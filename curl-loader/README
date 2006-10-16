@@ -1,0 +1,191 @@
+    curl-loader, version 0.18, 12/10/2006
+
+    Robert Iakobashvili, Ashdod, Israel, coroberti@gmail.com
+    Michael Moser, Modiin, Israel, moser.michael@gmail.com
+
+ABOUT:
+    Provides application load, simulating thousands (running from
+a script several curl_loaders - tens of thousands) clients, each with
+its own source IP-address.
+    This version emulates HTTP/HTTPS clients. Each client has its personal
+logging of all activities to a file, like connection establishment, request sent, 
+response data received with all relevant errors. It can be easily extended to 
+support ftp, ftps, telnet, tftp, ldap, etc other protocols, supported by the great 
+libcurl library.
+    Clients are groupped to the so-called batches of clients, performing the same
+sort of activities.
+
+
+SUCCESSFULLY USED:
+
+1. To generate Gbps traffic from thousands of TCP clients to test 
+    thousands of firewalling and NAT iptables/ipset entries impact 
+    at CPU consumption of a gateway device. 
+    Curl_loader provided client load against Apache web-server fetching a 
+    url with a gigabyte file, thus creating a permanent heavy-load 
+    traffic contaning thousand of tcp-streams at the gateway in the middle.
+
+2. To emulate http and https clients redirection, authentication and simulate
+    user-behaviour and real load for thousands of such clients to test 
+    authentication gateway. 
+    Curl_loader provided client load against Apache web-server with the gateway 
+    in the middle, where the gateway performed browser hijecking and http 
+    redirection of the curl-clients to the https url at the gateway own 
+    web-server. Https page of the gateway web-server provided a POST form,
+    filled with username and password for its further authentication against
+    external AAA (RADIUS) server. If the authentication was OK, user (curl
+    client) was allowed to enter the Internet and download several urls, etc 
+    perform some sort of emulated by curl_loader network activity.   
+    
+
+MAY BE USED:
+1. To create testing load for various HTTP/HTTPS/FTP/FTPS/LDAP, etc devices, 
+    where libcurl supports various variants and flavors of the protocols;
+2. For testing of HTTP/HTTPS based applications, application servers;
+2. For etc, etc, etc applications.
+
+BUILDING:
+Supposed to work on linux 2.4 and 2.6 kernels.
+
+In most cases just run make and relax. For some linux distributions, however, 
+matters should be fine tuned in build_curl.sh and Makefile. Sorry.
+Tarball of curl should be fetched by wget from
+the curl web-site. If a computer does not have Internet connection,
+bring the package yourself and put it inside to the distribution directory.
+
+make nobuildcurl builds the code with local version of curl, i.e. it does not fetch
+curl and does not build it.
+
+OS SUPPORT:
+Currently linux due to actually unlimited number of secondary ip-addresses,
+that can be arranged at a network interface to bind each individual client
+to an address.
+
+CONFIGURATION:
+curl_loader -h is your friend. Some examples of configuration are suggested
+in the files located in "configs" directory.
+
+ENVIRONMENT: ATTENTION !!! IMPORTANT !!!
+Running hundlers and thousands of clients, please do not forget:
+    - to increase limit of desriptors (sockets) by running e.g. 
+    #ulimit -n 10000;
+    - optionally, to set reuse of sockets in time-wait state: by setting 
+    #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or  
+    #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;
+
+PERFORMANCE ISSUES:
+A limit of 1000 clients per batch (due to select) may be worked around by 
+a script, which runs several instances of curl_loader, each with 1000 clients.
+Running several batches with threads (option -t), each with 1000 clients is 
+another valid option, however less stable and more buggy.
+Next release will hopefully incorporate libcurl HYPER API, using 
+curl_multi_socket() approach and epoll support by libevent as in
+http://curl.haxx.se/lxr/source/hiper/hipev.c
+
+
+MODES:
+The default mode is "storming", where all clients of a batch are starting 
+together. They are expected to finish their job within a certain timeout.
+After the timeout they are either completed fetching url, or are cutted
+and disconnected and a new cycle begins.
+Another mode is a so-called "smooth" (-m2 command line), where each 
+client spends as much time as wishes and starts another url or another 
+cycle only after completing the previous url.
+A combination of the both modes (two separate instances of the program)
+can provide somehow realistic behavior with some smooth constant load
+and bursts of requests.
+
+LICENSE:
+Actually it is GPL 2 due to the code from iprouted2. However, if somebody
+fills uncomfortable with this license, we can substitute the code of
+ip_secondary.c to calls to command "ip", and release it under BSD-license,
+and/or make it configurable.
+
+COMMAND-LINE AND CONFIG FILE
+usage: run as a root user:
+#./curl-loader -f <configuration filename> [other options]
+Possible options are:
+-c[onnection establishment timeout, seconds]
+-f[ilename of configuration to run (batches of clients)]
+-l[ogfile rewind after this number of cycles]
+-o[utput to stdout bodies of downloaded files - attn!- bulky]
+-p[ost method login and logoff formats provided as "login-str;logoff-str"]
+-r[euse established connections, don't run close-open cycles]
+-s[tderr printout of client messages instread of to logfile - attn!- bulky]
+-t[hreads enable - enables threads, each runs a batch of clients]
+-v[erbose output to the logfiles; includes info about headers sent/received]
+-u[rl logging - enables logging of url names to all client outputs]
+
+Note, that running with threads (-t) sometimes gots stacked,
+whereas without this option runs only the first batch of clients specified.
+Thus, running several client batches without threads requires some script with
+several curl-loader processes, each with its own batch config file.
+
+Configuration file should possess at least one client batch defined
+with the following params in each batch:
+BATCH_NAME;CLIENTS_NUM;INTERFACE;NETMASK;IP_ADDR_MIN;
+IP_ADDR_MAX;USERNAME;PASSWORD;CYCLES_NUM;URLS_NUM;
+and further one or more sequences of url-data in the following format:
+URL;URL_MAX_TIME;URL_INTERLEAVE_TIME
+
+Here is an example of the file with a single batch and a single url:
+
+BATCH_NAME = first_batch
+CLIENTS_NUM = 640
+INTERFACE = eth0
+NETMASK = 20
+IP_ADDR_MIN = 192.168.1.1
+IP_ADDR_MAX =192.168.5.255
+USERNAME = NO
+PASSWORD = NO
+CYCLES_NUM = 10000
+URLS_NUM = 1
+URL = http://192.168.112.200/ACE-INSTALL.html
+URL_MAX_TIME = 9
+URL_INTERLEAVE_TIME = 1
+
+Please, use string "NO" both as a username and a password to skip
+authentication, e.g. just simulating http, ftp, telnet, etc load for netfilter testing.
+Set CYCLES_NUM to 0 (zero), when willing to run a batch forever.
+Note, that currenly there is a limit of 1000 sockets per batch of clients.
+Running thousands and more clients, please do not forget the options:
+- to increase limit of open desriptors in shell by running e.g. "#ulimit -n 10000":
+- to increase total limit of  open descriptors in systeme somewhere in /proc
+- to consider reusing sockets in time-wait state: by "#echo 1 > 
+  /proc/sys/net/ipv4/tcp_tw_recycle"
+- and/or  "#echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse"
+
+URLS_NUM - is a total number of urls to fetch
+URLS_MAX_TIME is a maximum time in secondsto be wait for completion of the url retrival and
+URL_INTERLEAVE_TIME is time in seconds to sleep till the next url will be put in work.
+
+
+AUTHENTICATION POST STRINGS.
+
+The default POST strings are for login: "username=%s&password=%s" and 
+for logoff "op=logoff". The default means, that username and password,
+provided by the batch configuration file, will be substituting %s options
+as strings to be used for login. Thus, when 'robert' is the username and 'stam'
+is the password, the string used by libcurl int he method POST will be 
+"username=robert&password=stam".
+
+If one wishes to generate multiple unique users with unique passwords,
+it may provide as a string for login, e.g. "username=%s%d&password=%s%d".
+Thus, for each client to the username and password will be added client's
+number. E.g. for the client number one it will be 
+"username=robert1&password=stam1".
+
+Y can change the string as you wish, e.g. "user" and not "username", etc.
+When providing also the logoff option, please, separate it from login by ';',
+e.g. "user=%s%d&password=%s%d;op=logoff"
+
+There are two login modes supported. GET+POST and POST-only. When
+both username and password are provided, login can be made using the
+first url only once for each client either for GET with following POST or
+for POST only (note, that all 3xx HTTP redirections are supported as
+build-ins by libcurl). To enable GET+POST, pass '-z 2' to the commandline,
+and for POST-only, please, use '-z 3'.
+
+There are three logoff modes supported as GET-only, GET+POST and POST-only,
+which stay for 1, 2 and 3 for the '-w' commandline option. Cookies are enabled by
+default. 

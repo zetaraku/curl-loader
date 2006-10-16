@@ -1,0 +1,13 @@
+1. Next release will hopefully incorporate libcurl HYPER API, using 
+curl_multi_socket() approach and epoll support by libevent as in
+http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
+from a single process can become a reality.
+
+2. Good statistics from the smooth mode to be generalized to the 
+storming mode as well.
+
+3. Two login modes (GET-POST and POST-only) and 3 logoff modes
+(GET-only, GET-POST and POST-only) need to be tested more
+both for storming and smooth loading modes.
+
+4. More testing is required for multithreading option.

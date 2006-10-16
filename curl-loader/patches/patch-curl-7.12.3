@@ -1,0 +1,41 @@
+diff -Nur curl-7.12.3/include/curl/curl.h curl-7.12.3-rob/include/curl/curl.h
+--- curl-7.12.3/include/curl/curl.h	2004-12-14 11:58:45.000000000 +0200
++++ curl-7.12.3-rob/include/curl/curl.h	2004-12-27 19:29:05.842345464 +0200
+@@ -218,6 +218,7 @@
+   CURLINFO_DATA_OUT,     /* 4 */
+   CURLINFO_SSL_DATA_IN,  /* 5 */
+   CURLINFO_SSL_DATA_OUT, /* 6 */
++  CURLINFO_ERROR,             /* 7 */
+   CURLINFO_END
+ } curl_infotype;
+ 
+diff -Nur curl-7.12.3/lib/sendf.c curl-7.12.3-rob/lib/sendf.c
+--- curl-7.12.3/lib/sendf.c	2004-12-07 01:04:31.000000000 +0200
++++ curl-7.12.3-rob/lib/sendf.c	2004-12-27 19:36:09.916876336 +0200
+@@ -169,7 +169,8 @@
+         data->state.buffer[len] = '\n';
+         data->state.buffer[++len] = '\0';
+       }
+-      Curl_debug(data, CURLINFO_TEXT, data->state.buffer, len, NULL);
++      /*Curl_debug(data, CURLINFO_TEXT, data->state.buffer, len, NULL);*/
++      Curl_debug(data, CURLINFO_ERROR, data->state.buffer, len, NULL);
+   }
+ 
+   va_end(ap);
+@@ -448,7 +449,7 @@
+                   char *ptr, size_t size)
+ {
+   static const char * const s_infotype[CURLINFO_END] = {
+-    "* ", "< ", "> ", "{ ", "} ", "{ ", "} " };
++    "* ", "< ", "> ", "{ ", "} ", "{ ", "} " "! "};
+ 
+   if(data->set.fdebug)
+     return (*data->set.fdebug)(data, type, ptr, size,
+@@ -458,6 +459,7 @@
+   case CURLINFO_TEXT:
+   case CURLINFO_HEADER_OUT:
+   case CURLINFO_HEADER_IN:
++  case CURLINFO_ERROR:
+     fwrite(s_infotype[type], 2, 1, data->set.err);
+     fwrite(ptr, size, 1, data->set.err);
+     break;

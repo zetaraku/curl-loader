@@ -1,0 +1,39 @@
+version 0.18, 12/10/2006
+
+version 0.17, 10/11/2006
+
+-Added ChangeLog and TODO files.
+	
+-README - improved to contain information, available before only
+ from curl_loader -h
+
+-Authentication using POST has been unfortunately disabled in storming
+ mode. Fixed the bug, with thanks to Arik Nahmany, Arik.Nahmany@vocaltec.com,
+ for pointing this.
+
+-Some people may be interested to load their servers with multiple logging of
+ the same user and with the same password. We have allowed a more
+ sophisticated case with user and password incrementing and being unique, but
+ no reason not to support this rather simple case. Added support for this,
+ where, when POST login string contains two %d, we are incrementing username
+ and password, and, if the string lacks any %d symbols, this id the simple
+ case. Thanks to Arik Nahmany, Arik.Nahmany@vocaltec.com for suggesting this
+ feature and testing it.
+
+-Fixed an old bug of storming mode, where the first url used in
+ authentication was also participating in further load. When authentication is
+ required, the first url not to be used in load, unless option '-a' is added to to the 
+ commandline.
+
+-Added support for cookies, which are set in some cases upon authentication.
+
+-Enabled infinitive number of redirections. 
+
+- Logoff operation enabled as GET-only, GET+POST and POST-only. Initially,
+ it was tested for the storming mode. This is managed by the '-w' commandline
+ option, whereas '-z' is in charge for tuning login options between GET+POST 
+and POST-only.
+
+	
+version 0.15
+Basic version to be referred to.
