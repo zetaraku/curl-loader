@@ -1,4 +1,4 @@
-1. Next release will hopefully incorporate libcurl HYPER API, using 
+1. Future release will hopefully incorporate libcurl HYPER API, using 
 curl_multi_socket() approach and epoll support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
 from a single process can become a reality.
@@ -11,3 +11,12 @@ storming mode as well.
 both for storming and smooth loading modes.
 
 4. More testing is required for multithreading option.
+
+5. Login authentication and logoff should be separated in the
+batch configuration file to some separate modules.
+
+6. Some modularity of configuration file is necessary. XML is a
+valid option, but it brings a one more dependency to handle. 
+Michael has an idea of a user-interface script, may be linux kernel
+like Dialog GUI interface to assist user in configuring configuration
+batch files.
