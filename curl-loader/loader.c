@@ -200,12 +200,12 @@ static void* batch_function (void * batch_data)
      Now run the long cycles of the user-defined actions, like 
      fetching various urls and and sleeping in between.
   */
-  if (mode_loading == MODE_LOAD_STORMING)
+  if (loading_mode == LOAD_MODE_STORMING)
     {
        /* MODE_LOAD_STORM */
       rval = user_activity_storm (cctx);
     }
-  else /* MODE_LOAD_SMOOTH */
+  else /* LOAD_MODE_SMOOTH */
     { 
       rval = user_activity_smooth (cctx);
     }
@@ -375,7 +375,7 @@ int single_handle_setup (
   curl_easy_setopt (handle, CURLOPT_SSL_VERIFYHOST, 0);
     
   /* Set current cycle_number in buffer. */
-  if (mode_loading == MODE_LOAD_STORMING)
+  if (loading_mode == LOAD_MODE_STORMING)
     cctx->cycle_num = cycle_number;
 
   curl_easy_setopt (handle, CURLOPT_DEBUGDATA, cctx);

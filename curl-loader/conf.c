@@ -41,12 +41,12 @@ int output_to_stdout = 0; /* Whether to stdout the downloaded file body */
  int stderr_print_client_msg = 0; /* If to output client messages to stderr, 
                                      otherwise to logfile */
 unsigned long snapshot_timeout = 1000;
-int mode_loading = DEFAULT_MODE_LOADING; /* Storming or smooth loading */
+int loading_mode = LOAD_MODE_DEFAULT; /* Storming or smooth loading */
 char post_login_format [POST_BASE_BUF_SIZE] = {'\0'};
 char post_logoff_format [POST_BASE_BUF_SIZE] = {'\0'};
 int url_logging = 0; /* Whether to include url to all log outputs. */
-int w_logoff_mode = LOGOFF_NOT_DOING; /* Default is zero. When positive we do logoff. */
-int z_login_mode = LOGIN_GET_AND_POST; /* Default is GET and POST */
+int w_logoff_mode = LOGOFF_TYPE_NO_LOGOFF; /* Default is zero. When positive we do logoff. */
+int z_login_mode = LOGIN_TYPE_GET_AND_POST; /* Default is GET and POST */
 char config_file[PATH_MAX + 1]; /* Name of the configuration file */
 
 int parse_command_line (int argc, char *argv [])
@@ -97,12 +97,12 @@ int parse_command_line (int argc, char *argv [])
         case 'm': /* Modes of loading: SMOOTH and STORMING */
 
             if (!optarg || 
-                ((mode_loading = atoi (optarg)) != MODE_LOAD_STORMING &&
-                 mode_loading != MODE_LOAD_SMOOTH))
+                ((loading_mode = atoi (optarg)) != LOAD_MODE_STORMING &&
+                 loading_mode != LOAD_MODE_SMOOTH))
             {
               fprintf (stderr, 
                        "main: -m to be followed by a number either %d or %d.\n",
-                       MODE_LOAD_STORMING, MODE_LOAD_SMOOTH);
+                       LOAD_MODE_STORMING, LOAD_MODE_SMOOTH);
               return -1;
             }
           
@@ -163,22 +163,23 @@ int parse_command_line (int argc, char *argv [])
 
         case 'w': /* actually, this is logoff */
           w_logoff_mode = atoi (optarg);
-          if ((w_logoff_mode < LOGOFF_GET_ONLY) ||(w_logoff_mode > LOGOFF_POST_ONLY))
+          if ((w_logoff_mode < LOGOFF_TYPE_GET_ONLY) ||(w_logoff_mode > LOGOFF_TYPE_POST_ONLY))
             {
               fprintf (stderr, 
                        "main: -w option requires number between %d and %d.\n",
-                       LOGOFF_GET_ONLY, LOGOFF_POST_ONLY);
+                       LOGOFF_TYPE_GET_ONLY, LOGOFF_TYPE_POST_ONLY);
               return -1;
             }
           break;
 
         case 'z': /* actually, this is login */
           z_login_mode = atoi (optarg);
-          if ((z_login_mode != LOGIN_GET_AND_POST) && (z_login_mode != LOGIN_POST_ONLY))
+          if ((z_login_mode != LOGIN_TYPE_GET_AND_POST) && 
+              (z_login_mode != LOGIN_TYPE_POST_ONLY))
             {
               fprintf (stderr, 
                        "main: -z option requires number either %d or %d.\n",
-                       LOGIN_GET_AND_POST, LOGIN_POST_ONLY);
+                       LOGIN_TYPE_GET_AND_POST, LOGIN_TYPE_POST_ONLY);
               return -1;
             }
           break;

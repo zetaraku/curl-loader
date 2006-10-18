@@ -25,8 +25,15 @@
 
 #include <linux/limits.h> /* NAME_MAX, PATH_MAX */
 
+/* ----------------------------------------------------------------------------------------------------
+   Global configuration parameters, comming with the command-line.
+   TODO: to decrease them to the very minimal number. 
+*/
+
+/* TODO - should be per batch. */
 extern int authentication_url_load; /* Whether to use the first "authentication url"
                                     also for load. */
+
 extern int connect_timeout; /* Configurable time to cut connect () in prog */  
 extern int verbose_logging; /* Flag, whether to perform verbose logging */
 extern int threads_run; /* Flag, whether to run batches as batch per thread. */
@@ -38,7 +45,8 @@ extern int threads_run; /* Flag, whether to run batches as batch per thread. */
 */
 extern int logfile_rewind_cycles_num;
 
-/* Zero - means reuse connections, any non-zero -
+/* 
+   Zero - means reuse connections, any non-zero -
    don't re-use, refresh connections
 */
 extern int reuse_connection_forbidden;
@@ -49,6 +57,9 @@ extern int output_to_stdout;
 /* If to output client messages to stderr, otherwise to logfile */
 extern int stderr_print_client_msg;
 
+/* Used by the smooth loading mode to output statistics to the
+   screen at certain snapshot timeout intervals. */
+/* TODO: Statistics should be propagated to the storming load mode as well. */
 extern unsigned long snapshot_timeout;
 
 
@@ -56,45 +67,56 @@ extern unsigned long snapshot_timeout;
 #define DEFAULT_POST_LOGIN_STR_2 "username=%s&password=%s"
 #define DEFAULT_POST_LOGOFF_STR "op=logoff"
 
+/* TODO: 
+The strings should be per batch, because authentication should be 
+per batch.
+*/ 
 #define POST_BASE_BUF_SIZE 64
 extern char post_login_format [POST_BASE_BUF_SIZE];
 extern char post_logoff_format [POST_BASE_BUF_SIZE];
 
-enum
+/* Load modes: Storming and Smooth */
+enum load_mode
   {
-    MODE_LOAD_STORMING = 1,
-    MODE_LOAD_SMOOTH = 2,
+    LOAD_MODE_STORMING = 1, /*Stress mode - peaks of load */
+    LOAD_MODE_SMOOTH = 2, /* Initial stress, futher smooth loading. */
+    /* TODO - can we make initial stress more smooth, e.g. to control CAPS
+       (call attempt per seconds) ? */
   };
 
-#define DEFAULT_MODE_LOADING MODE_LOAD_STORMING
-extern int mode_loading;
+#define LOAD_MODE_DEFAULT LOAD_MODE_STORMING
+extern int loading_mode;
 
-extern int url_logging; /* Whether to include url to all log outputs. */
+extern int url_logging; /* Whether to include url name string to all log outputs. */
 
+/* TODO: should be per batch of clients. */
 extern int w_logoff_mode; /* When positive we do logoff. */
 
 /*
-Modes of logoff: via GET, via GET and following POST
-and using only POST method with post-string supplied as the
+Types of logoff: not doing logoff, via GET, via GET and following POST
+and using only POST HTTP request, where post-string supplied as the
 second part of the -p option string.
 */
-enum
+enum logoff_type
   {
-    LOGOFF_NOT_DOING = 0,
-    LOGOFF_GET_ONLY, // 1
-    LOGOFF_GET_AND_POST, //2
-    LOGOFF_POST_ONLY // 3
+    LOGOFF_TYPE_NO_LOGOFF = 0,
+    LOGOFF_TYPE_GET_ONLY, // 1,
+    LOGOFF_TYPE_GET_AND_POST, //2
+    LOGOFF_TYPE_POST_ONLY // 3
   };
 
+
+/* TODO: should be per batch of clients. */
 extern int z_login_mode;
 /*
-Modes of login: via GET, optional redirection-GET, and following POST or
-via POST only.
+Authentication login types for clients: 
+1) via GET, with an optional 3xx-redirection, and following POST or
+2) via POST only.
 */
-enum
+enum login_type
   {
-    LOGIN_GET_AND_POST = 2,
-    LOGIN_POST_ONLY //3
+    LOGIN_TYPE_GET_AND_POST = 2,
+    LOGIN_TYPE_POST_ONLY //3
   };
 
 extern char config_file[PATH_MAX + 1]; /* Name of the configuration file */

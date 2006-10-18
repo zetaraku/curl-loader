@@ -8,7 +8,7 @@ CURL_VER=7.15.4
 if [ ! -d curl-${CURL_VER} ]; then  
     
     if [ ! -f curl-${CURL_VER}.tar.gz ]; then
-        echo "downloading curl tarball"
+        echo "downloading curl tarball from the official curl site"
         wget --tries=5 -c http://curl.haxx.se/download/curl-${CURL_VER}.tar.gz || exit 1
     fi
 

@@ -223,7 +223,7 @@ int user_activity_storm (client_context*const cdata)
                                cycle, NULL);
         }
 
-      if (w_logoff_mode != LOGOFF_POST_ONLY)
+      if (w_logoff_mode != LOGOFF_TYPE_POST_ONLY)
         {
           /* GET the last url, if configured to do it.  */
           if (mget_url_storm (bctx) == -1)
@@ -235,7 +235,7 @@ int user_activity_storm (client_context*const cdata)
             }
         }
 
-      if (w_logoff_mode != LOGOFF_GET_ONLY)
+      if (w_logoff_mode != LOGOFF_TYPE_GET_ONLY)
         {
           /* Sets the POSTing logoff buffer to the curl-handlers and 
              POSTs the last url or the url, retrived by the previous GET */
@@ -256,7 +256,7 @@ int authenticate_clients_storm (client_context* cctx)
 {
   batch_context* bctx= cctx->bctx;
 
-  if (z_login_mode == LOGIN_GET_AND_POST) /* '-z 3' in commandline skips it */
+  if (z_login_mode == LOGIN_TYPE_GET_AND_POST) /* '-z 3' in commandline skips it */
     {
       /*
         GET the first url to be the POST form. When the first url is redirected 
