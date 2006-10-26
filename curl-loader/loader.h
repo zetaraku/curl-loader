@@ -36,9 +36,32 @@ struct client_context;
 struct batch_context;
 struct stat_point;
 
-/* Common loading functions */
-int single_handle_setup (struct client_context*const c_ctx, size_t url_num, 
-                         long cycle_number, char* post_buff);
+/*---------  Common loading functions ----------------*/
+
+enum url_index
+  {
+    URL_INDEX_LOGIN_URL = -2, /* Login url */
+    URL_INDEX_LOGOFF_URL = -1, /* Logoff url */
+    URL_INDEX_UAS_URL_START = 0, /* UAS - user activity simulation url from 
+                                    the array of url-contexts. */
+  };
+
+/*
+  Setup for a single curl handle (client): removes a handle from multi-handle, 
+  resets the handle, inits it, and, finally, adds the handle back to the
+  multi-handle.
+
+  <ctx> - pointer to the client context;
+  <url_index> - either URL_INDEX_LOGIN_URL, URL_INDEX_LOGOFF_URL or
+                       some number eq or above URL_INDEX_UAS_URL_START;
+  <cycle_number> - used in storming mode;
+  <post_method> - when 'true', POST method is used instead of the default GET
+*/
+int single_handle_setup (
+                         struct client_context*const ctx, 
+                         int url_index, 
+                         long cycle_number,
+                         int post_method);
 
 int add_secondary_ip_to_device (const char*const device,
                             const char*const ip_slash_mask);
@@ -57,22 +80,27 @@ int create_batch_data_array (char*const input_string,
                              struct batch_context*const bctx);
 
 
-/* Smooth load functions. */
-int mget_url_storm (struct batch_context* bctx);
+/* ------------- Storm loading  functions ----------------*/
+
 int user_activity_storm (struct client_context*const cdata);
-int authenticate_clients_storm (struct client_context* cctx);
 
+/*-------------- Smooth loading functions ----------------*/
 
-/* Smooth load functions. */
-int mget_url_smooth (struct batch_context* bctx);
-int mperform_smooth (struct batch_context* bctx, int* still_running);
 int user_activity_smooth (struct client_context* cctx);
 
+/*
 int load_next_step (struct client_context* cctx);
+
 unsigned long get_tick_count (void);
-void dump_statistics (unsigned long period,  struct stat_point *http, 
+
+void dump_statistics (unsigned long period,  
+                      struct stat_point *http, 
                       struct stat_point *https);
-void dump_stat_workhorse (int clients, unsigned long period,  
-                         struct stat_point *http, struct stat_point *https);
+
+void dump_stat_workhorse (int clients, 
+                          unsigned long period,  
+                          struct stat_point *http, 
+                          struct stat_point *https);
+*/
 
 #endif /* LOADER_H */

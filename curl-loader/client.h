@@ -27,14 +27,30 @@
 #define CLIENT_NAME_LEN 32
 
 /*
-  Client states.
+  Client states for smooth mode.
+  TODO: Transit to more general states below.
 */
 enum
   {
     STATE_RUNNING = 0, /* Thus, calloc set the state automatically */
     STATE_LAST_URL,
     STATE_FINISHED_OK,
-    STATE_ERROR,
+    STATE_PLACE_FILLING,
+    STATE_ERROR, // 4
+  };
+
+enum cstate
+  {
+    CSTATE_INIT = 0, /* Thus, calloc set the state automatically */
+  
+    /* Operational states */
+    CSTATE_LOGIN,
+    CSTATE_UAS,
+    CSTATE_LOGOFF,
+
+    /* Completion states */
+    CSTATE_ERROR, // also 4 as STATE_ERROR
+    CSTATE_FINISHED_OK,
   };
 
 /* Forward declarations */

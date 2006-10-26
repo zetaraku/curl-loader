@@ -27,12 +27,7 @@
 
 /* ----------------------------------------------------------------------------------------------------
    Global configuration parameters, comming with the command-line.
-   TODO: to decrease them to the very minimal number. 
 */
-
-/* TODO - should be per batch. */
-extern int authentication_url_load; /* Whether to use the first "authentication url"
-                                    also for load. */
 
 extern int connect_timeout; /* Configurable time to cut connect () in prog */  
 extern int verbose_logging; /* Flag, whether to perform verbose logging */
@@ -67,14 +62,6 @@ extern unsigned long snapshot_timeout;
 #define DEFAULT_POST_LOGIN_STR_2 "username=%s&password=%s"
 #define DEFAULT_POST_LOGOFF_STR "op=logoff"
 
-/* TODO: 
-The strings should be per batch, because authentication should be 
-per batch.
-*/ 
-#define POST_BASE_BUF_SIZE 64
-extern char post_login_format [POST_BASE_BUF_SIZE];
-extern char post_logoff_format [POST_BASE_BUF_SIZE];
-
 /* Load modes: Storming and Smooth */
 enum load_mode
   {
@@ -89,34 +76,27 @@ extern int loading_mode;
 
 extern int url_logging; /* Whether to include url name string to all log outputs. */
 
-/* TODO: should be per batch of clients. */
-extern int w_logoff_mode; /* When positive we do logoff. */
-
 /*
-Types of logoff: not doing logoff, via GET, via GET and following POST
-and using only POST HTTP request, where post-string supplied as the
-second part of the -p option string.
+Types of logoff: not doing logoff, via request GET, via request GET and 
+following POST and using only POST HTTP request, where post-string 
+is supplied as the second part of the -p option string.
 */
-enum logoff_type
+enum logoff_req_type
   {
-    LOGOFF_TYPE_NO_LOGOFF = 0,
-    LOGOFF_TYPE_GET_ONLY, // 1,
-    LOGOFF_TYPE_GET_AND_POST, //2
-    LOGOFF_TYPE_POST_ONLY // 3
+    LOGOFF_REQ_TYPE_GET = 1, 
+    LOGOFF_REQ_TYPE_GET_AND_POST = 2,
+    LOGOFF_REQ_TYPE_POST = 3
   };
 
-
-/* TODO: should be per batch of clients. */
-extern int z_login_mode;
 /*
 Authentication login types for clients: 
 1) via GET, with an optional 3xx-redirection, and following POST or
 2) via POST only.
 */
-enum login_type
+enum login_req_type
   {
-    LOGIN_TYPE_GET_AND_POST = 2,
-    LOGIN_TYPE_POST_ONLY //3
+    LOGIN_REQ_TYPE_GET_AND_POST = 1,
+    LOGIN_REQ_TYPE_POST = 2,
   };
 
 extern char config_file[PATH_MAX + 1]; /* Name of the configuration file */

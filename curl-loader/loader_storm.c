@@ -34,13 +34,129 @@
 #define POST_LOGOFF 0
 
 static int posting_credentials_storm (client_context* clients, int in_off);
+static int login_clients_storm (client_context* cctx, int cycle);
+static int logoff_clients_storm (client_context*const cctx, int cycle);
+static int mget_url_storm (batch_context* bctx, float m_time);
 
-int mget_url_storm (batch_context* bctx)
+/*
+  Simulates user activity upon storm loading mode.
+*/
+int user_activity_storm (client_context*const cdata)
 {
-  CURLM *mhandle = bctx->multiple_handle;
-  float max_timeout = bctx->url_ctx_arr[bctx->url_index].url_completion_time;
-  int still_running = 0;
+  batch_context* bctx = cdata->bctx;
+  long cycle = 0, k = 0;
+  long u_index = 0;
+
+  /* 
+     Make authentication login. If cycling login is disabled,
+     it is done using the login url and only once for each user.
+  */
+  if (bctx->do_login_auth && !bctx->login_cycling)
+    {
+      if (login_clients_storm (cdata, 0) == -1)
+        {
+          fprintf (stderr, "%s - \"%s\" - login_clients_storm() failed.\n", 
+                   __func__, bctx->batch_name);
+          return -1;
+        }
+    }
+  
+  for (cycle = 0; cycle < bctx->cycles_num ; cycle++)
+    {
+      /* 
+         Login, when required login in cycling. 
+       */
+      if (bctx->do_login_auth && bctx->login_cycling)
+        {
+          if (login_clients_storm (cdata, cycle) == -1)
+            {
+              fprintf (stderr, "%s - login_clients_storm() failed.\n", __func__);
+              return -1;
+            }
+        }
+
+      /*
+         UAS - user activity simulation, fetching urls from the UAS-array.
+      */
+      for (u_index = 0; u_index < bctx->uas_urls_num; u_index++)
+        {
+          // fprintf (stderr,"\n\"%s\" - %s - cycle %ld of fetching url %ld .\n\n",
+          //         bctx->batch_name, __func__, cycle, u_index);
+
+          /* 
+             Remove all CURL handles (clients) from the CURL multi-handle.
+             Reset each CURL handle (client), reset-up the handle with new url
+             params and add it back to the CURL multi-handle.
+          */
+          for (k = 0 ; k < bctx->client_num ; k++)
+            {
+              single_handle_setup (&cdata[k],
+                                   u_index, /* index of url string in array */
+                                   cycle,
+                                   0);
+              cdata[k].client_state = CSTATE_UAS;
+            }
+            
+          /* Fetch the new url by each client of the batch.*/
+          if ( mget_url_storm (bctx, 
+                               bctx->uas_url_ctx_array[u_index].url_completion_time) == -1)
+            {
+              fprintf (stderr, 
+                       "%s -mget_url_storm failed at cycle %ld of fetching url %ld .\n",
+                       __func__, cycle, u_index) ;
+              return -1;
+            }
+
+          //fprintf (stderr, 
+          //         "\n%s - sleeping after cycle %ld of getting url %d.\n\n", 
+          //        __func__, cycle, u_index);
+
+          /* Sleep in between the urls, simulating user-activity. */
+          sleep (bctx->uas_url_ctx_array[u_index].url_interleave_time);
+        }
+
+      /* 
+         Logoff, when required logoff in cycling. 
+      */
+      if (bctx->do_logoff && ! bctx->logoff_cycling)
+        {
+          if (logoff_clients_storm (cdata, cycle) == -1)
+            {
+              fprintf (stderr, "%s - logoff_clients_storm() failed .\n", __func__);
+              return -1;
+            }
+        }
+ 
+      /* 
+         After completing a cycle - rewind the file. Thus, we are keeping only 
+         a limited history run in the batch and the current run.
+      */
+      if (cycle > 0 && ! (cycle%logfile_rewind_cycles_num))
+          rewind (cdata->file_output);
+    }
+
+  /* 
+     Logoff, if not required logoff in cycling 
+  */
+  if (bctx->do_logoff && ! bctx->logoff_cycling)
+    {
+      if (logoff_clients_storm (cdata, 0) == -1)
+        {
+          fprintf (stderr, "%s - logoff_clients_storm() failed .\n", __func__);
+          return -1;
+        }
+    }
+  
+  fprintf (stderr, "\n%s - cycling done, exiting .\n\n", __func__);
+  return 0;
+}
+
+static int mget_url_storm (batch_context* bctx, float m_time)
+{
   struct timeval timeout;
+  CURLM *mhandle = bctx->multiple_handle;
+  int still_running = 0;
+  float max_timeout = m_time; //bctx->uas_url_ctx_array[bctx->url_index].url_completion_time;
 
   while(CURLM_CALL_MULTI_PERFORM== curl_multi_perform (mhandle, &still_running))
     ;
@@ -86,7 +202,6 @@ static int posting_credentials_storm (client_context* clients, int in_off)
   if ((in_off != POST_LOGIN) && (in_off != POST_LOGOFF))
     return -1;
 
-  /* Somebody removes or at least not adds curl-handles from the multi-handle */
   curl_multi_cleanup(bctx->multiple_handle);
 
   if (!(bctx->multiple_handle = curl_multi_init()))
@@ -96,19 +211,25 @@ static int posting_credentials_storm (client_context* clients, int in_off)
                __func__);
       return -1;
     }
-  
-  const long url_index = (in_off ==  POST_LOGIN) ? 0 : bctx->urls_num -1;  
-  
+
+  const float max_completion_time = (in_off == POST_LOGIN) ? 
+    bctx->login_url.url_completion_time : 
+    bctx->logoff_url.url_completion_time;
+
+  const long sleep_time = (in_off == POST_LOGIN) ? 
+    bctx->login_url.url_interleave_time : 
+    bctx->logoff_url.url_interleave_time;
+
   /* 
      An average user is used to read and think a bit prior to posting 
      his credentials.
   */
-  sleep (bctx->url_ctx_arr[url_index].url_interleave_time);
+  sleep (sleep_time);
 
   /* Add the POST fields */
   for (i = 0 ; i < bctx->client_num; i++)
     { 
-      /* Fill POST login fields */
+      /* Fill POST login or logoff fields */
       curl_easy_setopt(bctx->client_handles_array[i], CURLOPT_POSTFIELDS, 
                        in_off ? clients[i].post_data_login : clients[i].post_data_logoff);
 
@@ -117,7 +238,7 @@ static int posting_credentials_storm (client_context* clients, int in_off)
     }
 
   /* Make the actual posting */
-  if (mget_url_storm (bctx) == -1) 
+  if (mget_url_storm (bctx, max_completion_time) == -1) 
     {
       fprintf (stderr, "%s - mget_url_storm() failed for the authentication POST.\n",
                __func__);
@@ -127,143 +248,31 @@ static int posting_credentials_storm (client_context* clients, int in_off)
   return 0;
 }
 
-/*
-  Simulates user activity upon storm loading mode.
-*/
-int user_activity_storm (client_context*const cdata)
+static int login_clients_storm (client_context* cdata, int cycle)
 {
-  batch_context* bctx = cdata->bctx;
-  long cycle = 0, k = 0;
-  long url_index = 0;
+  int k = 0;
+  batch_context* bctx= cdata->bctx;
 
-  /* 
-     Make authentication login, if configured to do it. Such login 
-     is done using the first url and only once for each user.
-  */
-  if (bctx->do_auth && post_login_format[0])
+  /* Setup client handles for GET-method. */
+  for (k = 0 ; k < bctx->client_num ; k++)
     {
-      if (authenticate_clients_storm (cdata) == -1)
-        {
-          fprintf (stderr, "%s - \"%s\" - authenticate_clients_storm() failed.\n", 
-                   __func__, bctx->batch_name);
-          return -1;
-        }
+      single_handle_setup (&cdata[k], /* pointer to client context */
+                           URL_INDEX_LOGIN_URL, /* login url */
+                           cycle, /* zero cycle */
+                           0 /*without POST buffers as a more general case*/  
+                           );
+      cdata[k].client_state = CSTATE_LOGIN;
     }
 
-  /* 
-     We are starting from the second url, when the first URL has been used 
-     for authentication and commandline option '-a' was not specified.
-     When authentication is required and logoff is defined by -w command line
-     option, we are using the last url solely for logoff.
-  */
-  const int do_logoff = (bctx->do_auth && w_logoff_mode) ? 1 : 0;
-
-  const long url_start = (bctx->do_auth && !authentication_url_load) ? 1 : 0;
-  const long url_end = do_logoff ? bctx->urls_num - 1 : bctx->urls_num; 
-  
-  for (cycle = 0; cycle < bctx->repeat_cycles_num ; cycle++)
-    {
-      for (url_index = url_start; url_index < url_end ; url_index++)
-        {
-          //fprintf (stderr,"\n\"%s\" - %s - cycle %ld of fetching url %ld .\n\n",
-          //         bctx->batch_name, __func__, cycle, url_index);
-
-          /* 
-             Remove all CURL handles (clients) from the CURL Multi-handle.
-             Reset each CURL handle (client), reset-up the handle with new URL
-             params and add it back to the CURL Multi-handle.
-          */
-          for (k = 0 ; k < bctx->client_num ; k++)
-            {
-              curl_multi_remove_handle (bctx->multiple_handle, 
-                                        bctx->client_handles_array[k]);
-  
-              single_handle_setup (&cdata[k],
-                                   url_index, /* index of url string in array */
-                                   cycle, NULL);
-            }
-            
-          /* Fetch the new url by each client of the batch.*/
-          if ( mget_url_storm (bctx) == -1)
-            {
-              fprintf (stderr, 
-                       "%s -mget_url_storm failed at cycle %ld of fetching url %ld .\n",
-                       __func__, cycle, url_index) ;
-              return -1;
-            }
-
-          //fprintf (stderr, 
-          //         "\n%s - sleeping after cycle %ld of getting url %d.\n\n", 
-          //        __func__, cycle, url_index);
-
-          /* Sleep in between the urls, simulating user-activity. */
-          sleep (bctx->url_ctx_arr[url_index].url_interleave_time);
-        }
- 
-      /* 
-         After completing a cycle - rewind the file. Thus, we are keeping only 
-         a limited history run in the batch and the current run.
-      */
-      if (cycle > 0 && ! (cycle%logfile_rewind_cycles_num))
-          rewind (cdata->file_output);
-    }
-
-  /* Using the last url solely for logoff and only once for each client. */
-  if (do_logoff)
-    {
-
-      /* Setup the last url for logoff without any POST-buffer */
-      for (k = 0 ; k < bctx->client_num ; k++)
-        {
-          curl_multi_remove_handle (bctx->multiple_handle, 
-                                    bctx->client_handles_array[k]);
-          
-          single_handle_setup (&cdata[k],
-                               bctx->urls_num - 1 , /* index of the last url */
-                               cycle, NULL);
-        }
-
-      if (w_logoff_mode != LOGOFF_TYPE_POST_ONLY)
-        {
-          /* GET the last url, if configured to do it.  */
-          if (mget_url_storm (bctx) == -1)
-            {
-              fprintf (stderr, 
-                       "%s - \"%s\" - mget_url_storm()- failed for the initial URL.\n", 
-                       __func__, bctx->batch_name);
-              return -1;
-            }
-        }
-
-      if (w_logoff_mode != LOGOFF_TYPE_GET_ONLY)
-        {
-          /* Sets the POSTing logoff buffer to the curl-handlers and 
-             POSTs the last url or the url, retrived by the previous GET */
-          if (posting_credentials_storm (cdata, POST_LOGOFF) == -1)
-            {
-              fprintf (stderr, "%s - \"%s\" - posting_credentials_storm()- failed to logoff.\n", 
-                       __func__, bctx->batch_name);
-              return -1;
-            }
-        }
-    }
-  
-  fprintf (stderr, "\n%s - cycling done, exiting .\n\n", __func__);
-  return 0;
-}
-
-int authenticate_clients_storm (client_context* cctx)
-{
-  batch_context* bctx= cctx->bctx;
-
-  if (z_login_mode == LOGIN_TYPE_GET_AND_POST) /* '-z 3' in commandline skips it */
+  if (bctx->login_req_type == LOGIN_REQ_TYPE_GET_AND_POST)
     {
       /*
         GET the first url to be the POST form. When the first url is redirected 
         and authentication POSTing performed at the redirected url, 
         it can be done as below.
       */
-      if (mget_url_storm (bctx) == -1)
+
+      if (mget_url_storm (bctx, bctx->login_url.url_completion_time) == -1)
         {
           fprintf (stderr, 
                    "%s - \"%s\" - mget_url_storm()- failed for the initial URL.\n", 
@@ -272,12 +281,62 @@ int authenticate_clients_storm (client_context* cctx)
         }
     }
   
-  /* Make POSTing of login credentials for each client.*/
-  if (posting_credentials_storm (cctx, POST_LOGIN) == -1)
+  /* Make POSTing of login credentials for each client. Pass POST-buffers. */
+  if (posting_credentials_storm (cdata, POST_LOGIN) == -1)
     {
       fprintf (stderr, "%s - \"%s\" - posting_credentials_storm()- failed.\n", 
                __func__, bctx->batch_name);
       return -1;
+    }
+  return 0;
+}
+
+static int logoff_clients_storm (client_context*const cdata, int cycle)
+{
+  int k = 0;
+  batch_context* bctx = cdata->bctx;
+
+  /* 
+     Setup the last url for logoff without any POST-buffer 
+  */
+  for (k = 0 ; k < bctx->client_num ; k++)
+    {
+      single_handle_setup (&cdata[k],
+                           URL_INDEX_LOGOFF_URL, 
+                           cycle, /* Cycle number does not matter here */
+                           0 /* General case, without POST */
+                           );
+      cdata[k].client_state = CSTATE_LOGOFF;
+    }
+
+  if (bctx->logoff_req_type != LOGOFF_REQ_TYPE_POST)
+    {
+      /* 
+         GET the logoff url, if configured to do it.  
+      */
+      if (mget_url_storm (bctx, bctx->logoff_url.url_completion_time) == -1)
+        {
+          fprintf (stderr, 
+                   "%s - \"%s\" - mget_url_storm()- failed for the initial URL.\n", 
+                   __func__, bctx->batch_name);
+          return -1;
+        }
+    }
+
+  if (bctx->logoff_req_type != LOGOFF_REQ_TYPE_GET)
+    {
+      /*
+        POST the logoff url, if configured to do it.
+
+        Sets the POSTing logoff buffer to the curl-handlers and 
+        POSTs the last url or the url, retrived by the previous GET 
+      */
+      if (posting_credentials_storm (cdata, POST_LOGOFF) == -1)
+        {
+          fprintf (stderr, "%s - \"%s\" - posting_credentials_storm()- failed to logoff.\n", 
+                   __func__, bctx->batch_name);
+          return -1;
+        }
     }
   return 0;
 }

@@ -15,7 +15,8 @@ CC=gcc
 #C Compiler Flags
 CFLAGS= -W -Wall -Wpointer-arith -pipe
 
-#Debug flags
+#Debug flags. For optimized version remove -g and uncomment OPT_FLAGS below
+# To build libcurl with optimization, go to build_curl.sh and follow instructions
 DEBUG_FLAGS= -g
 
 #Optimization flags
@@ -28,7 +29,7 @@ LD=gcc
 #Linker Flags
 LDFLAGS=-L./curl-build/lib
 
-#Link Libraries
+#Link Libraries. RedHat/FC require sometimes lidn, remove first '#'
 LIBS= -ldl -lpthread -lrt -lssl -lcrypto -lcurl #-lidn #-lcares
 
 # Include directories

@@ -27,7 +27,7 @@ if [ ! -d curl-${CURL_VER} ]; then
     # Install on debian package libssl-dev (additionally to openssl binaries).
     #
     # Place to CFLAGS=-g to enable the libcurl debugging. To use the most effective
-    # optimized version of the library, place CFLAGS=-O2
+    # optimized version of the library, place CFLAGS=-O2 instead of -g
     #
     ../curl/configure --prefix ${CURL_BUILD} \
         --enable-thread \

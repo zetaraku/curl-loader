@@ -36,10 +36,73 @@
 #include "client.h"
 #include "conf.h"
 
-int mget_url_smooth (batch_context* bctx)  		       
+static int mget_url_smooth (batch_context* bctx);
+static int mperform_smooth (batch_context* bctx, int* still_running);
+static int load_next_step (client_context* cctx);
+static unsigned long get_tick_count ();
+static void dump_statistics (
+                             unsigned long period,  
+                             stat_point *http, 
+                             stat_point *https);
+static void dump_stat_workhorse (int clients, 
+                                 unsigned long period,  
+                                 stat_point *http, 
+                                 stat_point *https);
+
+int user_activity_smooth (client_context* cctx)
+{
+  int i;
+  unsigned long now;
+  batch_context* bctx = cctx->bctx;
+  
+  bctx->start_time = bctx->last_measure = get_tick_count(); 
+  
+  while(bctx->curl_handlers_count) 
+    {
+      if (mget_url_smooth (bctx) == -1) 
+        {
+          fprintf (stderr, "%s - mget_url () failed.\n", __func__) ;
+          return -1;
+        }
+    }
+
+  now = get_tick_count(); 
+
+  /* Dump final statistics. */
+  dump_stat_workhorse (bctx->curl_handlers_count, 
+                       now - bctx->last_measure, 
+                       &bctx->http_delta,  
+                       &bctx->https_delta);
+
+  stat_point_add (&bctx->http_total, &bctx->http_delta);
+  stat_point_add (&bctx->https_total, &bctx->https_delta);  
+    
+  fprintf(stderr,"===========================================\n");
+  fprintf(stderr,"End of test:\n"); 
+  fprintf(stderr,"===========================================\n");
+  
+  now = get_tick_count();
+  
+  dump_statistics ((now - bctx->start_time)/ 1000, 
+                   &bctx->http_total,  
+                   &bctx->https_total); 
+ 
+   for (i = 0 ; i < bctx->client_num; i++)
+    {
+      if (cctx[i].client_state == STATE_ERROR)
+        {
+          fprintf(stderr,"!!!Error!!! client %s failed\n", 
+                  cctx[i].client_name/* client buffer of client */);
+        }
+    }
+
+  return 0;
+}
+
+static int mget_url_smooth (batch_context* bctx)  		       
 {
     CURLM *mhandle =  bctx->multiple_handle; 
-    float max_timeout = bctx->url_ctx_arr[0].url_completion_time;
+    float max_timeout = bctx->uas_url_ctx_array[0].url_completion_time;
     const char *name = bctx->batch_name; 
  
     int still_running = 0;
@@ -75,7 +138,7 @@ int mget_url_smooth (batch_context* bctx)
     return 0;
 }
 
-int mperform_smooth (batch_context* bctx, int* still_running)
+static int mperform_smooth (batch_context* bctx, int* still_running)
 {
     CURLM *mhandle =  bctx->multiple_handle;     
     
@@ -128,9 +191,9 @@ int mperform_smooth (batch_context* bctx, int* still_running)
     return 0;
 }
 
-int load_next_step (client_context* cctx) 
+static int load_next_step (client_context* cctx)
 {
-  char* p_post_buff = NULL;
+  //char* p_post_buff = NULL;
   batch_context* bctx = cctx->bctx;
   
   curl_multi_remove_handle (bctx->multiple_handle, 
@@ -154,45 +217,42 @@ int load_next_step (client_context* cctx)
       return (cctx->client_state = STATE_FINISHED_OK);
     }
   
-    /* Advance index of the current url */
+  /* Advance index of the current url */
   cctx->url_curr_index++;
   
-  if (cctx->url_curr_index >= (size_t)(bctx->urls_num - 1)) 
+  if (cctx->url_curr_index >= (size_t)(bctx->uas_urls_num - 1)) 
     {
       cctx->cycle_num++;
       
-      fprintf (stderr, "%s -cycle_num:%ld repeat_cycles_num:%ld\n", 
-               __func__, cctx->cycle_num, bctx->repeat_cycles_num);
+      fprintf (stderr, "%s -cycle_num:%ld cycles_num:%ld\n", 
+               __func__, cctx->cycle_num, bctx->cycles_num);
       
-      if (cctx->cycle_num >= bctx->repeat_cycles_num) 
+      if (cctx->cycle_num >= bctx->cycles_num) 
         {
-          if (bctx->do_auth && cctx->post_data_logoff)
-            p_post_buff = cctx->post_data_logoff;
-
-              single_handle_setup (
-                                   cctx,
-                                   bctx->urls_num - 1, /* index of the last url */
-                                   -1, /* the index is not relevant here */ 
-                                   p_post_buff /* logoff, if authentication configured */
-                                   );
+          if (bctx->do_logoff && cctx->post_data_logoff)
+            single_handle_setup (cctx,
+                                 URL_INDEX_LOGOFF_URL, /* index of the logoff url */
+                                 0, /* the index is not relevant here */ 
+                                 1 /* TODO: 1 - means POST, but it could be GET-POST sequence */
+                                 );
               
-              return (cctx->client_state = STATE_LAST_URL);
+          return (cctx->client_state = STATE_LAST_URL);
         }
-        else
-          {
-            cctx->url_curr_index = 0; /* It was 1, Misha, why not 0 ? */
-          }
+      else
+        {
+          cctx->url_curr_index = 0; /* It was 1, Misha, why not 0 ? */
+        }
     }
 
   fprintf (stderr, "%s - prior to shs  client_state:%d, url:%d.\n",
            __func__, cctx->client_state, cctx->url_curr_index);
 
-  single_handle_setup (cctx, cctx->url_curr_index, -1, NULL);
+  single_handle_setup (cctx, cctx->url_curr_index, -1, 0); /* Last 0 - means no POST-ing */
   
   return cctx->client_state;
 }
 
-unsigned long get_tick_count ()
+static unsigned long get_tick_count ()
 {
   struct timeval  tval;
 
@@ -205,7 +265,10 @@ unsigned long get_tick_count ()
   return tval.tv_sec * 1000 + (tval.tv_usec / 1000);
 }
 
-void dump_statistics (unsigned long period,  stat_point *http, stat_point *https)
+static void dump_statistics (
+                             unsigned long period,  
+                             stat_point *http, 
+                             stat_point *https)
 {
   if (period == 0)
     {
@@ -226,8 +289,10 @@ void dump_statistics (unsigned long period,  stat_point *http, stat_point *https
           );
 }
 
-void dump_stat_workhorse ( int clients, unsigned long period,  
-                         stat_point *http, stat_point *https)
+static void dump_stat_workhorse (int clients, 
+                                 unsigned long period,  
+                                 stat_point *http, 
+                                 stat_point *https)
 {
   period /= 1000;
   if (period == 0) 
@@ -244,52 +309,3 @@ void dump_stat_workhorse ( int clients, unsigned long period,
 	      (int) (https->data_out/period), (int) https->requests);
 }
 
-int user_activity_smooth (client_context* cctx)
-{
-  int i;
-  unsigned long now;
-  batch_context* bctx = cctx->bctx;
-  
-  bctx->start_time = bctx->last_measure = get_tick_count(); 
-  
-  while(bctx->curl_handlers_count) 
-    {
-      if (mget_url_smooth (bctx) == -1) 
-        {
-          fprintf (stderr, "%s - mget_url () failed.\n", __func__) ;
-          return -1;
-        }
-    }
-
-  now = get_tick_count(); 
-
-  /* Dump final statistics. */
-  dump_stat_workhorse (bctx->curl_handlers_count, 
-                       now - bctx->last_measure, 
-                       &bctx->http_delta,  
-                       &bctx->https_delta);
-
-  stat_point_add (&bctx->http_total, &bctx->http_delta);
-  stat_point_add (&bctx->https_total, &bctx->https_delta);  
-    
-  fprintf(stderr,"===========================================\n");
-  fprintf(stderr,"End of test:\n"); 
-  fprintf(stderr,"===========================================\n");
-  
-  now = get_tick_count();
-  
-  dump_statistics ((now - bctx->start_time)/ 1000, 
-                   &bctx->http_total,  
-                   &bctx->https_total); 
- 
-   for (i = 0 ; i < bctx->client_num; i++)
-    {
-      if (cctx[i].client_state == STATE_ERROR)
-        {
-          fprintf(stderr,"!!!Error!!! client %s failed\n", 
-                  cctx[i].client_name/* client buffer of client */);
-        }
-    }
-
-  return 0;
-}

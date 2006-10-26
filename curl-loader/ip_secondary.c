@@ -218,7 +218,7 @@ int get_prefix(inet_prefix *dst, char *arg, int family)
 int get_prefix_1(inet_prefix *dst, char *arg, int family)
 {
   int err;
-  unsigned plen;
+  int plen;
   char *slash;
 
   memset(dst, 0, sizeof(*dst));
@@ -255,7 +255,7 @@ int get_prefix_1(inet_prefix *dst, char *arg, int family)
       if (slash) 
         {
 	   
-          if (get_integer(&plen, slash+1, 0) || plen > (unsigned)dst->bitlen)
+          if (get_integer(&plen, slash+1, 0) || plen > dst->bitlen)
             {
               err = -1;
               goto done;
@@ -311,7 +311,7 @@ int default_scope(inet_prefix *lcl)
 
 int rtnl_open(struct rtnl_handle *rth, unsigned subscriptions)
 {
-  int addr_len;
+  socklen_t addr_len;
 
   memset(rth, 0, sizeof(rth)) ;
 
@@ -814,7 +814,7 @@ int add_secondary_ip_addrs (const char*const interface, int addr_number,
 
         case -2:
           fprintf (stderr, 
-                   "NOTE: %s - probably the IP-address \"%s\" already exists.\n", 
+                   "NOTE: %s - probably, the IP-address \"%s\" already exists.\n", 
                    __func__, ip_slash_mask_buffer);
           break;
 
@@ -831,8 +831,7 @@ int add_secondary_ip_addrs (const char*const interface, int addr_number,
 /*
   The above functions are linux specific. We may wish to support in future
   more platforms, supported by libcurl, e.g. unixes like BSDs, Solaris, etc 
-  The below function is from Richard Stevens may serve as a good start. 
-  Do not remove.
+  The function is from Richard Stevens and may serve as a good start. 
 */
 /*
   int
@@ -912,5 +911,3 @@ int add_secondary_ip_addrs (const char*const interface, int addr_number,
   return 0;
   }
 */
-
-

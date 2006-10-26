@@ -7,13 +7,16 @@ ABOUT:
     Provides application load, simulating thousands (running from
 a script several curl_loaders - tens of thousands) clients, each with
 its own source IP-address.
-    This version emulates HTTP/HTTPS clients. Each client has its personal
-logging of all activities to a file, like connection establishment, request sent, 
-response data received with all relevant errors. It can be easily extended to 
-support ftp, ftps, telnet, tftp, ldap, etc other protocols, supported by the great 
-libcurl library.
+    This version emulates HTTP/HTTPS clients. All activities of each client are
+logged to a file: connection establishment, request headers sent, response headers
+received, data received and all TCP as well as HTTP and TLS (for HTTPS) errors. 
+The tool can be easily extended to support ftp, ftps, telnet, tftp, ldap, etc other 
+application protocols, supported by the great libcurl library.
     Clients are groupped to the so-called batches of clients, performing the same
-sort of activities.
+sort of activities. Configurable activities of the simulated clients are:
+- authentication login;
+- user activity simulation by fetching several urls and timeouts in between;
+- logoff.
 
 
 SUCCESSFULLY USED:
@@ -29,9 +32,9 @@ SUCCESSFULLY USED:
     user-behaviour and real load for thousands of such clients to test 
     authentication gateway. 
     Curl_loader provided client load against Apache web-server with the gateway 
-    in the middle, where the gateway performed browser hijecking and http 
-    redirection of the curl-clients to the https url at the gateway own 
-    web-server. Https page of the gateway web-server provided a POST form,
+    in the middle, where the gateway performed browser hijecking and HTTP- 
+    redirection of the curl-clients to the HTTPS url at the gateway own 
+    web-server. HTTPS page of the gateway web-server provided a POST form,
     filled with username and password for its further authentication against
     external AAA (RADIUS) server. If the authentication was OK, user (curl
     client) was allowed to enter the Internet and download several urls, etc 
@@ -44,22 +47,23 @@ MAY BE USED:
 2. For testing of HTTP/HTTPS based applications, application servers;
 2. For etc, etc, etc applications.
 
-BUILDING:
-Supposed to work on linux 2.4 and 2.6 kernels.
-
-In most cases just run make and relax. For some linux distributions, however, 
-matters should be fine tuned in build_curl.sh and Makefile. Sorry.
-Tarball of curl should be fetched by wget from
-the curl web-site. If a computer does not have Internet connection,
-bring the package yourself and put it inside to the distribution directory.
-
-make nobuildcurl builds the code with local version of curl, i.e. it does not fetch
-curl and does not build it.
-
 OS SUPPORT:
 Currently linux due to actually unlimited number of secondary ip-addresses,
 that can be arranged at a network interface to bind each individual client
 to an address.
+Supposed to work on linux 2.4 and 2.6 kernels.
+
+BUILDING:
+In most cases just run make and relax. For some linux distributions, however, 
+matters should be fine tuned in build_curl.sh and Makefile. Sorry.
+Tarball of curl should be fetched by wget from the curl web-site. 
+If a computer does not have Internet connection, bring the package yourself 
+and put it inside to the distribution directory.
+We are normally building it at Debian. Sometimes, libcurl has issue with
+buidling at RedHat/FC, where it requires linking with libidn. Correct it
+in the Makefile. 
+To build with optiomization, please, follow the instructions in Makefile and
+build_curl.sh
 
 CONFIGURATION:
 curl_loader -h is your friend. Some examples of configuration are suggested
@@ -96,57 +100,103 @@ can provide somehow realistic behavior with some smooth constant load
 and bursts of requests.
 
 LICENSE:
-Actually it is GPL 2 due to the code from iprouted2. However, if somebody
+Actually it is GPL2 due to the code from iprouted2. However, if somebody
 fills uncomfortable with this license, we can substitute the code of
 ip_secondary.c to calls to command "ip", and release it under BSD-license,
 and/or make it configurable.
 
+TERMINOLOGY:
+--- What is the batch?
+Batch is a group of clients with the same characteristics and 
+loading behavior. Configuration file has one or more batches.
+--- What is UAS?
+UAS - user activity simulation - fetching url, sleeping, another url -sleeping
+cycles, simulating actual user activity.
+
 COMMAND-LINE AND CONFIG FILE
-usage: run as a root user:
+Usage: run as a root user:
 #./curl-loader -f <configuration filename> [other options]
+
 Possible options are:
 -c[onnection establishment timeout, seconds]
 -f[ilename of configuration to run (batches of clients)]
 -l[ogfile rewind after this number of cycles]
 -o[utput to stdout bodies of downloaded files - attn!- bulky]
--p[ost method login and logoff formats provided as "login-str;logoff-str"]
 -r[euse established connections, don't run close-open cycles]
 -s[tderr printout of client messages instread of to logfile - attn!- bulky]
 -t[hreads enable - enables threads, each runs a batch of clients]
 -v[erbose output to the logfiles; includes info about headers sent/received]
 -u[rl logging - enables logging of url names to all client outputs]
 
-Note, that running with threads (-t) sometimes gots stacked,
+Note, that running with threads (-t) may be less stable,
 whereas without this option runs only the first batch of clients specified.
 Thus, running several client batches without threads requires some script with
-several curl-loader processes, each with its own batch config file.
+several curl-loader processes.
 
 Configuration file should possess at least one client batch defined
 with the following params in each batch:
-BATCH_NAME;CLIENTS_NUM;INTERFACE;NETMASK;IP_ADDR_MIN;
-IP_ADDR_MAX;USERNAME;PASSWORD;CYCLES_NUM;URLS_NUM;
-and further one or more sequences of url-data in the following format:
-URL;URL_MAX_TIME;URL_INTERLEAVE_TIME
 
-Here is an example of the file with a single batch and a single url:
+########### GENERAL SECTION ################################
+BATCH_NAME= bulk_batch  #The name of the batch.
+CLIENTS_NUM=3                     #Number of clients in the batch
+INTERFACE = eth0                   #Name of interface from which to load 
+NETMASK=20                             #The CIDR notation netmask
+IP_ADDR_MIN= 192.168.1.1   #The client addresses starting address
+IP_ADDR_MAX= 192.168.5.255 # Redundant, for self-control
+CYCLES_NUM= 100                   # Number of loading cycles to run, 0 -forever
 
-BATCH_NAME = first_batch
-CLIENTS_NUM = 640
-INTERFACE = eth0
-NETMASK = 20
-IP_ADDR_MIN = 192.168.1.1
-IP_ADDR_MAX =192.168.5.255
-USERNAME = NO
-PASSWORD = NO
-CYCLES_NUM = 10000
-URLS_NUM = 1
-URL = http://192.168.112.200/ACE-INSTALL.html
-URL_MAX_TIME = 9
-URL_INTERLEAVE_TIME = 1
+########### LOGIN SECTION ##################################
+LOGIN_AUTH=n             # If 'y' or 'Y', login enabled, all other lines of the 
+                                               # section to be filled
+#LOGIN_USERNAME= #Usename string
+#LOGIN_PASSWORD=  #Password string
+#LOGIN_REQ_TYPE=   # Use numbers for login either GET+POST (1), or POST-only (2).
+#LOGIN_POST_STR=    # POST string matrix. See below
+#
+# To generate multiple unique users with unique passwords, use the string like
+# "username=%s%d&password=%s%d". First %s will be substituted by the 
+# string from LOGIN_USERNAME and %d by the client number. Second %s will
+# be substituted by LOGIN_PASSWORD string and second %d by the same client
+# number. For example, if LOGIN_USERNAME=robert, LOGIN_PASSWORD=stam
+# and LOGIN_POST_STR "username=%s%d&password=%s%d" will be formed the
+# string for POST for the client number 1 as "username=robert1&password=stam1".
+# In such case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just 
+# as bases for generating unique user credentials.
+#
+# To use the username and password 'as as', just provide LOGIN_POST_STR without 
+# %d symbols, e.g. "user=%s&secret=%s". Thus, the POST string for each client 
+# will be the same and look like "user=robert&secret=stam".
+# Note, that the words like 'username', 'user', 'password', 'secret', etc are the
+# fields, that users are required to fill in the POST html page.
 
-Please, use string "NO" both as a username and a password to skip
-authentication, e.g. just simulating http, ftp, telnet, etc load for netfilter testing.
-Set CYCLES_NUM to 0 (zero), when willing to run a batch forever.
+#LOGIN_URL=                          # A valid http or https url to be used for login
+#LOGIN_URL_MAX_TIME= # Maximum batch time in seconds to login
+#LOGIN_URL_INTERLEAVE_TIME= # Time in seconds to sleep after login
+#LOGIN_CYCLING= # If 'y' login should be run in cycles, and not just done only once
+
+########### UAS SECTION ####################################
+UAS=y   # If 'y' or 'Y', login enabled, and other lines of the section to be filled
+UAS_URLS_NUM = 2 # Number of urls will be taken as in the format below
+
+UAS_URL=http://localhost/apache2-default/ACE-INSTALL.html
+UAS_URL_MAX_TIME = 6 # Maximum batch time in seconds to fetch the url by all clients
+UAS_URL_INTERLEAVE_TIME = 0 # Time in seconds to sleep after fetching the url
+
+UAS_URL= http://localhost/apache2-default/index.html
+UAS_URL_MAX_TIME = 4 # Maximum batch time in seconds to fetch the url by all clients
+UAS_URL_INTERLEAVE_TIME = 0 # Time in seconds to sleep after fetching the url
+
+########### LOGOFF SECTION #################################
+LOGOFF=n # If 'y' or 'Y', login enabled, and other lined of the section to be filled
+#LOGOFF_REQ_TYPE=#Use numbers for GET-only (1), GET+POST (2), POST-only (3)
+#LOGOFF_POST_STR= #String to be used for logoff, like "op=logoff" 
+#LOGOFF_URL=             #A valid http or https url to be used for logoff
+#LOGOFF_URL_MAX_TIME= # Maximum batch time in seconds to logoff
+#LOGOFF_URL_INTERLEAVE_TIME= # Time in seconds to sleep after logoff
+#LOGOFF_CYCLING= # If 'y' login should be run in cycles, and not just done only once
+
+For more examples, please, look at configs directory.
+
 Note, that currenly there is a limit of 1000 sockets per batch of clients.
 Running thousands and more clients, please do not forget the options:
 - to increase limit of open desriptors in shell by running e.g. "#ulimit -n 10000":
@@ -155,37 +205,13 @@ Running thousands and more clients, please do not forget the options:
   /proc/sys/net/ipv4/tcp_tw_recycle"
 - and/or  "#echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse"
 
-URLS_NUM - is a total number of urls to fetch
-URLS_MAX_TIME is a maximum time in secondsto be wait for completion of the url retrival and
-URL_INTERLEAVE_TIME is time in seconds to sleep till the next url will be put in work.
-
-
-AUTHENTICATION POST STRINGS.
-
-The default POST strings are for login: "username=%s&password=%s" and 
-for logoff "op=logoff". The default means, that username and password,
-provided by the batch configuration file, will be substituting %s options
-as strings to be used for login. Thus, when 'robert' is the username and 'stam'
-is the password, the string used by libcurl int he method POST will be 
-"username=robert&password=stam".
-
-If one wishes to generate multiple unique users with unique passwords,
-it may provide as a string for login, e.g. "username=%s%d&password=%s%d".
-Thus, for each client to the username and password will be added client's
-number. E.g. for the client number one it will be 
-"username=robert1&password=stam1".
-
-Y can change the string as you wish, e.g. "user" and not "username", etc.
-When providing also the logoff option, please, separate it from login by ';',
-e.g. "user=%s%d&password=%s%d;op=logoff"
-
-There are two login modes supported. GET+POST and POST-only. When
-both username and password are provided, login can be made using the
+There are two login modes supported. GET+POST (1) and POST-only (2). 
+When both username and password are provided, login can be made using the
 first url only once for each client either for GET with following POST or
 for POST only (note, that all 3xx HTTP redirections are supported as
-build-ins by libcurl). To enable GET+POST, pass '-z 2' to the commandline,
-and for POST-only, please, use '-z 3'.
+build-ins by libcurl).
 
 There are three logoff modes supported as GET-only, GET+POST and POST-only,
-which stay for 1, 2 and 3 for the '-w' commandline option. Cookies are enabled by
-default. 
+which stay for 1, 2 and 3 numbers. 
+
+Cookies are enabled in curl-loader by default. 

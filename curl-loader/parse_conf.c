@@ -34,6 +34,9 @@
 
 #include "parse_conf.h"
 #include "batch.h"
+#include "conf.h"
+
+#define NON_APPLICABLE_STR "N/A"
 
 /*
   Enumerations mapped to the string in the configuration file.
@@ -48,23 +51,59 @@
   Note, that URL_MAX_TIME and URL_INTERLEAVE_TIME are
   relevant only for loading using storming mode.
 */
-enum
+enum parsing_state
 {
     NOT_INIT = 0,
+
+    /*------------------------ GENERAL SECTION ------------------------------ */
+
     BATCH_NAME,
     CLIENTS_NUM,
     INTERFACE,
     NETMASK,
     IP_ADDR_MIN,
     IP_ADDR_MAX,
-    USERNAME,
-    PASSWORD,
     CYCLES_NUM,
-    URLS_NUM,
 
-    URL,
-    URL_MAX_TIME,
-    URL_INTERLEAVE_TIME,
+    /*------------------------ LOGIN SECTION -------------------------------- */
+
+    LOGIN_AUTH,
+    /* if Login Authentication is yes - optional fields*/
+    LOGIN_USERNAME,
+    LOGIN_PASSWORD,
+    LOGIN_REQ_TYPE, /* GET-POST or POST */
+    LOGIN_POST_STR, /* if includes POST - should provide strings in two possible 
+                       formats variants currently supported to deliver either: 
+                       1. the same login_username and login_password for all users - like
+                       username=steve&password=pass;
+                       2. a unique login_username and login_password for each user - like
+                       username=steve<N>&password=pass<N>, where N - client number 1, 2, 3*/
+    LOGIN_URL,
+    LOGIN_URL_MAX_TIME,
+    LOGIN_URL_INTERLEAVE_TIME,
+    LOGIN_CYCLING,
+
+    
+    /*------- UAS (User Activity Simulation) SECTION - fetching urls ----- */
+
+    UAS,
+    /* USER_ACTIVITY_SIMULATION - if yes, then optional N-URLs: */
+    UAS_URLS_NUM,
+    UAS_URL,
+    UAS_URL_MAX_TIME,
+    UAS_URL_INTERLEAVE_TIME,
+
+
+    /*------------------------LOGOFF SECTION ---------------------------------*/
+
+    LOGOFF,
+    /* if Logoff is yes - optional fields */
+    LOGOFF_REQ_TYPE, /* GET, GET-POST or POST */
+    LOGOFF_POST_STR, /* if LOGOFF_TYPE is GET-POST or POST */
+    LOGOFF_URL,
+    LOGOFF_URL_MAX_TIME,
+    LOGOFF_URL_INTERLEAVE_TIME, /* time to be up after logoff */
+    LOGOFF_CYCLING,
 
     VALID_BATCH,
 };
@@ -75,8 +114,8 @@ enum
 */
 typedef struct batch_params_map
 {
-  int        param_id;
-  char*   param_str; /* string name of the param */
+  int        id;
+  char*   str; /* string name of the param */
 } batch_params_map;
 
 #define BATCH_MAX_CLIENTS_NUM 4096
@@ -87,7 +126,7 @@ static int add_param_to_batch (char*const input, size_t input_length,
                                batch_context*const bctx, int*const batch_num);
 static int set_value_to_param (batch_context*const bctx, char*const value, 
                                size_t value_length);
-static void advance_batch_parser_state (int*const parser_state);
+static void advance_batch_parser_state (batch_context*const bctx);
 static char* skip_non_ws (char*ptr, size_t*const len);
 static char* eat_ws (char*ptr, size_t*const len);
 static int is_ws (char*const ptr);
@@ -97,7 +136,7 @@ int parse_config_file (char* const filename, batch_context* bctx_array,
                        size_t bctx_array_size)
 {
   char fgets_buff[2048];
-  size_t batches_number = 0;
+  int batches_number = 0;
   FILE* fp;
   struct stat statbuf;
 
@@ -105,7 +144,7 @@ int parse_config_file (char* const filename, batch_context* bctx_array,
   if (stat (filename, &statbuf) == -1)
     {
       fprintf (stderr, 
-               "%s - failed to stat file \"%s\" with errno %d.\n", 
+               "%s - failed to find configuration file \"%s\" with errno %d.\n", 
                __func__, filename, errno);
       return -1;
     }
@@ -113,7 +152,7 @@ int parse_config_file (char* const filename, batch_context* bctx_array,
   if (!(fp = fopen (filename, "r")))
     {
       fprintf (stderr, 
-               "%s - fopen() failed to open for read file \"%s\", errno %d.\n", 
+               "%s - fopen() failed to open for reading filename \"%s\", errno %d.\n", 
                __func__, filename, errno);
       return -1;
     }
@@ -129,14 +168,16 @@ int parse_config_file (char* const filename, batch_context* bctx_array,
       if ((string_len = strlen (fgets_buff)) && 
           (string_buff = eat_ws (fgets_buff, &string_len)))
         {
-          if (batches_number >= bctx_array_size)
+
+          if (batches_number >= (int) bctx_array_size)
             {
-              fprintf (stderr, 
-                       "%s - error: maximum batches number limit (%d) reached \n", 
+              fprintf(stderr, "%s - error: maximum batches limit (%d) reached \n", 
                        __func__, bctx_array_size);
               fclose (fp);
               return -1 ;
             }
+
+          /* Line may be commented out by '#'.*/
           if (fgets_buff[0] == '#')
             {
               fprintf (stderr, "%s - skipping commented file string \"%s\n", 
@@ -150,24 +191,19 @@ int parse_config_file (char* const filename, batch_context* bctx_array,
                                   &batches_number) == -1)
             {
               fprintf (stderr, 
-                       "%s - create_batch_data_array () processing string \"%s\"\n", 
+                       "%s - add_param_to_batch () failed processing line \"%s\"\n", 
                        __func__, fgets_buff);
               fclose (fp);
               return -1 ;
             }
         }
     }
-  
   fclose (fp);
 
   if (!batches_number)
     {
       fprintf (stderr, 
                    "%s - failed to load even a single valid batch\n", __func__);
-      fprintf (stderr, 
-                   "Most probably URLS_NUM is not equal to the specified url count.\n");
-      fprintf (stderr, 
-                   "or missed URL_MAX_TIME/URL_INTERLEAVE_TIME params.\n");
     }
   else
     {
@@ -180,40 +216,74 @@ int parse_config_file (char* const filename, batch_context* bctx_array,
 static const batch_params_map bp_map [] =
   {
     {NOT_INIT, "NOT_INIT"}, /* Starts from 0. Zero entry point to the map.*/
+
+    /*------------------------ GENERAL SECTION ------------------------------ */
+
     {BATCH_NAME, "BATCH_NAME"},
     {CLIENTS_NUM, "CLIENTS_NUM"},
     {INTERFACE,"INTERFACE"},
     {NETMASK, "NETMASK"},
     {IP_ADDR_MIN, "IP_ADDR_MIN"},
     {IP_ADDR_MAX, "IP_ADDR_MAX"},
-    {USERNAME, "USERNAME"},
-    {PASSWORD,"PASSWORD"},
     {CYCLES_NUM,"CYCLES_NUM"},
-    {URLS_NUM,"URLS_NUM"},
+
+
+   /*------------------------ LOGIN SECTION -------------------------------- */
+
+    {LOGIN_AUTH, "LOGIN_AUTH"},
+    /* if Login Authentication is yes - then the optional fields follow: */
+    {LOGIN_USERNAME, "LOGIN_USERNAME"},
+    {LOGIN_PASSWORD,"LOGIN_PASSWORD"},
+    {LOGIN_REQ_TYPE, "LOGIN_REQ_TYPE"},
+    {LOGIN_POST_STR, "LOGIN_POST_STR"},
+    {LOGIN_URL, "LOGIN_URL"},
+    {LOGIN_URL_MAX_TIME, "LOGIN_URL_MAX_TIME"},
+    {LOGIN_URL_INTERLEAVE_TIME, "LOGIN_URL_INTERLEAVE_TIME"},
+    {LOGIN_CYCLING, "LOGIN_CYCLING"},
+
+
+    /*------- UAS (User Activity Simulation) SECTION - fetching urls ----- */ 
+
+    {UAS, "UAS"},
+    /* USER_ACTIVITY_SIMULATION - if yes, then optional N-URLs: */
+
+    {UAS_URLS_NUM, "UAS_URLS_NUM"},
+    {UAS_URL,"UAS_URL"},
+    {UAS_URL_MAX_TIME,"UAS_URL_MAX_TIME"},
+    {UAS_URL_INTERLEAVE_TIME,"UAS_URL_INTERLEAVE_TIME"},
+
+
+    /*------------------------LOGOFF SECTION ---------------------------------*/
+
+    {LOGOFF, "LOGOFF"},
+    /* if logoff is yes - then the optional fields follow: */
+
+    {LOGOFF_REQ_TYPE, "LOGOFF_REQ_TYPE"},
+    {LOGOFF_POST_STR, "LOGOFF_POST_STR"},
+    {LOGOFF_URL, "LOGOFF_URL"},
+    {LOGOFF_URL_MAX_TIME, "LOGOFF_URL_MAX_TIME"},
+    {LOGOFF_URL_INTERLEAVE_TIME,"LOGOFF_URL_INTERLEAVE_TIME"},
+    {LOGOFF_CYCLING, "LOGOFF_CYCLING"},
   
-    {URL,"URL"},
-    {URL_MAX_TIME,"URL_MAX_TIME"},
-    {URL_INTERLEAVE_TIME,"URL_INTERLEAVE_TIME"},
-  
-    {0, NULL}   
+    {0, NULL}
   };
 
 
-static int add_param_to_batch (char*const input, size_t  input_length,
+static int add_param_to_batch (char*const str_buff, size_t  str_len,
                     batch_context*const bctx, int*const batch_num)
 {
-  if (!input || !input_length || !bctx)
+  if (!str_buff || !str_len || !bctx)
     return -1;
 
   /*We are not eating LWS, as it supposed to be done before... */
     
   char* equal = NULL;
 
-  if ( ! (equal = strchr (input, '=')))
+  if ( ! (equal = strchr (str_buff, '=')))
     {
       fprintf (stderr, 
                "%s - error: input string \"%s\" is short of '=' sign.\n", 
-               __func__, input) ;
+               __func__, str_buff) ;
       return -1;
     }
   else
@@ -221,35 +291,38 @@ static int add_param_to_batch (char*const input, size_t  input_length,
       *equal = '\0'; /* The idea from Igor Potulnitsky */
     }
 
-  if (bctx->batch_init_state == NOT_INIT) /* New coming batch is welcome. */
-    bctx->batch_init_state++;
-    
-  if (! strstr (input, bp_map[bctx->batch_init_state].param_str))
+  if (bctx->batch_init_state == NOT_INIT)
     {
-      if (!strstr (input, bp_map[BATCH_NAME].param_str))
+      bctx->batch_init_state++; /* Welcome to the new batch. */
+    }
+    
+  if (! strstr (str_buff, bp_map[bctx->batch_init_state].str))
+    {
+      if (bctx->batch_init_state ==  UAS_URL &&
+          strstr (str_buff, bp_map[LOGOFF].str))
         {
-          fprintf (stderr, 
-                   "\n%s - error: in batch \"%s\"; correct URLS_NUM (%d)\n", 
-                   __func__, bctx->batch_name, bctx->urls_num);
-          fprintf (stderr, "prior to defining the next batch \"%s\".\n\n", 
-                   input);
+          bctx->batch_init_state = LOGOFF; /* UAS triplets end on LOGOFF */
+        }
+      else if (!strstr (str_buff, bp_map[BATCH_NAME].str))
+        {
+          fprintf (stderr, "\n%s - error: in batch \"%s\"\n", 
+                   __func__, bctx->batch_name);
           return -1;
         }
       else
         {
           fprintf (stderr, "%s - error: parameter %s is expected.\n", 
-                   __func__, bp_map[bctx->batch_init_state].param_str);
+                   __func__, bp_map[bctx->batch_init_state].str);
           return -1;
         }
     }
 
   int value_len = 0;
-  if ((value_len = input_length - (equal - input) - 1) < 0)
+  if ((value_len = str_len - (equal - str_buff) - 1) < 0)
     {
       *equal = '=' ;
-      fprintf (stderr, 
-               "%s - error: in \"%s\" a non-empty value after '=' is expected.\n", 
-               __func__, input);
+      fprintf(stderr, "%s - error: in \"%s\" a valid name should follow '='.\n", 
+               __func__, str_buff);
       return -1;
     }
 
@@ -257,11 +330,11 @@ static int add_param_to_batch (char*const input, size_t  input_length,
     {
       fprintf (stderr, 
                "%s - error: set_value_to_param () failed for state %d, param %s and value %s.\n", 
-               __func__, bctx->batch_init_state, input, equal + 1);
+               __func__, bctx->batch_init_state, str_buff, equal + 1);
       return -1;
     }
 
-  advance_batch_parser_state (&bctx->batch_init_state);
+  advance_batch_parser_state (bctx);
 
   if (bctx->batch_init_state == VALID_BATCH)
     ++(*batch_num);
@@ -269,19 +342,45 @@ static int add_param_to_batch (char*const input, size_t  input_length,
   return 0;
 }
 
-static void advance_batch_parser_state (int*const parser_state)
+static void advance_batch_parser_state (batch_context*const bctx)
 {
-  if (*parser_state == VALID_BATCH)
+  if (bctx->batch_init_state == VALID_BATCH)
     return;
 
-  if (*parser_state == URL_INTERLEAVE_TIME)
+  switch (bctx->batch_init_state)
     {
-      *parser_state = URL;
+    case LOGIN_AUTH:
+      if (! bctx->do_login_auth) /* If Login is of no interest - jump to UAS */
+          bctx->batch_init_state = UAS;
+      else
+           ++bctx->batch_init_state;
+      break;
+      
+    case UAS:
+      if (! bctx->do_uas) /* if UAS is of no interest - jump to LOGOFF */
+          bctx->batch_init_state = LOGOFF;
+      else
+           ++bctx->batch_init_state;
+      break;
+
+    case UAS_URL_INTERLEAVE_TIME:
+      bctx->batch_init_state = UAS_URL; /* There is a possiblity, that the next 
+                                           state will be LOGOFF instead. Treated upper. */
+      break;
+
+    case LOGOFF:
+      if (! bctx->do_logoff) /* If Logoff is of no interest - go forward to  VALID_BATCH */
+          bctx->batch_init_state = VALID_BATCH;
+      else
+           ++bctx->batch_init_state;
+      break;
+ 
+    default: /*advance to the next state */
+      ++bctx->batch_init_state;
+      break;
     }
-  else
-    {
-      ++(*parser_state);
-    }
+
+  return;
 }
 
 /*
@@ -320,8 +419,10 @@ static int is_non_ws (char*const ptr)
   return ! is_ws (ptr);
 }
 
-static int set_value_to_param (batch_context*const bctx, char*const value, 
-                    size_t value_length)
+static int set_value_to_param (
+                               batch_context*const bctx, 
+                               char*const value, 
+                               size_t value_length)
 {
   if (!bctx || !value || !value_length)
     {
@@ -336,7 +437,24 @@ static int set_value_to_param (batch_context*const bctx, char*const value,
     {
       fprintf (stderr, "%s - error: only LWS found in the value \"%s\".\n", 
                __func__, value);
+      fprintf (stderr, "%s - if the field is not applicable, place %s .\n", 
+               __func__, NON_APPLICABLE_STR);
       return -1;
+    }
+
+  /* Cut-off the comments in value string, starting from '#' */
+  char* comments = NULL;
+  if ((comments = strchr (value_start, '#')))
+    {
+      *comments = '\0'; /* The idea from Igor Potulnitsky */
+      if (! (length = strlen (value_start)))
+        {  
+          fprintf (stderr, "%s - error: value \"%s\" has only comments.\n", 
+                   __func__, value);
+          fprintf (stderr, "%s - if the field is not applicable, place %s .\n", 
+                   __func__, NON_APPLICABLE_STR);
+          return -1;
+        }
     }
 
   /* remove TWS */
@@ -351,16 +469,17 @@ static int set_value_to_param (batch_context*const bctx, char*const value,
   size_t url_length = 0;
 
   /*
-    The most Object-Oriented switch
+    The most Object-Oriented switch.
+    TODO: consider splitting it into some function, e.g. according
+    to the sections.
   */
   switch (bctx->batch_init_state)
     {
+
+      /*------------------------ GENERAL SECTION ------------------------------ */
+
     case BATCH_NAME:
       strncpy (bctx->batch_name, value_start, sizeof (bctx->batch_name) -1);
-      break;
-
-    case INTERFACE:
-      strncpy (bctx->net_interface, value_start, sizeof (bctx->net_interface) -1);
       break;
 
     case CLIENTS_NUM:
@@ -375,7 +494,6 @@ static int set_value_to_param (batch_context*const bctx, char*const value,
                    __func__, bctx->client_num);
           return -1;
         }
-
       if (! (bctx->client_handles_array = 
              (CURL **)calloc (bctx->client_num, sizeof (CURL *))))
         {
@@ -384,6 +502,10 @@ static int set_value_to_param (batch_context*const bctx, char*const value,
                    __func__);
           return -1;
         }
+      break;
+
+    case INTERFACE:
+      strncpy (bctx->net_interface, value_start, sizeof (bctx->net_interface) -1);
       break;
 
     case NETMASK: /* CIDR number of non-masked first bits -16, 24, etc */
@@ -409,7 +531,7 @@ static int set_value_to_param (batch_context*const bctx, char*const value,
       break;
 
     case IP_ADDR_MAX: /* We have number of clients, therefore 
-                         the address is more or less for programmer self-control. */
+                         the address is more or less for self-control. */
      
       if (!inet_aton (value_start, &in_address))
         {
@@ -421,66 +543,129 @@ static int set_value_to_param (batch_context*const bctx, char*const value,
       bctx->ip_addr_max = ntohl (in_address.s_addr);
       break;
 
-    case USERNAME:
-      strncpy (bctx->username, value_start, sizeof(bctx->username) -1);
-      bctx->do_auth = strcmp (bctx->username, "NO") ? 1 : 0;
-      break;
-
-    case PASSWORD: /* When NO set in username, set NO here as well */
-      strncpy (bctx->password, value_start, sizeof(bctx->password) -1);
-      break;
-
     case CYCLES_NUM: /*zero means forever */
-      bctx->repeat_cycles_num = atol (value_start);
-      if (bctx->repeat_cycles_num <= 0)
+      bctx->cycles_num = atol (value_start);
+      if (bctx->cycles_num <= 0)
         {
           fprintf (stderr, 
-                   "%s - note: repeat_cycles_num (%s) should be 0  or positive\n", 
+                   "%s - note: cycles_num (%s) should be 0  or positive\n", 
                    __func__, value_start);
-          bctx->repeat_cycles_num = LONG_MAX - 1;
+          bctx->cycles_num = LONG_MAX - 1;
         }
       break;
 
-    case URLS_NUM:
-      bctx->urls_num = atoi (value_start);
-      if (bctx->urls_num < 1)
+
+   /*------------------------ LOGIN SECTION -------------------------------- */
+
+    case LOGIN_AUTH:
+      bctx->do_login_auth = (*value_start == 'Y' || *value_start == 'y') ? 1 : 0;
+      break;
+
+    case LOGIN_USERNAME:
+      strncpy (bctx->login_username, value_start, sizeof(bctx->login_username) - 1);
+      break;
+
+    case LOGIN_PASSWORD:
+      strncpy (bctx->login_password, value_start, sizeof(bctx->login_password) - 1);
+      break;
+
+    case LOGIN_REQ_TYPE:
+      bctx->login_req_type = atoi (value_start);
+      if (bctx->login_req_type != LOGIN_REQ_TYPE_GET_AND_POST
+          && 
+          bctx->login_req_type != LOGIN_REQ_TYPE_POST)
         {
           fprintf (stderr, 
-                   "%s - error: urls_num (%s) should be one or more.\n", 
+                   "%s - error: login_req_type (%d) not valid. Valid are %d or %d .\n", 
+                   __func__, bctx->login_req_type, 
+                   LOGIN_REQ_TYPE_GET_AND_POST, LOGIN_REQ_TYPE_POST);
+          return -1;
+        }
+      break; 
+
+    case LOGIN_POST_STR:
+      // TODO: validate the input. Important !!!.
+      if (strcmp (value_start, NON_APPLICABLE_STR))
+        {
+          strncpy (bctx->login_post_str, 
+                   value_start, 
+                   sizeof (bctx->login_post_str) - 1);
+        }
+      break;
+
+    case  LOGIN_URL:
+      if ((url_length = strlen (value_start)) <= 0)
+        {
+          fprintf(stderr, "%s - empty url for \"%s\"\n",  __func__,value_start);
+          return -1;
+        }
+      if (!(bctx->login_url.url_str =(char *)calloc(url_length+1,sizeof (char))))
+        {
+          fprintf (stderr, 
+                   "%s - error: login_url allocation failed for url \"%s\"\n", 
+                   __func__, value_start);
+          return -1;
+        }
+      strcpy(bctx->login_url.url_str, value_start);
+      break;
+
+    case  LOGIN_URL_MAX_TIME:
+      bctx->login_url.url_completion_time = atof (value_start);
+      break;
+
+    case  LOGIN_URL_INTERLEAVE_TIME:
+      bctx->login_url.url_interleave_time = atoi(value_start);
+      break;
+
+    case LOGIN_CYCLING:
+      bctx->login_cycling = (*value_start == 'Y' || *value_start == 'y') ? 1 : 0;
+      break;
+
+
+      /*------- UAS (User Activity Simulation) SECTION - fetching urls ----- */
+
+    case UAS:
+      bctx->do_uas = (*value_start == 'Y' || *value_start == 'y') ? 1 : 0;
+      break;
+
+    case UAS_URLS_NUM:
+      bctx->uas_urls_num = atoi (value_start);
+      if (bctx->uas_urls_num < 1)
+        {
+          fprintf (stderr, 
+                   "%s - error: urls_num (%s) should be one or more.\n",
                    __func__, value_start);
           return -1;
         }    
       /* Preparing the staff to load URLs and handles */
-      if (! (bctx->url_ctx_arr = 
-             (url_context *)calloc (bctx->urls_num, sizeof (url_context))))
+      if (! (bctx->uas_url_ctx_array = 
+             (url_context *)calloc (bctx->uas_urls_num, sizeof (url_context))))
         {
           fprintf (stderr, 
                    "%s - error: failed to allocate URL-context array for %d urls\n", 
-                   __func__, bctx->urls_num);
+                   __func__, bctx->uas_urls_num);
           return -1;
         }
-
       bctx->url_index = 0;  /* Starting from the 0 position in the arrays */
       break;
 
-    case  URL:
-      if ((int)bctx->url_index >= bctx->urls_num)
+    case  UAS_URL:
+      if ((int)bctx->url_index >= bctx->uas_urls_num)
         {
           fprintf (stderr, 
-                   "%s - skiping loading a new url after %d url\n",
+                   "%s - error: UAS_URL_NUM (%d) is below uas-url triplets number in conf-file.\n",
                    __func__, bctx->url_index);
-          return 0;
+          return -1;
         }
 
       if ((url_length = strlen (value_start)) <= 0)
         {
-          fprintf (stderr, 
-                   "%s - empty of error value, strlen returns %d for \"%s\"\n", 
-                   __func__, url_length, value_start);
+          fprintf(stderr, "%s - error: url is not correct with\"%s\"\n", 
+                  __func__, value_start);
           return -1;
         }
 
-      if (! (bctx->url_ctx_arr[bctx->url_index].url_str = 
+      if (! (bctx->uas_url_ctx_array[bctx->url_index].url_str = 
              (char *) calloc (url_length +1, sizeof (char))))
         {
           fprintf (stderr, 
@@ -488,40 +673,83 @@ static int set_value_to_param (batch_context*const bctx, char*const value,
                    __func__, value_start);
           return -1;
         }
-      strcpy(bctx->url_ctx_arr[bctx->url_index].url_str, value_start);
+      strcpy(bctx->uas_url_ctx_array[bctx->url_index].url_str, value_start);
       break;
 
-    case  URL_MAX_TIME:
-      if ((int)bctx->url_index >= bctx->urls_num)
-        {
-          fprintf (stderr, 
-                   "%s - skiping loading a url_completion_time after %d url\n",
-                   __func__, bctx->url_index);
-          return 0;
-        }
-      bctx->url_ctx_arr[bctx->url_index].url_completion_time = atof (value_start);
+    case  UAS_URL_MAX_TIME:
+      bctx->uas_url_ctx_array[bctx->url_index].url_completion_time = 
+        atof (value_start);
       break;
 
-    case  URL_INTERLEAVE_TIME:
-      if ((int)bctx->url_index >= bctx->urls_num)
-        {
-          fprintf (stderr, 
-                   "%s - skiping loading a url_inter_sleeping_time after %d url\n",
-                   __func__, bctx->url_index);
-          return 0;
-        }
-
-      bctx->url_ctx_arr[bctx->url_index].url_interleave_time = atoi(value_start);
+    case  UAS_URL_INTERLEAVE_TIME:
+      bctx->uas_url_ctx_array[bctx->url_index].url_interleave_time = 
+        atoi(value_start);
       bctx->url_index++; /* advance the position */
+      break;
 
-      if ((int)bctx->url_index >= bctx->urls_num)
+      /*------------------------LOGOFF SECTION ---------------------------------*/
+
+    case LOGOFF:
+      bctx->do_logoff = (*value_start == 'Y' || *value_start == 'y') ? 1 : 0;
+      break;
+
+      /* Username and password logoff authentication - looks like
+         future options to support. */
+
+    case LOGOFF_REQ_TYPE:
+      bctx->logoff_req_type = atoi (value_start);
+
+      if (bctx->logoff_req_type != LOGOFF_REQ_TYPE_GET && 
+          bctx->logoff_req_type != LOGOFF_REQ_TYPE_GET_AND_POST &&
+          bctx->logoff_req_type != LOGOFF_REQ_TYPE_POST)
         {
-          bctx->batch_init_state = VALID_BATCH ;
-          fprintf (stderr, "%s - completing loading url after loading %d url\n",
-                   __func__, bctx->url_index);
-          return 0;
+          fprintf (stderr, 
+                   "%s - error: logoff_req_type (%d) is not valid. Consider %d, %d or %d.\n", 
+                   __func__, bctx->logoff_req_type, 
+                   LOGOFF_REQ_TYPE_GET, 
+                   LOGOFF_REQ_TYPE_GET_AND_POST, 
+                   LOGOFF_REQ_TYPE_POST);
+          return -1;
         }
       break;
+
+    case LOGOFF_POST_STR:
+      if (strcmp (value_start, NON_APPLICABLE_STR))
+        {
+          strncpy (bctx->logoff_post_str, 
+                   value_start, 
+                   sizeof (bctx->logoff_post_str) - 1);
+        }
+      break;
+
+    case  LOGOFF_URL:
+      if ((url_length = strlen (value_start)) <= 0)
+        {
+          fprintf(stderr, "%s - empty url for \"%s\"\n", __func__,value_start);
+          return -1;
+        }
+      if (!(bctx->logoff_url.url_str =(char *)calloc(url_length+1,sizeof (char))))
+        {
+          fprintf (stderr, 
+                   "%s - error: logoff_url allocation failed for url \"%s\"\n", 
+                   __func__, value_start);
+          return -1;
+        }
+      strcpy(bctx->logoff_url.url_str, value_start);
+      break;
+
+    case  LOGOFF_URL_MAX_TIME:
+      bctx->logoff_url.url_completion_time = atof (value_start);
+      break;
+
+    case  LOGOFF_URL_INTERLEAVE_TIME: /* means time to be up after logoff */
+      bctx->logoff_url.url_interleave_time = atoi(value_start);
+      break;
+
+    case LOGOFF_CYCLING:
+      bctx->logoff_cycling = (*value_start == 'Y' || *value_start == 'y') ? 1 : 0;
+      break;
+      
 
     default:
       fprintf (stderr, 
