@@ -50,7 +50,7 @@ MAY BE USED:
 OS SUPPORT:
 Currently linux due to actually unlimited number of secondary ip-addresses,
 that can be arranged at a network interface to bind each individual client
-to an address.
+to an IP-address.
 Supposed to work on linux 2.4 and 2.6 kernels.
 
 BUILDING:
@@ -59,10 +59,10 @@ matters should be fine tuned in build_curl.sh and Makefile. Sorry.
 Tarball of curl should be fetched by wget from the curl web-site. 
 If a computer does not have Internet connection, bring the package yourself 
 and put it inside to the distribution directory.
-We are normally building it at Debian. Sometimes, libcurl has issue with
+We are normally building it at Debian. Sometimes, libcurl has issues with
 buidling at RedHat/FC, where it requires linking with libidn. Correct it
 in the Makefile. 
-To build with optiomization, please, follow the instructions in Makefile and
+To build with optimization, please, follow the instructions in Makefile and
 build_curl.sh
 
 CONFIGURATION:
@@ -109,7 +109,7 @@ TERMINOLOGY:
 --- What is the batch?
 Batch is a group of clients with the same characteristics and 
 loading behavior. Configuration file has one or more batches.
---- What is UAS?
+--- What means UAS?
 UAS - user activity simulation - fetching url, sleeping, another url -sleeping
 cycles, simulating actual user activity.
 
@@ -136,22 +136,23 @@ several curl-loader processes.
 Configuration file should possess at least one client batch defined
 with the following params in each batch:
 
+----------------------------------------------------------------------------
 ########### GENERAL SECTION ################################
-BATCH_NAME= bulk_batch  #The name of the batch.
-CLIENTS_NUM=3                     #Number of clients in the batch
-INTERFACE = eth0                   #Name of interface from which to load 
-NETMASK=20                             #The CIDR notation netmask
-IP_ADDR_MIN= 192.168.1.1   #The client addresses starting address
+BATCH_NAME= bulk_batch     # The name of the batch.
+CLIENTS_NUM=3              # Number of clients in the batch
+INTERFACE = eth0           # Name of interface from which to load 
+NETMASK=20                 # Netmask in CIDR-notation (number of bits with 1)
+IP_ADDR_MIN= 192.168.1.1   # The client addresses starting address
 IP_ADDR_MAX= 192.168.5.255 # Redundant, for self-control
-CYCLES_NUM= 100                   # Number of loading cycles to run, 0 -forever
+CYCLES_NUM= 100            # Number of loading cycles to run, 0 -forever
 
 ########### LOGIN SECTION ##################################
-LOGIN_AUTH=n             # If 'y' or 'Y', login enabled, all other lines of the 
-                                               # section to be filled
-#LOGIN_USERNAME= #Usename string
-#LOGIN_PASSWORD=  #Password string
-#LOGIN_REQ_TYPE=   # Use numbers for login either GET+POST (1), or POST-only (2).
-#LOGIN_POST_STR=    # POST string matrix. See below
+LOGIN_AUTH=n      # If 'y' or 'Y', login enabled, all other lines of the 
+                  # section to be filled
+#LOGIN_USERNAME=  # Usename string
+#LOGIN_PASSWORD=  # Password string
+#LOGIN_REQ_TYPE=  # Use a number to be either GET+POST (1), or POST-only (2).
+#LOGIN_POST_STR=  # POST string matrix. See below:
 #
 # To generate multiple unique users with unique passwords, use the string like
 # "username=%s%d&password=%s%d". First %s will be substituted by the 
@@ -164,37 +165,42 @@ LOGIN_AUTH=n             # If 'y' or 'Y', login enabled, all other lines of the
 # as bases for generating unique user credentials.
 #
 # To use the username and password 'as as', just provide LOGIN_POST_STR without 
-# %d symbols, e.g. "user=%s&secret=%s". Thus, the POST string for each client 
-# will be the same and look like "user=robert&secret=stam".
+# %d symbols, e.g. "user=%s&secret=%s". Thus, all clients will have the same
+# POST credentials with the string looking like "user=robert&secret=stam".
+#
 # Note, that the words like 'username', 'user', 'password', 'secret', etc are the
 # fields, that users are required to fill in the POST html page.
 
-#LOGIN_URL=                          # A valid http or https url to be used for login
-#LOGIN_URL_MAX_TIME= # Maximum batch time in seconds to login
+#LOGIN_URL=                 # A valid http or https url to be used for login
+#LOGIN_URL_MAX_TIME=        # Maximum batch time in seconds to login
 #LOGIN_URL_INTERLEAVE_TIME= # Time in seconds to sleep after login
-#LOGIN_CYCLING= # If 'y' login should be run in cycles, and not just done only once
+#LOGIN_CYCLING=             # If 'y' login should be run in cycles, and not 
+                            # just done only once
 
 ########### UAS SECTION ####################################
-UAS=y   # If 'y' or 'Y', login enabled, and other lines of the section to be filled
+UAS=y            # If 'y' or 'Y', login enabled, and other lines of the section 
+                 # to be filled
 UAS_URLS_NUM = 2 # Number of urls will be taken as in the format below
 
 UAS_URL=http://localhost/apache2-default/ACE-INSTALL.html
-UAS_URL_MAX_TIME = 6 # Maximum batch time in seconds to fetch the url by all clients
+UAS_URL_MAX_TIME = 6        # Maximum batch time in seconds to fetch the url
 UAS_URL_INTERLEAVE_TIME = 0 # Time in seconds to sleep after fetching the url
 
 UAS_URL= http://localhost/apache2-default/index.html
-UAS_URL_MAX_TIME = 4 # Maximum batch time in seconds to fetch the url by all clients
+UAS_URL_MAX_TIME = 4        # Maximum batch time in seconds to fetch the url
 UAS_URL_INTERLEAVE_TIME = 0 # Time in seconds to sleep after fetching the url
 
 ########### LOGOFF SECTION #################################
-LOGOFF=n # If 'y' or 'Y', login enabled, and other lined of the section to be filled
-#LOGOFF_REQ_TYPE=#Use numbers for GET-only (1), GET+POST (2), POST-only (3)
-#LOGOFF_POST_STR= #String to be used for logoff, like "op=logoff" 
-#LOGOFF_URL=             #A valid http or https url to be used for logoff
-#LOGOFF_URL_MAX_TIME= # Maximum batch time in seconds to logoff
+LOGOFF=n                 # If 'y' or 'Y', login enabled, and other lines 
+                         # of the section to be filled
+#LOGOFF_REQ_TYPE=        # Use numbers for GET-only (1), GET+POST (2), POST-only (3)
+#LOGOFF_POST_STR=        # String to be used for logoff, like "op=logoff" 
+#LOGOFF_URL=             # A valid http or https url to be used for logoff
+#LOGOFF_URL_MAX_TIME=    # Maximum batch time in seconds to logoff
 #LOGOFF_URL_INTERLEAVE_TIME= # Time in seconds to sleep after logoff
-#LOGOFF_CYCLING= # If 'y' login should be run in cycles, and not just done only once
-
+#LOGOFF_CYCLING=         # If 'y' login should be run in cycles, and not just 
+                         # done only once
+--------------------------------------------------------------------------------
 For more examples, please, look at configs directory.
 
 Note, that currenly there is a limit of 1000 sockets per batch of clients.
