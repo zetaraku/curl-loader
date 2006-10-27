@@ -1,5 +1,18 @@
 version 0.18, 12/10/2006
 
+Major improvement of configuration. Several command line options removed and
+instread the configuration file enhanced. Configuration file separated to several
+sections, namely:
+- GENERAL;
+- LOGIN;
+- UAS (user activity simulation, like fetching URLs and sleeping);
+- LOGOFF;
+Only GENERAL section is a MUST, whereas other sections are enabled whenever
+is necessary, depending on the purpose of the testing. 
+
+Several more options for LOGIN and LOGOFF parts are added.
+
+
 version 0.17, 10/11/2006
 
 -Added ChangeLog and TODO files.

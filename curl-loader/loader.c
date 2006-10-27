@@ -51,22 +51,36 @@
 
 /*
   The limitation is due to using select() in our mget_url ()
-  as well as in libcurl. Options to consider are poll () and /dev/epoll.
+  as well as in libcurl. Options are to consider are poll () and /dev/epoll.
 */
 #define MAX_FD_IN_THREAD 1000
 
 
 static int create_ip_addrs (batch_context* bctx, int bctx_num);
-static int client_tracing_function (CURL *handle, curl_infotype type, 
-                                    unsigned char *data, size_t size, void *userp);
-static size_t do_nothing_write_func (void *ptr, size_t size, size_t nmemb, 
+
+static int client_tracing_function (CURL *handle, 
+                                    curl_infotype type, 
+                                    unsigned char *data, 
+                                    size_t size, 
+                                    void *userp);
+
+static size_t do_nothing_write_func (void *ptr, 
+                                     size_t size, 
+                                     size_t nmemb, 
                                      void *stream);
+
 static void* batch_function (void *batch_data);
+
 static int initial_handles_init (struct client_context*const cdata);
+
 static int alloc_init_client_post_buffers (struct client_context* cctx);
+
 static int alloc_init_client_contexts (client_context** p_cctx, 
-                                       batch_context* bctx, FILE* output_file);
+                                       batch_context* bctx, 
+                                       FILE* output_file);
+
 static void free_batch_data_allocations (struct batch_context* bctx);
+
 
 int 
 main (int argc, char *argv [])
@@ -81,36 +95,40 @@ main (int argc, char *argv [])
   if (parse_command_line (argc, argv) == -1)
     {
       fprintf (stderr, 
-                       "main: error: failed parsing of the command line.\n");
+               "%s - error: failed parsing of the command line.\n", __func__);
       return -1;
     }
 
   if (geteuid())
     {
       fprintf (stderr, 
-               "main: error: lacking root preveledges to run this program.\n");
+               "%s - error: lacking root preveledges to run this program.\n", __func__);
       return -1;
     }
 
   memset(bc_arr, 0, sizeof(bc_arr));
 
-  /* Parse the configuration file. */
+  /* 
+     Parse the configuration file. 
+  */
   if ((batches_num = parse_config_file (config_file, bc_arr, 
                                         sizeof(bc_arr)/sizeof(*bc_arr))) <= 0)
     {
-      fprintf (stderr, "main: parse_config_file () - error.\n");
+        fprintf (stderr, "%s - error: parse_config_file () - error.\n", __func__);
       return -1;
     }
    
-  /* Add ip-addresses to the loading network interfaces
-     and keep the ip-addr of each loading client in batch-contexts. */
+  /* 
+     Add ip-addresses to the loading network interfaces
+     and keep the ip-addr of each loading client in batch-contexts. 
+  */
   if (create_ip_addrs (bc_arr, batches_num) == -1)
     {
-      fprintf (stderr, "main: create_ip_addrs () - error.\n");
+        fprintf (stderr, "%s - error: create_ip_addrs () failed. \n", __func__);
       return -1;
     }
 
-  fprintf (stderr, "%s - completed adding IP addresses.\n", 
+  fprintf (stderr, "%s - accomplished setting IP-addresses to the loading interfaces.\n", 
            __func__);
   
   if (! threads_run)
@@ -121,13 +139,13 @@ main (int argc, char *argv [])
     }
   else
     {
-      fprintf (stderr, "\nSTARTING THREADS\n\n");
+        fprintf (stderr, "\n%s - STARTING THREADS\n\n", __func__);
       sleep (1);
       
       /* Init openssl mutexes and pass two callbacks to openssl. */
         if (thread_openssl_setup () == -1)
         {
-          fprintf (stderr, "thread_setup () - failed.\n");
+            fprintf (stderr, "%s - error: thread_setup () - failed.\n", __func__);
            return -1;
         }
       
@@ -137,16 +155,17 @@ main (int argc, char *argv [])
           error = pthread_create (&tid[i], NULL, batch_function, &bc_arr[i]);
 
           if (0 != error)
-            fprintf(stderr, "Couldn't run thread number %d, errno %d\n", i, error);
+            fprintf(stderr, "%s - error: Couldn't run thread number %d, errno %d\n", 
+                    __func__, i, error);
           else 
-            fprintf(stderr, "Thread %d, starts normally\n", i);
+              fprintf(stderr, "%s - note: Thread %d, started normally\n", __func__, i);
         }
 
       /* Waiting for all the threads to terminate */
       for (i = 0 ; i < batches_num ; i++) 
         {
           error = pthread_join (tid[i], NULL) ;
-          fprintf(stderr, "Thread %d terminated normally\n", i) ;
+          fprintf(stderr, "%s - note: Thread %d terminated normally\n", __func__, i) ;
         }
 
       thread_openssl_cleanup ();
@@ -156,7 +175,7 @@ main (int argc, char *argv [])
 }
 
 /*
-  Runs the batch test. Prepared to be used as a thread function.
+  Runs the batch test. Prepared to be used as a POSIX thread function.
 */
 static void* batch_function (void * batch_data)
 {
@@ -168,7 +187,9 @@ static void* batch_function (void * batch_data)
 
   if (! stderr_print_client_msg)
     {
-      /* Init batch logfile for the batch clients output */
+      /*
+        Init batch logfile for the batch clients output 
+      */
       sprintf (output_file_name, "%s.log", bctx->batch_name);
 
       if (!(output_file = fopen(output_file_name, "w")))
@@ -180,7 +201,9 @@ static void* batch_function (void * batch_data)
         }
     }
   
-  /* Allocates and inits objects, containing client-context information */
+  /* 
+     Allocates and inits objects, containing client-context information 
+  */
   if (alloc_init_client_contexts (&cctx, bctx, output_file) == -1)
     {
       fprintf (stderr, "%s - \"%s\" - failed to allocate or init cctx.\n", 
@@ -268,7 +291,7 @@ static int initial_handles_init (client_context*const cdata)
     {
       if (alloc_init_client_post_buffers (cdata) == -1)
         {
-          fprintf (stderr, "\"%s\" - alloc_client_post_buffers ().\n", __func__);
+          fprintf (stderr, "%s - error: alloc_client_post_buffers () .\n", __func__);
           return -1;
         }
     }
@@ -285,13 +308,6 @@ static int initial_handles_init (client_context*const cdata)
       }
         
     bctx->curl_handlers_count = bctx->client_num;
-        
-    //single_handle_setup (
-    //                      &cdata[k], /* pointer to client context */
-    //                     0, /* start from the first (zero index) url */
-    //                     0, /* zero cycle */
-    //                      NULL /*without POST buffers as a more general case*/  
-    //                    );
 
     return 0;
 }
@@ -327,8 +343,9 @@ int single_handle_setup (client_context*const cctx,
 #define  HTTPS_S "http://" 
   cctx->is_https = (strncmp (url, HTTPS_S, sizeof(HTTPS_S)) == 0);
 
-  /* Remove the handle from the multiple handle and reset it. 
-     Still the handle remembers DNS, cookies, etc. 
+  /*
+    Remove the handle from the multiple handle and reset it. 
+    Still the handle remembers DNS, cookies, etc. 
   */
   curl_multi_remove_handle (bctx->multiple_handle, handle);
   curl_easy_reset (handle);
@@ -341,20 +358,21 @@ int single_handle_setup (client_context*const cctx,
 
   curl_easy_setopt (handle, CURLOPT_NOSIGNAL, 1);
     
-  /* set the url */
+  /* Set the url */
   curl_easy_setopt (handle, CURLOPT_URL, url);
   cctx->url_curr_index = url_num; /* set the index to client for smooth loading */
   
 
   curl_easy_setopt (handle, CURLOPT_DNS_CACHE_TIMEOUT, -1);
 
-  /* set the connection timeout */
+  /* Set the connection timeout */
   curl_easy_setopt (handle, CURLOPT_CONNECTTIMEOUT, connect_timeout);
 
-  /* define the connection re-use policy. When passed 1, dont re-use */
+  /* Define the connection re-use policy. When passed 1, dont re-use */
   curl_easy_setopt (handle, CURLOPT_FRESH_CONNECT, reuse_connection_forbidden);
 
-  /* If DNS resolving is necesary, global DNS cache is enough,
+  /* 
+     If DNS resolving is necesary, global DNS cache is enough,
      otherwise compile libcurl with ares (cares) library support.
      Attention: DNS global cache is not thread-safe, therefore use
      cares for asynchronous DNS lookups.
@@ -374,8 +392,11 @@ int single_handle_setup (client_context*const cctx,
   curl_easy_setopt (handle, CURLOPT_MAXREDIRS, -1);
 
 #define EXPLORER_USERAGENT_STR "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" 
-  /* TODO: Lets be Explorer-6, but actually User-Agent header 
-     should be configurable. */
+  
+  /* 
+     TODO: Lets be Explorer-6, but actually User-Agent header 
+     should be configurable. 
+  */
   curl_easy_setopt (handle, CURLOPT_USERAGENT, EXPLORER_USERAGENT_STR);
 
   /* Enable cookies. This is important for verious authentication schemes. */
@@ -539,25 +560,25 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
           {
           case 1: /* 100-Continue and 101 responses */
             if (verbose_logging)
-              fprintf(cctx->file_output, "%ld %s:!! 100CONTINUE\n", 
-                      cctx->cycle_num, cctx->client_name);
+              fprintf(cctx->file_output, "%ld %s:!! %ld CONTINUE\n", 
+                      cctx->cycle_num, cctx->client_name, response_status);
             break;  
           case 2: /* 200 OK */
             if (verbose_logging)
-              fprintf(cctx->file_output, "%ld %s:!! OK\n",
-                      cctx->cycle_num, cctx->client_name);
+              fprintf(cctx->file_output, "%ld %s:!! %ld OK\n",
+                      cctx->cycle_num, cctx->client_name, response_status);
             break;       
           case 3: /* 3xx REDIRECTIONS */
-            fprintf(cctx->file_output, "%ld %s:!! REDIRECTION: %s\n", 
-                    cctx->cycle_num, cctx->client_name, data);
+            fprintf(cctx->file_output, "%ld %s:!! %ld REDIRECTION: %s\n", 
+                    cctx->cycle_num, cctx->client_name, response_status, data);
             break;
           case 4: /* 4xx Client Error */
-            fprintf(cctx->file_output, "%ld %s %s :!! CLIENT_ERROR(%ld): %s\n", 
+            fprintf(cctx->file_output, "%ld %s %s :!! %ld CLIENT_ERROR : %s\n", 
                     cctx->cycle_num, cctx->client_name, 
                     url_logging && url ? url : "", response_status, data);
             break;
           case 5: /* 5xx Server Error */
-            fprintf(cctx->file_output, "%ld %s %s :!! SERVER_ERROR(%ld): %s\n", 
+            fprintf(cctx->file_output, "%ld %s %s :!! %ld SERVER_ERROR : %s\n", 
                     cctx->cycle_num, cctx->client_name,
                     url_logging && url ? url : "", response_status, data);
             break;
@@ -621,7 +642,8 @@ static int alloc_init_client_post_buffers (client_context* cctx)
 
   for (i = 0;  i < bctx->client_num; i++)
     {
-      /* Allocate client buffers for POSTing login and logoff credentials.
+      /*
+        Allocate client buffers for POSTing login and logoff credentials.
       */
       if (! (cctx[i].post_data_login = 
              (char *) calloc(POST_LOGIN_BUF_SIZE, sizeof (char))))
@@ -636,8 +658,8 @@ static int alloc_init_client_post_buffers (client_context* cctx)
              (char *) calloc(POST_LOGOFF_BUF_SIZE, sizeof (char))))
         {
           fprintf (stderr,
-                   "\"%s\" - %s - failed to allocate post login buffer.\n",
-                   bctx->batch_name, __func__) ;
+                   "%s - error: %s - failed to allocate post login buffer.\n",
+                   __func__, bctx->batch_name);
           return -1;
         }
 
@@ -696,11 +718,14 @@ static int alloc_init_client_contexts (
 
   *p_cctx = cctx;
 
-  /* Pass through client contexts and initialize */
+  /* 
+     Iterate through client contexts and initialize them. 
+  */
   for (i = 0 ; i < bctx->client_num ; i++)
     {
-      /* Build client name for logging, based on sequence number and 
-          ip-address for each simulated client. 
+      /* 
+         Build client name for logging, based on sequence number and 
+         ip-address for each simulated client. 
       */
       cctx[i].cycle_num = 0;
 
@@ -708,17 +733,23 @@ static int alloc_init_client_contexts (
                sizeof(cctx[i].client_name) - 1, 
                "%d (%s) ", i + 1, bctx->ip_addr_array[i]);
 
-      /* Set index of the client within the batch.
-         Useful to get the client's CURL handle from bctx. */
+      /* 
+         Set index of the client within the batch.
+         Useful to get the client's CURL handle from bctx. 
+      */
       cctx[i].client_index = i;
 
       cctx[i].url_curr_index = 0; /* Actually zeroed by calloc. */
 
-      /* Set output stream for each client to be either batch logfile or stderr. */
+      /* 
+         Set output stream for each client to be either batch logfile or stderr. 
+      */
       cctx[i].file_output = stderr_print_client_msg ? stderr : output_file;
 
-      /* Set pointer to batch for each client to be user to get configuration 
-         and set back statistics to batch */
+      /* 
+         Set pointer to batch for each client to be user to get configuration 
+         and set back statistics to batch 
+      */
       cctx[i].bctx = bctx;
     }
   return 0;
@@ -765,13 +796,13 @@ static int create_ip_addrs (batch_context* bctx, int bctx_num)
 {
   int bi, cli; /* Batch and client indexes */
   struct in_addr in_address;
-  char*** ip_addresses = NULL;
-  char* dotted_ip_addr = NULL;
+  char*** ip_addresses =0;
+  char* dotted_ip_addr = 0;
 
   /* Add secondary IP-addresses to the "loading" network interface. */
   if (!(ip_addresses = (char***)calloc (bctx_num, sizeof (char**))))
     {
-      fprintf (stderr, "%s - failed to allocate ip_addresses.\n", __func__);
+      fprintf (stderr, "%s - error: failed to allocate ip_addresses.\n", __func__);
       return -1;
     }
   
@@ -782,7 +813,7 @@ static int create_ip_addrs (batch_context* bctx, int bctx_num)
                                               sizeof (char *))))
         {
           fprintf (stderr, 
-                   "%s - failed to allocate array of ip-addresses for batch %d.\n", 
+                   "%s - error: failed to allocate array of ip-addresses for batch %d.\n", 
                    __func__, bi);
           return -1;
         }
@@ -823,7 +854,7 @@ static int create_ip_addrs (batch_context* bctx, int bctx_num)
                                   (const char** const) ip_addresses[bi], bctx[bi].cidr_netmask) == -1)
         {
           fprintf (stderr, 
-                   "%s - add_secondary_ip_addrs() - failed for batch = %d\n", 
+                   "%s - error: add_secondary_ip_addrs() - failed for batch = %d\n", 
                    __func__, bi);
            return -1;
         }
@@ -840,7 +871,9 @@ do_nothing_write_func (void *ptr, size_t size, size_t nmemb, void *stream)
   (void)ptr;
   (void)stream;
 
-  /* Overwriting the default behavior to write body bytes to stdout and 
-     just skipping the body bytes without any output. */
+  /* 
+     Overwriting the default behavior to write body bytes to stdout and 
+     just skipping the body bytes without any output. 
+  */
   return (size*nmemb);
 }

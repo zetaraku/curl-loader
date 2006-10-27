@@ -88,19 +88,5 @@ int user_activity_storm (struct client_context*const cdata);
 
 int user_activity_smooth (struct client_context* cctx);
 
-/*
-int load_next_step (struct client_context* cctx);
-
-unsigned long get_tick_count (void);
-
-void dump_statistics (unsigned long period,  
-                      struct stat_point *http, 
-                      struct stat_point *https);
-
-void dump_stat_workhorse (int clients, 
-                          unsigned long period,  
-                          struct stat_point *http, 
-                          struct stat_point *https);
-*/
 
 #endif /* LOADER_H */

@@ -48,8 +48,8 @@ int user_activity_storm (client_context*const cdata)
   long u_index = 0;
 
   /* 
-     Make authentication login. If cycling login is disabled,
-     it is done using the login url and only once for each user.
+     Make authentication login. If login operation should not be cycled.
+     For such cases login is performed only once for each user.
   */
   if (bctx->do_login_auth && !bctx->login_cycling)
     {
@@ -64,7 +64,7 @@ int user_activity_storm (client_context*const cdata)
   for (cycle = 0; cycle < bctx->cycles_num ; cycle++)
     {
       /* 
-         Login, when required login in cycling. 
+         Login, when the login operation to be done in cycles. 
        */
       if (bctx->do_login_auth && bctx->login_cycling)
         {
@@ -192,7 +192,6 @@ static int mget_url_storm (batch_context* bctx, float m_time)
 }
 
 /*
-  
 */
 static int posting_credentials_storm (client_context* clients, int in_off)
 {
@@ -221,8 +220,8 @@ static int posting_credentials_storm (client_context* clients, int in_off)
     bctx->logoff_url.url_interleave_time;
 
   /* 
-     An average user is used to read and think a bit prior to posting 
-     his credentials.
+     An average user is used to read and think a bit 
+     prior to posting his credentials.
   */
   sleep (sleep_time);
 
@@ -275,7 +274,7 @@ static int login_clients_storm (client_context* cdata, int cycle)
       if (mget_url_storm (bctx, bctx->login_url.url_completion_time) == -1)
         {
           fprintf (stderr, 
-                   "%s - \"%s\" - mget_url_storm()- failed for the initial URL.\n", 
+                   "%s - \"%s\" - error: mget_url_storm()- failed for the login URL.\n", 
                    __func__, bctx->batch_name);
           return -1;
         }
@@ -284,7 +283,7 @@ static int login_clients_storm (client_context* cdata, int cycle)
   /* Make POSTing of login credentials for each client. Pass POST-buffers. */
   if (posting_credentials_storm (cdata, POST_LOGIN) == -1)
     {
-      fprintf (stderr, "%s - \"%s\" - posting_credentials_storm()- failed.\n", 
+      fprintf (stderr, "%s - \"%s\" - error: posting_credentials_storm()- failed.\n", 
                __func__, bctx->batch_name);
       return -1;
     }
@@ -317,7 +316,7 @@ static int logoff_clients_storm (client_context*const cdata, int cycle)
       if (mget_url_storm (bctx, bctx->logoff_url.url_completion_time) == -1)
         {
           fprintf (stderr, 
-                   "%s - \"%s\" - mget_url_storm()- failed for the initial URL.\n", 
+                   "%s - \"%s\" - error: mget_url_storm()- failed for the logoff URL.\n", 
                    __func__, bctx->batch_name);
           return -1;
         }

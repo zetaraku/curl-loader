@@ -10,10 +10,10 @@
  *
  * Authors:    Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
  *
- *  The ideas and most of implementation comes from iprouted2
+ * The ideas and most of the implementation comes from iprouted2
  * project, directory ip, written by Alexey Kuznetsov.
  *
- * Cutted and combined by Robert Iakobashvili, coroberti@gmail.com
+ * Cutted and combined by Robert Iakobashvili, <coroberti@gmail.com>
  */
 
 #include <stdio.h>
@@ -165,7 +165,7 @@ int add_secondary_ip_to_device(const char*const device,
   addattr_l(&req.n, sizeof(req), IFA_LOCAL, &lcl.data, lcl.bytelen);
   local_len = lcl.bytelen;
    
-  if (peer_len == 0 && local_len /*&& cmd != RTM_DELADDR*/) 
+  if (peer_len == 0 && local_len) 
     {
       peer = lcl;
       addattr_l(&req.n, sizeof(req), IFA_ADDRESS, &lcl.data, lcl.bytelen);
@@ -176,7 +176,6 @@ int add_secondary_ip_to_device(const char*const device,
 
   /* do not support broadcast addresses */
 
-  /* if (!scoped && cmd != RTM_DELADDR) */
   req.ifa.ifa_scope = default_scope(&lcl);
 
   if (rth.fd < 0)
@@ -189,7 +188,7 @@ int add_secondary_ip_to_device(const char*const device,
 
   if ((req.ifa.ifa_index = ll_name_to_index((char*)d)) == 0) 
     {
-      fprintf(stderr, "Cannot find device \"%s\"\n", d);
+        fprintf (stderr, "%s - Cannot find device \"%s\"\n", __func__, d);
       return -1;
     }
 
@@ -204,12 +203,15 @@ int get_prefix(inet_prefix *dst, char *arg, int family)
   if (family == AF_PACKET) 
     {
       fprintf(stderr, 
-              "Error: \"%s\" may be inet prefix, but it is not allowed in this context.\n", arg);
+              "%s - Error: \"%s\" may be inet prefix, but it is not allowed in this context.\n",
+              __func__, arg);
       exit(1);
     }
   if (get_prefix_1(dst, arg, family)) 
     {
-      fprintf(stderr, "Error: an inet prefix is expected rather than \"%s\".\n", arg);
+        fprintf(stderr, 
+                "%s - Error: an inet prefix is expected rather than \"%s\".\n", 
+                __func__, arg);
       exit(1);
     }
   return 0;
@@ -318,7 +320,7 @@ int rtnl_open(struct rtnl_handle *rth, unsigned subscriptions)
   rth->fd = socket (AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
   if (rth->fd < 0) 
     {
-      perror("Cannot open netlink socket");
+      perror("rtnl_open(): Cannot open netlink socket");
       return -1;
     }
 
@@ -328,23 +330,25 @@ int rtnl_open(struct rtnl_handle *rth, unsigned subscriptions)
     
   if (bind(rth->fd, (struct sockaddr*)&rth->local, sizeof(rth->local)) < 0) 
     {
-      perror("Cannot bind netlink socket");
+      perror("rtnl_open(): Cannot bind netlink socket");
       return -1;
     }
   addr_len = sizeof(rth->local);
   if (getsockname(rth->fd, (struct sockaddr*)&rth->local, &addr_len) < 0) 
     {
-      perror("Cannot getsockname");
+      perror("rtnl_open(): Cannot getsockname");
       return -1;
     }
   if (addr_len != sizeof(rth->local)) 
     {
-      fprintf(stderr, "Wrong address length %d\n", addr_len);
-      return -1;
+        fprintf(stderr, "%s - error: Wrong address length %d\n", 
+                __func__, addr_len);
+        return -1;
     }
   if (rth->local.nl_family != AF_NETLINK) 
     {
-      fprintf(stderr, "Wrong address family %d\n", rth->local.nl_family);
+      fprintf(stderr, "%s - error: Wrong address family %d\n", 
+              __func__, rth->local.nl_family);
       return -1;
     }
   rth->seq = time(NULL);
@@ -355,13 +359,13 @@ int ll_init_map(struct rtnl_handle *rth)
 {
   if (rtnl_wilddump_request(rth, AF_UNSPEC, RTM_GETLINK) < 0) 
     {
-      perror("Cannot send dump request");
+      perror("ll_init_map(): Cannot send dump request");
       exit(1);
     }
   if (rtnl_dump_filter(rth, ll_remember_index, &idxmap, NULL, NULL) < 0) 
     {
-      fprintf(stderr, "Dump terminated\n");
-      exit(1);
+        fprintf(stderr, "%s - Dump terminated\n", __func__);
+        exit(1);
     }
   return 0;
 }
@@ -404,7 +408,7 @@ int rtnl_talk(struct rtnl_handle *rtnl,
 
   if (status < 0) 
     {
-      perror("Cannot talk to rtnetlink");
+      perror("rtnl_talk(): Cannot talk to rtnetlink");
       return -1;
     }
 
@@ -419,17 +423,18 @@ int rtnl_talk(struct rtnl_handle *rtnl,
         {
           if (errno == EINTR)
             continue;
-          perror("OVERRUN");
+          perror("rtnl_talk(): recvmsg OVERRUN");
           continue;
         }
       if (status == 0) 
         {
-          fprintf(stderr, "EOF on netlink\n");
+            fprintf(stderr, "%s - error: EOF on netlink\n", __func__);
           return -1;
         }
       if (msg.msg_namelen != sizeof(nladdr)) 
         {
-          fprintf(stderr, "sender address length == %d\n", msg.msg_namelen);
+          fprintf(stderr, "%s - sender address length == %d\n", 
+                  __func__, msg.msg_namelen);
           exit(1);
         }
 		
@@ -443,10 +448,10 @@ int rtnl_talk(struct rtnl_handle *rtnl,
             {
               if (msg.msg_flags & MSG_TRUNC) 
                 {
-                  fprintf(stderr, "Truncated message\n");
+                    fprintf(stderr, "%s - Truncated message\n", __func__);
                   return -1;
                 }
-              fprintf(stderr, "!!!malformed message: len=%d\n", len);
+              fprintf(stderr, "%s - !!!malformed message: len=%d\n", __func__, len);
               exit(1);
             }
           if ((int)nladdr.nl_pid != peer || 
@@ -468,7 +473,7 @@ int rtnl_talk(struct rtnl_handle *rtnl,
 
               if (l < (int)sizeof(struct nlmsgerr)) 
                 {
-                  fprintf(stderr, "ERROR truncated\n");
+                    fprintf(stderr, "%s - ERROR truncated\n", __func__);
                 } 
               else 
                 {
@@ -479,7 +484,7 @@ int rtnl_talk(struct rtnl_handle *rtnl,
                         memcpy(answer, h, h->nlmsg_len);
                       return 0;
                     }
-                  perror("RTNETLINK answers");
+                  perror("rtnl_talk(): RTNETLINK answers");
                 }
               return -1;
             }
@@ -489,20 +494,20 @@ int rtnl_talk(struct rtnl_handle *rtnl,
               return 0;
             }
 
-          fprintf(stderr, "Unexpected reply!!!\n");
+          fprintf(stderr, "%s - Unexpected reply!!!\n", __func__);
           status -= NLMSG_ALIGN(len);
           h = (struct nlmsghdr*)((char*)h + NLMSG_ALIGN(len));
         }
 		
       if (msg.msg_flags & MSG_TRUNC) 
         {
-          fprintf(stderr, "Message truncated\n");
+            fprintf(stderr, "%s - Message truncated\n", __func__);
           continue;
         }	   
       if (status) 
         {		
-          fprintf(stderr, "!!!Remnant of size %d\n", status);
-          exit(1);
+            fprintf(stderr, "%s - !!!Remnant of size %d\n", __func__, status);
+            exit(1);
         }
     }
 }
@@ -677,18 +682,19 @@ rtnl_dump_filter(struct rtnl_handle *rth,
         {
           if (errno == EINTR)
             continue;
-          perror("OVERRUN");
+          perror("rtnl_dump_filter(): OVERRUN");
           continue;
         }
       if (status == 0) 
         {
-          fprintf(stderr, "EOF on netlink\n");
+            fprintf(stderr, "%s - EOF on netlink\n", __func__);
           return -1;
         }
 		
       if (msg.msg_namelen != sizeof(nladdr)) 
         {
-          fprintf(stderr, "sender address length == %d\n", msg.msg_namelen);
+            fprintf(stderr, "%s - sender address length == %d\n", 
+                    __func__, msg.msg_namelen);
           exit(1);
         }
 
@@ -716,12 +722,12 @@ rtnl_dump_filter(struct rtnl_handle *rth,
               struct nlmsgerr *err = (struct nlmsgerr*)NLMSG_DATA(h);			
               if (h->nlmsg_len < NLMSG_LENGTH(sizeof(struct nlmsgerr))) 
                 {
-                  fprintf(stderr, "ERROR truncated\n");
+                    fprintf(stderr, "%s - ERROR truncated\n", __func__);
                 } 
               else 
                 {
                   errno = -err->error;
-                  perror("RTNETLINK answers");
+                  perror("rtnl_dump_filter(): RTNETLINK answers");
                 }
               return -1;
             }
@@ -736,12 +742,12 @@ rtnl_dump_filter(struct rtnl_handle *rth,
         
       if (msg.msg_flags & MSG_TRUNC) 
         {
-          fprintf(stderr, "Message truncated\n");
+            fprintf(stderr, "%s - Message truncated\n", __func__);
           continue;
         }
       if (status) 
         {
-          fprintf(stderr, "!!!Remnant of size %d\n", status);
+            fprintf(stderr, "%s - !!!Remnant of size %d\n", __func__, status);
           exit(1);
         }
     }
@@ -759,7 +765,7 @@ int parse_rtattr(struct rtattr *tb[],
       rta = RTA_NEXT(rta,len);
     }
   if (len)
-    fprintf(stderr, "!!!Deficit %d, rta_len=%d\n", len, rta->rta_len);
+    fprintf(stderr, "%s - !!!Deficit %d, rta_len=%d\n", __func__, len, rta->rta_len);
   return 0;
 }
 
@@ -799,22 +805,26 @@ int add_secondary_ip_addrs (const char*const interface, int addr_number,
 
   for (j = 0; j < addr_number && addresses[j] ; j++)
     {
-      fprintf (stderr, "setting secondary IP %s\n", addresses[j]);
-      snprintf (ip_slash_mask_buffer, sizeof (ip_slash_mask_buffer) -1, 
-                "%s/%d", addresses[j], netmask);
+        fprintf (stderr, "%s - setting secondary IP %s\n", __func__, addresses[j]);
+
+        snprintf (ip_slash_mask_buffer, 
+                  sizeof (ip_slash_mask_buffer) -1, 
+                  "%s/%d", 
+                  addresses[j], netmask);
             
       rval_set_ip = add_secondary_ip_to_device(interface, ip_slash_mask_buffer);
+
       switch (rval_set_ip)
         {
         case -1:
           fprintf (stderr, 
-                   "ERROR: %s - failed with errno %d for ip %s\n", 
+                   "%s - error: failed with errno %d for ip %s\n", 
                    __func__, errno, ip_slash_mask_buffer);
           return -1;
 
         case -2:
           fprintf (stderr, 
-                   "NOTE: %s - probably, the IP-address \"%s\" already exists.\n", 
+                   "%s - note: probably, the IP-address \"%s\" already exists.\n", 
                    __func__, ip_slash_mask_buffer);
           break;
 

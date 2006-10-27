@@ -2,8 +2,9 @@
    ssl_thr_lock.c
 
    Taken with thanks from CURL project opensslthreadlock.c by 
-   Jeremy Brown <jbrown_at_novell.com> and
-   modified by Robert Iakobashvili, coroberti@gmail.com
+   Jeremy Brown <jbrown_at_novell.com> 
+   and modified by 
+   Robert Iakobashvili <coroberti@gmail.com>
 */
 
 #include <pthread.h>

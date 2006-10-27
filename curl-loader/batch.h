@@ -165,7 +165,7 @@ typedef struct batch_context
 
 
 
-  /*---------------Smooth mode specific  --------------------*/
+  /*---------------SMOOTH-mode specific  --------------------*/
 
   int curl_handlers_count; /* Counter used by smooth-loading mode */
 

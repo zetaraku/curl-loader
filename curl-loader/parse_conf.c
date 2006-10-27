@@ -38,15 +38,16 @@
 
 #define NON_APPLICABLE_STR "N/A"
 
-/*
-  Enumerations mapped to the string in the configuration file.
-  Each enum means required string, whereas url blocks:
+/**** enum parsing_state **************
+
+  Each enumeration is mapped to the string in the configuration file.
+  Each enum means, that there is a required string in the batch configuration, 
+  whereas url blocks:
   URL,
   URL_MAX_TIME,
   URL_INTERLEAVE_TIME,
 
-  may be repeated several times, supporting emulation of the several 
-  url fetches by a single client.
+  may be repeated several times, supporting emulation of user-activity.
 
   Note, that URL_MAX_TIME and URL_INTERLEAVE_TIME are
   relevant only for loading using storming mode.
@@ -122,9 +123,12 @@ typedef struct batch_params_map
 
 
 
-static int add_param_to_batch (char*const input, size_t input_length,
-                               batch_context*const bctx, int*const batch_num);
-static int set_value_to_param (batch_context*const bctx, char*const value, 
+static int add_param_to_batch (char*const input, 
+                               size_t input_length,
+                               batch_context*const bctx, 
+                               int*const batch_num);
+static int set_value_to_param (batch_context*const bctx, 
+                               char*const value, 
                                size_t value_length);
 static void advance_batch_parser_state (batch_context*const bctx);
 static char* skip_non_ws (char*ptr, size_t*const len);
@@ -132,7 +136,8 @@ static char* eat_ws (char*ptr, size_t*const len);
 static int is_ws (char*const ptr);
 static int is_non_ws (char*const ptr);
 
-int parse_config_file (char* const filename, batch_context* bctx_array, 
+int parse_config_file (char* const filename, 
+                       batch_context* bctx_array, 
                        size_t bctx_array_size)
 {
   char fgets_buff[2048];
@@ -191,19 +196,20 @@ int parse_config_file (char* const filename, batch_context* bctx_array,
                                   &batches_number) == -1)
             {
               fprintf (stderr, 
-                       "%s - add_param_to_batch () failed processing line \"%s\"\n", 
+                       "%s - error: add_param_to_batch () failed processing line \"%s\"\n", 
                        __func__, fgets_buff);
               fclose (fp);
               return -1 ;
             }
         }
     }
+
   fclose (fp);
 
   if (!batches_number)
     {
       fprintf (stderr, 
-                   "%s - failed to load even a single valid batch\n", __func__);
+                   "%s - error: failed to load even a single valid batch\n", __func__);
     }
   else
     {
@@ -269,8 +275,11 @@ static const batch_params_map bp_map [] =
   };
 
 
-static int add_param_to_batch (char*const str_buff, size_t  str_len,
-                    batch_context*const bctx, int*const batch_num)
+static 
+int add_param_to_batch (char*const str_buff, 
+                        size_t  str_len,
+                        batch_context*const bctx, 
+                        int*const batch_num)
 {
   if (!str_buff || !str_len || !bctx)
     return -1;
@@ -383,41 +392,7 @@ static void advance_batch_parser_state (batch_context*const bctx)
   return;
 }
 
-/*
-  Eats leading white space. Returns pointer to the start of 
-  the non-white-space or NULL. Returns via len a new length.
-*/
-char* eat_ws (char* ptr, size_t*const len)
-{
-  if (!ptr || !*len)
-    return NULL;
 
-  while (*len && is_ws (ptr))
-    ++ptr, --(*len);
-
-  return *len ? ptr : NULL;
-}
-
-static char* skip_non_ws (char*ptr, size_t*const len)
-{
-  if (!ptr || !*len)
-    return NULL;
-
-  while (*len && is_non_ws (ptr))
-    ++ptr, --(*len);
-
-  return *len ? ptr : NULL;
-}
-
-static int is_ws (char*const ptr)
-{
-  return (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n') ? 1 : 0;
-}
-
-static int is_non_ws (char*const ptr)
-{
-  return ! is_ws (ptr);
-}
 
 static int set_value_to_param (
                                batch_context*const bctx, 
@@ -470,8 +445,9 @@ static int set_value_to_param (
 
   /*
     The most Object-Oriented switch.
-    TODO: consider splitting it into some function, e.g. according
-    to the sections.
+
+    TODO: consider splitting it into some function, 
+    e.g. according to the sections below.
   */
   switch (bctx->batch_init_state)
     {
@@ -531,7 +507,7 @@ static int set_value_to_param (
       break;
 
     case IP_ADDR_MAX: /* We have number of clients, therefore 
-                         the address is more or less for self-control. */
+                         this IP-address is more or less for self-control. */
      
       if (!inet_aton (value_start, &in_address))
         {
@@ -596,7 +572,7 @@ static int set_value_to_param (
     case  LOGIN_URL:
       if ((url_length = strlen (value_start)) <= 0)
         {
-          fprintf(stderr, "%s - empty url for \"%s\"\n",  __func__,value_start);
+          fprintf(stderr, "%s - error: empty url for \"%s\"\n",  __func__,value_start);
           return -1;
         }
       if (!(bctx->login_url.url_str =(char *)calloc(url_length+1,sizeof (char))))
@@ -725,9 +701,10 @@ static int set_value_to_param (
     case  LOGOFF_URL:
       if ((url_length = strlen (value_start)) <= 0)
         {
-          fprintf(stderr, "%s - empty url for \"%s\"\n", __func__,value_start);
+          fprintf(stderr, "%s - error: empty url for \"%s\"\n", __func__,value_start);
           return -1;
         }
+ 
       if (!(bctx->logoff_url.url_str =(char *)calloc(url_length+1,sizeof (char))))
         {
           fprintf (stderr, 
@@ -760,4 +737,40 @@ static int set_value_to_param (
     } /* 'from switch' */
 
   return 0;
+}
+
+/*
+  Eats leading white space. Returns pointer to the start of 
+  the non-white-space or NULL. Returns via len a new length.
+*/
+char* eat_ws (char* ptr, size_t*const len)
+{
+  if (!ptr || !*len)
+    return NULL;
+
+  while (*len && is_ws (ptr))
+    ++ptr, --(*len);
+
+  return *len ? ptr : NULL;
+}
+
+static char* skip_non_ws (char*ptr, size_t*const len)
+{
+  if (!ptr || !*len)
+    return NULL;
+
+  while (*len && is_non_ws (ptr))
+    ++ptr, --(*len);
+
+  return *len ? ptr : NULL;
+}
+
+static int is_ws (char*const ptr)
+{
+  return (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n') ? 1 : 0;
+}
+
+static int is_non_ws (char*const ptr)
+{
+  return ! is_ws (ptr);
 }

@@ -56,11 +56,11 @@ enum cstate
 /* Forward declarations */
 struct batch_context;
 
-/*
+/******** struct client_context  ***********
   Client context is passed to curl handle and returned back to the tracing
   function and used for output to the logfile.
-  Client context is also heavily used for loading, particularly for smooth
-  loading.
+  Client context is also heavily used for login/logoff, using POST-buffers,
+  and for smooth-mode.
 */
 typedef struct client_context
 {

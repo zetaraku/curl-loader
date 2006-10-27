@@ -30,7 +30,7 @@ LD=gcc
 LDFLAGS=-L./curl-build/lib
 
 #Link Libraries. RedHat/FC require sometimes lidn, remove first '#'
-LIBS= -ldl -lpthread -lrt -lssl -lcrypto -lcurl #-lidn #-lcares
+LIBS= -ldl -lpthread -lrt -lssl -lcrypto -lcurl -lz #-lidn #-lcares
 
 # Include directories
 INCDIR=-I. -I./curl-build/include -I./curl-$(CURL_VER)/lib
