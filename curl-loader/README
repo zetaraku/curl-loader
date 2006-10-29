@@ -81,8 +81,8 @@ PERFORMANCE ISSUES:
 A limit of 1000 clients per batch (due to select) may be worked around by 
 a script, which runs several instances of curl_loader, each with 1000 clients.
 Running several batches with threads (option -t), each with 1000 clients is 
-another valid option, however less stable and more buggy.
-Next release will hopefully incorporate libcurl HYPER API, using 
+another valid option, however, may be less stable - try it.
+Some future release will hopefully incorporate libcurl HYPER API, using 
 curl_multi_socket() approach and epoll support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c
 
@@ -138,17 +138,17 @@ with the following params in each batch:
 
 ----------------------------------------------------------------------------
 ########### GENERAL SECTION ################################
-BATCH_NAME= bulk_batch     # The name of the batch.
+BATCH_NAME= bulk_batch     # The name of the batch. Logfile - bulk_batch.log
 CLIENTS_NUM=3              # Number of clients in the batch
-INTERFACE = eth0           # Name of interface from which to load 
+INTERFACE = eth0           # Name of the network interface from which to load 
 NETMASK=20                 # Netmask in CIDR-notation (number of bits with 1)
 IP_ADDR_MIN= 192.168.1.1   # The client addresses starting address
 IP_ADDR_MAX= 192.168.5.255 # Redundant, for self-control
 CYCLES_NUM= 100            # Number of loading cycles to run, 0 -forever
 
 ########### LOGIN SECTION ##################################
-LOGIN_AUTH=n      # If 'y' or 'Y', login enabled, all other lines of the 
-                  # section to be filled
+LOGIN_AUTH=n      # If 'y' or 'Y', login enabled, all other tags of the 
+                  # section to be filled. If 'n' or 'N' - comment out others
 #LOGIN_USERNAME=  # Usename string
 #LOGIN_PASSWORD=  # Password string
 #LOGIN_REQ_TYPE=  # Use a number to be either GET+POST (1), or POST-only (2).
@@ -156,8 +156,8 @@ LOGIN_AUTH=n      # If 'y' or 'Y', login enabled, all other lines of the
 #
 # To generate multiple unique users with unique passwords, use the string like
 # "username=%s%d&password=%s%d". First %s will be substituted by the 
-# string from LOGIN_USERNAME and %d by the client number. Second %s will
-# be substituted by LOGIN_PASSWORD string and second %d by the same client
+# value of LOGIN_USERNAME tag and %d by the client number. Second %s will
+# be substituted by LOGIN_PASSWORD tag value and second %d by the same client
 # number. For example, if LOGIN_USERNAME=robert, LOGIN_PASSWORD=stam
 # and LOGIN_POST_STR "username=%s%d&password=%s%d" will be formed the
 # string for POST for the client number 1 as "username=robert1&password=stam1".
@@ -168,8 +168,8 @@ LOGIN_AUTH=n      # If 'y' or 'Y', login enabled, all other lines of the
 # %d symbols, e.g. "user=%s&secret=%s". Thus, all clients will have the same
 # POST credentials with the string looking like "user=robert&secret=stam".
 #
-# Note, that the words like 'username', 'user', 'password', 'secret', etc are the
-# fields, that users are required to fill in the POST html page.
+# Note, that the words like 'username', 'user', 'password', 'secret', etc are 
+# just those fields, that login users are required to fill in their POST page.
 
 #LOGIN_URL=                 # A valid http or https url to be used for login
 #LOGIN_URL_MAX_TIME=        # Maximum batch time in seconds to login
@@ -191,8 +191,8 @@ UAS_URL_MAX_TIME = 4        # Maximum batch time in seconds to fetch the url
 UAS_URL_INTERLEAVE_TIME = 0 # Time in seconds to sleep after fetching the url
 
 ########### LOGOFF SECTION #################################
-LOGOFF=n                 # If 'y' or 'Y', login enabled, and other lines 
-                         # of the section to be filled
+LOGOFF=n                 # If 'y' or 'Y', login enabled, and other tags of the 
+                         # section to be filled. If 'n' or 'N' - comment out others
 #LOGOFF_REQ_TYPE=        # Use numbers for GET-only (1), GET+POST (2), POST-only (3)
 #LOGOFF_POST_STR=        # String to be used for logoff, like "op=logoff" 
 #LOGOFF_URL=             # A valid http or https url to be used for logoff
@@ -201,6 +201,15 @@ LOGOFF=n                 # If 'y' or 'Y', login enabled, and other lines
 #LOGOFF_CYCLING=         # If 'y' login should be run in cycles, and not just 
                          # done only once
 --------------------------------------------------------------------------------
+
+Worth to mention, that each batch configuration should contain all tags from
+the section GENERAL as well as LOGIN, UAS and LOGOFF section tags. When LOGIN, 
+UAS or LOGOFF is set as 'y' (yes), all tags for that section to appear 
+(uncommented) and to be set to some valid values (N/A string to be used not 
+to define *POST_STR tags, when POST is not applicable). In the case, that LOGIN, 
+UAS or LOGOFF section tag is disabled by setting 'n' (no) value, thus, the tags 
+of the disabled section should not appear or just to be commented out by '#'.
+
 For more examples, please, look at configs directory.
 
 Note, that currenly there is a limit of 1000 sockets per batch of clients.
