@@ -30,7 +30,7 @@ LD=gcc
 LDFLAGS=-L./curl-build/lib
 
 #Link Libraries. RedHat/FC require sometimes lidn, remove first '#'
-LIBS= -ldl -lpthread -lrt -lssl -lcrypto -lcurl -lz #-lidn #-lcares
+LIBS= -ldl -lpthread -lrt -lssl -lcrypto -lcurl -lz -lidn  #-lcares
 
 # Include directories
 INCDIR=-I. -I./curl-build/include -I./curl-$(CURL_VER)/lib
@@ -40,7 +40,7 @@ LIBCURL=libcurl
 all: $(TARGET)
 
 $(TARGET): $(LIBCURL) $(OBJ)
-	$(LD) $(LDFLAGS) $(DEBUG_FLAGS) -o $@ $(OBJ) $(LIBS)
+	$(LD) $(DEBUG_FLAGS) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
 
 nobuildcurl: $(OBJ)
 	$(LD) $(DEBUG_FLAGS) -o $(TARGET) $(OBJ) $(LIBS)
