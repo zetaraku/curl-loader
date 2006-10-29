@@ -203,10 +203,10 @@ LOGOFF=n                 # If 'y' or 'Y', login enabled, and other tags of the
 --------------------------------------------------------------------------------
 
 Worth to mention, that each batch configuration should contain all tags from
-the section GENERAL as well as LOGIN, UAS and LOGOFF section tags. When LOGIN, 
-UAS or LOGOFF is set as 'y' (yes), all tags for that section to appear 
+the section GENERAL as well as LOGIN_AUTH, UAS and LOGOFF section tags. When 
+LOGIN_AUTH, UAS or LOGOFF is set as 'y' (yes), all tags for that section to appear 
 (uncommented) and to be set to some valid values (N/A string to be used not 
-to define *POST_STR tags, when POST is not applicable). In the case, that LOGIN, 
+to define *POST_STR tags, when POST is not applicable). In the case, that LOGIN_AUTH, 
 UAS or LOGOFF section tag is disabled by setting 'n' (no) value, thus, the tags 
 of the disabled section should not appear or just to be commented out by '#'.
 
