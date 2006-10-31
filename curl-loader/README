@@ -8,7 +8,7 @@ ABOUT:
 a script several curl_loaders - tens of thousands) clients, each with
 its own source IP-address.
     This version emulates HTTP/HTTPS clients. All activities of each client are
-logged to a file: connection establishment, request headers sent, response headers
+logged to file: connection establishment, request headers sent, response headers
 received, data received and all TCP as well as HTTP and TLS (for HTTPS) errors. 
 The tool can be easily extended to support ftp, ftps, telnet, tftp, ldap, etc other 
 application protocols, supported by the great libcurl library.
@@ -24,22 +24,29 @@ SUCCESSFULLY USED:
 1. To generate Gbps traffic from thousands of TCP clients to test 
     thousands of firewalling and NAT iptables/ipset entries impact 
     at CPU consumption of a gateway device. 
-    Curl_loader provided client load against Apache web-server fetching a 
+    curl-loader provided client load against Apache web-server fetching a 
     url with a gigabyte file, thus creating a permanent heavy-load 
     traffic contaning thousand of tcp-streams at the gateway in the middle.
 
-2. To emulate http and https clients redirection, authentication and simulate
+2. To emulate HTTP/HTTPS clients redirection, authentication and simulate
     user-behaviour and real load for thousands of such clients to test 
     authentication gateway. 
-    Curl_loader provided client load against Apache web-server with the gateway 
+    curl-loader provided client load against Apache web-server with the gateway 
     in the middle, where the gateway performed browser hijecking and HTTP- 
     redirection of the curl-clients to the HTTPS url at the gateway own 
     web-server. HTTPS page of the gateway web-server provided a POST form,
     filled with username and password for its further authentication against
-    external AAA (RADIUS) server. If the authentication was OK, user (curl
-    client) was allowed to enter the Internet and download several urls, etc 
-    perform some sort of emulated by curl_loader network activity.   
+    external AAA (RADIUS) server. If the authentication was OK, user (a libcurl
+    client object) was allowed to enter the Internet and download several urls, 
+    etc. perform some sort of emulated by curl-loader network activity, namely,
+    fetching several urls and sleeping in between them.   
     
+3. To test web-server pages, authenticating tens and hundred thousand of
+   clients, where each clients comes to https url using GET, is redirected
+   to another url, providing POST form, and after authentication gets cookies
+   set to the client. Client activities are further simulated by fetching
+   several site urls and sleeping. Clients are doing logoff via GET to the 
+   logoff-url (and cookies).
 
 MAY BE USED:
 1. To create testing load for various HTTP/HTTPS/FTP/FTPS/LDAP, etc devices, 
@@ -59,11 +66,9 @@ matters should be fine tuned in build_curl.sh and Makefile. Sorry.
 Tarball of curl should be fetched by wget from the curl web-site. 
 If a computer does not have Internet connection, bring the package yourself 
 and put it inside to the distribution directory.
-We are normally building it at Debian. Sometimes, libcurl has issues with
-buidling at RedHat/FC, where it requires linking with libidn. Correct it
-in the Makefile. 
-To build with optimization, please, follow the instructions in Makefile and
-build_curl.sh
+We are normally building it at Debian. Sometimes, libcurl has building issues 
+Correct them in the Makefile. To build with optimization, please, follow 
+the instructions in Makefile and build_curl.sh
 
 CONFIGURATION:
 curl_loader -h is your friend. Some examples of configuration are suggested
@@ -83,7 +88,7 @@ a script, which runs several instances of curl_loader, each with 1000 clients.
 Running several batches with threads (option -t), each with 1000 clients is 
 another valid option, however, may be less stable - try it.
 Some future release will hopefully incorporate libcurl HYPER API, using 
-curl_multi_socket() approach and epoll support by libevent as in
+curl_multi_socket() approach and epoll API support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c
 
 
@@ -147,11 +152,11 @@ IP_ADDR_MAX= 192.168.5.255 # Redundant, for self-control
 CYCLES_NUM= 100            # Number of loading cycles to run, 0 -forever
 
 ########### LOGIN SECTION ##################################
-LOGIN=n          # If 'y' or 'Y', login enabled, all other tags of the 
+LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the 
                   # section to be filled. If 'n' or 'N' - comment out others
 #LOGIN_USERNAME=  # Usename string
 #LOGIN_PASSWORD=  # Password string
-#LOGIN_REQ_TYPE=  # Use a number to be either GET+POST (1), or POST-only (2).
+#LOGIN_REQ_TYPE=  # Use string either GET+POST or POST
 #LOGIN_POST_STR=  # POST string matrix. See below:
 #
 # To generate multiple unique users with unique passwords, use the string like
@@ -193,7 +198,7 @@ UAS_URL_INTERLEAVE_TIME = 0 # Time in seconds to sleep after fetching the url
 ########### LOGOFF SECTION #################################
 LOGOFF=n                 # If 'y' or 'Y', login enabled, and other tags of the 
                          # section to be filled. If 'n' or 'N' - comment out others
-#LOGOFF_REQ_TYPE=        # Use numbers for GET-only (1), GET+POST (2), POST-only (3)
+#LOGOFF_REQ_TYPE=        # Use strings to be GET, GET+POST, or POST
 #LOGOFF_POST_STR=        # String to be used for logoff, like "op=logoff" 
 #LOGOFF_URL=             # A valid http or https url to be used for logoff
 #LOGOFF_URL_MAX_TIME=    # Maximum batch time in seconds to logoff
@@ -204,29 +209,23 @@ LOGOFF=n                 # If 'y' or 'Y', login enabled, and other tags of the
 
 Worth to mention, that each batch configuration should contain all tags from
 the section GENERAL as well as LOGIN, UAS and LOGOFF section tags. When 
-LOGIN, UAS or LOGOFF is set as 'y' (yes), all tags for that section to appear 
-(uncommented) and to be set to some valid values (N/A string to be used not 
-to define *POST_STR tags, when POST is not applicable). In the case, that LOGIN, 
-UAS or LOGOFF section tag is disabled by setting 'n' (no) value, thus, the tags 
-of the disabled section should not appear or just to be commented out by '#'.
+LOGIN, UAS or LOGOFF is set as 'y' (yes), for all tags for that section should 
+appear (uncommented) and to be set to some valid values (N/A string to be used 
+not to define *POST_STR tags, when POST is not applicable). In the case, that 
+LOGIN, UAS or LOGOFF section tag is disabled by setting 'n' (no) value, thus, 
+all the tags of the disabled section are not appear or just to be simply 
+commented out by '#'.
 
 For more examples, please, look at configs directory.
 
 Note, that currenly there is a limit of 1000 sockets per batch of clients.
 Running thousands and more clients, please do not forget the options:
 - to increase limit of open desriptors in shell by running e.g. "#ulimit -n 10000":
-- to increase total limit of  open descriptors in systeme somewhere in /proc
+- to increase total limit of  open descriptors in system somewhere in /proc
 - to consider reusing sockets in time-wait state: by "#echo 1 > 
   /proc/sys/net/ipv4/tcp_tw_recycle"
 - and/or  "#echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse"
 
-There are two login modes supported. GET+POST (1) and POST-only (2). 
-When both username and password are provided, login can be made using the
-first url only once for each client either for GET with following POST or
-for POST only (note, that all 3xx HTTP redirections are supported as
-build-ins by libcurl).
-
-There are three logoff modes supported as GET-only, GET+POST and POST-only,
-which stay for 1, 2 and 3 numbers. 
-
+There are two login modes supported. GET+POST and POST-only. 
+There are three logoff modes supported as GET-only, GET+POST and POST-only.
 Cookies are enabled in curl-loader by default. 

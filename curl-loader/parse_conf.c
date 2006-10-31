@@ -121,6 +121,10 @@ typedef struct batch_params_map
 
 #define BATCH_MAX_CLIENTS_NUM 4096
 
+#define REQ_GET "GET"
+#define REQ_POST "POST"
+#define REQ_GET_POST "GET+POST"
+
 
 
 static int add_param_to_batch (char*const input, 
@@ -392,8 +396,6 @@ static void advance_batch_parser_state (batch_context*const bctx)
   return;
 }
 
-
-
 static int set_value_to_param (
                                batch_context*const bctx, 
                                char*const value, 
@@ -446,7 +448,7 @@ static int set_value_to_param (
   /*
     The most Object-Oriented switch.
 
-    TODO: consider splitting it into some function, 
+    TODO: consider splitting it into some functions, 
     e.g. according to the sections below.
   */
   switch (bctx->batch_init_state)
@@ -546,18 +548,18 @@ static int set_value_to_param (
       break;
 
     case LOGIN_REQ_TYPE:
-      bctx->login_req_type = atoi (value_start);
-      if (bctx->login_req_type != LOGIN_REQ_TYPE_GET_AND_POST
-          && 
-          bctx->login_req_type != LOGIN_REQ_TYPE_POST)
+      if (!strcmp (value_start, REQ_GET_POST))
+          bctx->login_req_type = LOGIN_REQ_TYPE_GET_AND_POST;
+      else if (!strcmp (value_start, REQ_POST))
+          bctx->login_req_type = LOGIN_REQ_TYPE_POST;
+      else
         {
           fprintf (stderr, 
-                   "%s - error: login_req_type (%d) not valid. Valid are %d or %d .\n", 
-                   __func__, bctx->login_req_type, 
-                   LOGIN_REQ_TYPE_GET_AND_POST, LOGIN_REQ_TYPE_POST);
+                   "%s - error: LOGIN_REQ_TYPE (%s) is not valid. Use %s or %s .\n", 
+                   __func__, value_start, REQ_GET_POST, REQ_POST);
           return -1;
-        }
-      break; 
+        }        
+      break;
 
     case LOGIN_POST_STR:
       // TODO: validate the input. Important !!!.
@@ -673,18 +675,17 @@ static int set_value_to_param (
          future options to support. */
 
     case LOGOFF_REQ_TYPE:
-      bctx->logoff_req_type = atoi (value_start);
-
-      if (bctx->logoff_req_type != LOGOFF_REQ_TYPE_GET && 
-          bctx->logoff_req_type != LOGOFF_REQ_TYPE_GET_AND_POST &&
-          bctx->logoff_req_type != LOGOFF_REQ_TYPE_POST)
+      if (!strcmp (value_start, REQ_GET_POST)) 
+          bctx->logoff_req_type = LOGOFF_REQ_TYPE_GET_AND_POST;
+      else if (!strcmp (value_start, REQ_GET))
+        bctx->logoff_req_type = LOGOFF_REQ_TYPE_GET;
+      else if (!strcmp (value_start, REQ_POST))
+        bctx->logoff_req_type = LOGOFF_REQ_TYPE_POST;
+      else
         {
           fprintf (stderr, 
-                   "%s - error: logoff_req_type (%d) is not valid. Consider %d, %d or %d.\n", 
-                   __func__, bctx->logoff_req_type, 
-                   LOGOFF_REQ_TYPE_GET, 
-                   LOGOFF_REQ_TYPE_GET_AND_POST, 
-                   LOGOFF_REQ_TYPE_POST);
+                   "%s - error: LOGOFF_REQ_TYPE (%s) is not valid. Consider %s, %s or %s.\n", 
+                   __func__, value_start, REQ_GET, REQ_POST, REQ_GET_POST);
           return -1;
         }
       break;

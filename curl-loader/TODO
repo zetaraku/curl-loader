@@ -1,35 +1,22 @@
-1. Future release will hopefully incorporate libcurl HYPER API, using 
+1. Menu interface to configure testing conf-file. Dialog-like interface
+   may be a good option. There are several requests for that, particularly
+   from QA/validation people.
+
+2. Good statistics from the smooth mode to be generalized to the 
+storming mode as well. We need to provide more statistics, which
+not to be limited just to success and error numbers. Requested counters
+are redirects numbers, server TCP delay, server SSL-delay (HTTPS only) 
+and server application (HTTP) delay per client as well as averages per
+batch of clients.
+
+3. Configuration/making improvements starting from moving all source-files
+to src directory etc
+
+4. Future release will hopefully incorporate libcurl HYPER API, using 
 curl_multi_socket() approach and epoll support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
 from a single process can become a reality.
 
-2. Good statistics from the smooth mode to be generalized to the 
-storming mode as well.
-
-3. Two login modes (GET-POST and POST-only) and 3 logoff modes
-(GET-only, GET-POST and POST-only) need to be tested more
-both for storming and smooth loading modes.
-
-4. More testing is required for multithreading option.
-
-5. Login authentication and logoff should be separated in the
-batch configuration file to some separate modules.
-
-6. Some modularity of configuration file is necessary. XML is a
-valid option, but it brings a one more dependency to handle. 
-Michael has an idea of a user-interface script, may be linux kernel
-like Dialog GUI interface to assist user in configuring configuration
-batch files. All login authentication relevant configurations should be
-enabled only, when they are relevant, comprising login-mode, 
-username-password-mode (constant username/password for all clients or
-using them as basewords and incrementing it), logoff modes.
-
-Storming or smooth loading modes should be also be part of a batch file
-configuration, thus it will be a per-batch option (using threads, of course).
-
-7. Configuration/making improvements starting from moving all source-files
-to src directory, libidni option for RedHat/Fedora, etc
-
-8. Advancing to the next libcurl release in order to get options necessary
+5. Advancing to the next libcurl release in order to get libcurl API 
 for libcurl hyper mode and integration with libevent for epoll event 
 demultiplexing.
