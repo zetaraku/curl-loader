@@ -95,7 +95,7 @@ typedef struct batch_context
 
   /*------------------------ LOGIN SECTION -------------------------------- */
 
-  int do_login_auth; /* Flag, whether to do authentication. If zero - don't do, else 
+  int do_login; /* Flag, whether to do authentication. If zero - don't do, else 
                   do it. When zero, username, password, etc are not relevant. */
 
   char login_username[32]; /* Authentication login_username */

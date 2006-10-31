@@ -178,7 +178,7 @@ void print_help ()
   fprintf (stderr, "CYCLES_NUM= 100            # Number of loading cycles to run, 0 -forever\n");
   fprintf (stderr, "\n");
   fprintf (stderr, "########### LOGIN SECTION ##################################\n");
-  fprintf (stderr, "LOGIN_AUTH=n      # If 'y' or 'Y', login enabled, all other lines of the\n"); 
+  fprintf (stderr, "LOGIN=n      # If 'y' or 'Y', login enabled, all other lines of the\n"); 
   fprintf (stderr, "                  # section to be filled\n");
   fprintf (stderr, "#LOGIN_USERNAME=  # Usename string\n");
   fprintf (stderr, "#LOGIN_PASSWORD=  # Password string\n");

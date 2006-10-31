@@ -51,7 +51,7 @@ int user_activity_storm (client_context*const cdata)
      Make authentication login. If login operation should not be cycled.
      For such cases login is performed only once for each user.
   */
-  if (bctx->do_login_auth && !bctx->login_cycling)
+  if (bctx->do_login && !bctx->login_cycling)
     {
       if (login_clients_storm (cdata, 0) == -1)
         {
@@ -66,7 +66,7 @@ int user_activity_storm (client_context*const cdata)
       /* 
          Login, when the login operation to be done in cycles. 
        */
-      if (bctx->do_login_auth && bctx->login_cycling)
+      if (bctx->do_login && bctx->login_cycling)
         {
           if (login_clients_storm (cdata, cycle) == -1)
             {
@@ -94,7 +94,7 @@ int user_activity_storm (client_context*const cdata)
                                    u_index, /* index of url string in array */
                                    cycle,
                                    0);
-              cdata[k].client_state = CSTATE_UAS;
+              cdata[k].client_state = CSTATE_UAS_CYCLING;
             }
             
           /* Fetch the new url by each client of the batch.*/

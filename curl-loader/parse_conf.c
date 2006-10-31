@@ -68,7 +68,7 @@ enum parsing_state
 
     /*------------------------ LOGIN SECTION -------------------------------- */
 
-    LOGIN_AUTH,
+    LOGIN,
     /* if Login Authentication is yes - optional fields*/
     LOGIN_USERNAME,
     LOGIN_PASSWORD,
@@ -236,7 +236,7 @@ static const batch_params_map bp_map [] =
 
    /*------------------------ LOGIN SECTION -------------------------------- */
 
-    {LOGIN_AUTH, "LOGIN_AUTH"},
+    {LOGIN, "LOGIN"},
     /* if Login Authentication is yes - then the optional fields follow: */
     {LOGIN_USERNAME, "LOGIN_USERNAME"},
     {LOGIN_PASSWORD,"LOGIN_PASSWORD"},
@@ -358,8 +358,8 @@ static void advance_batch_parser_state (batch_context*const bctx)
 
   switch (bctx->batch_init_state)
     {
-    case LOGIN_AUTH:
-      if (! bctx->do_login_auth) /* If Login is of no interest - jump to UAS */
+    case LOGIN:
+      if (! bctx->do_login) /* If Login is of no interest - jump to UAS */
           bctx->batch_init_state = UAS;
       else
            ++bctx->batch_init_state;
@@ -533,8 +533,8 @@ static int set_value_to_param (
 
    /*------------------------ LOGIN SECTION -------------------------------- */
 
-    case LOGIN_AUTH:
-      bctx->do_login_auth = (*value_start == 'Y' || *value_start == 'y') ? 1 : 0;
+    case LOGIN:
+      bctx->do_login = (*value_start == 'Y' || *value_start == 'y') ? 1 : 0;
       break;
 
     case LOGIN_USERNAME:

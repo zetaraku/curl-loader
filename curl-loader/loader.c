@@ -287,7 +287,7 @@ static int initial_handles_init (client_context*const cdata)
     }
 
   /* Allocate and fill login/logoff POST strings for each client. */ 
-    if (bctx->do_login_auth)
+    if (bctx->do_login)
     {
       if (alloc_init_client_post_buffers (cdata) == -1)
         {
@@ -360,7 +360,7 @@ int single_handle_setup (client_context*const cctx,
     
   /* Set the url */
   curl_easy_setopt (handle, CURLOPT_URL, url);
-  cctx->url_curr_index = url_num; /* set the index to client for smooth loading */
+  cctx->uas_url_curr_index = url_num; /* set the index to client for smooth loading */
   
 
   curl_easy_setopt (handle, CURLOPT_DNS_CACHE_TIMEOUT, -1);
@@ -474,9 +474,11 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
         case CSTATE_LOGIN:
           url = cctx->bctx->login_url.url_str;
           break;
-        case CSTATE_UAS:
-          url = cctx->bctx->uas_url_ctx_array[cctx->url_curr_index].url_str;
+
+        case CSTATE_UAS_CYCLING:
+          url = cctx->bctx->uas_url_ctx_array[cctx->uas_url_curr_index].url_str;
           break;
+
         case CSTATE_LOGOFF:
           url = cctx->bctx->logoff_url.url_str;
           break;
@@ -499,7 +501,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                cctx->cycle_num, cctx->client_name, 
                url_logging && url ? url : "", data);
 
-       cctx->client_state = STATE_ERROR; // Number 4 - exactly as state 
+       cctx->client_state = CSTATE_ERROR;
       break;
 
     case CURLINFO_HEADER_OUT:
@@ -538,7 +540,8 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
       
     case CURLINFO_HEADER_IN:
       /* 
-         CURL library assists us by passing whole HTTP-headers, not just parts. 
+         CURL library assists us by passing to the full HTTP-headers, 
+         not just parts. 
       */
       if (cctx->is_https)
         cctx->bctx->https_delta.data_in += (unsigned long) size; 
@@ -738,17 +741,14 @@ static int alloc_init_client_contexts (
          Useful to get the client's CURL handle from bctx. 
       */
       cctx[i].client_index = i;
+      cctx[i].uas_url_curr_index = 0; /* Actually zeroed by calloc. */
 
-      cctx[i].url_curr_index = 0; /* Actually zeroed by calloc. */
-
-      /* 
-         Set output stream for each client to be either batch logfile or stderr. 
-      */
+      /* Set output stream for each client to be either batch logfile or stderr. */
       cctx[i].file_output = stderr_print_client_msg ? stderr : output_file;
 
       /* 
-         Set pointer to batch for each client to be user to get configuration 
-         and set back statistics to batch 
+         Set pointer in client to its batch object. The pointer will be used to get 
+         configuration and set back statistics to batch.
       */
       cctx[i].bctx = bctx;
     }
