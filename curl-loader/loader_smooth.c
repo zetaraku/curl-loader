@@ -213,10 +213,6 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 static int load_next_step (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
-  
-  // do we need it?
-  //curl_multi_remove_handle (bctx->multiple_handle, 
-  //                          bctx->client_handles_array[cctx->client_index]);
 
   //fprintf (stderr, "%s - entered client_state:%d, url:%d.\n", 
   //          __func__, cctx->client_state, cctx->uas_url_curr_index);
@@ -224,7 +220,8 @@ static int load_next_step (client_context* cctx)
   if (cctx->client_state != CSTATE_ERROR &&
       cctx->client_state != CSTATE_INIT)
     {
-      cctx->is_https ? bctx->https_delta.requests++ : bctx->http_delta.requests;
+      cctx->is_https ? bctx->https_delta.requests++ : bctx->http_delta.requests++;
+      //fprintf (stderr, "Inc to %lld\n", bctx->http_delta.requests); 
     }
 
   switch (cctx->client_state)

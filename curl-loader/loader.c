@@ -464,7 +464,9 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
 
   if (url_logging)
     {
-      // TODO: broken for the smooth mode
+      /* 
+         TODO: broken for the smooth mode
+      */
       /* 
          TODO: Clients are being redirected back and forth by 3xx redirects. 
          The real url is of our interest.
@@ -474,11 +476,9 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
         case CSTATE_LOGIN:
           url = cctx->bctx->login_url.url_str;
           break;
-
         case CSTATE_UAS_CYCLING:
           url = cctx->bctx->uas_url_ctx_array[cctx->uas_url_curr_index].url_str;
           break;
-
         case CSTATE_LOGOFF:
           url = cctx->bctx->logoff_url.url_str;
           break;
@@ -579,17 +579,20 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
             fprintf(cctx->file_output, "%ld %s %s :!! %ld CLIENT_ERROR : %s\n", 
                     cctx->cycle_num, cctx->client_name, 
                     url_logging && url ? url : "", response_status, data);
+            /* TODO: count client errors - wrong - cctx->client_state =CSTATE_ERROR; */
             break;
           case 5: /* 5xx Server Error */
             fprintf(cctx->file_output, "%ld %s %s :!! %ld SERVER_ERROR : %s\n", 
                     cctx->cycle_num, cctx->client_name,
                     url_logging && url ? url : "", response_status, data);
+            /* TODO: count client errors - wrong - cctx->client_state = CSTATE_ERROR; */
             break;
 
           default :
             fprintf(cctx->file_output, 
                     "%ld %s:<= parsing error: wrong status code \"%s\".\n", 
                     cctx->cycle_num, cctx->client_name, (char*) data);
+             cctx->client_state = CSTATE_ERROR;
             break;
           }
       }
