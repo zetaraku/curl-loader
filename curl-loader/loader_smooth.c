@@ -63,17 +63,24 @@ static void dump_stat_workhorse (int clients,
 
 int user_activity_smooth (client_context* cctx)
 {
-  int i;
+  int j, i;
   unsigned long now;
   batch_context* bctx = cctx->bctx;
   
-  bctx->start_time = bctx->last_measure = get_tick_count(); 
+  bctx->start_time = bctx->last_measure = get_tick_count();
+
+  for (j = 0 ; j < bctx->client_num; j++)
+    if (load_next_step (&cctx[j]) == -1)
+      {
+        fprintf(stderr,"%s error: load_next_step() initial failed\n", __func__);
+        return -1;
+      }
   
   while(bctx->curl_handlers_count) 
     {
       if (mget_url_smooth (bctx) == -1) 
         {
-          fprintf (stderr, "%s - mget_url () failed.\n", __func__) ;
+          fprintf (stderr, "%s error: mget_url () failed.\n", __func__) ;
           return -1;
         }
     }
@@ -103,8 +110,8 @@ int user_activity_smooth (client_context* cctx)
     {
       if (cctx[i].client_state == CSTATE_ERROR)
         {
-          fprintf(stderr,"!!!Error!!! client %s failed\n", 
-                  cctx[i].client_name/* client buffer of client */);
+          fprintf(stderr,"%s - error client %s failed\n", 
+                  __func__, cctx[i].client_name);
         }
     }
 
@@ -133,8 +140,8 @@ static int mget_url_smooth (batch_context* bctx)
 
         max_timeout -= ((float)timeout.tv_sec + (float)timeout.tv_usec/1000000.0) ; 
         curl_multi_fdset(mhandle, &fdread, &fdwrite, &fdexcep, &maxfd);
-        fprintf (stderr, "%s - Waiting for %d clients with seconds %f.\n", 
-                 name, still_running, max_timeout);
+        //fprintf (stderr, "%s - Waiting for %d clients with seconds %f.\n", 
+        //         name, still_running, max_timeout);
 
         rc = select (maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout) ;
         switch(rc) 
@@ -188,7 +195,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
             client_context *cctx = (client_context *) shandle->set.debugdata;
           
             int client_state =  load_next_step (cctx);
-            fprintf (stderr, "%s - after load_next_step client state %d.\n", __func__, client_state);
+            //fprintf (stderr, "%s - after load_next_step client state %d.\n", __func__, client_state);
 
             if (client_state == CSTATE_ERROR || client_state == CSTATE_FINISHED_OK) 
               {
@@ -351,7 +358,7 @@ static int setup_uas (client_context* cctx)
                        0 /* GET - zero, unless we'll need to make POST here */
                        );
 
-  return CSTATE_UAS_CYCLING;
+  return cctx->client_state = CSTATE_UAS_CYCLING;
 }
 
 static int load_login_state (client_context* cctx)
