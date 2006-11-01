@@ -1,4 +1,4 @@
-version 0.18, 1/11/2006
+version 0.18, 1/11/2006 svn-21
 
 -Major improvement of configuration. Several command line options removed and
 instread the configuration file enhanced. Configuration file separated to several
