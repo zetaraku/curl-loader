@@ -182,7 +182,7 @@ void print_help ()
   fprintf (stderr, "                  # section to be filled\n");
   fprintf (stderr, "#LOGIN_USERNAME=  # Usename string\n");
   fprintf (stderr, "#LOGIN_PASSWORD=  # Password string\n");
-  fprintf (stderr, "#LOGIN_REQ_TYPE=  # Use a number to be either GET+POST (1), or POST-only (2).\n");
+  fprintf (stderr, "#LOGIN_REQ_TYPE=  # Either GET+POST , or POST strings .\n");
   fprintf (stderr, "#LOGIN_POST_STR=  # POST string matrix. See below:\n");
   fprintf (stderr, "#\n");
   fprintf (stderr, "# To generate multiple unique users with unique passwords, use the string like\n");
@@ -190,10 +190,10 @@ void print_help ()
   fprintf (stderr, "# string from LOGIN_USERNAME and %%d by the client number. Second %%s will\n");
   fprintf (stderr, "# be substituted by LOGIN_PASSWORD string and second %%d by the same client\n");
   fprintf (stderr, "# number. For example, if LOGIN_USERNAME=robert, LOGIN_PASSWORD=stam\n");
-  fprintf (stderr, "# and LOGIN_POST_STR \"username=%%s%%d&password=%%s%%d\" will be formed the\n");
-  fprintf (stderr, "# string for POST for the client number 1 as \"username=robert1&password=stam1\".\n");
-  fprintf (stderr, "# In such case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just \n");
-  fprintf (stderr, "# as bases for generating unique user credentials.\n");
+  fprintf (stderr, "# and LOGIN_POST_STR \"username=%%s%%d&password=%%s%%d\",  the string\n");
+  fprintf (stderr, "# for POST-ing client number 1 will be \"username=robert1&password=stam1\".\n");
+  fprintf (stderr, "# In such case LOGIN_USERNAME and LOGIN_PASSWORD strings are used \n");
+  fprintf (stderr, "# as base-words to generate unique user credentials.\n");
   fprintf (stderr, "#\n");
   fprintf (stderr, "# To use the username and password 'as as', just provide LOGIN_POST_STR without \n");
   fprintf (stderr, "# %%d symbols, e.g. \"user=%%s&secret=%%s\". Thus, all clients will have the same\n");
@@ -201,6 +201,7 @@ void print_help ()
   fprintf (stderr, "#\n");
   fprintf (stderr, "# Note, that the words like 'username', 'user', 'password', 'secret', etc are the\n");
   fprintf (stderr, "# fields, that users are required to fill in the POST html page.\n");
+  fprintf (stderr, "# Place N/A to LOGIN_POST_STR and LOGOFF_POST_STR, when no POST used.\n");
   fprintf (stderr, "\n");
   fprintf (stderr, "#LOGIN_URL=                 # A valid http or https url to be used for login\n");
   fprintf (stderr, "#LOGIN_URL_MAX_TIME=        # Maximum batch time in seconds to login\n");
@@ -224,7 +225,7 @@ void print_help ()
   fprintf (stderr, "########### LOGOFF SECTION #################################\n");
   fprintf (stderr, "LOGOFF=n                 # If 'y' or 'Y', login enabled, and other lines \n");
    fprintf (stderr, "                        # of the section to be filled\n");
-  fprintf (stderr, "#LOGOFF_REQ_TYPE=        # Use numbers for GET-only (1), GET+POST (2), POST-only (3)\n");
+  fprintf (stderr, "#LOGOFF_REQ_TYPE=        # Use GET , GET+POST , or POST strings\n");
   fprintf (stderr, "#LOGOFF_POST_STR=        # String to be used for logoff, like \"op=logoff\" \n");
   fprintf (stderr, "#LOGOFF_URL=             # A valid http or https url to be used for logoff\n");
   fprintf (stderr, "#LOGOFF_URL_MAX_TIME=    # Maximum batch time in seconds to logoff\n");

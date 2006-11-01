@@ -1,4 +1,4 @@
-    curl-loader, version 0.18, 12/10/2006
+    curl-loader, version 0.18, 1/11/2006
 
     Robert Iakobashvili, Ashdod, Israel, coroberti@gmail.com
     Michael Moser, Modiin, Israel, moser.michael@gmail.com
@@ -21,32 +21,36 @@ sort of activities. Configurable activities of the simulated clients are:
 
 SUCCESSFULLY USED:
 
-1. To generate Gbps traffic from thousands of TCP clients to test 
-    thousands of firewalling and NAT iptables/ipset entries impact 
-    at CPU consumption of a gateway device. 
-    curl-loader provided client load against Apache web-server fetching a 
-    url with a gigabyte file, thus creating a permanent heavy-load 
-    traffic contaning thousand of tcp-streams at the gateway in the middle.
+1. To emulate HTTP/HTTPS clients redirection, authentication and simulate
+    user-behaviour and real load for thousands of such clients for testing an 
+    authentication gateway.
 
-2. To emulate HTTP/HTTPS clients redirection, authentication and simulate
-    user-behaviour and real load for thousands of such clients to test 
-    authentication gateway. 
     curl-loader provided client load against Apache web-server with the gateway 
     in the middle, where the gateway performed browser hijecking and HTTP- 
     redirection of the curl-clients to the HTTPS url at the gateway own 
-    web-server. HTTPS page of the gateway web-server provided a POST form,
-    filled with username and password for its further authentication against
+    web-server. HTTPS page of the web-server provided a POST form to be filled
+    with username and password for the client/user authentication against
     external AAA (RADIUS) server. If the authentication was OK, user (a libcurl
-    client object) was allowed to enter the Internet and download several urls, 
-    etc. perform some sort of emulated by curl-loader network activity, namely,
-    fetching several urls and sleeping in between them.   
+    client object) was allowed to enter the Internet and to perform some sort of 
+    simulated by curl-loader network activity, namely, fetching some urls and 
+    sleeping in between them.   
     
-3. To test web-server pages, authenticating tens and hundred thousand of
-   clients, where each clients comes to https url using GET, is redirected
-   to another url, providing POST form, and after authentication gets cookies
-   set to the client. Client activities are further simulated by fetching
-   several site urls and sleeping. Clients are doing logoff via GET to the 
-   logoff-url (and cookies).
+2. To test web-server pages, authenticating tens and hundred thousand of
+    clients, where each clients comes to https url using GET and redirected
+    to another url, providing POST form. After successful authentication the 
+    web-server sets cookies set to the client (each client simulates browser by
+    using a libcurl object). Client activities are further simulated by fetching
+    fetching some urls and sleeping in between. Clients are doing logoff via 
+    GET to the logoff-url (using cookies).
+
+3. To generate Gbps traffic from thousands of TCP/HTTP clients to test the 
+    impact of thousands of firewalling and NAT iptables/ipset rules and 
+    hundreds of the rules deleted and added each second at performance of a 
+    gateway device.
+
+    curl-loader provided client load against Apache web-server fetching a 
+    url with a gigabyte file, thus, creating a permanent heavy-load 
+    traffic contaning thousand of tcp-streams at the gateway in the middle.
 
 MAY BE USED:
 1. To create testing load for various HTTP/HTTPS/FTP/FTPS/LDAP, etc devices, 
@@ -66,13 +70,13 @@ matters should be fine tuned in build_curl.sh and Makefile. Sorry.
 Tarball of curl should be fetched by wget from the curl web-site. 
 If a computer does not have Internet connection, bring the package yourself 
 and put it inside to the distribution directory.
-We are normally building it at Debian. Sometimes, libcurl has building issues 
-Correct them in the Makefile. To build with optimization, please, follow 
-the instructions in Makefile and build_curl.sh
+We are normally building it at Debian. When libcurl of curl-loader have building 
+issues, correct them in the Makefile and build_curl.sh. To build with optimization, 
+please, follow the instructions in Makefile and build_curl.sh
 
 CONFIGURATION:
 curl_loader -h is your friend. Some examples of configuration are suggested
-in the files located in "configs" directory.
+in the files, located in "configs" directory.
 
 ENVIRONMENT: ATTENTION !!! IMPORTANT !!!
 Running hundlers and thousands of clients, please do not forget:
@@ -101,8 +105,8 @@ Another mode is a so-called "smooth" (-m2 command line), where each
 client spends as much time as wishes and starts another url or another 
 cycle only after completing the previous url.
 A combination of the both modes (two separate instances of the program)
-can provide somehow realistic behavior with some smooth constant load
-and bursts of requests.
+can provide somehow realistic behavior with some "smooth" load plus
+"storming" bursts of requests.
 
 LICENSE:
 Actually it is GPL2 due to the code from iprouted2. However, if somebody
@@ -160,21 +164,21 @@ LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the
 #LOGIN_POST_STR=  # POST string matrix. See below:
 #
 # To generate multiple unique users with unique passwords, use the string like
-# "username=%s%d&password=%s%d". First %s will be substituted by the 
-# value of LOGIN_USERNAME tag and %d by the client number. Second %s will
-# be substituted by LOGIN_PASSWORD tag value and second %d by the same client
+# "username=%s%d&password=%s%d". First '%s' will be substituted by the 
+# value of LOGIN_USERNAME tag and '%d' by the client number. Second '%s' will
+# be substituted by LOGIN_PASSWORD tag value and second '%d' by the same client
 # number. For example, if LOGIN_USERNAME=robert, LOGIN_PASSWORD=stam
-# and LOGIN_POST_STR "username=%s%d&password=%s%d" will be formed the
-# string for POST for the client number 1 as "username=robert1&password=stam1".
-# In such case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just 
-# as bases for generating unique user credentials.
+# and LOGIN_POST_STR "username=%s%d&password=%s%d", the final POST string, 
+# used for the client number 1, will be  "username=robert1&password=stam1".
+# In this case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just 
+# as base-words for generating unique user credentials by appending an number.
 #
 # To use the username and password 'as as', just provide LOGIN_POST_STR without 
 # %d symbols, e.g. "user=%s&secret=%s". Thus, all clients will have the same
 # POST credentials with the string looking like "user=robert&secret=stam".
 #
 # Note, that the words like 'username', 'user', 'password', 'secret', etc are 
-# just those fields, that login users are required to fill in their POST page.
+# those fields, that login users are required to fill in their POST page.
 
 #LOGIN_URL=                 # A valid http or https url to be used for login
 #LOGIN_URL_MAX_TIME=        # Maximum batch time in seconds to login
@@ -185,7 +189,7 @@ LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the
 ########### UAS SECTION ####################################
 UAS=y            # If 'y' or 'Y', login enabled, and other lines of the section 
                  # to be filled
-UAS_URLS_NUM = 2 # Number of urls will be taken as in the format below
+UAS_URLS_NUM = 2 # Number of urls
 
 UAS_URL=http://localhost/apache2-default/ACE-INSTALL.html
 UAS_URL_MAX_TIME = 6        # Maximum batch time in seconds to fetch the url
@@ -194,6 +198,9 @@ UAS_URL_INTERLEAVE_TIME = 0 # Time in seconds to sleep after fetching the url
 UAS_URL= http://localhost/apache2-default/index.html
 UAS_URL_MAX_TIME = 4        # Maximum batch time in seconds to fetch the url
 UAS_URL_INTERLEAVE_TIME = 0 # Time in seconds to sleep after fetching the url
+
+# You may add any number of urls providing 3-tags for each url as above,
+# but do not forget to update the UAS_URLS_NUM.
 
 ########### LOGOFF SECTION #################################
 LOGOFF=n                 # If 'y' or 'Y', login enabled, and other tags of the 
@@ -209,12 +216,12 @@ LOGOFF=n                 # If 'y' or 'Y', login enabled, and other tags of the
 
 Worth to mention, that each batch configuration should contain all tags from
 the section GENERAL as well as LOGIN, UAS and LOGOFF section tags. When 
-LOGIN, UAS or LOGOFF is set as 'y' (yes), for all tags for that section should 
+LOGIN, UAS or LOGOFF is set as 'y' (yes), all tags for that section should 
 appear (uncommented) and to be set to some valid values (N/A string to be used 
-not to define *POST_STR tags, when POST is not applicable). In the case, that 
-LOGIN, UAS or LOGOFF section tag is disabled by setting 'n' (no) value, thus, 
-all the tags of the disabled section are not appear or just to be simply 
-commented out by '#'.
+not to define LOGIN_POST_STR and LOGOFF_POST_STR tags, when POST 
+is not applicable). In the case, that LOGIN, UAS or LOGOFF section tag is 
+disabled by setting 'n' (no) value, thus, all the tags of the disabled section 
+should not appear or just to be simply commented out by '#'.
 
 For more examples, please, look at configs directory.
 

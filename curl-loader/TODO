@@ -1,3 +1,5 @@
+1/11/2006
+
 1. Menu interface to configure testing conf-file. Dialog-like interface
    may be a good option. There are several requests for that, particularly
    from QA/validation people.
@@ -9,10 +11,16 @@ are redirects numbers, server TCP delay, server SSL-delay (HTTPS only)
 and server application (HTTP) delay per client as well as averages per
 batch of clients.
 
+SIPP provides a useful console output with the loading scenario presentation
+and updatable "running counters". Worth using this approach to present
+load scenario and major statistics counters. Statistics may be also outputted
+to an ASCII text file with separators ready for import to Excel. Detailed info
+about errors may be presented in browsable html format.
+
 3. Configuration/making improvements starting from moving all source-files
 to src directory etc
 
-4. Future release will hopefully incorporate libcurl HYPER API, using 
+4. Future releases will hopefully incorporate libcurl HYPER API, using 
 curl_multi_socket() approach and epoll support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
 from a single process can become a reality.

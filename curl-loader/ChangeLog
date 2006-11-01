@@ -1,6 +1,6 @@
-version 0.18, 12/10/2006
+version 0.18, 1/11/2006
 
-Major improvement of configuration. Several command line options removed and
+-Major improvement of configuration. Several command line options removed and
 instread the configuration file enhanced. Configuration file separated to several
 sections, namely:
 - GENERAL;
@@ -10,7 +10,17 @@ sections, namely:
 Only GENERAL section is a MUST, whereas other sections are enabled whenever
 is necessary, depending on the purpose of the testing. 
 
-Several more options for LOGIN and LOGOFF parts are added.
+-Several more options for LOGIN and LOGOFF parts are added.
+
+- Login and logoff of clients may be configured to be done only once or to
+be cycled with optional UAS-load in between of login and logoff cycles.
+
+- Smooth-loading mode with statistics is finally back to work after being
+broken for a while.
+
+- Options -a, -w and -z removed. Instead of using -a option, one may dublicate
+the login url in UAS section.
+
 
 
 version 0.17, 10/11/2006
