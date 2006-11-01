@@ -1,28 +1,28 @@
 /* 
-*     loader.c
-*
-* 2006 Copyright (c) 
-* Robert Iakobashvili, <coroberti@gmail.com>
-* Michael Moser, <moser.michael@gmail.com>
-* All rights reserved.
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; either version 2 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-* Cooked from the CURL-project examples with thanks to the 
-* great CURL-project authors and contributors.
-*/
+ *     loader.c
+ *
+ * 2006 Copyright (c) 
+ * Robert Iakobashvili, <coroberti@gmail.com>
+ * Michael Moser, <moser.michael@gmail.com>
+ * All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * Cooked from the CURL-project examples with thanks to the 
+ * great CURL-project authors and contributors.
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -114,7 +114,7 @@ main (int argc, char *argv [])
   if ((batches_num = parse_config_file (config_file, bc_arr, 
                                         sizeof(bc_arr)/sizeof(*bc_arr))) <= 0)
     {
-        fprintf (stderr, "%s - error: parse_config_file () - error.\n", __func__);
+      fprintf (stderr, "%s - error: parse_config_file () - error.\n", __func__);
       return -1;
     }
    
@@ -124,7 +124,7 @@ main (int argc, char *argv [])
   */
   if (create_ip_addrs (bc_arr, batches_num) == -1)
     {
-        fprintf (stderr, "%s - error: create_ip_addrs () failed. \n", __func__);
+      fprintf (stderr, "%s - error: create_ip_addrs () failed. \n", __func__);
       return -1;
     }
 
@@ -139,14 +139,14 @@ main (int argc, char *argv [])
     }
   else
     {
-        fprintf (stderr, "\n%s - STARTING THREADS\n\n", __func__);
+      fprintf (stderr, "\n%s - STARTING THREADS\n\n", __func__);
       sleep (1);
       
       /* Init openssl mutexes and pass two callbacks to openssl. */
-        if (thread_openssl_setup () == -1)
+      if (thread_openssl_setup () == -1)
         {
-            fprintf (stderr, "%s - error: thread_setup () - failed.\n", __func__);
-           return -1;
+          fprintf (stderr, "%s - error: thread_setup () - failed.\n", __func__);
+          return -1;
         }
       
       /* Opening threads for the batches of clients */
@@ -158,7 +158,7 @@ main (int argc, char *argv [])
             fprintf(stderr, "%s - error: Couldn't run thread number %d, errno %d\n", 
                     __func__, i, error);
           else 
-              fprintf(stderr, "%s - note: Thread %d, started normally\n", __func__, i);
+            fprintf(stderr, "%s - note: Thread %d, started normally\n", __func__, i);
         }
 
       /* Waiting for all the threads to terminate */
@@ -196,7 +196,7 @@ static void* batch_function (void * batch_data)
         {
           fprintf (stderr, 
                    "%s - \"%s\" - failed to open file \"%s\" with errno %d.\n", 
-                     __func__, bctx->batch_name, output_file_name, errno);
+                   __func__, bctx->batch_name, output_file_name, errno);
           return NULL;
         }
     }
@@ -214,7 +214,7 @@ static void* batch_function (void * batch_data)
   /* 
      Init MCURL and CURL handles. Setup of the handles is delayed to
      the later step, depending on whether login, UAS or logoff is required.
-   */
+  */
   if (initial_handles_init (cctx) == -1)
     {
       fprintf (stderr, "%s - \"%s\" initial_handles_init () failed.\n", 
@@ -228,7 +228,7 @@ static void* batch_function (void * batch_data)
   */
   if (loading_mode == LOAD_MODE_STORMING)
     {
-       /* MODE_LOAD_STORM */
+      /* MODE_LOAD_STORM */
       rval = user_activity_storm (cctx);
     }
   else /* LOAD_MODE_SMOOTH */
@@ -246,7 +246,7 @@ static void* batch_function (void * batch_data)
  cleanup:
 
   if (bctx->multiple_handle)
-      curl_multi_cleanup(bctx->multiple_handle);
+    curl_multi_cleanup(bctx->multiple_handle);
 
   for (i = 0 ; i < bctx->client_num ; i++)
     {
@@ -255,14 +255,14 @@ static void* batch_function (void * batch_data)
 
       /* Free POST-buffers */
       if (cctx[i].post_data_login)
-          free (cctx[i].post_data_login);
+        free (cctx[i].post_data_login);
       if (cctx[i].post_data_logoff)
-          free (cctx[i].post_data_logoff);
+        free (cctx[i].post_data_logoff);
     }
 
   free(cctx);
   if (output_file)
-      fclose (output_file);
+    fclose (output_file);
   free_batch_data_allocations (bctx);
 
   return NULL;
@@ -287,7 +287,7 @@ static int initial_handles_init (client_context*const cdata)
     }
 
   /* Allocate and fill login/logoff POST strings for each client. */ 
-    if (bctx->do_login)
+  if (bctx->do_login)
     {
       if (alloc_init_client_post_buffers (cdata) == -1)
         {
@@ -296,20 +296,20 @@ static int initial_handles_init (client_context*const cdata)
         }
     }
 
-    /* Initialize all the CURL handlers */
-    for (k = 0 ; k < bctx->client_num ; k++)
-      {
-        if (!(bctx->client_handles_array[k] = curl_easy_init ()))
-          {
-            fprintf (stderr,"%s - error: curl_easy_init () failed for k=%d.\n",
-                     __func__, k);
-            return -1;
-          }
-      }
+  /* Initialize all the CURL handlers */
+  for (k = 0 ; k < bctx->client_num ; k++)
+    {
+      if (!(bctx->client_handles_array[k] = curl_easy_init ()))
+        {
+          fprintf (stderr,"%s - error: curl_easy_init () failed for k=%d.\n",
+                   __func__, k);
+          return -1;
+        }
+    }
         
-    bctx->curl_handlers_count = bctx->client_num;
+  bctx->curl_handlers_count = bctx->client_num;
 
-    return 0;
+  return 0;
 }
 
 
@@ -320,7 +320,7 @@ static int initial_handles_init (client_context*const cdata)
 
   <ctx> - pointer to the client context
   <url_index> - either URL_INDEX_LOGIN_URL, URL_INDEX_LOGOFF_URL or
-                       some number eq or above URL_INDEX_UAS_URL_START
+  some number eq or above URL_INDEX_UAS_URL_START
   <cycle_number> - used in storming mode.
   <post_method> - when 'true', POST method is used instead of the default GET
 */
@@ -334,7 +334,7 @@ int single_handle_setup (client_context*const cctx,
   char* url = NULL;
 
   if (url_num >= URL_INDEX_UAS_URL_START)
-     url = bctx->uas_url_ctx_array[url_num].url_str;
+    url = bctx->uas_url_ctx_array[url_num].url_str;
   else if (url_num == URL_INDEX_LOGIN_URL)
     url = bctx->login_url.url_str;
   else if (url_num == URL_INDEX_LOGOFF_URL)
@@ -400,7 +400,7 @@ int single_handle_setup (client_context*const cctx,
   curl_easy_setopt (handle, CURLOPT_USERAGENT, EXPLORER_USERAGENT_STR);
 
   /* Enable cookies. This is important for verious authentication schemes. */
-   curl_easy_setopt (handle, CURLOPT_COOKIEFILE, "");
+  curl_easy_setopt (handle, CURLOPT_COOKIEFILE, "");
 
   curl_easy_setopt (handle, CURLOPT_VERBOSE, 1);
   curl_easy_setopt (handle, CURLOPT_DEBUGFUNCTION, 
@@ -457,10 +457,12 @@ int single_handle_setup (client_context*const cctx,
   Used to log activity for each individual session. 
 */
 static int client_tracing_function (CURL *handle, curl_infotype type, 
-                         unsigned char *data, size_t size, void *userp)
+                                    unsigned char *data, size_t size, void *userp)
 {
   client_context* cctx = (client_context*) userp;
   char* url = NULL;
+
+  //fprintf (stderr, "IN - ");
 
   if (url_logging)
     {
@@ -483,7 +485,10 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
           url = cctx->bctx->logoff_url.url_str;
           break;
         }
+      //fprintf (stderr, "%d - \n", cctx->client_state);
     }
+
+  const int url_print = (url_logging && url) ? 1 : 0;
 
   switch (type)
     {
@@ -491,39 +496,35 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
       if (verbose_logging)
         {
           fprintf(cctx->file_output, "%ld %s %s :== Info: %s",
-                  cctx->cycle_num, cctx->client_name, 
-                  url_logging && url ? url : "", data);
+                  cctx->cycle_num, cctx->client_name, url_print ? url : "", data);
         }
       break; 
 
     case CURLINFO_ERROR:
-       fprintf(cctx->file_output, "%ld %s %s   !! ERROR: %s", 
-               cctx->cycle_num, cctx->client_name, 
-               url_logging && url ? url : "", data);
+      fprintf(cctx->file_output, "%ld %s %s   !! ERROR: %s", 
+              cctx->cycle_num, cctx->client_name, url_print ? url : "", data);
 
-       cctx->client_state = CSTATE_ERROR;
+      cctx->client_state = CSTATE_ERROR;
       break;
 
     case CURLINFO_HEADER_OUT:
       if (verbose_logging)
         {
           fprintf(cctx->file_output, "%ld %s %s => Send header\n", 
-                  cctx->cycle_num, cctx->client_name,
-                  url_logging && url ? url : "");
+                  cctx->cycle_num, cctx->client_name, url_print ? url : "");
         }
 
       if (cctx->is_https)
-	  cctx->bctx->https_delta.data_out += (unsigned long) size; 
-	else 
-	  cctx->bctx->http_delta.data_out += (unsigned long) size;
+        cctx->bctx->https_delta.data_out += (unsigned long) size; 
+      else 
+        cctx->bctx->http_delta.data_out += (unsigned long) size;
       break;
 
     case CURLINFO_DATA_OUT:
       if (verbose_logging)
         {
           fprintf(cctx->file_output, "%ld %s %s => Send data\n", 
-                  cctx->cycle_num, cctx->client_name,
-                  url_logging && url ? url : "");
+                  cctx->cycle_num, cctx->client_name, url_print ? url : "");
         }
       cctx->bctx->http_delta.data_out += (unsigned long) size;
       break;
@@ -532,8 +533,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
       if (verbose_logging) 
         {
           fprintf(cctx->file_output, "%ld %s %s => Send ssl data\n", 
-                  cctx->cycle_num, cctx->client_name,
-                  url_logging && url ? url : "");
+                  cctx->cycle_num, cctx->client_name, url_print ? url : "");
         }
       cctx->bctx->https_delta.data_out += (unsigned long) size;
       break;
@@ -553,8 +553,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
         
         if (verbose_logging)
           fprintf(cctx->file_output, "%ld %s %s <= Recv header\n", 
-                  cctx->cycle_num, cctx->client_name, 
-                  url_logging && url ? url : "");
+                  cctx->cycle_num, cctx->client_name, url_print ? url : "");
         
         curl_easy_getinfo (handle, CURLINFO_RESPONSE_CODE, &response_status);
         response_module = response_status / (long)100;
@@ -577,14 +576,14 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
             break;
           case 4: /* 4xx Client Error */
             fprintf(cctx->file_output, "%ld %s %s :!! %ld CLIENT_ERROR : %s\n", 
-                    cctx->cycle_num, cctx->client_name, 
-                    url_logging && url ? url : "", response_status, data);
+                    cctx->cycle_num, cctx->client_name, url_print ? url : "", 
+                    response_status, data);
             /* TODO: count client errors - wrong - cctx->client_state =CSTATE_ERROR; */
             break;
           case 5: /* 5xx Server Error */
             fprintf(cctx->file_output, "%ld %s %s :!! %ld SERVER_ERROR : %s\n", 
-                    cctx->cycle_num, cctx->client_name,
-                    url_logging && url ? url : "", response_status, data);
+                    cctx->cycle_num, cctx->client_name, url_print ? url : "", 
+                    response_status, data);
             /* TODO: count client errors - wrong - cctx->client_state = CSTATE_ERROR; */
             break;
 
@@ -592,7 +591,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
             fprintf(cctx->file_output, 
                     "%ld %s:<= parsing error: wrong status code \"%s\".\n", 
                     cctx->cycle_num, cctx->client_name, (char*) data);
-             cctx->client_state = CSTATE_ERROR;
+            cctx->client_state = CSTATE_ERROR;
             break;
           }
       }
@@ -600,28 +599,24 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
 
     case CURLINFO_DATA_IN:
       if (verbose_logging) 
-        {
           fprintf(cctx->file_output, "%ld %s %s <= Recv data\n", 
-                  cctx->cycle_num, cctx->client_name, 
-                  url_logging && url ? url : "");
-        }
+                  cctx->cycle_num, cctx->client_name, url_print ? url : "");
       cctx->bctx->http_delta.data_in += (unsigned long) size;         
       break;
 
     case CURLINFO_SSL_DATA_IN:
       if (verbose_logging) 
-        {
           fprintf(cctx->file_output, "%ld %s %s <= Recv ssl data\n", 
-                  cctx->cycle_num, cctx->client_name,
-                  url_logging && url ? url : "");
-        }
+                  cctx->cycle_num, cctx->client_name, url_print && url ? url : "");
       cctx->bctx->https_delta.data_in += (unsigned long) size;
       break;
 
     default:
+      fprintf (stderr, "default OUT - \n");
       return 0;
     }
 
+  //fprintf (stderr, "OUT - \n");
   return 0;
 }
 
@@ -715,7 +710,7 @@ static int alloc_init_client_contexts (
 
   /* Allocate client contexts */
   if (!(cctx  = (client_context *) calloc(bctx->client_num, 
-                                           sizeof (client_context))))
+                                          sizeof (client_context))))
     {
       fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
                bctx->batch_name, __func__);
@@ -813,7 +808,7 @@ static int create_ip_addrs (batch_context* bctx, int bctx_num)
     {
       /* Allocate array of IP-addresses */
       if (!(ip_addresses[bi] = (char**)calloc (bctx[bi].client_num, 
-                                              sizeof (char *))))
+                                               sizeof (char *))))
         {
           fprintf (stderr, 
                    "%s - error: failed to allocate array of ip-addresses for batch %d.\n", 
@@ -859,7 +854,7 @@ static int create_ip_addrs (batch_context* bctx, int bctx_num)
           fprintf (stderr, 
                    "%s - error: add_secondary_ip_addrs() - failed for batch = %d\n", 
                    __func__, bi);
-           return -1;
+          return -1;
         }
     }
   return 0;

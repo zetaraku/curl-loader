@@ -36,6 +36,8 @@
 #include "client.h"
 #include "conf.h"
 
+#define DEFAULT_SMOOTH_URL_COMPLETION_TIME 6.0
+
 static int mget_url_smooth (batch_context* bctx);
 static int mperform_smooth (batch_context* bctx, int* still_running);
 static int load_next_step (client_context* cctx);
@@ -120,9 +122,14 @@ int user_activity_smooth (client_context* cctx)
 
 static int mget_url_smooth (batch_context* bctx)  		       
 {
-    CURLM *mhandle =  bctx->multiple_handle; 
-    float max_timeout = bctx->uas_url_ctx_array[0].url_completion_time;
-    const char *name = bctx->batch_name; 
+    CURLM *mhandle =  bctx->multiple_handle;
+    const char *name = bctx->batch_name;
+    float max_timeout = DEFAULT_SMOOTH_URL_COMPLETION_TIME;
+    
+    if (bctx->uas_url_ctx_array)
+      {
+      max_timeout = bctx->uas_url_ctx_array[0].url_completion_time;
+      }
  
     int still_running = 0;
     struct timeval timeout;
@@ -140,11 +147,11 @@ static int mget_url_smooth (batch_context* bctx)
 
         max_timeout -= ((float)timeout.tv_sec + (float)timeout.tv_usec/1000000.0) ; 
         curl_multi_fdset(mhandle, &fdread, &fdwrite, &fdexcep, &maxfd);
-        //fprintf (stderr, "%s - Waiting for %d clients with seconds %f.\n", 
-        //         name, still_running, max_timeout);
+        fprintf (stderr, "%s - Waiting for %d clients with seconds %f.\n", 
+                 name, still_running, max_timeout);
 
         rc = select (maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout) ;
-        switch(rc) 
+        switch(rc)
         {
         case -1: // select error
             break;
@@ -339,9 +346,18 @@ static int setup_login_logoff (client_context* cctx, const int login)
          request method with post login/logoff fields. 
       */
       CURL* handle = bctx->client_handles_array[cctx->client_index];
+
+      curl_multi_remove_handle (bctx->multiple_handle, handle);
       
+      /* 
+         Just add POSTFIELDS.
+         Note, that it should be done on CURL handle outside (removed) 
+         from MCURL. Add it back afterwords.
+      */
       curl_easy_setopt(handle, CURLOPT_POSTFIELDS, 
                        login ? cctx->post_data_login : cctx->post_data_logoff);
+
+      curl_multi_add_handle(bctx->multiple_handle, handle);
     }
 
   return cctx->client_state = login ? CSTATE_LOGIN : CSTATE_LOGOFF;
@@ -445,6 +461,10 @@ static int load_uas_state (client_context* cctx)
           // next state is logoff with cycling.
           return load_logoff_state (cctx);
         }
+    }
+  else
+    {
+      cctx->uas_url_curr_index = 0;
     }
 
   /* Non-UAS states are all falling below: */

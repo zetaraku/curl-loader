@@ -228,7 +228,10 @@ static int posting_credentials_storm (client_context* clients, int in_off)
   /* Add the POST fields */
   for (i = 0 ; i < bctx->client_num; i++)
     { 
-      /* Fill POST login or logoff fields */
+      /* 
+         Fill POST login or logoff fields. Note, that it should be done on CURL handle
+         removed from MCURL.
+       */
       curl_easy_setopt(bctx->client_handles_array[i], CURLOPT_POSTFIELDS, 
                        in_off ? clients[i].post_data_login : clients[i].post_data_logoff);
 
