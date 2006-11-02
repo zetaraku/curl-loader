@@ -4,16 +4,15 @@
     Michael Moser, Modiin, Israel, moser.michael@gmail.com
 
 ABOUT:
-    Provides application load, simulating thousands (running from
-a script several curl_loaders - tens of thousands) clients, each with
-its own source IP-address.
-    This version emulates HTTP/HTTPS clients. All activities of each client are
-logged to file: connection establishment, request headers sent, response headers
-received, data received and all TCP as well as HTTP and TLS (for HTTPS) errors. 
-The tool can be easily extended to support ftp, ftps, telnet, tftp, ldap, etc other 
+    Provides application load using libcurl/openssl stacks, simulating behaviour
+of thousands and tens of thousands clients, each with its own source IP-address.
+    This version simulates HTTP/HTTPS clients. All activities of each virtual 
+client are logged to file: resolving, connection establishment, request headers sent, 
+response headers received, data received/sent, errors from TCP, SSL and HTTP 
+levels. The tool can be easily extended to support ftp, ftps, telnet, tftp, ldap, etc other 
 application protocols, supported by the great libcurl library.
-    Clients are groupped to the so-called batches of clients, performing the same
-sort of activities. Configurable activities of the simulated clients are:
+    Virtual clients are grouped to the so-called batches of clients, performing
+the same sort of activities. Configurable activities of the simulated clients are:
 - authentication login;
 - user activity simulation by fetching several urls and timeouts in between;
 - logoff.
@@ -21,36 +20,34 @@ sort of activities. Configurable activities of the simulated clients are:
 
 SUCCESSFULLY USED:
 
-1. To emulate HTTP/HTTPS clients redirection, authentication and simulate
-    user-behaviour and real load for thousands of such clients for testing an 
-    authentication gateway.
+1. To simulate HTTP/HTTPS load of thousands of clients against an authentication 
+    gateway for testing of the gateway performance in various scenarios.
 
-    curl-loader provided client load against Apache web-server with the gateway 
-    in the middle, where the gateway performed browser hijecking and HTTP- 
+     curl-loader supplied  client load against Apache web-server with the gateway 
+    in the middle, where the gateway performed browser hijacking and HTTP- 
     redirection of the curl-clients to the HTTPS url at the gateway own 
-    web-server. HTTPS page of the web-server provided a POST form to be filled
-    with username and password for the client/user authentication against
-    external AAA (RADIUS) server. If the authentication was OK, user (a libcurl
-    client object) was allowed to enter the Internet and to perform some sort of 
-    simulated by curl-loader network activity, namely, fetching some urls and 
+    web-server. HTTPS page of the web-server responded with a POST form to be 
+    filled with username and password for the client/user authentication against
+    an external AAA (RADIUS) server. If the authentication was OK, user (a libcurl
+    virtual client object) was allowed to enter the Internet and to perform some
+    sort of simulated by curl-loader network activity, namely, fetching urls and 
     sleeping in between them.   
     
 2. To test web-server pages, authenticating tens and hundred thousand of
-    clients, where each clients comes to https url using GET and redirected
-    to another url, providing POST form. After successful authentication the 
-    web-server sets cookies set to the client (each client simulates browser by
-    using a libcurl object). Client activities are further simulated by fetching
-    fetching some urls and sleeping in between. Clients are doing logoff via 
-    GET to the logoff-url (using cookies).
+    clients, where each clients comes to HTTPS url using GET and is redirected
+    to another url, providing authentication POST form. After client successful 
+    authentication the web-server sets cookies to the client. Client activities 
+    are further simulated by fetching urls and sleeping in between. Clients are 
+    doing logoff via GET to the logoff-url (using cookies).
 
-3. To generate Gbps traffic from thousands of TCP/HTTP clients to test the 
+3. To generate Gbps traffic from thousands of TCP/HTTP clients and to test the 
     impact of thousands of firewalling and NAT iptables/ipset rules and 
-    hundreds of the rules deleted and added each second at performance of a 
+    hundreds of the rules being added/deleted each second at performance of a 
     gateway device.
 
     curl-loader provided client load against Apache web-server fetching a 
     url with a gigabyte file, thus, creating a permanent heavy-load 
-    traffic contaning thousand of tcp-streams at the gateway in the middle.
+    traffic, containing thousand of tcp-streams at the gateway in the middle.
 
 MAY BE USED:
 1. To create testing load for various HTTP/HTTPS/FTP/FTPS/LDAP, etc devices, 
@@ -79,8 +76,8 @@ curl_loader -h is your friend. Some examples of configuration are suggested
 in the files, located in "configs" directory.
 
 ENVIRONMENT: ATTENTION !!! IMPORTANT !!!
-Running hundlers and thousands of clients, please do not forget:
-    - to increase limit of desriptors (sockets) by running e.g. 
+Running hundreds and thousands of clients, please do not forget:
+    - to increase limit of descriptors (sockets) by running e.g. 
     #ulimit -n 10000;
     - optionally, to set reuse of sockets in time-wait state: by setting 
     #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or  
@@ -132,7 +129,7 @@ Possible options are:
 -l[ogfile rewind after this number of cycles]
 -o[utput to stdout bodies of downloaded files - attn!- bulky]
 -r[euse established connections, don't run close-open cycles]
--s[tderr printout of client messages instread of to logfile - attn!- bulky]
+-s[tderr printout of client messages instead of to logfile - attn!- bulky]
 -t[hreads enable - enables threads, each runs a batch of clients]
 -v[erbose output to the logfiles; includes info about headers sent/received]
 -u[rl logging - enables logging of url names to all client outputs]
@@ -158,7 +155,7 @@ CYCLES_NUM= 100            # Number of loading cycles to run, 0 -forever
 ########### LOGIN SECTION ##################################
 LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the 
                   # section to be filled. If 'n' or 'N' - comment out others
-#LOGIN_USERNAME=  # Usename string
+#LOGIN_USERNAME=  # Username string
 #LOGIN_PASSWORD=  # Password string
 #LOGIN_REQ_TYPE=  # Use string either GET+POST or POST
 #LOGIN_POST_STR=  # POST string matrix. See below:
@@ -225,7 +222,7 @@ should not appear or just to be simply commented out by '#'.
 
 For more examples, please, look at configs directory.
 
-Note, that currenly there is a limit of 1000 sockets per batch of clients.
+Note, that currently there is a limit of 1000 sockets per batch of clients.
 Running thousands and more clients, please do not forget the options:
 - to increase limit of open desriptors in shell by running e.g. "#ulimit -n 10000":
 - to increase total limit of  open descriptors in system somewhere in /proc

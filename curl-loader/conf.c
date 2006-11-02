@@ -155,7 +155,7 @@ void print_help ()
   fprintf (stderr, " -l[ogfile rewind after this number of cycles]\n");
   fprintf (stderr, " -o[utput to stdout bodies of downloaded files - attn!- bulky]\n");
   fprintf (stderr, " -r[euse established connections, don't run close-open cycles]\n");
-  fprintf (stderr, " -s[tderr printout of client messages instread of to logfile - attn!- bulky]\n");
+  fprintf (stderr, " -s[tderr printout of client messages instead of to logfile - attn!- bulky]\n");
   fprintf (stderr, " -t[hreads enable - enables threads, each runs a batch of clients]\n");
   fprintf (stderr, " -v[erbose output to the logfiles; includes info about headers sent/received]\n");
   fprintf (stderr, " -u[rl logging - logs url names to logfile, when -v verbose option is used]\n");
@@ -180,7 +180,7 @@ void print_help ()
   fprintf (stderr, "########### LOGIN SECTION ##################################\n");
   fprintf (stderr, "LOGIN=n      # If 'y' or 'Y', login enabled, all other lines of the\n"); 
   fprintf (stderr, "                  # section to be filled\n");
-  fprintf (stderr, "#LOGIN_USERNAME=  # Usename string\n");
+  fprintf (stderr, "#LOGIN_USERNAME=  # Username string\n");
   fprintf (stderr, "#LOGIN_PASSWORD=  # Password string\n");
   fprintf (stderr, "#LOGIN_REQ_TYPE=  # Either GET+POST , or POST strings .\n");
   fprintf (stderr, "#LOGIN_POST_STR=  # POST string matrix. See below:\n");
@@ -235,9 +235,9 @@ void print_help ()
   fprintf (stderr, "--------------------------------------------------------------------------------\n");
   fprintf (stderr, "For more examples, please, look at configs directory.\n");
   fprintf (stderr, "\n");
-  fprintf (stderr, "Note, that currenly there is a limit of 1000 sockets per batch of clients.\n");
+  fprintf (stderr, "Note, that currently there is a limit of 1000 sockets per batch of clients.\n");
   fprintf (stderr, "Running thousands and more clients, please do not forget the options:\n");
-  fprintf (stderr, "- to increase limit of open desriptors in shell by running e.g. #ulimit -n 10000:\n");
+  fprintf (stderr, "- to increase limit of open descriptors in shell by running e.g. #ulimit -n 10000:\n");
   fprintf (stderr, "- to increase total limit of  open descriptors in systeme somewhere in /proc\n");
   fprintf (stderr, "- to consider reusing sockets in time-wait state: by #echo 1 > \n");
   fprintf (stderr, " /proc/sys/net/ipv4/tcp_tw_recycle\n");
