@@ -460,59 +460,48 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                                     unsigned char *data, size_t size, void *userp)
 {
   client_context* cctx = (client_context*) userp;
-  char* url = NULL;
-
-  //fprintf (stderr, "IN - ");
+  char*url_target = NULL, *url_effective = NULL;
 
   if (url_logging)
     {
-      /* 
-         TODO: broken for the smooth mode
-      */
-      /* 
-         TODO: Clients are being redirected back and forth by 3xx redirects. 
-         The real url is of our interest.
-      */
       switch (cctx->client_state)
         {
         case CSTATE_LOGIN:
-          url = cctx->bctx->login_url.url_str;
+          url_target = cctx->bctx->login_url.url_str;
           break;
         case CSTATE_UAS_CYCLING:
-          url = cctx->bctx->uas_url_ctx_array[cctx->uas_url_curr_index].url_str;
+          url_target = cctx->bctx->uas_url_ctx_array[cctx->uas_url_curr_index].url_str;
           break;
         case CSTATE_LOGOFF:
-          url = cctx->bctx->logoff_url.url_str;
+          url_target = cctx->bctx->logoff_url.url_str;
           break;
         }
-      //fprintf (stderr, "%d - \n", cctx->client_state);
+      /* Clients are being redirected back and forth by 3xx redirects. */
+      curl_easy_getinfo (handle, CURLINFO_EFFECTIVE_URL, &url_effective);
     }
 
+  const char*const url = url_effective ? url_effective : url_target;
+  //const char*const url = url_target;
   const int url_print = (url_logging && url) ? 1 : 0;
 
   switch (type)
     {
     case CURLINFO_TEXT:
       if (verbose_logging)
-        {
           fprintf(cctx->file_output, "%ld %s %s :== Info: %s",
                   cctx->cycle_num, cctx->client_name, url_print ? url : "", data);
-        }
-      break; 
+      break;
 
     case CURLINFO_ERROR:
       fprintf(cctx->file_output, "%ld %s %s   !! ERROR: %s", 
               cctx->cycle_num, cctx->client_name, url_print ? url : "", data);
-
       cctx->client_state = CSTATE_ERROR;
       break;
 
     case CURLINFO_HEADER_OUT:
       if (verbose_logging)
-        {
           fprintf(cctx->file_output, "%ld %s %s => Send header\n", 
                   cctx->cycle_num, cctx->client_name, url_print ? url : "");
-        }
 
       if (cctx->is_https)
         cctx->bctx->https_delta.data_out += (unsigned long) size; 
@@ -522,19 +511,17 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
 
     case CURLINFO_DATA_OUT:
       if (verbose_logging)
-        {
           fprintf(cctx->file_output, "%ld %s %s => Send data\n", 
                   cctx->cycle_num, cctx->client_name, url_print ? url : "");
-        }
+
       cctx->bctx->http_delta.data_out += (unsigned long) size;
       break;
 
     case CURLINFO_SSL_DATA_OUT:
       if (verbose_logging) 
-        {
           fprintf(cctx->file_output, "%ld %s %s => Send ssl data\n", 
                   cctx->cycle_num, cctx->client_name, url_print ? url : "");
-        }
+
       cctx->bctx->https_delta.data_out += (unsigned long) size;
       break;
       
@@ -544,9 +531,9 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
          not just parts. 
       */
       if (cctx->is_https)
-        cctx->bctx->https_delta.data_in += (unsigned long) size; 
+        cctx->bctx->https_delta.data_in += (u_long) size; 
       else 
-        cctx->bctx->http_delta.data_in += (unsigned long) size;
+        cctx->bctx->http_delta.data_in += (u_long) size;
 
       {
         long response_status = 0, response_module = 0;
@@ -556,6 +543,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   cctx->cycle_num, cctx->client_name, url_print ? url : "");
         
         curl_easy_getinfo (handle, CURLINFO_RESPONSE_CODE, &response_status);
+
         response_module = response_status / (long)100;
         
         switch (response_module)
@@ -616,7 +604,6 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
       return 0;
     }
 
-  //fprintf (stderr, "OUT - \n");
   return 0;
 }
 

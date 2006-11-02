@@ -1,3 +1,10 @@
+version 0.19
+
+* Effective URL will be outputted to logfile, thanks for 
+   CURLINFO_EFFECTIVE_URL facility. Usefull to provide real urls
+   after redirections, not just the urls client starts with
+  
+
 version 0.18, 1/11/2006 svn-21
 
 -Major improvement of configuration. Several command line options removed and
