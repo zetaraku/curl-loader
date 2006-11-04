@@ -25,6 +25,3 @@ curl_multi_socket() approach and epoll support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
 from a single process can become a reality.
 
-5. Advancing to the next libcurl release in order to get libcurl API 
-for libcurl hyper mode and integration with libevent for epoll event 
-demultiplexing.

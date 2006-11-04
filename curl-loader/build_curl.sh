@@ -3,7 +3,7 @@
 # curl_build.sh script builds libcurl library
 
 CURL_BUILD=`pwd`/curl-build
-CURL_VER=7.15.4
+CURL_VER=7.16.0
 
 if [ ! -d curl-${CURL_VER} ]; then  
     

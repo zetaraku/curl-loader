@@ -24,12 +24,15 @@
 */
 
 #include <stdlib.h>
+#include <errno.h>
 #include <unistd.h>
 #include <netinet/in.h>
 
-/* Very bad - bloody hacking */
+/* 
+Very bad - bloody hacking -
 #define HAVE_GETTIMEOFDAY
 #include <urldata.h>
+*/
 
 #include "loader.h"
 #include "batch.h"
@@ -153,10 +156,10 @@ static int mget_url_smooth (batch_context* bctx)
         rc = select (maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout) ;
         switch(rc)
         {
-        case -1: // select error
+        case -1: /* select error */
             break;
         case 0:
-        default: // timeout or readable/writable sockets
+        default: /* timeout or readable/writable sockets */
             mperform_smooth (bctx, &still_running);            
 	    break;
         }
@@ -168,8 +171,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 {
     CURLM *mhandle =  bctx->multiple_handle;     
     
-    while(CURLM_CALL_MULTI_PERFORM == 
-          curl_multi_perform (mhandle, still_running))
+    while(CURLM_CALL_MULTI_PERFORM == curl_multi_perform(mhandle,still_running))
       ;
 
     unsigned long now = get_tick_count(); 
@@ -197,10 +199,15 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
       {
         if (msg->msg == CURLMSG_DONE)
           {
-            /* Very bad style - curl bloody hacking. Some API is appropriate here. */
-            struct SessionHandle *shandle = msg->easy_handle;
-            client_context *cctx = (client_context *) shandle->set.debugdata;
-          
+              /* TODO: CURLMsg returns 'result' field as curl return code. We may wish to use it. */
+
+            /* Finally API instead of bloody hacking */
+
+            CURL *handle = msg->easy_handle;
+            client_context *cctx = NULL;
+
+            curl_easy_getinfo (handle, CURLINFO_PRIVATE, &cctx);
+
             int client_state =  load_next_step (cctx);
             //fprintf (stderr, "%s - after load_next_step client state %d.\n", __func__, client_state);
 
@@ -280,7 +287,6 @@ static int is_last_cycling_state (client_context* cctx)
 
 static void advance_cycle_num (client_context* cctx)
 {
-  /* we are in charge to advance to counter */
   cctx->cycle_num++;
   
   //fprintf (stderr, "%s -cycle_num:%ld cycles_num:%ld\n", 

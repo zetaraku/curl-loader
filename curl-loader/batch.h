@@ -25,6 +25,8 @@
 #ifndef BATCH_H
 #define BATCH_H
 
+#include <stddef.h>
+
 #include <curl/curl.h>
 
 #define BATCH_NAME_SIZE 32

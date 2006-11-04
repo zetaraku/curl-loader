@@ -421,7 +421,11 @@ int single_handle_setup (client_context*const cctx,
       cctx->cycle_num = cycle_number;
     }
 
+  /* This is to return cctx pointer as the last void* userp to tracing function. */
   curl_easy_setopt (handle, CURLOPT_DEBUGDATA, cctx);
+
+  /* This is to ser the private pointer. */
+  curl_easy_setopt (handle, CURLOPT_PRIVATE, cctx);
 
   /* Without the buffer set, we do not get any errors in tracing function. */
   curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer);

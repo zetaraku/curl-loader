@@ -2,7 +2,7 @@
 TARGET=curl-loader
 TAGFILE=.tagfile
 
-CURL_VER:=7.15.4
+CURL_VER:=7.16.0
 OBJ_DIR:=obj
 SRC_SUFFIX:=c
 OBJ:=$(patsubst %.$(SRC_SUFFIX), $(OBJ_DIR)/$(basename %).o, $(wildcard *.$(SRC_SUFFIX)))
@@ -30,10 +30,10 @@ LD=gcc
 LDFLAGS=-L./curl-build/lib
 
 #Link Libraries. RedHat/FC require sometimes lidn, remove first '#'
-LIBS= -ldl -lpthread -lrt -lssl -lcrypto -lcurl -lz -lidn  #-lcares
+LIBS= -ldl -lpthread -lrt -lssl -lcrypto -lcurl -lz #-lidn  #-lcares
 
 # Include directories
-INCDIR=-I. -I./curl-build/include -I./curl-$(CURL_VER)/lib
+INCDIR=-I. -I./curl-build/include #-I./curl-$(CURL_VER)/lib
 
 LIBCURL=libcurl
 
