@@ -1,11 +1,15 @@
 version 0.19
 
+* THANKS file added.
+* Building directories re-arranged. Directory packages arranged with dialog,
+   and c-ares tarballs added. 
+	
 * Advanced to libcurl 7.16.0.
 
 * Instead of bloody hacking used in loader_smooth.c mperform_smooth () to get
    access to client_context* cctx, finally we are using setting and getting cctx via
-   PRIVATE pointer API. The hacking broke compiling against libcurl starting from
-   7.15.5.
+   PRIVATE pointer API. The hacking broke compiling against libcurl starting 
+   from 7.15.5.
 	
 * Effective URL will be outputted to logfile, thanks for 
    CURLINFO_EFFECTIVE_URL facility. Usefull to provide real urls

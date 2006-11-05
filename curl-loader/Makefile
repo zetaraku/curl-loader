@@ -27,13 +27,13 @@ DEBUG_FLAGS= -g
 LD=gcc
 
 #Linker Flags
-LDFLAGS=-L./curl-build/lib
+LDFLAGS=-L./lib
 
-#Link Libraries. RedHat/FC require sometimes lidn, remove first '#'
-LIBS= -ldl -lpthread -lrt -lssl -lcrypto -lcurl -lz #-lidn  #-lcares
+#Link Libraries. RedHat/FC require sometimes lidn
+LIBS= -ldl -lpthread -lrt -lz -lidn -lssl -lcrypto -lcurl  #-lcares
 
 # Include directories
-INCDIR=-I. -I./curl-build/include #-I./curl-$(CURL_VER)/lib
+INCDIR=-I. -I./inc
 
 LIBCURL=libcurl
 
@@ -49,7 +49,7 @@ clean:
 	rm -f $(OBJ_DIR)/*.o $(TARGET) core*
 
 cleanall: clean
-	rm -rf curl ./curl-build ./curl-$(CURL_VER) $(TAGFILE) *~ *.log
+	rm -rf ./build ./packages/curl-$(CURL_VER) ./inc ./lib ./bin $(TAGFILE) *~ *.log
 
 tags:
 	etags --members -o $(TAGFILE) *.h *.c
