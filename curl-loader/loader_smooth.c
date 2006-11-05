@@ -3,6 +3,7 @@
 *
 * 2006 Copyright (c)
 * Michael Moser, <moser.michael@gmail.com>
+* Robert Iakobashvili, <coroberti@gmail.com>
 * All rights reserved.
 *
 * This program is free software; you can redistribute it and/or modify
@@ -27,12 +28,6 @@
 #include <errno.h>
 #include <unistd.h>
 #include <netinet/in.h>
-
-/* 
-Very bad - bloody hacking -
-#define HAVE_GETTIMEOFDAY
-#include <urldata.h>
-*/
 
 #include "loader.h"
 #include "batch.h"
@@ -338,7 +333,7 @@ static int setup_login_logoff (client_context* cctx, const int login)
         }
 
       single_handle_setup (cctx,
-                           login ? URL_INDEX_LOGIN_URL : URL_INDEX_LOGOFF_URL,
+                           login ? &bctx->login_url : &bctx->logoff_url,
                            0, /* not applicable for the smooth mode */
                            post_standalone /* if 'true' -POST, else GET */  
                            );
@@ -371,8 +366,10 @@ static int setup_login_logoff (client_context* cctx, const int login)
 
 static int setup_uas (client_context* cctx)
 {
+  batch_context* bctx = cctx->bctx;
+
   single_handle_setup (cctx,
-                       cctx->uas_url_curr_index, /* index of the logoff url */
+                       &bctx->uas_url_ctx_array[cctx->uas_url_curr_index], /* current url */
                        0, /* cycle, do we need it */ 
                        0 /* GET - zero, unless we'll need to make POST here */
                        );

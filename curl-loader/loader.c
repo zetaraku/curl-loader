@@ -54,6 +54,7 @@
   as well as in libcurl. Options are to consider are poll () and /dev/epoll.
 */
 #define MAX_FD_IN_THREAD 1000
+#define EXPLORER_USERAGENT_STR "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" 
 
 
 static int create_ip_addrs (batch_context* bctx, int bctx_num);
@@ -72,6 +73,10 @@ static size_t do_nothing_write_func (void *ptr,
 static void* batch_function (void *batch_data);
 
 static int initial_handles_init (struct client_context*const cdata);
+
+static 
+int setup_handle_appl (struct client_context*const cctx,  url_context* url_ctx,
+                       int post_method);
 
 static int alloc_init_client_post_buffers (struct client_context* cctx);
 
@@ -325,12 +330,19 @@ static int initial_handles_init (client_context*const cdata)
   <post_method> - when 'true', POST method is used instead of the default GET
 */
 int single_handle_setup (client_context*const cctx,
-                         int url_num, 
+                         url_context* url_ctx,
                          long cycle_number,
                          int post_method)
 {
   batch_context* bctx = cctx->bctx;
   CURL* handle = bctx->client_handles_array[cctx->client_index];
+
+  if (!cctx || !url_ctx)
+    {
+      return -1;
+    }
+
+  /*
   char* url = NULL;
 
   if (url_num >= URL_INDEX_UAS_URL_START)
@@ -339,9 +351,7 @@ int single_handle_setup (client_context*const cctx,
     url = bctx->login_url.url_str;
   else if (url_num == URL_INDEX_LOGOFF_URL)
     url = bctx->logoff_url.url_str;
-
-#define  HTTPS_S "http://" 
-  cctx->is_https = (strncmp (url, HTTPS_S, sizeof(HTTPS_S)) == 0);
+  */
 
   /*
     Remove the handle from the multiple handle and reset it. 
@@ -350,18 +360,20 @@ int single_handle_setup (client_context*const cctx,
   curl_multi_remove_handle (bctx->multiple_handle, handle);
   curl_easy_reset (handle);
 
-
   /* Now set all options */
-
   curl_easy_setopt (handle, CURLOPT_INTERFACE, 
                     bctx->ip_addr_array [cctx->client_index]);
 
   curl_easy_setopt (handle, CURLOPT_NOSIGNAL, 1);
     
   /* Set the url */
-  curl_easy_setopt (handle, CURLOPT_URL, url);
-  cctx->uas_url_curr_index = url_num; /* set the index to client for smooth loading */
+  curl_easy_setopt (handle, CURLOPT_URL, url_ctx->url_str);
   
+  /* Set the index to client for smooth-mode */
+  if (url_ctx->url_uas_num >= 0)
+    cctx->uas_url_curr_index = url_ctx->url_uas_num;
+  
+  bctx->url_index = url_ctx->url_uas_num;
 
   curl_easy_setopt (handle, CURLOPT_DNS_CACHE_TIMEOUT, -1);
 
@@ -379,29 +391,7 @@ int single_handle_setup (client_context*const cctx,
 
      curl_easy_setopt (handle, CURLOPT_DNS_USE_GLOBAL_CACHE, 1); 
   */
-    
-  /* 
-     Follow possible HTTP-redirection from header Location of the 
-     3xx HTTP responses, like 301, 302, 307, etc. It also updates the url 
-     in the options, so you do not need to parse headers and extract the 
-     value of header Location. Great job done by the libcurl people.
-  */
-  curl_easy_setopt (handle, CURLOPT_FOLLOWLOCATION, 1);
-
-  /* Enable infinitive (-1) redirection number. */
-  curl_easy_setopt (handle, CURLOPT_MAXREDIRS, -1);
-
-#define EXPLORER_USERAGENT_STR "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" 
-  
-  /* 
-     TODO: Lets be Explorer-6, but actually User-Agent header 
-     should be configurable. 
-  */
-  curl_easy_setopt (handle, CURLOPT_USERAGENT, EXPLORER_USERAGENT_STR);
-
-  /* Enable cookies. This is important for verious authentication schemes. */
-  curl_easy_setopt (handle, CURLOPT_COOKIEFILE, "");
-
+     
   curl_easy_setopt (handle, CURLOPT_VERBOSE, 1);
   curl_easy_setopt (handle, CURLOPT_DEBUGFUNCTION, 
                     client_tracing_function);
@@ -424,35 +414,88 @@ int single_handle_setup (client_context*const cctx,
   /* This is to return cctx pointer as the last void* userp to tracing function. */
   curl_easy_setopt (handle, CURLOPT_DEBUGDATA, cctx);
 
-  /* This is to ser the private pointer. */
+  /* This is to set the private pointer. */
   curl_easy_setopt (handle, CURLOPT_PRIVATE, cctx);
 
   /* Without the buffer set, we do not get any errors in tracing function. */
-  curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer);
+  curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer);    
 
-  /* Make POST, using post buffer, if requested. */
-  if (post_method)
+
+  if (setup_handle_appl (cctx, url_ctx, post_method) == -1)
     {
-      char* post_buff = NULL;
-
-      if (url_num == URL_INDEX_LOGIN_URL)
-        post_buff = cctx->post_data_login;
-      else if (url_num == URL_INDEX_LOGOFF_URL)
-        post_buff = cctx->post_data_logoff;
-      else
-        {            
-          fprintf (stderr,
-                   "%s - error: post_method to be used for login or logoff url.\n",
-                   __func__);
-          return -1;
-        }
-      curl_easy_setopt(handle, CURLOPT_POSTFIELDS, post_buff);
+      fprintf (stderr,
+               "%s - error: setup_handle_appl () failed .\n",
+               __func__);
+      return -1;
     }
-
-  bctx->url_index = url_num;
      
-  /* It is supposed to be removed before. */
+  /* The handle is supposed to be removed before. */
   curl_multi_add_handle(bctx->multiple_handle, handle);
+
+  return 0;
+}
+  
+/* 
+   Application/url-type specific setup 
+*/
+static 
+int setup_handle_appl (
+                       client_context*const cctx,  
+                       url_context* url_ctx,
+                       int post_method)
+{
+  batch_context* bctx = cctx->bctx;
+  CURL* handle = bctx->client_handles_array[cctx->client_index];
+
+  cctx->is_https = (url_ctx->url_appl_type == URL_APPL_HTTPS);
+
+  if (url_ctx->url_appl_type == URL_APPL_HTTPS ||
+      url_ctx->url_appl_type == URL_APPL_HTTP)
+    {
+      /*************** HTTP-specific *************************************/
+      
+      /* 
+         Follow possible HTTP-redirection from header Location of the 
+         3xx HTTP responses, like 301, 302, 307, etc. It also updates the url 
+         in the options, so you do not need to parse headers and extract the 
+         value of header Location. Great job done by the libcurl people.
+      */
+      curl_easy_setopt (handle, CURLOPT_FOLLOWLOCATION, 1);
+      
+      /* Enable infinitive (-1) redirection number. */
+      curl_easy_setopt (handle, CURLOPT_MAXREDIRS, -1);     
+      /* 
+         TODO: Lets be Explorer-6, but actually User-Agent header 
+         should be configurable. 
+      */
+      curl_easy_setopt (handle, CURLOPT_USERAGENT, EXPLORER_USERAGENT_STR);
+      
+      /* Enable cookies. This is important for verious authentication schemes. */
+      curl_easy_setopt (handle, CURLOPT_COOKIEFILE, "");
+      
+      /* Make POST, using post buffer, if requested. */
+      if (post_method)
+        {
+          char* post_buff = NULL;
+          
+          if (url_ctx->url_lstep == URL_LOAD_LOGIN)
+            post_buff = cctx->post_data_login;
+          else if (url_ctx->url_lstep == URL_LOAD_LOGOFF)
+            post_buff = cctx->post_data_logoff;
+          else
+            {            
+              fprintf (stderr,
+                       "%s - error: post_method to be used only for login or logoff url.\n",
+                       __func__);
+              return -1;
+            }
+          curl_easy_setopt(handle, CURLOPT_POSTFIELDS, post_buff);
+        }
+    }
+  else
+    {
+
+    }
 
   return 0;
 }

@@ -26,7 +26,10 @@
 
 #define CLIENT_NAME_LEN 32
 
-
+/*
+****************   cstate   ************************************
+  States of a virtual client. 
+*/
 enum cstate
   {
     CSTATE_ERROR = -1, /* Completion state */
@@ -44,10 +47,12 @@ enum cstate
 struct batch_context;
 
 /*
-****************   client_context   **********************************
+****************   client_context   ************************************
 
-  Client context is passed to curl handle and returned back to the tracing
-  function and used for output to the logfile.
+  The structure is the placeholder of  a virtual client stateful information.
+  
+  Client context is passed to curl handle to be returned back to the tracing
+  function for output to the logfile.
   Client context is also heavily used for login/logoff, using POST-buffers,
   and for smooth-mode.
 */
@@ -60,7 +65,7 @@ typedef struct client_context
  
   long cycle_num;  /* Current cycle number. Useful for multiple runs. */                          
 
-  FILE* file_output;  /* The file to be used for output for this particular 
+  FILE* file_output;  /* The file to be used as output for this particular 
                              client (normally used a file-per-batch logging strategy) */
 
 /* 

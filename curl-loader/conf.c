@@ -30,7 +30,7 @@
 /*
   Command line configuration options. Setting defaults here.
 */
-int connect_timeout = 1; /* Configurable time to cut connect () in prog */  
+int connect_timeout = 5; /* Configurable time to cut connect () in prog */  
 int verbose_logging = 0; /* Flag, whether to perform verbose logging */
 int threads_run = 0; /* Flag, whether to run batches as batch per thread. */
 int logfile_rewind_cycles_num = 10; /* Rewind logfile after num cycles */

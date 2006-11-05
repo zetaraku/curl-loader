@@ -1,5 +1,15 @@
 version 0.19
 
+* FTP and FTPs support added. Currently it should go to UAS urls section and use
+   for passing credentials ftp url, like:
+   ftp://username:password@hostname:port/etc-str
+   File ftp.conf added to configs directory.
+
+* All url-specific context collected to url_context structure to reside in 
+   the new file url.h. Function single_handle_setup () re-worked and HTTP-specific
+   part separated to setup_handle_appl 9) function, which is in preparation to 
+   support more protocols besides http/s.
+
 * THANKS file added.
 * Building directories re-arranged. Directory packages arranged with dialog,
    and c-ares tarballs added. 

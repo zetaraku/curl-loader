@@ -90,11 +90,12 @@ int user_activity_storm (client_context*const cdata)
           */
           for (k = 0 ; k < bctx->client_num ; k++)
             {
+              cdata[k].client_state = CSTATE_UAS_CYCLING;
+
               single_handle_setup (&cdata[k],
-                                   u_index, /* index of url string in array */
+                                   &bctx->uas_url_ctx_array[u_index], /* index of url string in array */
                                    cycle,
                                    0);
-              cdata[k].client_state = CSTATE_UAS_CYCLING;
             }
             
           /* Fetch the new url by each client of the batch.*/
@@ -258,12 +259,13 @@ static int login_clients_storm (client_context* cdata, int cycle)
   /* Setup client handles for GET-method. */
   for (k = 0 ; k < bctx->client_num ; k++)
     {
+      cdata[k].client_state = CSTATE_LOGIN;
+
       single_handle_setup (&cdata[k], /* pointer to client context */
-                           URL_INDEX_LOGIN_URL, /* login url */
+                           &bctx->login_url, /* login url */
                            cycle, /* zero cycle */
                            0 /*without POST buffers as a more general case*/  
                            );
-      cdata[k].client_state = CSTATE_LOGIN;
     }
 
   if (bctx->login_req_type == LOGIN_REQ_TYPE_GET_AND_POST)
@@ -303,12 +305,13 @@ static int logoff_clients_storm (client_context*const cdata, int cycle)
   */
   for (k = 0 ; k < bctx->client_num ; k++)
     {
+      cdata[k].client_state = CSTATE_LOGOFF;
+
       single_handle_setup (&cdata[k],
-                           URL_INDEX_LOGOFF_URL, 
+                           &bctx->logoff_url, 
                            cycle, /* Cycle number does not matter here */
                            0 /* General case, without POST */
                            );
-      cdata[k].client_state = CSTATE_LOGOFF;
     }
 
   if (bctx->logoff_req_type != LOGOFF_REQ_TYPE_POST)

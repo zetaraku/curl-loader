@@ -32,19 +32,14 @@
 #define POST_LOGOFF_BUF_SIZE 64
 
 /* forward declarations */
+struct url_context;
 struct client_context;
 struct batch_context;
 struct stat_point;
 
 /*---------  Common loading functions ----------------*/
 
-enum url_index
-  {
-    URL_INDEX_LOGIN_URL = -2, /* Login url */
-    URL_INDEX_LOGOFF_URL = -1, /* Logoff url */
-    URL_INDEX_UAS_URL_START = 0, /* UAS - user activity simulation url from 
-                                    the array of url-contexts. */
-  };
+
 
 /*
   Setup for a single curl handle (client): removes a handle from multi-handle, 
@@ -58,8 +53,8 @@ enum url_index
   <post_method> - when 'true', POST method is used instead of the default GET
 */
 int single_handle_setup (
-                         struct client_context*const ctx, 
-                         int url_index, 
+                         struct client_context*const cctx, 
+                         struct url_context* url_ctx, 
                          long cycle_number,
                          int post_method);
 

@@ -135,6 +135,7 @@ static int set_value_to_param (batch_context*const bctx,
                                char*const value, 
                                size_t value_length);
 static void advance_batch_parser_state (batch_context*const bctx);
+static url_appl_type url_schema_classification (const char* const url);
 static char* skip_non_ws (char*ptr, size_t*const len);
 static char* eat_ws (char*ptr, size_t*const len);
 static int is_ws (char*const ptr);
@@ -585,6 +586,9 @@ static int set_value_to_param (
           return -1;
         }
       strcpy(bctx->login_url.url_str, value_start);
+      bctx->login_url.url_lstep = URL_LOAD_LOGIN;
+      bctx->login_url.url_appl_type = url_schema_classification (value_start);
+      bctx->login_url.url_uas_num = -1; // means N/A
       break;
 
     case  LOGIN_URL_MAX_TIME:
@@ -652,6 +656,9 @@ static int set_value_to_param (
           return -1;
         }
       strcpy(bctx->uas_url_ctx_array[bctx->url_index].url_str, value_start);
+      bctx->uas_url_ctx_array[bctx->url_index].url_lstep = URL_LOAD_UAS;
+      bctx->uas_url_ctx_array[bctx->url_index].url_appl_type = url_schema_classification (value_start);
+      bctx->uas_url_ctx_array[bctx->url_index].url_uas_num = bctx->url_index;
       break;
 
     case  UAS_URL_MAX_TIME:
@@ -714,6 +721,9 @@ static int set_value_to_param (
           return -1;
         }
       strcpy(bctx->logoff_url.url_str, value_start);
+      bctx->logoff_url.url_lstep = URL_LOAD_LOGOFF;
+      bctx->logoff_url.url_appl_type = url_schema_classification (value_start);
+      bctx->logoff_url.url_uas_num = -1; // means N/A 
       break;
 
     case  LOGOFF_URL_MAX_TIME:
@@ -738,6 +748,31 @@ static int set_value_to_param (
     } /* 'from switch' */
 
   return 0;
+}
+
+static url_appl_type 
+url_schema_classification (const char* const url)
+{
+  if (!url)
+    {
+      return  URL_APPL_UNDEF;
+    }
+
+#define HTTPS_SCHEMA_STR "https://"
+#define HTTP_SCHEMA_STR "http://"
+#define FTPS_SCHEMA_STR "ftps://"
+#define FTP_SCHEMA_STR "ftp://"
+
+  if (strstr (url, HTTPS_SCHEMA_STR))
+      return URL_APPL_HTTPS;
+  else if (strstr (url, HTTP_SCHEMA_STR))
+    return URL_APPL_HTTP;
+  else if (strstr (url, FTPS_SCHEMA_STR))
+    return URL_APPL_FTPS;
+  else if (strstr (url, FTP_SCHEMA_STR))
+    return URL_APPL_FTP;
+
+  return  URL_APPL_UNDEF;
 }
 
 /*

@@ -29,6 +29,8 @@
 
 #include <curl/curl.h>
 
+#include "url.h"
+
 #define BATCH_NAME_SIZE 32
 #define POST_BUFFER_SIZE 64
 
@@ -45,19 +47,6 @@ typedef struct stat_point
 
 void stat_point_add (stat_point* left, stat_point* right);
 void stat_point_reset (stat_point* point);
-
-
-
-typedef struct url_context
-{
-  char* url_str; /* String of url */
-
-  float url_completion_time;  /* Maximum time given to all clients in the 
-                                  batch to accomplish fetching. */
-
-  int url_interleave_time; /* Client sleeping intervals between fetching 
-                               the urls. */
-} url_context;
 
 
 
