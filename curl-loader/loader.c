@@ -619,9 +619,9 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
 
           default :
             fprintf(cctx->file_output, 
-                    "%ld %s:<= parsing error: wrong status code \"%s\".\n", 
+                    "%ld %s:<= WARNING: parsing error: wrong status code \"%s\".\n", 
                     cctx->cycle_num, cctx->client_name, (char*) data);
-            cctx->client_state = CSTATE_ERROR;
+            /* FTP breaks it - cctx->client_state = CSTATE_ERROR; */
             break;
           }
       }
