@@ -76,7 +76,7 @@ int user_activity_smooth (client_context* cctx)
         return -1;
       }
   
-  while(bctx->curl_handlers_count) 
+  while(bctx->active_clients_count) 
     {
       if (mget_url_smooth (bctx) == -1) 
         {
@@ -88,7 +88,7 @@ int user_activity_smooth (client_context* cctx)
   now = get_tick_count(); 
 
   /* Dump final statistics. */
-  dump_stat_workhorse (bctx->curl_handlers_count, 
+  dump_stat_workhorse (bctx->active_clients_count, 
                        now - bctx->last_measure, 
                        &bctx->http_delta,  
                        &bctx->https_delta);
@@ -175,7 +175,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
       {
         // dump statistics.
         dump_stat_workhorse( 
-                          bctx->curl_handlers_count, 
+                          bctx->active_clients_count, 
                           now - bctx->last_measure, 
                           &bctx->http_delta,  
                           &bctx->https_delta);
@@ -208,7 +208,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
             if (client_state == CSTATE_ERROR || client_state == CSTATE_FINISHED_OK) 
               {
-                bctx->curl_handlers_count--; 
+                bctx->active_clients_count--; 
               }
           
             if (msg_num <= 0)
@@ -332,7 +332,7 @@ static int setup_login_logoff (client_context* cctx, const int login)
           post_standalone = 1;
         }
 
-      single_handle_setup (cctx,
+      setup_curl_handle (cctx,
                            login ? &bctx->login_url : &bctx->logoff_url,
                            0, /* not applicable for the smooth mode */
                            post_standalone /* if 'true' -POST, else GET */  
@@ -368,7 +368,7 @@ static int setup_uas (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
 
-  single_handle_setup (cctx,
+  setup_curl_handle (cctx,
                        &bctx->uas_url_ctx_array[cctx->uas_url_curr_index], /* current url */
                        0, /* cycle, do we need it */ 
                        0 /* GET - zero, unless we'll need to make POST here */

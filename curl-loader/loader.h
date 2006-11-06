@@ -52,7 +52,7 @@ struct stat_point;
   <cycle_number> - used in storming mode;
   <post_method> - when 'true', POST method is used instead of the default GET
 */
-int single_handle_setup (
+int setup_curl_handle (
                          struct client_context*const cctx, 
                          struct url_context* url_ctx, 
                          long cycle_number,

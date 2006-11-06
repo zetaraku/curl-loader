@@ -1,7 +1,7 @@
 version 0.19
 
 * FTP and FTPs support added. Currently it should go to UAS urls section and use
-   for passing credentials ftp url, like:
+   for passing user credentials ftp url (RFC 1738), like:
    ftp://username:password@hostname:port/etc-str
    File ftp.conf added to configs directory.
 

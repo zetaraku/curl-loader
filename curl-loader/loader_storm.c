@@ -92,7 +92,7 @@ int user_activity_storm (client_context*const cdata)
             {
               cdata[k].client_state = CSTATE_UAS_CYCLING;
 
-              single_handle_setup (&cdata[k],
+              setup_curl_handle (&cdata[k],
                                    &bctx->uas_url_ctx_array[u_index], /* index of url string in array */
                                    cycle,
                                    0);
@@ -261,7 +261,7 @@ static int login_clients_storm (client_context* cdata, int cycle)
     {
       cdata[k].client_state = CSTATE_LOGIN;
 
-      single_handle_setup (&cdata[k], /* pointer to client context */
+      setup_curl_handle (&cdata[k], /* pointer to client context */
                            &bctx->login_url, /* login url */
                            cycle, /* zero cycle */
                            0 /*without POST buffers as a more general case*/  
@@ -307,7 +307,7 @@ static int logoff_clients_storm (client_context*const cdata, int cycle)
     {
       cdata[k].client_state = CSTATE_LOGOFF;
 
-      single_handle_setup (&cdata[k],
+      setup_curl_handle (&cdata[k],
                            &bctx->logoff_url, 
                            cycle, /* Cycle number does not matter here */
                            0 /* General case, without POST */

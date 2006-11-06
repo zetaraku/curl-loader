@@ -75,7 +75,7 @@ static void* batch_function (void *batch_data);
 static int initial_handles_init (struct client_context*const cdata);
 
 static 
-int setup_handle_appl (struct client_context*const cctx,  url_context* url_ctx,
+int setup_curl_handle_appl (struct client_context*const cctx,  url_context* url_ctx,
                        int post_method);
 
 static int alloc_init_client_post_buffers (struct client_context* cctx);
@@ -180,7 +180,8 @@ main (int argc, char *argv [])
 }
 
 /*
-  Runs the batch test. Prepared to be used as a POSIX thread function.
+  Runs the batch test. The function may be used as a 
+  POSIX thread function.
 */
 static void* batch_function (void * batch_data)
 {
@@ -207,7 +208,7 @@ static void* batch_function (void * batch_data)
     }
   
   /* 
-     Allocates and inits objects, containing client-context information 
+     Allocates and inits objects, containing client-context information.
   */
   if (alloc_init_client_contexts (&cctx, bctx, output_file) == -1)
     {
@@ -228,8 +229,8 @@ static void* batch_function (void * batch_data)
     }
 
   /* 
-     Now run the long cycles of the user-defined actions, like 
-     fetching various urls and and sleeping in between.
+     Now run login, user-defined actions, like fetching various urls and and 
+     sleeping in between, and logoff.
   */
   if (loading_mode == LOAD_MODE_STORMING)
     {
@@ -312,7 +313,7 @@ static int initial_handles_init (client_context*const cdata)
         }
     }
         
-  bctx->curl_handlers_count = bctx->client_num;
+  bctx->active_clients_count = bctx->client_num;
 
   return 0;
 }
@@ -329,7 +330,7 @@ static int initial_handles_init (client_context*const cdata)
   <cycle_number> - used in storming mode.
   <post_method> - when 'true', POST method is used instead of the default GET
 */
-int single_handle_setup (client_context*const cctx,
+int setup_curl_handle (client_context*const cctx,
                          url_context* url_ctx,
                          long cycle_number,
                          int post_method)
@@ -343,24 +344,13 @@ int single_handle_setup (client_context*const cctx,
     }
 
   /*
-  char* url = NULL;
-
-  if (url_num >= URL_INDEX_UAS_URL_START)
-    url = bctx->uas_url_ctx_array[url_num].url_str;
-  else if (url_num == URL_INDEX_LOGIN_URL)
-    url = bctx->login_url.url_str;
-  else if (url_num == URL_INDEX_LOGOFF_URL)
-    url = bctx->logoff_url.url_str;
-  */
-
-  /*
     Remove the handle from the multiple handle and reset it. 
     Still the handle remembers DNS, cookies, etc. 
   */
   curl_multi_remove_handle (bctx->multiple_handle, handle);
   curl_easy_reset (handle);
 
-  /* Now set all options */
+  /* Bind the handle to a certain IP-address */
   curl_easy_setopt (handle, CURLOPT_INTERFACE, 
                     bctx->ip_addr_array [cctx->client_index]);
 
@@ -411,20 +401,25 @@ int single_handle_setup (client_context*const cctx,
       cctx->cycle_num = cycle_number;
     }
 
-  /* This is to return cctx pointer as the last void* userp to tracing function. */
+  /* 
+     This is to return cctx pointer as the last void* userp to the 
+     tracing function. 
+  */
   curl_easy_setopt (handle, CURLOPT_DEBUGDATA, cctx);
 
-  /* This is to set the private pointer. */
+  /* Set the private pointer to be used by the smooth-mode. */
   curl_easy_setopt (handle, CURLOPT_PRIVATE, cctx);
 
   /* Without the buffer set, we do not get any errors in tracing function. */
   curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer);    
 
-
-  if (setup_handle_appl (cctx, url_ctx, post_method) == -1)
+  /* 
+     Application (url) specific setups, like HTTP-specific, FTP-specific, etc. 
+  */
+  if (setup_curl_handle_appl (cctx, url_ctx, post_method) == -1)
     {
       fprintf (stderr,
-               "%s - error: setup_handle_appl () failed .\n",
+               "%s - error: setup_curl_handle_appl () failed .\n",
                __func__);
       return -1;
     }
@@ -439,7 +434,7 @@ int single_handle_setup (client_context*const cctx,
    Application/url-type specific setup 
 */
 static 
-int setup_handle_appl (
+int setup_curl_handle_appl (
                        client_context*const cctx,  
                        url_context* url_ctx,
                        int post_method)
@@ -494,14 +489,14 @@ int setup_handle_appl (
     }
   else
     {
-
+      /* FTP-specific setup */
     }
 
   return 0;
 }
 
 /*
-  Used to log activity for each individual session. 
+  Used to log activities of each client . 
 */
 static int client_tracing_function (CURL *handle, curl_infotype type, 
                                     unsigned char *data, size_t size, void *userp)

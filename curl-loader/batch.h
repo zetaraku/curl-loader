@@ -56,7 +56,8 @@ void stat_point_reset (stat_point* point);
   Batch is a group of clients with the same characteristics and loading
   behavior.
 
-  The structure is used to keep all batch-relevant information for loading.
+  The structure is used to keep all batch-relevant configuration and run-time
+  information.
 */
 typedef struct batch_context
 {
@@ -94,8 +95,8 @@ typedef struct batch_context
   char login_password[32];  /* Authentication login_password */
   
   size_t login_req_type; /* either 
-                            LOGIN_REQ_TYPE_GET_AND_POST (1) or 
-                            LOGIN_REQ_TYPE_POST (2) 
+                            LOGIN_REQ_TYPE_GET_AND_POST or 
+                            LOGIN_REQ_TYPE_POST 
                          */
 
   /* The string to be used as the base for post message */
@@ -122,9 +123,9 @@ typedef struct batch_context
   int do_logoff;
 
   size_t logoff_req_type; /* 
-                             LOGOFF_REQ_TYPE_GET (1), 
-                             LOGOFF_REQ_TYPE_GET_AND_POST (2),
-                             LOGOFF_REQ_TYPE_POST (3) 
+                             LOGOFF_REQ_TYPE_GET, 
+                             LOGOFF_REQ_TYPE_GET_AND_POST,
+                             LOGOFF_REQ_TYPE_POST
                           */
 
   char logoff_post_str[POST_BUFFER_SIZE + 1];
@@ -158,7 +159,7 @@ typedef struct batch_context
 
   /*---------------SMOOTH-mode specific  --------------------*/
 
-  int curl_handlers_count; /* Counter used by smooth-loading mode */
+  int active_clients_count; /* Counter used by smooth-loading mode */
 
   u_long start_time; 
   u_long last_measure;
