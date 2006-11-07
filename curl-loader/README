@@ -22,9 +22,9 @@ the same sort of activities. Configurable activities of the simulated clients ar
 SUCCESSFULLY USED:
 
 1. To simulate HTTP/HTTPS load of thousands of clients against an authentication 
-    gateway for testing of the gateway performance in various scenarios.
+   gateway for testing of the gateway performance in various scenarios.
 
-     curl-loader supplied  client load against Apache web-server with the gateway 
+    curl-loader supplied client load against Apache web-server with the gateway 
     in the middle, where the gateway performed browser hijacking and HTTP- 
     redirection of the curl-clients to the HTTPS url at the gateway own 
     web-server. HTTPS page of the web-server responded with a POST form to be 
@@ -54,7 +54,7 @@ MAY BE USED:
 1. To create testing load for various HTTP/HTTPS/FTP/FTPS/LDAP, etc devices, 
     where libcurl supports various variants and flavors of the protocols;
 2. For testing of HTTP/HTTPS, FTP/FTPS based applications, application servers;
-2. For etc, etc, etc applications.
+3. For etc, etc, etc applications.
 
 OS SUPPORT:
 Currently linux due to actually unlimited number of secondary ip-addresses,
@@ -80,10 +80,10 @@ suggested in the files, located in "configs" directory.
 ENVIRONMENT: ATTENTION !!! IMPORTANT !!!
 Running hundreds and thousands of clients, please do not forget:
     - to increase limit of descriptors (sockets) by running e.g. 
-    #ulimit -n 10000;
+      #ulimit -n 10000;
     - optionally, to set reuse of sockets in time-wait state: by setting 
-    #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or  
-    #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;
+      #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or  
+      #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;
 
 PERFORMANCE ISSUES:
 A limit of 1000 clients per batch (due to select) may be worked around by 
@@ -192,7 +192,7 @@ UAS_URLS_NUM = 2 # Number of urls
 
 UAS_URL=ftp://anonymous:stam@localhost/curl-7.16.0.tar.gz # Rather large file
 UAS_URL_MAX_TIME = 20        # Maximum batch time in seconds to fetch the url
-UAS_URL_INTERLEAVE_TIME = 0 # Time in seconds to sleep after fetching the url
+UAS_URL_INTERLEAVE_TIME = 0  # Time in seconds to sleep after fetching the url
 
 UAS_URL= http://localhost/apache2-default/index.html
 UAS_URL_MAX_TIME = 4        # Maximum batch time in seconds to fetch the url

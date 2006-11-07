@@ -21,10 +21,6 @@ Question 1: whether to count SSL handshake time for HTTPS;
 Question 2: resolving time;
 
 
-are redirects numbers, server TCP delay, server SSL-delay (HTTPS only) 
-and server application (HTTP) delay per client as well as averages per
-batch of clients.
-
 SIPP provides a useful console output with the loading scenario presentation
 and updatable "running counters". Worth using this approach to present
 load scenario and major statistics counters. Statistics may be also outputted
@@ -55,4 +51,3 @@ resolver=no, global, cares, default is no. If "global" (global DNS cache) enable
 curl_multi_socket() approach and epoll support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
 from a single process can become a reality.
-
