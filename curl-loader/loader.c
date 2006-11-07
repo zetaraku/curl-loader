@@ -523,46 +523,51 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
     }
 
   const char*const url = url_effective ? url_effective : url_target;
-  //const char*const url = url_target;
   const int url_print = (url_logging && url) ? 1 : 0;
+  const int url_diff = (url_print && url_effective && url_target) ? 
+    strcmp(url_effective, url_target) : 0;
 
   switch (type)
     {
     case CURLINFO_TEXT:
       if (verbose_logging)
-          fprintf(cctx->file_output, "%ld %s %s :== Info: %s",
-                  cctx->cycle_num, cctx->client_name, url_print ? url : "", data);
+          fprintf(cctx->file_output, "%ld %s :== Info: %s: eff-url: %s, url: %s\n",
+                  cctx->cycle_num, cctx->client_name, data,
+                  url_print ? url : "", url_diff ? url_target : "");
       break;
 
     case CURLINFO_ERROR:
-      fprintf(cctx->file_output, "%ld %s %s   !! ERROR: %s", 
-              cctx->cycle_num, cctx->client_name, url_print ? url : "", data);
+      fprintf(cctx->file_output, "%ld %s !! ERROR: %s: eff-url: %s, url: %s\n", 
+              cctx->cycle_num, cctx->client_name, data, 
+              url_print ? url : "", url_diff ? url_target : "");
       cctx->client_state = CSTATE_ERROR;
       break;
 
     case CURLINFO_HEADER_OUT:
       if (verbose_logging)
-          fprintf(cctx->file_output, "%ld %s %s => Send header\n", 
-                  cctx->cycle_num, cctx->client_name, url_print ? url : "");
+          fprintf(cctx->file_output, "%ld %s => Send header: eff-url: %s, url: %s\n", 
+                  cctx->cycle_num, cctx->client_name, url_print ? url : "", url_diff ? url_target : "");
 
       if (cctx->is_https)
-        cctx->bctx->https_delta.data_out += (unsigned long) size; 
+        cctx->bctx->https_delta.data_out += (u_long) size; 
       else 
-        cctx->bctx->http_delta.data_out += (unsigned long) size;
+        cctx->bctx->http_delta.data_out += (u_long) size;
       break;
 
     case CURLINFO_DATA_OUT:
       if (verbose_logging)
-          fprintf(cctx->file_output, "%ld %s %s => Send data\n", 
-                  cctx->cycle_num, cctx->client_name, url_print ? url : "");
+          fprintf(cctx->file_output, "%ld %s => Send data: eff-url: %s, url: %s\n", 
+                  cctx->cycle_num, cctx->client_name, url_print ? url : "",
+                  url_diff ? url_target : "");
 
-      cctx->bctx->http_delta.data_out += (unsigned long) size;
+      cctx->bctx->http_delta.data_out += (u_long) size;
       break;
 
     case CURLINFO_SSL_DATA_OUT:
       if (verbose_logging) 
-          fprintf(cctx->file_output, "%ld %s %s => Send ssl data\n", 
-                  cctx->cycle_num, cctx->client_name, url_print ? url : "");
+          fprintf(cctx->file_output, "%ld %s => Send ssl data: eff-url: %s, url: %s\n", 
+                  cctx->cycle_num, cctx->client_name, url_print ? url : "",
+                  url_diff ? url_target : "");
 
       cctx->bctx->https_delta.data_out += (unsigned long) size;
       break;
@@ -581,8 +586,9 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
         long response_status = 0, response_module = 0;
         
         if (verbose_logging)
-          fprintf(cctx->file_output, "%ld %s %s <= Recv header\n", 
-                  cctx->cycle_num, cctx->client_name, url_print ? url : "");
+          fprintf(cctx->file_output, "%ld %s <= Recv header: eff-url: %s, url: %s\n", 
+                  cctx->cycle_num, cctx->client_name, url_print ? url : "",
+                  url_diff ? url_target : "");
         
         curl_easy_getinfo (handle, CURLINFO_RESPONSE_CODE, &response_status);
 
@@ -592,36 +598,38 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
           {
           case 1: /* 100-Continue and 101 responses */
             if (verbose_logging)
-              fprintf(cctx->file_output, "%ld %s:!! %ld CONTINUE\n", 
-                      cctx->cycle_num, cctx->client_name, response_status);
+              fprintf(cctx->file_output, "%ld %s:!! %ld CONTINUE: eff-url: %s, url: %s\n", 
+                      cctx->cycle_num, cctx->client_name, response_status,
+                      url_print ? url : "", url_diff ? url_target : "");
             break;  
           case 2: /* 200 OK */
             if (verbose_logging)
-              fprintf(cctx->file_output, "%ld %s:!! %ld OK\n",
-                      cctx->cycle_num, cctx->client_name, response_status);
+              fprintf(cctx->file_output, "%ld %s:!! %ld OK: eff-url: %s, url: %s\n",
+                      cctx->cycle_num, cctx->client_name, response_status,
+                      url_print ? url : "", url_diff ? url_target : "");
             break;       
           case 3: /* 3xx REDIRECTIONS */
-            fprintf(cctx->file_output, "%ld %s:!! %ld REDIRECTION: %s\n", 
-                    cctx->cycle_num, cctx->client_name, response_status, data);
+            fprintf(cctx->file_output, "%ld %s:!! %ld REDIRECTION: %s: eff-url: %s, url: %s\n", 
+                    cctx->cycle_num, cctx->client_name, response_status, data,
+                    url_print ? url : "", url_diff ? url_target : "");
             break;
-          case 4: /* 4xx Client Error */
-            fprintf(cctx->file_output, "%ld %s %s :!! %ld CLIENT_ERROR : %s\n", 
-                    cctx->cycle_num, cctx->client_name, url_print ? url : "", 
-                    response_status, data);
-            /* TODO: count client errors - wrong - cctx->client_state =CSTATE_ERROR; */
-            break;
+          case 4: /* 4xx Client Error. Being a client side, can we ever get it?*/
+            fprintf(cctx->file_output, "%ld %s :!! %ld CLIENT_ERROR : %s: eff-url: %s, url: %s\n", 
+                    cctx->cycle_num, cctx->client_name, response_status, data,
+                    url_print ? url : "", url_diff ? url_target : "");
+             break;
           case 5: /* 5xx Server Error */
-            fprintf(cctx->file_output, "%ld %s %s :!! %ld SERVER_ERROR : %s\n", 
-                    cctx->cycle_num, cctx->client_name, url_print ? url : "", 
-                    response_status, data);
-            /* TODO: count client errors - wrong - cctx->client_state = CSTATE_ERROR; */
+            fprintf(cctx->file_output, "%ld %s :!! %ld SERVER_ERROR : %s: eff-url: %s, url: %s\n", 
+                    cctx->cycle_num, cctx->client_name, response_status, data,
+                    url_print ? url : "", url_diff ? url_target : "");
+            /* TODO: count server errors */
             break;
 
           default :
             fprintf(cctx->file_output, 
                     "%ld %s:<= WARNING: parsing error: wrong status code \"%s\".\n", 
                     cctx->cycle_num, cctx->client_name, (char*) data);
-            /* FTP breaks it - cctx->client_state = CSTATE_ERROR; */
+            /* FTP breaks it: - cctx->client_state = CSTATE_ERROR; */
             break;
           }
       }
@@ -629,16 +637,18 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
 
     case CURLINFO_DATA_IN:
       if (verbose_logging) 
-          fprintf(cctx->file_output, "%ld %s %s <= Recv data\n", 
-                  cctx->cycle_num, cctx->client_name, url_print ? url : "");
-      cctx->bctx->http_delta.data_in += (unsigned long) size;         
+          fprintf(cctx->file_output, "%ld %s <= Recv data: eff-url: %s, url: %s\n", 
+                  cctx->cycle_num, cctx->client_name, 
+                  url_print ? url : "", url_diff ? url_target : "");
+      cctx->bctx->http_delta.data_in += (u_long) size;         
       break;
 
     case CURLINFO_SSL_DATA_IN:
       if (verbose_logging) 
-          fprintf(cctx->file_output, "%ld %s %s <= Recv ssl data\n", 
-                  cctx->cycle_num, cctx->client_name, url_print && url ? url : "");
-      cctx->bctx->https_delta.data_in += (unsigned long) size;
+          fprintf(cctx->file_output, "%ld %s <= Recv ssl data: eff-url: %s, url: %s\n", 
+                  cctx->cycle_num, cctx->client_name, 
+                  url_print && url ? url : "", url_diff ? url_target : "");
+      cctx->bctx->https_delta.data_in += (u_long) size;
       break;
 
     default:
