@@ -39,16 +39,16 @@ struct stat_point;
 
 /*---------  Common loading functions ----------------*/
 
-
-
 /*
   Setup for a single curl handle (client): removes a handle from multi-handle, 
   resets the handle, inits it, and, finally, adds the handle back to the
   multi-handle.
 
+  Calls inside an application-specific routine to setup either HTTP or other
+  application (FTP, etc) specific features.
+
   <ctx> - pointer to the client context;
-  <url_index> - either URL_INDEX_LOGIN_URL, URL_INDEX_LOGOFF_URL or
-                       some number eq or above URL_INDEX_UAS_URL_START;
+  <url_ctx> - pointer to 
   <cycle_number> - used in storming mode;
   <post_method> - when 'true', POST method is used instead of the default GET
 */
