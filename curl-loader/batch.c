@@ -30,8 +30,26 @@ void stat_point_add (stat_point* left, stat_point* right)
 
   left->data_in += right->data_in;
   left->data_out += right->data_out;
+  
   left->requests += right->requests;
-  left->errors += right->errors;
+  left->resp_redirs += right->resp_redirs;
+  left->resp_oks += right->resp_oks;
+  left->resp_serv_errs += right->resp_serv_errs;
+  left->other_errs += right->other_errs;
+  
+  const int total_points = left->appl_delay_points + right->appl_delay_points;
+
+  if (total_points > 0)
+    {
+      left->appl_delay = (left->appl_delay * left->appl_delay_points  + 
+                          right->appl_delay * right->appl_delay_points) / total_points;
+         
+    }
+  else
+    {
+      left->appl_delay = 0;
+    }
+  
 }
 
 void stat_point_reset (stat_point* p)
@@ -39,8 +57,11 @@ void stat_point_reset (stat_point* p)
   if (!p)
     return;
 
-  p->data_in = p->data_out = p->requests = p->errors = 0;
-  
+  p->data_in = p->data_out = 0;
+  p->requests = p->resp_redirs = p->resp_oks = p->resp_serv_errs = 
+    p->other_errs = 0;
+  p->appl_delay_points = 0;
+  p->appl_delay = 0;
 }
 
 

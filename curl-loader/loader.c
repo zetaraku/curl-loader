@@ -541,6 +541,8 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
               cctx->cycle_num, cctx->client_name, data, 
               url_print ? url : "", url_diff ? url_target : "");
       cctx->client_state = CSTATE_ERROR;
+      stat_err_inc (cctx);
+      hdrs_clear_all (cctx);
       break;
 
     case CURLINFO_HEADER_OUT:
@@ -552,6 +554,13 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
         cctx->bctx->https_delta.data_out += (u_long) size; 
       else 
         cctx->bctx->http_delta.data_out += (u_long) size;
+
+      if (!cctx->hdrs_req)
+        {
+          cctx->hdrs_req++;
+          stat_req_inc (cctx);
+        }
+      hdrs_clear_non_req (cctx);
       break;
 
     case CURLINFO_DATA_OUT:
@@ -561,6 +570,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   url_diff ? url_target : "");
 
       cctx->bctx->http_delta.data_out += (u_long) size;
+      hdrs_clear_all (cctx);
       break;
 
     case CURLINFO_SSL_DATA_OUT:
@@ -570,6 +580,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   url_diff ? url_target : "");
 
       cctx->bctx->https_delta.data_out += (unsigned long) size;
+      hdrs_clear_all (cctx);
       break;
       
     case CURLINFO_HEADER_IN:
@@ -601,28 +612,52 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
               fprintf(cctx->file_output, "%ld %s:!! %ld CONTINUE: eff-url: %s, url: %s\n", 
                       cctx->cycle_num, cctx->client_name, response_status,
                       url_print ? url : "", url_diff ? url_target : "");
+            hdrs_clear_all (cctx);
             break;  
           case 2: /* 200 OK */
             if (verbose_logging)
               fprintf(cctx->file_output, "%ld %s:!! %ld OK: eff-url: %s, url: %s\n",
                       cctx->cycle_num, cctx->client_name, response_status,
                       url_print ? url : "", url_diff ? url_target : "");
-            break;       
+
+            if (!cctx->hdrs_2xx)
+              {
+                cctx->hdrs_2xx++;
+                stat_2xx_inc (cctx);
+              }
+            hdrs_clear_non_2xx (cctx);
+            break;
+       
           case 3: /* 3xx REDIRECTIONS */
             fprintf(cctx->file_output, "%ld %s:!! %ld REDIRECTION: %s: eff-url: %s, url: %s\n", 
                     cctx->cycle_num, cctx->client_name, response_status, data,
                     url_print ? url : "", url_diff ? url_target : "");
+
+            if (!cctx->hdrs_3xx)
+              {
+                cctx->hdrs_3xx++;
+                stat_3xx_inc (cctx);
+              }
+            hdrs_clear_non_3xx (cctx);
             break;
+
           case 4: /* 4xx Client Error. Being a client side, can we ever get it?*/
             fprintf(cctx->file_output, "%ld %s :!! %ld CLIENT_ERROR : %s: eff-url: %s, url: %s\n", 
                     cctx->cycle_num, cctx->client_name, response_status, data,
                     url_print ? url : "", url_diff ? url_target : "");
              break;
+
           case 5: /* 5xx Server Error */
             fprintf(cctx->file_output, "%ld %s :!! %ld SERVER_ERROR : %s: eff-url: %s, url: %s\n", 
                     cctx->cycle_num, cctx->client_name, response_status, data,
                     url_print ? url : "", url_diff ? url_target : "");
-            /* TODO: count server errors */
+
+            if (!cctx->hdrs_5xx)
+              {
+                cctx->hdrs_5xx++;
+                stat_5xx_inc (cctx);
+              }
+            hdrs_clear_non_5xx (cctx);
             break;
 
           default :
@@ -640,7 +675,8 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
           fprintf(cctx->file_output, "%ld %s <= Recv data: eff-url: %s, url: %s\n", 
                   cctx->cycle_num, cctx->client_name, 
                   url_print ? url : "", url_diff ? url_target : "");
-      cctx->bctx->http_delta.data_in += (u_long) size;         
+      cctx->bctx->http_delta.data_in += (u_long) size;
+      hdrs_clear_all (cctx);
       break;
 
     case CURLINFO_SSL_DATA_IN:
@@ -649,6 +685,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   cctx->cycle_num, cctx->client_name, 
                   url_print && url ? url : "", url_diff ? url_target : "");
       cctx->bctx->https_delta.data_in += (u_long) size;
+      hdrs_clear_all (cctx);
       break;
 
     default:

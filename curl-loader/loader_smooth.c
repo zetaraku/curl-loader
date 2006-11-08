@@ -46,7 +46,7 @@ static int load_logoff_state (client_context* cctx);
 
 static int is_last_cycling_state (client_context* cctx);
 static void advance_cycle_num (client_context* cctx);
-static int on_cycling_completed  (client_context* cctx);
+static int on_cycling_completed (client_context* cctx);
 
 static int setup_login_logoff (client_context* cctx, const int login);
 static int setup_uas (client_context* cctx);
@@ -221,17 +221,17 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
 static int load_next_step (client_context* cctx)
 {
-  batch_context* bctx = cctx->bctx;
+  //  batch_context* bctx = cctx->bctx;
 
   //fprintf (stderr, "%s - entered client_state:%d, url:%d.\n", 
   //          __func__, cctx->client_state, cctx->uas_url_curr_index);
 
-  if (cctx->client_state != CSTATE_ERROR &&
-      cctx->client_state != CSTATE_INIT)
-    {
-      cctx->is_https ? bctx->https_delta.requests++ : bctx->http_delta.requests++;
+  //  if (cctx->client_state != CSTATE_ERROR &&
+  //    cctx->client_state != CSTATE_INIT)
+  //  {
+      //cctx->is_https ? bctx->https_delta.requests++ : bctx->http_delta.requests++;
       //fprintf (stderr, "Inc to %lld\n", bctx->http_delta.requests); 
-    }
+  // }
 
   switch (cctx->client_state)
     {
@@ -552,13 +552,10 @@ static void dump_statistics (
   
   fprintf(stderr,
 	      "Test took %d seconds\n", (int) period);
-  fprintf(stderr,
-          "HTTP(Err: %d In/s: %d Out/s: %d Req/s: %d) HTTPS(Err: %d In/s: %d Out/s: %d Req/s: %d)\n",    
-	      (int)  http->errors, (int) (http->data_in/period), (int) (http->data_out/period),
-	      (int) (http->requests/period),
-	      (int)  https->errors, (int) (https->data_in/period),
-	      (int) (https->data_out/period), (int) (https->requests/period)
-          );
+  fprintf(stderr, "HTTP - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Oth-Err: %ld \n",
+          http->requests, http->resp_redirs, http->resp_oks, http->resp_serv_errs, http->other_errs);
+  fprintf(stderr, "HTTPS - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Oth-Err: %ld \n",
+          https->requests, https->resp_redirs, https->resp_oks, https->resp_serv_errs, https->other_errs);
 }
 
 static void dump_stat_workhorse (int clients, 
@@ -567,17 +564,15 @@ static void dump_stat_workhorse (int clients,
                                  stat_point *https)
 {
   period /= 1000;
-  if (period == 0) 
+  if (period == 0)
     {
       period = 1;
     }
 
-  fprintf(stderr,
-	      "Clients: %d Time %d sec HTTP(Err: %d In/s: %d Out/s: %d Req: %d) HTTPS(Err: %d In/s: %d Out/s: %d Req: %d)\n",
-	      (int) clients, (int) period, 
-	      (int) http->errors, (int) (http->data_in/period),
-	      (int) (http->data_out/period), (int) http->requests,
-	      (int) https->errors, (int) (https->data_in/period),
-	      (int) (https->data_out/period), (int) https->requests);
+  fprintf(stderr, "Clients: %d Time %d sec\n", (int) clients, (int) period);
+  fprintf(stderr, "HTTP - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Oth-Err: %ld \n",
+          http->requests, http->resp_redirs, http->resp_oks, http->resp_serv_errs, http->other_errs);
+   fprintf(stderr, "HTTPS - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Oth-Err: %ld \n",
+          https->requests, https->resp_redirs, https->resp_oks, https->resp_serv_errs, https->other_errs);
 }
 

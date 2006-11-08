@@ -41,8 +41,16 @@ typedef struct stat_point
 {
   unsigned long long data_in;
   unsigned long long data_out;
-  unsigned long long requests;
-  unsigned long long errors;
+
+  u_long requests; /* number of requests issued */
+  u_long resp_redirs;  /* number of 3xx redirections */
+  u_long resp_oks;       /* number of 2xx responses */
+  u_long resp_serv_errs; /* number of 5xx responses */
+  u_long other_errs; /* Errors of resolving, connecting, internal errors, etc. */
+
+  int appl_delay_points;
+  unsigned long long  appl_delay; /* Average delay in msec between request and response */
+
 } stat_point;
 
 void stat_point_add (stat_point* left, stat_point* right);

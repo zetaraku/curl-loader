@@ -24,6 +24,8 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+#include <stdio.h>
+
 #define CLIENT_NAME_LEN 32
 
 /*
@@ -94,6 +96,25 @@ typedef struct client_context
   char* post_data_login;
   char* post_data_logoff;
 
+  /* Flags to mark at the headers at first header */
+  int hdrs_req;
+
+  int hdrs_2xx;
+  int hdrs_3xx;
+  int hdrs_5xx;
+
 } client_context;
+
+void hdrs_clear_all (client_context* cctx);
+void hdrs_clear_non_req (client_context* cctx);
+void hdrs_clear_non_2xx (client_context* cctx);
+void hdrs_clear_non_3xx (client_context* cctx);
+void hdrs_clear_non_5xx (client_context* cctx);
+
+void stat_err_inc (client_context* cctx);
+void stat_req_inc (client_context* cctx);
+void stat_2xx_inc (client_context* cctx);
+void stat_3xx_inc (client_context* cctx);
+void stat_5xx_inc (client_context* cctx);
 
 #endif /*   CLIENT_H */
