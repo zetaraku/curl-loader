@@ -103,6 +103,8 @@ typedef struct client_context
   int hdrs_3xx;
   int hdrs_5xx;
 
+  unsigned long req_tmsec;
+
 } client_context;
 
 void hdrs_clear_all (client_context* cctx);
@@ -116,5 +118,8 @@ void stat_req_inc (client_context* cctx);
 void stat_2xx_inc (client_context* cctx);
 void stat_3xx_inc (client_context* cctx);
 void stat_5xx_inc (client_context* cctx);
+
+void stat_appl_delay_add (client_context* cctx, unsigned long resp_timestamp);
+void stat_appl_delay_2xx_add (client_context* cctx, unsigned long resp_timestamp);
 
 #endif /*   CLIENT_H */

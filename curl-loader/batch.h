@@ -49,7 +49,10 @@ typedef struct stat_point
   u_long other_errs; /* Errors of resolving, connecting, internal errors, etc. */
 
   int appl_delay_points;
-  unsigned long long  appl_delay; /* Average delay in msec between request and response */
+  u_long  appl_delay; /* Average delay in msec between request and response */
+
+  int appl_delay_2xx_points;
+  u_long  appl_delay_2xx; /* Average delay in msec between request and 2xx-OK response */
 
 } stat_point;
 

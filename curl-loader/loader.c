@@ -559,6 +559,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
         {
           cctx->hdrs_req++;
           stat_req_inc (cctx);
+          cctx->req_tmsec = get_tick_count ();
         }
       hdrs_clear_non_req (cctx);
       break;
@@ -624,6 +625,9 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
               {
                 cctx->hdrs_2xx++;
                 stat_2xx_inc (cctx);
+                const u_long time_2xx_resp = get_tick_count ();
+                stat_appl_delay_2xx_add (cctx, time_2xx_resp);
+                stat_appl_delay_add (cctx, time_2xx_resp);
               }
             hdrs_clear_non_2xx (cctx);
             break;
@@ -637,6 +641,8 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
               {
                 cctx->hdrs_3xx++;
                 stat_3xx_inc (cctx);
+                const u_long time_3xx_resp = get_tick_count ();
+                stat_appl_delay_add (cctx, time_3xx_resp);
               }
             hdrs_clear_non_3xx (cctx);
             break;
@@ -656,6 +662,8 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
               {
                 cctx->hdrs_5xx++;
                 stat_5xx_inc (cctx);
+                const u_long time_5xx_resp = get_tick_count ();
+                stat_appl_delay_add (cctx, time_5xx_resp);
               }
             hdrs_clear_non_5xx (cctx);
             break;
@@ -950,4 +958,17 @@ do_nothing_write_func (void *ptr, size_t size, size_t nmemb, void *stream)
      just skipping the body bytes without any output. 
   */
   return (size*nmemb);
+}
+
+unsigned long get_tick_count ()
+{
+  struct timeval  tval;
+
+  if (!gettimeofday (&tval, NULL) == -1)
+    {
+      fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", 
+              __func__, errno);
+      exit (1);
+    }
+  return tval.tv_sec * 1000 + (tval.tv_usec / 1000);
 }

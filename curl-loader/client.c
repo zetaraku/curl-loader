@@ -69,3 +69,40 @@ void stat_5xx_inc (client_context* cctx)
   cctx->is_https ? cctx->bctx->https_delta.resp_serv_errs++ :
     cctx->bctx->http_delta.resp_serv_errs++;
 }
+
+void stat_appl_delay_add (client_context* cctx, u_long resp_timestamp)
+{
+  if (resp_timestamp > cctx->req_tmsec)
+    {
+      if (cctx->is_https)
+        {
+          cctx->bctx->https_delta.appl_delay = 
+            (cctx->bctx->https_delta.appl_delay * cctx->bctx->https_delta.appl_delay_points +
+             resp_timestamp - cctx->req_tmsec) / ++cctx->bctx->https_delta.appl_delay_points;
+        }
+      else
+        {
+          cctx->bctx->http_delta.appl_delay = 
+            (cctx->bctx->http_delta.appl_delay * cctx->bctx->http_delta.appl_delay_points +
+             resp_timestamp - cctx->req_tmsec) / ++cctx->bctx->http_delta.appl_delay_points;
+        }
+    }
+}
+void stat_appl_delay_2xx_add (client_context* cctx, u_long resp_timestamp)
+{
+    if (resp_timestamp > cctx->req_tmsec)
+    {
+      if (cctx->is_https)
+        {
+          cctx->bctx->https_delta.appl_delay_2xx = 
+            (cctx->bctx->https_delta.appl_delay_2xx * cctx->bctx->https_delta.appl_delay_2xx_points +
+             resp_timestamp - cctx->req_tmsec) / ++cctx->bctx->https_delta.appl_delay_2xx_points;
+        }
+      else
+        {
+          cctx->bctx->http_delta.appl_delay_2xx = 
+            (cctx->bctx->http_delta.appl_delay_2xx * cctx->bctx->http_delta.appl_delay_2xx_points +
+             resp_timestamp - cctx->req_tmsec) / ++cctx->bctx->http_delta.appl_delay_2xx_points;
+        }
+    }
+}

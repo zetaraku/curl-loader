@@ -51,7 +51,6 @@ static int on_cycling_completed (client_context* cctx);
 static int setup_login_logoff (client_context* cctx, const int login);
 static int setup_uas (client_context* cctx);
 
-static unsigned long get_tick_count ();
 static void dump_statistics (
                              unsigned long period,  
                              stat_point *http, 
@@ -524,18 +523,7 @@ static int load_logoff_state (client_context* cctx)
   return setup_login_logoff (cctx, 0);
 }
 
-static unsigned long get_tick_count ()
-{
-  struct timeval  tval;
 
-  if (!gettimeofday (&tval, NULL) == -1)
-    {
-      fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", 
-              __func__, errno);
-      exit (1);
-    }
-  return tval.tv_sec * 1000 + (tval.tv_usec / 1000);
-}
 
 static void dump_statistics (
                              unsigned long period,  
@@ -552,10 +540,12 @@ static void dump_statistics (
   
   fprintf(stderr,
 	      "Test took %d seconds\n", (int) period);
-  fprintf(stderr, "HTTP - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Oth-Err: %ld \n",
-          http->requests, http->resp_redirs, http->resp_oks, http->resp_serv_errs, http->other_errs);
-  fprintf(stderr, "HTTPS - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Oth-Err: %ld \n",
-          https->requests, https->resp_redirs, https->resp_oks, https->resp_serv_errs, https->other_errs);
+  fprintf(stderr, "HTTP - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld,  Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec)\n",
+          http->requests, http->resp_redirs, http->resp_oks, http->resp_serv_errs, 
+          http->other_errs, http->appl_delay, http->appl_delay_2xx);
+  fprintf(stderr, "HTTPS - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld, Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec) \n",
+          https->requests, https->resp_redirs, https->resp_oks, https->resp_serv_errs, 
+          https->other_errs, https->appl_delay, https->appl_delay_2xx);
 }
 
 static void dump_stat_workhorse (int clients, 
@@ -570,9 +560,11 @@ static void dump_stat_workhorse (int clients,
     }
 
   fprintf(stderr, "Clients: %d Time %d sec\n", (int) clients, (int) period);
-  fprintf(stderr, "HTTP - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Oth-Err: %ld \n",
-          http->requests, http->resp_redirs, http->resp_oks, http->resp_serv_errs, http->other_errs);
-   fprintf(stderr, "HTTPS - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Oth-Err: %ld \n",
-          https->requests, https->resp_redirs, https->resp_oks, https->resp_serv_errs, https->other_errs);
+  fprintf(stderr, "HTTP - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld,  Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec)\n",
+          http->requests, http->resp_redirs, http->resp_oks, http->resp_serv_errs, 
+          http->other_errs, http->appl_delay, http->appl_delay_2xx);
+   fprintf(stderr, "HTTPS - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld, Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec) \n",
+          https->requests, https->resp_redirs, https->resp_oks, https->resp_serv_errs, 
+           https->other_errs, https->appl_delay, https->appl_delay_2xx);
 }
 

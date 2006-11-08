@@ -74,6 +74,8 @@ int parse_config_file (char* const filename,
 int create_batch_data_array (char*const input_string, 
                              struct batch_context*const bctx);
 
+unsigned long get_tick_count ();
+
 
 /* ------------- Storm loading  functions ----------------*/
 
