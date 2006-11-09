@@ -4,22 +4,7 @@
    may be a good option. There are several requests for that, particularly
    from QA/validation people.
 
-2. Good statistics from the smooth mode to be generalized to the 
-storming mode as well. We need to provide more statistics, which
-not to be limited just to success and error numbers. 
-
-Requested general counters:
-- requests success num;
-- requests errors num below the application: resolving or TCP layers;
-- requests application level errors num, like server errors 5xx;
-- redirects num - 3xx;
-
-Requested server delay counters (per url bases):
-- server TCP-delay, time between SYN from client and SYN-ACK back from server;
-- server application delay, time between request sent and response from server;
-Question 1: whether to count SSL handshake time for HTTPS;
-Question 2: resolving time;
-
+2. Enhancement of statistics for loading/testing:
 
 SIPP provides a useful console output with the loading scenario presentation
 and updatable "running counters". Worth using this approach to present
@@ -31,6 +16,10 @@ We should support options to make:
 - no statistics;
 - minimal set of statistics, TBD;
 - all statistics;
+
+Question 1: whether to count SSL handshake time for HTTPS;
+Question 2: resolving time;
+
 
 3. Configuration/making improvements starting from moving all source-files
 to src directory etc

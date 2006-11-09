@@ -194,7 +194,10 @@ static void* batch_function (void * batch_data)
   batch_context* bctx = (batch_context *) batch_data;
   client_context* cctx = NULL;
   FILE* output_file = 0;
-  char output_file_name[BATCH_NAME_SIZE+4];
+  //FILE* statistics_file = 0;
+  char output_filename[BATCH_NAME_SIZE+4];
+  //char statistics_filename[BATCH_NAME_SIZE+4];
+  
   int  i = 0, rval = -1;
 
   if (! stderr_print_client_msg)
@@ -202,15 +205,34 @@ static void* batch_function (void * batch_data)
       /*
         Init batch logfile for the batch clients output 
       */
-      sprintf (output_file_name, "%s.log", bctx->batch_name);
+      sprintf (output_filename, "%s.log", bctx->batch_name);
 
-      if (!(output_file = fopen(output_file_name, "w")))
+      if (!(output_file = fopen(output_filename, "w")))
         {
           fprintf (stderr, 
                    "%s - \"%s\" - failed to open file \"%s\" with errno %d.\n", 
-                   __func__, bctx->batch_name, output_file_name, errno);
+                   __func__, bctx->batch_name, output_filename, errno);
           return NULL;
         }
+
+      /*
+        Init batch statistics file for loading statistics.
+      */
+      /*
+      sprintf (statistics_filename, "%s.txt", bctx->batch_name);
+      
+      if (!(statistics_file = fopen(output_filename, "w")))
+        {
+          fprintf (stderr, 
+                   "%s - \"%s\" - failed to open file \"%s\" with errno %d.\n", 
+                   __func__, bctx->batch_name, statistics_filename, errno);
+          return NULL;
+        }
+      else
+        {
+          bctx->statistics_file = >statistics_file;
+        }
+      */
     }
   
   /* 
@@ -273,8 +295,12 @@ static void* batch_function (void * batch_data)
     }
 
   free(cctx);
+
   if (output_file)
     fclose (output_file);
+  //if (statistics_file)
+  //   fclose (statistics_file);
+
   free_batch_data_allocations (bctx);
 
   return NULL;
@@ -653,10 +679,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
             hdrs_clear_non_3xx (cctx);
             break;
 
-          case 4: /* 4xx Client Error. Being a client side, can we ever get it?*/
-            fprintf(cctx->file_output, "%ld %s :!! %ld CLIENT_ERROR : %s: eff-url: %s, url: %s\n", 
-                    cctx->cycle_num, cctx->client_name, response_status, data,
-                    url_print ? url : "", url_diff ? url_target : "");
+          case 4: /* 4xx Client Error. Being a client side, can we ever get here?*/
              break;
 
           case 5: /* 5xx Server Error */
@@ -1013,9 +1036,6 @@ void dump_final_statistics (client_context* cctx)
         }
     }
 }
-
-
-
 
 void dump_intermediate_statistics (int clients, 
                                  unsigned long period,  

@@ -1,5 +1,22 @@
-version 0.19
+version 0.19 9/11/2006
 
+* Loading statistics for HTTP/HTTPS enhanced for smooth-mode and added
+  for storming mode.
+  The statistics includes the following counters:
+   - requests num;
+   - responses success num;
+   - 3xx redirects num;
+   - server 5xx errors num;
+   - other errors num, like resolving, tcp-connect, server closing or 
+     empty responses num;
+   - average application server delay (msec), estimated as the time between 
+     HTTP request and HTTP response without taking into the account network
+     latency (RTT);
+   - average application server delay for 2xx (success) HTTP-responses, as above,
+     but only for 2xx responses. The motivation for that is that 3xx redirections
+     and 5xx server errors/rejects may not necessarily provide a true indication
+     of a testing server working functionality.
+	
 * FTP and FTPs support added. Currently it should go to UAS urls section and use
    for passing user credentials ftp url (RFC 1738), like:
    ftp://username:password@hostname:port/etc-str

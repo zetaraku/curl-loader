@@ -172,6 +172,11 @@ typedef struct batch_context
 
   int active_clients_count; /* Counter used by smooth-loading mode */
 
+
+   /*--------------- STATISTICS  --------------------------------------------*/
+
+  FILE* statistics_file;
+
   u_long start_time; 
   u_long last_measure;
 

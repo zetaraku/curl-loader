@@ -236,6 +236,25 @@ There are two login modes supported. GET+POST and POST-only.
 There are three logoff modes supported as GET-only, GET+POST and POST-only.
 HTTP cookies are enabled in curl-loader by default.
 
+
+FTP/FTPS LOAD (just added feature):
 To generate FTP/FTPS load, please, use UAS section and pass user credentials
 via ftp-url according to the RFC 1738), like:
 ftp://username:password@hostname:port/etc-str
+
+
+STATISTICS (just added feature):
+Currently HTTP/HTTPS statistics includes the following counters:
+   - requests num;
+   - responses success num;
+   - 3xx redirects num;
+   - server 5xx errors num;
+   - other errors num, like resolving, tcp-connect, server closing or 
+     empty responses number;
+   - average application server delay (msec), estimated as the time between 
+     HTTP request and HTTP response without taking into the account network
+     latency (RTT);
+   - average application server delay for 2xx (success) HTTP-responses, as above,
+     but only for 2xx responses. The motivation for that is that 3xx redirections
+     and 5xx server errors/rejects may not necessarily provide a true indication
+     of a testing server working functionality.
