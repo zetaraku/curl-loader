@@ -1,4 +1,4 @@
-version 0.19 9/11/2006
+version 0.19 9/11/2006, svn-40
 
 * Loading statistics for HTTP/HTTPS enhanced for smooth-mode and added
   for storming mode.
