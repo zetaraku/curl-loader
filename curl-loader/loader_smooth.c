@@ -51,23 +51,19 @@ static int on_cycling_completed (client_context* cctx);
 static int setup_login_logoff (client_context* cctx, const int login);
 static int setup_uas (client_context* cctx);
 
-static void dump_statistics (
-                             unsigned long period,  
-                             stat_point *http, 
-                             stat_point *https);
-static void dump_stat_workhorse (int clients, 
-                                 unsigned long period,  
-                                 stat_point *http, 
-                                 stat_point *https);
 
 int user_activity_smooth (client_context* cctx)
 {
-  int j, i;
-  unsigned long now;
+  int j;
   batch_context* bctx = cctx->bctx;
   
   bctx->start_time = bctx->last_measure = get_tick_count();
 
+  /* Load the first url for all clients */
+
+  /* TODO. Not all clients should start loading immediately.
+     Calls-per-seconds number (CAPS) should be configurable.
+  */
   for (j = 0 ; j < bctx->client_num; j++)
     if (load_next_step (&cctx[j]) == -1)
       {
@@ -84,35 +80,7 @@ int user_activity_smooth (client_context* cctx)
         }
     }
 
-  now = get_tick_count(); 
-
-  /* Dump final statistics. */
-  dump_stat_workhorse (bctx->active_clients_count, 
-                       now - bctx->last_measure, 
-                       &bctx->http_delta,  
-                       &bctx->https_delta);
-
-  stat_point_add (&bctx->http_total, &bctx->http_delta);
-  stat_point_add (&bctx->https_total, &bctx->https_delta);  
-    
-  fprintf(stderr,"===========================================\n");
-  fprintf(stderr,"End of test:\n"); 
-  fprintf(stderr,"===========================================\n");
-  
-  now = get_tick_count();
-  
-  dump_statistics ((now - bctx->start_time)/ 1000, 
-                   &bctx->http_total,  
-                   &bctx->https_total); 
- 
-   for (i = 0 ; i < bctx->client_num; i++)
-    {
-      if (cctx[i].client_state == CSTATE_ERROR)
-        {
-          fprintf(stderr,"%s - error client %s failed\n", 
-                  __func__, cctx[i].client_name);
-        }
-    }
+  dump_final_statistics (cctx);
 
   return 0;
 }
@@ -120,7 +88,7 @@ int user_activity_smooth (client_context* cctx)
 static int mget_url_smooth (batch_context* bctx)  		       
 {
     CURLM *mhandle =  bctx->multiple_handle;
-    const char *name = bctx->batch_name;
+    // const char *name = bctx->batch_name;
     float max_timeout = DEFAULT_SMOOTH_URL_COMPLETION_TIME;
     
     if (bctx->uas_url_ctx_array)
@@ -144,8 +112,8 @@ static int mget_url_smooth (batch_context* bctx)
 
         max_timeout -= ((float)timeout.tv_sec + (float)timeout.tv_usec/1000000.0) ; 
         curl_multi_fdset(mhandle, &fdread, &fdwrite, &fdexcep, &maxfd);
-        fprintf (stderr, "%s - Waiting for %d clients with seconds %f.\n", 
-                 name, still_running, max_timeout);
+        //        fprintf (stderr, "%s - Waiting for %d clients with seconds %f.\n", 
+        //        name, still_running, max_timeout);
 
         rc = select (maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout) ;
         switch(rc)
@@ -168,22 +136,11 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
     while(CURLM_CALL_MULTI_PERFORM == curl_multi_perform(mhandle,still_running))
       ;
 
-    unsigned long now = get_tick_count(); 
+    u_long now = get_tick_count(); 
 
     if ((now - bctx->last_measure) > snapshot_timeout) 
       {
-        // dump statistics.
-        dump_stat_workhorse( 
-                          bctx->active_clients_count, 
-                          now - bctx->last_measure, 
-                          &bctx->http_delta,  
-                          &bctx->https_delta);
-	  
-        stat_point_add (&bctx->http_total, &bctx->http_delta);
-        stat_point_add (&bctx->https_total, &bctx->https_delta); 
-        stat_point_reset (&bctx->http_delta); 
-        stat_point_reset (&bctx->https_delta); 
-        bctx->last_measure = get_tick_count(); 
+        dump_intermediate_and_advance_total_statistics (bctx);
       }
  
     int msg_num;	
@@ -220,18 +177,6 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
 static int load_next_step (client_context* cctx)
 {
-  //  batch_context* bctx = cctx->bctx;
-
-  //fprintf (stderr, "%s - entered client_state:%d, url:%d.\n", 
-  //          __func__, cctx->client_state, cctx->uas_url_curr_index);
-
-  //  if (cctx->client_state != CSTATE_ERROR &&
-  //    cctx->client_state != CSTATE_INIT)
-  //  {
-      //cctx->is_https ? bctx->https_delta.requests++ : bctx->http_delta.requests++;
-      //fprintf (stderr, "Inc to %lld\n", bctx->http_delta.requests); 
-  // }
-
   switch (cctx->client_state)
     {
     case CSTATE_ERROR:
@@ -253,11 +198,11 @@ static int load_init_state (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
 
-  if (bctx->do_login) // normally first operation is login
+  if (bctx->do_login) /* Normally first operation is login, but who is normal? */
       return load_login_state (cctx);
-  else if (bctx->do_uas) // sometimes, no login defined at all
+  else if (bctx->do_uas) /* Sometimes, no login is defined. Just a traffic-gen */
       return load_uas_state (cctx);
-  else if (bctx->do_logoff) // Logoff load only?  If user wants it, lets do it.
+  else if (bctx->do_logoff) /* Logoff only?  If this is what a user wishing ...  */
       return load_logoff_state (cctx);
 
   return (cctx->client_state = CSTATE_ERROR);
@@ -270,10 +215,14 @@ static int is_last_cycling_state (client_context* cctx)
   switch (cctx->client_state)
     {
     case CSTATE_LOGIN:
-      return (bctx->login_cycling && !bctx->do_uas && !(bctx->do_logoff && bctx->logoff_cycling)) ? 1 : 0;
+      return (bctx->login_cycling && !bctx->do_uas && 
+              !(bctx->do_logoff && bctx->logoff_cycling)) ? 1 : 0;
+
     case CSTATE_UAS_CYCLING:
       return (!(bctx->do_logoff && bctx->logoff_cycling)) ? 1 : 0;
-    case CSTATE_LOGOFF: // logoff cycling, if exists, is the last state of a cycle
+
+    case CSTATE_LOGOFF: /* Logoff cycling, if exists, 
+                           supposed to be the last state of a cycle. */
       return bctx->logoff_cycling ? 1 : 0;
     }
   return 0;
@@ -282,16 +231,15 @@ static int is_last_cycling_state (client_context* cctx)
 static void advance_cycle_num (client_context* cctx)
 {
   cctx->cycle_num++;
-  
-  //fprintf (stderr, "%s -cycle_num:%ld cycles_num:%ld\n", 
-  //         __func__, cctx->cycle_num);
 }
 
 static int on_cycling_completed  (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
 
-  /* Go to not-cycling logoff, if exists, or to finish. */
+  /* 
+     Go to not-cycling logoff, else to the finish-line. 
+  */
   if (bctx->do_logoff && !bctx->logoff_cycling)
     return load_logoff_state (cctx);
 
@@ -333,8 +281,8 @@ static int setup_login_logoff (client_context* cctx, const int login)
 
       setup_curl_handle (cctx,
                            login ? &bctx->login_url : &bctx->logoff_url,
-                           0, /* not applicable for the smooth mode */
-                           post_standalone /* if 'true' -POST, else GET */  
+                           0, /* Not applicable for the smooth mode */
+                           post_standalone /* If 'true' -POST, else GET */  
                            );
     }
   else
@@ -369,7 +317,7 @@ static int setup_uas (client_context* cctx)
 
   setup_curl_handle (cctx,
                        &bctx->uas_url_ctx_array[cctx->uas_url_curr_index], /* current url */
-                       0, /* cycle, do we need it */ 
+                       0, /* Cycle, do we need it? */ 
                        0 /* GET - zero, unless we'll need to make POST here */
                        );
 
@@ -408,7 +356,7 @@ static int load_login_state (client_context* cctx)
                 {
                   /* Configured to cycle, but the state is the last cycling state 
                      and also the only cycling state, therefore, continue login. */
-                  return setup_login_logoff (cctx, 1); // one means login
+                  return setup_login_logoff (cctx, 1); /* 1 - means login */
                 }
             }
  
@@ -435,7 +383,7 @@ static int load_uas_state (client_context* cctx)
 
        if (cctx->uas_url_curr_index >= (size_t)(bctx->uas_urls_num))
         {
-          /* Accomplished all urls for a single UAS -cycle. */
+          /* Accomplished all the urls for a single UAS -cycle. */
 
           cctx->uas_url_curr_index = 0;
  
@@ -446,12 +394,12 @@ static int load_uas_state (client_context* cctx)
 
               if (cctx->cycle_num >= bctx->cycles_num)
                 {
-                  // Either logoff or finish_ok.
+                  /* Either logoff or finish_ok. */
                   return on_cycling_completed (cctx);
                 }
               else
                 {
-                  // continue cycling - take another cycle
+                  /* Continue cycling - take another cycle */
                   if (bctx->do_login && bctx->login_cycling)
                     return load_login_state  (cctx);
                   else
@@ -459,8 +407,10 @@ static int load_uas_state (client_context* cctx)
                 }
             }
 
-          // We are not the last cycling state. The guess is, that the
-          // next state is logoff with cycling.
+          /* 
+             We are not the last cycling state. A guess is, that the
+             next state is logoff with cycling.
+          */
           return load_logoff_state (cctx);
         }
     }
@@ -498,7 +448,7 @@ static int load_logoff_state (client_context* cctx)
 
               if (cctx->cycle_num >= bctx->cycles_num)
                 {
-                  return on_cycling_completed (cctx); // Goes to finish-ok
+                  return on_cycling_completed (cctx); /* Goes to finish-ok */
                 }
               else
                 {
@@ -510,7 +460,7 @@ static int load_logoff_state (client_context* cctx)
                   else if (bctx->do_uas)
                     return load_uas_state (cctx);
                   else /* logoff is the only cycling state - strange, but allow it */
-                    return setup_login_logoff (cctx, 0); // zero means logoff
+                    return setup_login_logoff (cctx, 0); /* 0 - means logoff */
                 }
             }
  
@@ -523,48 +473,4 @@ static int load_logoff_state (client_context* cctx)
   return setup_login_logoff (cctx, 0);
 }
 
-
-
-static void dump_statistics (
-                             unsigned long period,  
-                             stat_point *http, 
-                             stat_point *https)
-{
-  if (period == 0)
-    {
-      fprintf(stderr,
-              "%s - less than 1 second duration test without statistics.\n",
-              __func__);
-      return;
-    } 
-  
-  fprintf(stderr,
-	      "Test took %d seconds\n", (int) period);
-  fprintf(stderr, "HTTP - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld,  Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec)\n",
-          http->requests, http->resp_redirs, http->resp_oks, http->resp_serv_errs, 
-          http->other_errs, http->appl_delay, http->appl_delay_2xx);
-  fprintf(stderr, "HTTPS - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld, Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec) \n",
-          https->requests, https->resp_redirs, https->resp_oks, https->resp_serv_errs, 
-          https->other_errs, https->appl_delay, https->appl_delay_2xx);
-}
-
-static void dump_stat_workhorse (int clients, 
-                                 unsigned long period,  
-                                 stat_point *http, 
-                                 stat_point *https)
-{
-  period /= 1000;
-  if (period == 0)
-    {
-      period = 1;
-    }
-
-  fprintf(stderr, "Clients: %d Time %d sec\n", (int) clients, (int) period);
-  fprintf(stderr, "HTTP - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld,  Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec)\n",
-          http->requests, http->resp_redirs, http->resp_oks, http->resp_serv_errs, 
-          http->other_errs, http->appl_delay, http->appl_delay_2xx);
-   fprintf(stderr, "HTTPS - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld, Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec) \n",
-          https->requests, https->resp_redirs, https->resp_oks, https->resp_serv_errs, 
-           https->other_errs, https->appl_delay, https->appl_delay_2xx);
-}
 

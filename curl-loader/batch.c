@@ -40,16 +40,23 @@ void stat_point_add (stat_point* left, stat_point* right)
   const int total_points = left->appl_delay_points + right->appl_delay_points;
 
   if (total_points > 0)
+    {
       left->appl_delay = (left->appl_delay * left->appl_delay_points  + 
                           right->appl_delay * right->appl_delay_points) / total_points;
+
+      left->appl_delay_points = total_points;
+    }
   else
       left->appl_delay = 0;
 
    const int total_points_2xx = left->appl_delay_2xx_points + right->appl_delay_2xx_points;
 
   if (total_points_2xx > 0)
+    {
       left->appl_delay_2xx = (left->appl_delay_2xx * left->appl_delay_2xx_points  + 
                           right->appl_delay_2xx * right->appl_delay_2xx_points) / total_points_2xx;
+      left->appl_delay_2xx_points = total_points_2xx;
+    }
   else
       left->appl_delay_2xx = 0;
 }

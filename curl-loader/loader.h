@@ -76,6 +76,15 @@ int create_batch_data_array (char*const input_string,
 
 unsigned long get_tick_count ();
 
+void dump_final_statistics (struct client_context* cctx);
+
+void dump_intermediate_statistics (int clients, 
+                          unsigned long period,  
+                          struct stat_point *http, 
+                          struct stat_point *https);
+
+void dump_intermediate_and_advance_total_statistics(struct batch_context* bctx);
+
 
 /* ------------- Storm loading  functions ----------------*/
 

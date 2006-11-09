@@ -74,17 +74,23 @@ static void* batch_function (void *batch_data);
 
 static int initial_handles_init (struct client_context*const cdata);
 
-static 
-int setup_curl_handle_appl (struct client_context*const cctx,  url_context* url_ctx,
-                       int post_method);
+static int setup_curl_handle_appl (
+                                   struct client_context*const cctx,  
+                                   url_context* url_ctx,
+                                   int post_method);
 
 static int alloc_init_client_post_buffers (struct client_context* cctx);
-
-static int alloc_init_client_contexts (client_context** p_cctx, 
+static int alloc_init_client_contexts (
+                                       client_context** p_cctx, 
                                        batch_context* bctx, 
                                        FILE* output_file);
 
 static void free_batch_data_allocations (struct batch_context* bctx);
+
+static void dump_statistics (
+                             u_long period, 
+                             stat_point *http, 
+                             stat_point *https);
 
 
 int 
@@ -971,4 +977,107 @@ unsigned long get_tick_count ()
       exit (1);
     }
   return tval.tv_sec * 1000 + (tval.tv_usec / 1000);
+}
+
+void dump_final_statistics (client_context* cctx)
+{
+  batch_context* bctx = cctx->bctx;
+  u_long now = get_tick_count();
+
+  dump_intermediate_statistics (bctx->active_clients_count, 
+                       now - bctx->last_measure, 
+                       &bctx->http_delta,  
+                       &bctx->https_delta);
+
+  stat_point_add (&bctx->http_total, &bctx->http_delta);
+  stat_point_add (&bctx->https_total, &bctx->https_delta);  
+    
+  fprintf(stderr,"===========================================\n");
+  fprintf(stderr,"End of test:\n"); 
+  fprintf(stderr,"===========================================\n");
+  
+  now = get_tick_count();
+  
+  dump_statistics ((now - bctx->start_time)/ 1000, 
+                   &bctx->http_total,  
+                   &bctx->https_total); 
+ 
+  int i;
+
+   for (i = 0 ; i < bctx->client_num; i++)
+    {
+      if (cctx[i].client_state == CSTATE_ERROR)
+        {
+          fprintf(stderr,"%s - error client %s failed\n", 
+                  __func__, cctx[i].client_name);
+        }
+    }
+}
+
+
+
+
+void dump_intermediate_statistics (int clients, 
+                                 unsigned long period,  
+                                 stat_point *http, 
+                                 stat_point *https)
+{
+  period /= 1000;
+  if (period == 0)
+    {
+      period = 1;
+    }
+
+  fprintf(stderr, "Clients: %d Time %d sec\n", (int) clients, (int) period);
+  fprintf(stderr, "HTTP - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld,  Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec)\n",
+          http->requests, http->resp_redirs, http->resp_oks, http->resp_serv_errs, 
+          http->other_errs, http->appl_delay, http->appl_delay_2xx);
+   fprintf(stderr, "HTTPS - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld, Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec) \n",
+          https->requests, https->resp_redirs, https->resp_oks, https->resp_serv_errs, 
+           https->other_errs, https->appl_delay, https->appl_delay_2xx);
+}
+
+void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
+{
+  const u_long now_time = get_tick_count ();
+
+  dump_intermediate_statistics( 
+                               bctx->active_clients_count, 
+                               now_time - bctx->last_measure, 
+                               &bctx->http_delta,  
+                               &bctx->https_delta);
+
+  stat_point_add (&bctx->http_total, &bctx->http_delta);
+  stat_point_add (&bctx->https_total, &bctx->https_delta);
+
+  stat_point_reset (&bctx->http_delta); 
+  stat_point_reset (&bctx->https_delta); 
+        
+  bctx->last_measure = get_tick_count(); 
+}
+
+static void dump_statistics (
+                             u_long period,  
+                             stat_point *http, 
+                             stat_point *https)
+{
+  if (period == 0)
+    {
+      fprintf(stderr,
+              "%s - less than 1 second duration test without statistics.\n",
+              __func__);
+      return;
+    } 
+  
+  fprintf(stderr,
+	      "Test took %d seconds\n", (int) period);
+  fprintf(stderr, "HTTP - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld,  Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec)\n",
+          http->requests, http->resp_redirs, http->resp_oks, http->resp_serv_errs, 
+          http->other_errs, http->appl_delay, http->appl_delay_2xx);
+  fprintf(stderr, "HTTPS - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld, Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec) \n",
+          https->requests, https->resp_redirs, https->resp_oks, https->resp_serv_errs, 
+          https->other_errs, https->appl_delay, https->appl_delay_2xx);
+
+  fprintf (stderr, "Appl-Delay-Points %d, Appl-Delay-2xx-Points %d \n", 
+           http->appl_delay_points, http->appl_delay_2xx_points);
 }

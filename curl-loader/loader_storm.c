@@ -47,6 +47,8 @@ int user_activity_storm (client_context*const cdata)
   long cycle = 0, k = 0;
   long u_index = 0;
 
+  bctx->start_time = bctx->last_measure = get_tick_count();
+
   /* 
      Make authentication login. If login operation should not be cycled.
      For such cases login is performed only once for each user.
@@ -59,10 +61,15 @@ int user_activity_storm (client_context*const cdata)
                    __func__, bctx->batch_name);
           return -1;
         }
+
+      // First string to contain statistics for non-cycling logins 
+      dump_intermediate_and_advance_total_statistics (bctx);
     }
   
   for (cycle = 0; cycle < bctx->cycles_num ; cycle++)
     {
+      
+      bctx->last_measure = get_tick_count();
       /* 
          Login, when the login operation to be done in cycles. 
        */
@@ -129,11 +136,14 @@ int user_activity_storm (client_context*const cdata)
         }
  
       /* 
-         After completing a cycle - rewind the file. Thus, we are keeping only 
-         a limited history run in the batch and the current run.
+         After completing a cycle - rewind the file. Thus, we are keeping the current run
+         and a limited history run in the logfile. 
       */
       if (cycle > 0 && ! (cycle%logfile_rewind_cycles_num))
           rewind (cdata->file_output);
+      
+      // Bring statistics at the end of each cycle
+      dump_intermediate_and_advance_total_statistics (bctx);
     }
 
   /* 
@@ -146,7 +156,12 @@ int user_activity_storm (client_context*const cdata)
           fprintf (stderr, "%s - logoff_clients_storm() failed .\n", __func__);
           return -1;
         }
+
+      // Last string to contain statistics for non-cycling logoffs 
+      dump_intermediate_and_advance_total_statistics (bctx);
     }
+
+  dump_final_statistics (cdata);
   
   fprintf (stderr, "\n%s - cycling done, exiting .\n\n", __func__);
   return 0;
@@ -174,8 +189,8 @@ static int mget_url_storm (batch_context* bctx, float m_time)
       max_timeout -= ((float)timeout.tv_sec + (float)timeout.tv_usec/1000000.0);
       curl_multi_fdset(mhandle, &fdread, &fdwrite, &fdexcep, &maxfd);
 
-      fprintf (stderr, "%s - Waiting for %d clients with seconds %f.\n", 
-               bctx->batch_name, still_running, max_timeout);
+      //fprintf (stderr, "%s - Waiting for %d clients with seconds %f.\n", 
+      //         bctx->batch_name, still_running, max_timeout);
 
       rc = select (maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout);
       switch(rc) 
