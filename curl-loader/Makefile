@@ -30,7 +30,7 @@ LD=gcc
 LDFLAGS=-L./lib
 
 #Link Libraries. RedHat/FC require sometimes lidn
-LIBS= -ldl -lpthread -lrt -lz -lidn -lssl -lcrypto -lcurl  #-lcares
+LIBS= -ldl -lpthread -lrt -lidn -lssl -lcrypto -lcurl -lz#-lcares
 
 # Include directories
 INCDIR=-I. -I./inc
