@@ -218,7 +218,7 @@ static void* batch_function (void * batch_data)
       */
       sprintf (statistics_filename, "%s.txt", bctx->batch_name);
       
-      if (!(statistics_file = fopen(output_filename, "w")))
+      if (!(statistics_file = fopen(statistics_filename, "w")))
         {
           fprintf (stderr, 
                    "%s - \"%s\" - failed to open file \"%s\" with errno %d.\n", 
@@ -1028,19 +1028,22 @@ void dump_final_statistics (client_context* cctx)
 
       print_statistics_footer (bctx->statistics_file);
 
+      const u_long loading_time = (now - bctx->start_time > 0) ? 
+        (now - bctx->start_time) : 1;
+ 
       print_statistics_data (bctx->statistics_file,
                              0, // timestamp - TODO
                              "HTTP", 
                              bctx->client_num, 
                              &bctx->http_total,
-                             now - bctx->last_measure);
+                             loading_time);
 
       print_statistics_data (bctx->statistics_file, 
                              0, // timestamp - TODO
                              "HTTPS", 
                              bctx->client_num, 
                              &bctx->https_delta,
-                             now - bctx->last_measure);
+                             loading_time);
   }
  
   int i;
@@ -1067,15 +1070,8 @@ void dump_intermediate_statistics (int clients,
     }
 
   fprintf(stderr, "Clients: %d Time %d sec\n", (int) clients, (int) period);
-
-    fprintf(stderr, "HTTP - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld,  Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec), Thr-In:%lld (Bytes/sec), Thr-Out: %lld (Bytes/sec)\n",
-          http->requests, http->resp_redirs, http->resp_oks, http->resp_serv_errs, 
-          http->other_errs, http->appl_delay, http->appl_delay_2xx, 
-          http->data_in/period, http->data_out/period);
-  fprintf(stderr, "HTTPS - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld, Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec) , Thr-In: %lld (Bytes/sec), Thr-Out: %lld (Bytes/sec)\n",
-          https->requests, https->resp_redirs, https->resp_oks, https->resp_serv_errs, 
-          https->other_errs, https->appl_delay, https->appl_delay_2xx,
-          https->data_in/period, https->data_out/period);
+  dump_stat_to_screen ("HTTP", http, period);
+  dump_stat_to_screen ("HTTPS", https, period);
 }
 
 void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
@@ -1091,19 +1087,21 @@ void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
 
   if (bctx->statistics_file)
   {
-      print_statistics_data (bctx->statistics_file,
-                             0, // timestamp - TODO
-                             "HTTP", 
-                             bctx->client_num, 
-                             &bctx->http_delta,
-                             delta_time);
+    const u_long timestamp_sec =  (now_time - bctx->start_time) / 1000;
 
-      print_statistics_data (bctx->statistics_file, 
-                             0, // timestamp - TODO
-                             "HTTPS", 
-                             bctx->client_num, 
-                             &bctx->https_delta,
-                             delta_time);
+    print_statistics_data (bctx->statistics_file,
+                           timestamp_sec,
+                           "HTTP", 
+                           bctx->client_num, 
+                           &bctx->http_delta,
+                           delta_time ? delta_time : 1);
+    
+    print_statistics_data (bctx->statistics_file, 
+                           timestamp_sec,
+                           "HTTPS", 
+                           bctx->client_num, 
+                           &bctx->https_delta,
+                           delta_time ? delta_time : 1);
   }
 
   stat_point_add (&bctx->http_total, &bctx->http_delta);
@@ -1128,25 +1126,26 @@ static void dump_statistics (
       return;
     } 
   
-  fprintf(stderr,
-	      "Test took %d seconds\n", (int) period);
-  fprintf(stderr, "HTTP - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld,  Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec), Thr-In: %lld (Bytes/sec), Thr-Out: %lld (Bytes/sec)\n",
-          http->requests, http->resp_redirs, http->resp_oks, http->resp_serv_errs, 
-          http->other_errs, http->appl_delay, http->appl_delay_2xx, 
-          http->data_in/period, http->data_out/period);
-  fprintf(stderr, "HTTPS - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld, Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec) , Thr-In: %lld (Bytes/sec), Thr-Out: %lld (Bytes/sec)\n",
-          https->requests, https->resp_redirs, https->resp_oks, https->resp_serv_errs, 
-          https->other_errs, https->appl_delay, https->appl_delay_2xx,
-          https->data_in/period, https->data_out/period);
+  fprintf(stderr, "Test took %d seconds\n", (int) period);
+  dump_stat_to_screen ("HTTP", http, period);
+  dump_stat_to_screen ("HTTPS", https, period);
+}
 
-  //fprintf (stderr, "Appl-Delay-Points %d, Appl-Delay-2xx-Points %d \n", 
-  //         http->appl_delay_points, http->appl_delay_2xx_points);
+void dump_stat_to_screen (char* protocol, stat_point* sd, u_long period)
+{
+  fprintf(stderr, "%s - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld,  Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec), Thr-In: %lld (Bytes/sec), Thr-Out: %lld (Bytes/sec)\n",
+          protocol, sd->requests, sd->resp_redirs, sd->resp_oks, sd->resp_serv_errs, 
+          sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, 
+          sd->data_in/period, sd->data_out/period);
 
+    //fprintf (stderr, "Appl-Delay-Points %d, Appl-Delay-2xx-Points %d \n", 
+  //         sd->appl_delay_points, sd->appl_delay_2xx_points);
 }
 
 static void print_statistics_header (FILE* file)
 {
-    fprintf (file, "Time, Protocol, Clients, Req, Redirs, Resp-OK, Resp-Serv-Err, Err, Resp-Delay, Resp-Delay-OK, Thr-In, Thr-Out\n");
+    fprintf (file, 
+             "Time, Protocol, Clients, Req, Redirs, Resp-OK, Resp-Serv-Err, Err, Resp-Delay, Resp-Delay-OK, Thr-In, Thr-Out\n");
 }
 
 static void print_statistics_footer (FILE* file)
@@ -1161,6 +1160,12 @@ static void print_statistics_data (FILE* file,
                                    stat_point *sd,
                                    u_long period)
 {
+    period /= 1000;
+    if (period == 0)
+      {
+        period = 1;
+      }
+
     fprintf (file, "%ld, %s, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %lld, %lld\n",
              timestamp, prot, clients_num, sd->requests, sd->resp_redirs, sd->resp_oks, sd->resp_serv_errs, 
              sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, sd->data_in/period, sd->data_out/period);
