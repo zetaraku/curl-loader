@@ -96,13 +96,13 @@ http://curl.haxx.se/lxr/source/hiper/hipev.c
 
 
 MODES:
-The default mode is "storming", where all clients of a batch are starting 
+One of the modes is storming mode, where all clients of a batch are starting 
 together. They are expected to finish their job within a certain timeout.
 After the timeout they are either completed fetching url, or are cutted
 and disconnected and a new cycle begins.
-Another mode is a so-called "smooth" (-m2 command line), where each 
-client spends as much time as wishes and starts another url or another 
-cycle only after completing the previous url.
+Another mode is a so-called "smooth" (-m2 command line) (default mode), 
+where each client spends as much time as wishes and starts another url or 
+another cycle only after completing the previous url.
 A combination of the both modes (two separate instances of the program)
 can provide somehow realistic behavior with some "smooth" load plus
 "storming" bursts of requests.
@@ -129,6 +129,7 @@ Possible options are:
 -c[onnection establishment timeout, seconds]
 -f[ilename of configuration to run (batches of clients)]
 -l[ogfile rewind after this number of cycles]
+-m[ode of loading, 1 - storming, 2 - smooth (default)]
 -o[utput to stdout bodies of downloaded files - attn!- bulky]
 -r[euse established connections, don't run close-open cycles]
 -s[tderr printout of client messages instead of to logfile - attn!- bulky]

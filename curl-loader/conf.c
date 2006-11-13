@@ -45,6 +45,8 @@ char config_file[PATH_MAX + 1]; /* Name of the configuration file */
 unsigned long snapshot_timeout = 2000; /* milli-seconds */
 unsigned long error_recovery_client = 0; /* no error recovery */
 
+
+
 int parse_command_line (int argc, char *argv [])
 {
   int rget_opt = 0;
@@ -159,6 +161,7 @@ void print_help ()
   fprintf (stderr, " -c[onnection establishment timeout, seconds]\n");
   fprintf (stderr, " -e[rror recovery client, which on error doesn't stop and continues next cycle]\n");
   fprintf (stderr, " -l[ogfile rewind after this number of cycles]\n");
+  fprintf (stderr, " -m[ode of loading, 1 - storming, 2 - smooth (default)]\n");
   fprintf (stderr, " -o[utput to stdout bodies of downloaded files - attn!- bulky]\n");
   fprintf (stderr, " -r[euse established connections, don't run close-open cycles]\n");
   fprintf (stderr, " -s[tderr printout of client messages instead of to logfile - attn!- bulky]\n");

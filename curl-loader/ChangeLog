@@ -1,3 +1,13 @@
+version 0.20
+
+* Smooth mode set to be the default loading mode.
+
+* SIGINT and final statistics also dumps clients table to file $batch_name.ctx
+
+* SIGINT closes loading and dumps final statistics to statistics file.
+
+* Loading statistics outputted to file $batch_name.txt
+
 version 0.19 9/11/2006, svn-40
 
 * Loading statistics for HTTP/HTTPS enhanced for smooth-mode and added
@@ -16,7 +26,7 @@ version 0.19 9/11/2006, svn-40
      but only for 2xx responses. The motivation for that is that 3xx redirections
      and 5xx server errors/rejects may not necessarily provide a true indication
      of a testing server working functionality.
-	
+
 * FTP and FTPs support added. Currently it should go to UAS urls section and use
    for passing user credentials ftp url (RFC 1738), like:
    ftp://username:password@hostname:port/etc-str

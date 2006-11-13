@@ -49,6 +49,8 @@
 #include "conf.h"
 #include "ssl_thr_lock.h"
 
+
+
 /*
   The limitation is due to using select() in our mget_url ()
   as well as in libcurl. Options are to consider are poll () and /dev/epoll.
@@ -80,6 +82,16 @@ static int alloc_init_client_contexts (
                                        FILE* output_file);
 static void free_batch_data_allocations (struct batch_context* bctx);
 
+int stop_loading = 0;
+
+void sigint_handler (int signum)
+{
+  (void) signum;
+
+  stop_loading = 1;
+
+  fprintf (stderr, "\n\n======= SIGINT Received ============.\n");
+}
 
 int 
 main (int argc, char *argv [])
@@ -90,8 +102,6 @@ main (int argc, char *argv [])
   int i = 0, error = 0;
 
   signal (SIGPIPE, SIG_IGN);
-
-  //signal (SIGINT, sigint_handler);
 
   if (parse_command_line (argc, argv) == -1)
     {
@@ -131,6 +141,8 @@ main (int argc, char *argv [])
 
   fprintf (stderr, "%s - accomplished setting IP-addresses to the loading interfaces.\n", 
            __func__);
+
+  signal (SIGINT, sigint_handler);
   
   if (! threads_run)
     {
@@ -538,6 +550,9 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
         case CSTATE_LOGOFF:
           url_target = cctx->bctx->logoff_url.url_str;
           break;
+
+        default:
+          url_target = NULL;
         }
       /* Clients are being redirected back and forth by 3xx redirects. */
       curl_easy_getinfo (handle, CURLINFO_EFFECTIVE_URL, &url_effective);
@@ -563,6 +578,8 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
               url_print ? url : "", url_diff ? url_target : "");
 
       cctx->client_state = CSTATE_ERROR;
+      cctx->errors_num++;
+
       stat_err_inc (cctx);
       hdrs_clear_all (cctx);
       break;
@@ -717,9 +734,9 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
 
     default:
       fprintf (stderr, "default OUT - \n");
-      return 0;
     }
 
+  fflush (cctx->file_output);
   return 0;
 }
 
@@ -853,6 +870,9 @@ static int alloc_init_client_contexts (
       */
       cctx[i].bctx = bctx;
     }
+
+  bctx->cctx_array = cctx;
+
   return 0;
 }
 

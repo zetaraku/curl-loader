@@ -8,9 +8,8 @@
 
 SIPP provides a useful console output with the loading scenario presentation
 and updatable "running counters". Worth using this approach to present
-load scenario and major statistics counters. Statistics may be also outputted
-to an ASCII text file with separators ready for import to Excel. Detailed info
-about errors may be presented in browsable html format.
+load scenario and major statistics counters. Detailed info about errors may 
+be presented in browsable html format.
 
 We should support options to make:
 - no statistics;
@@ -20,10 +19,8 @@ We should support options to make:
 Question 1: whether to count SSL handshake time for HTTPS;
 Question 2: resolving time;
 
-
 3. Configuration/making improvements starting from moving all source-files
-to src directory etc
-
+to src directory etc.
 Making to perform unified build for all major libraries, like libcurl, libcares.
  
 make <option> to support as options:

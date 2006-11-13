@@ -35,7 +35,7 @@
 #define BATCH_NAME_SIZE 32
 #define POST_BUFFER_SIZE 64
 
-
+struct client_context;
 
 /**********************
   struct batch_context
@@ -140,13 +140,11 @@ typedef struct batch_context
   url_context* uas_url_ctx_array; /* Array of all url contexts */
 
   int url_index; /* Index of the parsed url in uas_url_ctx_array below.
-                  Further used by the storm-mode as the current url index. */ 
+                  Further used by the storm-mode as the current url index. */
 
+  struct client_context* cctx_array;
 
-
-  /*---------------SMOOTH-mode specific  --------------------*/
-
-  int active_clients_count; /* Counter used by smooth-loading mode */
+  int active_clients_count; /* Counter used mainlu by smooth mode */
 
 
    /*--------------- STATISTICS  --------------------------------------------*/

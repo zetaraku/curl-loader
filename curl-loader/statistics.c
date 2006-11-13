@@ -35,16 +35,21 @@ static void dump_statistics (
                              stat_point *https);
 
 static void print_statistics_footer (FILE* file);
-static void print_statistics_data (FILE* file, 
+
+static void print_statistics_data (
+                                   FILE* file, 
                                    u_long timestamp,
                                    char* prot,
                                    long clients_num, 
                                    stat_point *sd,
                                    u_long period);
+
 static void dump_stat_to_screen (
                                  char* protocol, 
                                  stat_point* sd, 
                                  u_long period);
+
+static void dump_clients (client_context* cctx_array);
 
 void stat_point_add (stat_point* left, stat_point* right)
 {
@@ -158,17 +163,8 @@ void dump_final_statistics (client_context* cctx)
                              &bctx->https_delta,
                              loading_time);
     }
- 
-  int i;
 
-  for (i = 0 ; i < bctx->client_num; i++)
-    {
-      if (cctx[i].client_state == CSTATE_ERROR)
-        {
-          fprintf(stderr,"%s - error client %s failed\n", 
-                  __func__, cctx[i].client_name);
-        }
-    }
+  dump_clients (cctx);
 }
 
 void dump_intermediate_statistics (int clients, 
@@ -192,6 +188,12 @@ void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
   const u_long now_time = get_tick_count ();
   const u_long delta_time = now_time - bctx->last_measure;
 
+    if (stop_loading)
+    {
+      dump_final_statistics (bctx->cctx_array);
+      exit (1); 
+    }
+
   dump_intermediate_statistics( 
                                bctx->active_clients_count, 
                                delta_time, 
@@ -205,14 +207,14 @@ void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
     print_statistics_data (bctx->statistics_file,
                            timestamp_sec,
                            "HTTP", 
-                           bctx->client_num, 
+                           bctx->active_clients_count, 
                            &bctx->http_delta,
                            delta_time ? delta_time : 1);
     
     print_statistics_data (bctx->statistics_file, 
                            timestamp_sec,
                            "HTTPS", 
-                           bctx->client_num, 
+                           bctx->active_clients_count, 
                            &bctx->https_delta,
                            delta_time ? delta_time : 1);
   }
@@ -221,7 +223,7 @@ void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
   stat_point_add (&bctx->https_total, &bctx->https_delta);
 
   stat_point_reset (&bctx->http_delta); 
-  stat_point_reset (&bctx->https_delta); 
+  stat_point_reset (&bctx->https_delta);
         
   bctx->last_measure = get_tick_count(); 
 }
@@ -288,5 +290,33 @@ static void print_statistics_data (FILE* file,
              timestamp, prot, clients_num, sd->requests, sd->resp_redirs, sd->resp_oks, sd->resp_serv_errs, 
              sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, sd->data_in/period, sd->data_out/period);
     fflush (file);
+}
+
+static void dump_clients (client_context* cctx_array)
+{
+  batch_context* bctx = cctx_array->bctx;
+  char client_table_filename[BATCH_NAME_SIZE+4];
+  FILE* ct_file = NULL;
+  int i;
+
+  /*
+    Init batch logfile for the batch clients output 
+  */
+  sprintf (client_table_filename, "%s.ctx", bctx->batch_name);
+  
+  if (!(ct_file = fopen(client_table_filename, "w")))
+    {
+      fprintf (stderr, 
+               "%s - \"%s\" - failed to open file \"%s\" with errno %d.\n", 
+               __func__, bctx->batch_name, client_table_filename, errno);
+      return;
+    }
+
+  for (i = 0 ; i < bctx->client_num; i++)
+    {
+      dump_client (ct_file, &cctx_array[i]);
+    }
+
+  fclose (ct_file);
 }
 

@@ -164,9 +164,12 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
               {
                 fprintf (stderr, "result is %d\n", msg->data.result);
                 cctx->client_state = CSTATE_ERROR;
+                cctx->errors_num++;
+                fprintf(cctx->file_output, "%ld %s !! ERROR: %d (number from  curl.h)\n", 
+                        cctx->cycle_num, cctx->client_name, msg->data.result);
               }
 
-            int client_state =  load_next_step (cctx);
+            cstate client_state =  load_next_step (cctx);
             //fprintf (stderr, "%s - after load_next_step client state %d.\n", __func__, client_state);
             //fprintf (stderr, "%d ", client_state);
 
@@ -200,6 +203,8 @@ static int load_next_step (client_context* cctx)
       return load_uas_state (cctx);
     case CSTATE_LOGOFF:
       return load_logoff_state (cctx);
+    case CSTATE_FINISHED_OK:
+      return CSTATE_FINISHED_OK;
     }
   
   return CSTATE_ERROR;
@@ -261,6 +266,9 @@ static int is_last_cycling_state (client_context* cctx)
     case CSTATE_LOGOFF: /* Logoff cycling, if exists, 
                            supposed to be the last state of a cycle. */
       return bctx->logoff_cycling ? 1 : 0;
+
+    default:
+      return 0;
     }
   return 0;
 }

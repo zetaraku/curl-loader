@@ -85,5 +85,7 @@ int user_activity_storm (struct client_context*const cdata);
 
 int user_activity_smooth (struct client_context* cctx);
 
+extern int stop_loading;
+
 
 #endif /* LOADER_H */

@@ -32,10 +32,10 @@
 ****************   cstate   ************************************
   States of a virtual client. 
 */
-enum cstate
+typedef enum cstate
   {
     CSTATE_ERROR = -1, /* Completion state */
-    CSTATE_INIT = 0, /* state 0, thus, calloc set the state automatically */
+    CSTATE_INIT, /* state 0, thus, calloc set the state automatically */
   
     /* Operational states */
     CSTATE_LOGIN, /* cycling state, if cycling enabled */
@@ -43,7 +43,7 @@ enum cstate
     CSTATE_LOGOFF, /* cycling state, if cycling enabled */
 
     CSTATE_FINISHED_OK, /* Completion state */
-  };
+  } cstate;
 
 /* Forward declarations */
 struct batch_context;
@@ -80,7 +80,9 @@ typedef struct client_context
 
   size_t uas_url_curr_index; /* Index of the currently used UAS url. */
 
-  int client_state; /* Current state of the client. */
+  cstate client_state; /* Current state of the client. */
+
+  int errors_num; /* Number of errors */ 
 
   /* Flag controlling sequence of GET-POST logins and logoffs.
      When 0 - do GET, when 1 do POST and set back to 0
@@ -121,5 +123,9 @@ void stat_5xx_inc (client_context* cctx);
 
 void stat_appl_delay_add (client_context* cctx, unsigned long resp_timestamp);
 void stat_appl_delay_2xx_add (client_context* cctx, unsigned long resp_timestamp);
+
+void dump_client (FILE* file, client_context* cctx);
+
+extern int stop_loading; /* set to 1 by SIGINT */
 
 #endif /*   CLIENT_H */

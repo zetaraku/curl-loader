@@ -98,7 +98,7 @@ enum load_mode
        (call attempt per seconds) ? */
   };
 
-#define LOAD_MODE_DEFAULT LOAD_MODE_STORMING
+#define LOAD_MODE_DEFAULT LOAD_MODE_SMOOTH
 extern int loading_mode;
 
 /* 
@@ -107,10 +107,12 @@ extern int loading_mode;
 */
 extern int url_logging;
 
-/* 
+/*
    Name of the configuration file. 
 */
 extern char config_file[PATH_MAX + 1];
+
+extern int stop_loading;
 
 /*
   Authentication login types for clients: 

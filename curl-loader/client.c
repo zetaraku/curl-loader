@@ -106,3 +106,15 @@ void stat_appl_delay_2xx_add (client_context* cctx, u_long resp_timestamp)
         }
     }
 }
+
+
+void dump_client (FILE* file, client_context* cctx)
+{
+  if (!file || !cctx)
+    return;
+
+  fprintf (file, "%s, cycle_num:%ld; uas_ind:%d, state:%d, errors_num %d \n", 
+           cctx->client_name, cctx->cycle_num, cctx->uas_url_curr_index, 
+           cctx->client_state, cctx->errors_num);
+  fflush (file);
+}
