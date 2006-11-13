@@ -77,9 +77,15 @@ extern int stderr_print_client_msg;
 /* 
    Used by the smooth loading mode to output statistics to the
    screen at certain snapshot timeout intervals. 
-   TODO: Statistics should be propagated to the storming load mode as well. 
 */
 extern unsigned long snapshot_timeout;
+
+/* 
+   Used by the smooth loading mode decide, either to continue loading
+   attempting a new cycle (when TRUE), or to return error and do not
+   continue any more.
+*/
+extern unsigned long error_recovery_client;
 
 /*
   Loading modes: Storming and Smooth 

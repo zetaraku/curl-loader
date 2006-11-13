@@ -40,6 +40,7 @@ static int mget_url_smooth (batch_context* bctx);
 static int mperform_smooth (batch_context* bctx, int* still_running);
 static int load_next_step (client_context* cctx);
 static int load_init_state (client_context* cctx);
+static int load_error_state (client_context* cctx);
 static int load_login_state (client_context* cctx);
 static int load_uas_state (client_context* cctx);
 static int load_logoff_state (client_context* cctx);
@@ -61,7 +62,8 @@ int user_activity_smooth (client_context* cctx)
 
   /* Load the first url for all clients */
 
-  /* TODO. Not all clients should start loading immediately.
+  /* 
+     TODO. Not all clients should start loading immediately.
      Calls-per-seconds number (CAPS) should be configurable.
   */
   for (j = 0 ; j < bctx->client_num; j++)
@@ -88,12 +90,11 @@ int user_activity_smooth (client_context* cctx)
 static int mget_url_smooth (batch_context* bctx)  		       
 {
     CURLM *mhandle =  bctx->multiple_handle;
-    // const char *name = bctx->batch_name;
     float max_timeout = DEFAULT_SMOOTH_URL_COMPLETION_TIME;
     
     if (bctx->uas_url_ctx_array)
       {
-      max_timeout = bctx->uas_url_ctx_array[0].url_completion_time;
+        max_timeout = bctx->uas_url_ctx_array[0].url_completion_time;
       }
  
     int still_running = 0;
@@ -159,8 +160,15 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
             curl_easy_getinfo (handle, CURLINFO_PRIVATE, &cctx);
 
+            if (msg->data.result)
+              {
+                fprintf (stderr, "result is %d\n", msg->data.result);
+                cctx->client_state = CSTATE_ERROR;
+              }
+
             int client_state =  load_next_step (cctx);
             //fprintf (stderr, "%s - after load_next_step client state %d.\n", __func__, client_state);
+            //fprintf (stderr, "%d ", client_state);
 
             if (client_state == CSTATE_ERROR || client_state == CSTATE_FINISHED_OK) 
               {
@@ -168,7 +176,10 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
               }
           
             if (msg_num <= 0)
-              break;
+              {
+                /* If no messages left in the queue - go out */
+                break;
+              }
           }
       }
 
@@ -180,7 +191,7 @@ static int load_next_step (client_context* cctx)
   switch (cctx->client_state)
     {
     case CSTATE_ERROR:
-      return cctx->client_state;
+      return load_error_state (cctx);
     case CSTATE_INIT:
       return load_init_state (cctx);
     case CSTATE_LOGIN:
@@ -208,6 +219,32 @@ static int load_init_state (client_context* cctx)
   return (cctx->client_state = CSTATE_ERROR);
 }
 
+static int load_error_state (client_context* cctx)
+{
+  batch_context* bctx = cctx->bctx;
+
+  if (error_recovery_client)
+    {
+      advance_cycle_num (cctx);
+
+      if (cctx->cycle_num >= bctx->cycles_num)
+        {
+          return CSTATE_ERROR;
+        }
+      else
+        {
+          if (bctx->do_login && bctx->login_cycling)
+            return load_login_state (cctx);
+          else if (bctx->do_uas)
+            return load_uas_state (cctx);
+          else if (bctx->do_logoff && bctx->logoff_cycling)
+            return load_logoff_state (cctx);
+        }
+    }
+ 
+  /* Thus, the client will not be scheduled for load any more. */
+  return CSTATE_ERROR;
+}
 static int is_last_cycling_state (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;

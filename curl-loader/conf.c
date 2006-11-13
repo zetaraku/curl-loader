@@ -42,13 +42,14 @@ int loading_mode = LOAD_MODE_DEFAULT; /* Storming or smooth loading */
 int url_logging = 0; /* Whether to include url to all log outputs. */
 char config_file[PATH_MAX + 1]; /* Name of the configuration file */
 
-unsigned long snapshot_timeout = 1000;
+unsigned long snapshot_timeout = 2000; /* milli-seconds */
+unsigned long error_recovery_client = 0; /* no error recovery */
 
 int parse_command_line (int argc, char *argv [])
 {
   int rget_opt = 0;
 
-    while ((rget_opt = getopt (argc, argv, "c:hf:l:m:op:rstvu")) != EOF) 
+    while ((rget_opt = getopt (argc, argv, "c:ehf:l:m:op:rstvu")) != EOF) 
     {
       switch (rget_opt) 
         {
@@ -60,6 +61,10 @@ int parse_command_line (int argc, char *argv [])
                   __func__);
               return -1;
             }
+          break;
+          
+        case 'e':
+          error_recovery_client = 1;
           break;
 
         case 'h':
@@ -152,6 +157,7 @@ void print_help ()
   fprintf (stderr, "usage: run as a root:\n");
   fprintf (stderr, "#./curl-loader -f <configuration file name> with [other options below]:\n");
   fprintf (stderr, " -c[onnection establishment timeout, seconds]\n");
+  fprintf (stderr, " -e[rror recovery client, which on error doesn't stop and continues next cycle]\n");
   fprintf (stderr, " -l[ogfile rewind after this number of cycles]\n");
   fprintf (stderr, " -o[utput to stdout bodies of downloaded files - attn!- bulky]\n");
   fprintf (stderr, " -r[euse established connections, don't run close-open cycles]\n");

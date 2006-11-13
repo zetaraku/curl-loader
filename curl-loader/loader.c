@@ -91,6 +91,11 @@ static void print_statistics_data (FILE* file,
                                    long clients_num, 
                                    stat_point *sd,
                                    u_long period);
+static void dump_stat_to_screen (
+                                 char* protocol, 
+                                 stat_point* sd, 
+                                 u_long period);
+
 int 
 main (int argc, char *argv [])
 {
@@ -100,6 +105,8 @@ main (int argc, char *argv [])
   int i = 0, error = 0;
 
   signal (SIGPIPE, SIG_IGN);
+
+  //signal (SIGINT, sigint_handler);
 
   if (parse_command_line (argc, argv) == -1)
     {
@@ -1034,14 +1041,14 @@ void dump_final_statistics (client_context* cctx)
       print_statistics_data (bctx->statistics_file,
                              0, // timestamp - TODO
                              "HTTP", 
-                             bctx->client_num, 
+                             bctx->active_clients_count, 
                              &bctx->http_total,
                              loading_time);
 
       print_statistics_data (bctx->statistics_file, 
                              0, // timestamp - TODO
                              "HTTPS", 
-                             bctx->client_num, 
+                             bctx->active_clients_count, 
                              &bctx->https_delta,
                              loading_time);
   }
@@ -1069,7 +1076,7 @@ void dump_intermediate_statistics (int clients,
       period = 1;
     }
 
-  fprintf(stderr, "Clients: %d Time %d sec\n", (int) clients, (int) period);
+  fprintf(stderr, "\nClients: %d Time %d sec\n", (int) clients, (int) period);
   dump_stat_to_screen ("HTTP", http, period);
   dump_stat_to_screen ("HTTPS", https, period);
 }
@@ -1131,7 +1138,10 @@ static void dump_statistics (
   dump_stat_to_screen ("HTTPS", https, period);
 }
 
-void dump_stat_to_screen (char* protocol, stat_point* sd, u_long period)
+static void dump_stat_to_screen (
+                                 char* protocol, 
+                                 stat_point* sd, 
+                                 u_long period)
 {
   fprintf(stderr, "%s - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld,  Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec), Thr-In: %lld (Bytes/sec), Thr-Out: %lld (Bytes/sec)\n",
           protocol, sd->requests, sd->resp_redirs, sd->resp_oks, sd->resp_serv_errs, 
@@ -1146,11 +1156,13 @@ static void print_statistics_header (FILE* file)
 {
     fprintf (file, 
              "Time, Protocol, Clients, Req, Redirs, Resp-OK, Resp-Serv-Err, Err, Resp-Delay, Resp-Delay-OK, Thr-In, Thr-Out\n");
+    fflush (file);
 }
 
 static void print_statistics_footer (FILE* file)
 {
     fprintf (file, "*, *, *, *, *, *, *, *, *, *, *, *\n");
+    fflush (file);
 }
 
 static void print_statistics_data (FILE* file, 
@@ -1169,4 +1181,5 @@ static void print_statistics_data (FILE* file,
     fprintf (file, "%ld, %s, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %lld, %lld\n",
              timestamp, prot, clients_num, sd->requests, sd->resp_redirs, sd->resp_oks, sd->resp_serv_errs, 
              sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, sd->data_in/period, sd->data_out/period);
+    fflush (file);
 }
