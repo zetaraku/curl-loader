@@ -30,34 +30,10 @@
 #include <curl/curl.h>
 
 #include "url.h"
+#include "statistics.h"
 
 #define BATCH_NAME_SIZE 32
 #define POST_BUFFER_SIZE 64
-
-/*
-  Statistics used by the smooth mode.
-*/
-typedef struct stat_point
-{
-  unsigned long long data_in;
-  unsigned long long data_out;
-
-  u_long requests; /* number of requests issued */
-  u_long resp_redirs;  /* number of 3xx redirections */
-  u_long resp_oks;       /* number of 2xx responses */
-  u_long resp_serv_errs; /* number of 5xx responses */
-  u_long other_errs; /* Errors of resolving, connecting, internal errors, etc. */
-
-  int appl_delay_points;
-  u_long  appl_delay; /* Average delay in msec between request and response */
-
-  int appl_delay_2xx_points;
-  u_long  appl_delay_2xx; /* Average delay in msec between request and 2xx-OK response */
-
-} stat_point;
-
-void stat_point_add (stat_point* left, stat_point* right);
-void stat_point_reset (stat_point* point);
 
 
 
