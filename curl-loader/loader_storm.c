@@ -82,6 +82,9 @@ int user_activity_storm (client_context*const cdata)
             }
         }
 
+      /* Sleep in between the login urls. */
+      sleep (bctx->login_url.url_interleave_time);
+
       /*
          UAS - user activity simulation, fetching urls from the UAS-array.
       */
@@ -97,7 +100,10 @@ int user_activity_storm (client_context*const cdata)
           */
           for (k = 0 ; k < bctx->client_num ; k++)
             {
-              cdata[k].client_state = CSTATE_UAS_CYCLING;
+              if (cdata[k].client_state != CSTATE_ERROR)
+                cdata[k].client_state = CSTATE_UAS_CYCLING;
+              //fprintf (stderr, "%s - client_num %ld, state %d\n", 
+              //        __func__, k, cdata[k].client_state);
 
               setup_curl_handle (&cdata[k],
                                    &bctx->uas_url_ctx_array[u_index], /* index of url string in array */
@@ -126,7 +132,7 @@ int user_activity_storm (client_context*const cdata)
       /* 
          Logoff, when required logoff in cycling. 
       */
-      if (bctx->do_logoff && ! bctx->logoff_cycling)
+      if (bctx->do_logoff && bctx->logoff_cycling)
         {
           if (logoff_clients_storm (cdata, cycle) == -1)
             {
@@ -134,6 +140,9 @@ int user_activity_storm (client_context*const cdata)
               return -1;
             }
         }
+
+      /* Sleep in between the logoff urls. */
+      sleep (bctx->logoff_url.url_interleave_time);
  
       /* 
          After completing a cycle - rewind the file. Thus, we are keeping the current run
@@ -159,6 +168,16 @@ int user_activity_storm (client_context*const cdata)
 
       // Last string to contain statistics for non-cycling logoffs 
       dump_intermediate_and_advance_total_statistics (bctx);
+    }
+
+  for (k = 0 ; k < bctx->client_num ; k++)
+    {
+      if (cdata[k].client_state != CSTATE_ERROR)
+      {
+        cdata[k].client_state = CSTATE_FINISHED_OK;
+      }
+      //fprintf (stderr, "%s - client_num %ld, state %d\n", 
+      //         __func__, k, cdata[k].client_state);
     }
 
   dump_final_statistics (cdata);
@@ -275,6 +294,8 @@ static int login_clients_storm (client_context* cdata, int cycle)
   for (k = 0 ; k < bctx->client_num ; k++)
     {
       cdata[k].client_state = CSTATE_LOGIN;
+      //fprintf (stderr, "%s - client_num %d, state %d\n", 
+      //         __func__, k, CSTATE_LOGIN);
 
       setup_curl_handle (&cdata[k], /* pointer to client context */
                            &bctx->login_url, /* login url */
@@ -320,7 +341,10 @@ static int logoff_clients_storm (client_context*const cdata, int cycle)
   */
   for (k = 0 ; k < bctx->client_num ; k++)
     {
-      cdata[k].client_state = CSTATE_LOGOFF;
+      if (cdata[k].client_state != CSTATE_ERROR) 
+        cdata[k].client_state = CSTATE_LOGOFF;
+      //fprintf (stderr, "%s - client_num %d, state %d\n", 
+      //        __func__, k, cdata[k].client_state);
 
       setup_curl_handle (&cdata[k],
                            &bctx->logoff_url, 
