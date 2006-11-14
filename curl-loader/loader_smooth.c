@@ -162,11 +162,15 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
             if (msg->data.result)
               {
-                fprintf (stderr, "result is %d\n", msg->data.result);
+                // fprintf (stderr, "res is %d ", msg->data.result);
                 cctx->client_state = CSTATE_ERROR;
-                cctx->errors_num++;
-                fprintf(cctx->file_output, "%ld %s !! ERROR: %d (number from  curl.h)\n", 
-                        cctx->cycle_num, cctx->client_name, msg->data.result);
+                
+                /* client tracing function stats all the errors
+                stat_err_inc (cctx);
+                 fprintf(cctx->file_output, "%ld %s !! ERROR: %d - %s\n", 
+                        cctx->cycle_num, cctx->client_name, msg->data.result, 
+                        curl_easy_strerror(msg->data.result ));
+                */
               }
 
             cstate client_state =  load_next_step (cctx);
@@ -288,7 +292,7 @@ static int on_cycling_completed  (client_context* cctx)
   if (bctx->do_logoff && !bctx->logoff_cycling)
     return load_logoff_state (cctx);
 
-  return CSTATE_FINISHED_OK;
+  return (cctx->client_state = CSTATE_FINISHED_OK);
 }
 
 static int setup_login_logoff (client_context* cctx, const int login)
@@ -410,7 +414,7 @@ static int load_login_state (client_context* cctx)
           else if (bctx->do_logoff)
             return load_logoff_state (cctx);
           else
-            return CSTATE_FINISHED_OK;
+            return (cctx->client_state = CSTATE_FINISHED_OK);
         }
     }
 
@@ -510,7 +514,7 @@ static int load_logoff_state (client_context* cctx)
             }
  
           /* If not doing logoff cycling, means single logoff done - go to finish-ok */
-            return CSTATE_FINISHED_OK;
+          return (cctx->client_state = CSTATE_FINISHED_OK);
         }
     }
 

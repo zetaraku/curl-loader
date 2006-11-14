@@ -1,12 +1,17 @@
 version 0.20
 
-* Smooth mode set to be the default loading mode.
+* Smooth mode set to be the default loading mode. When libcurl detects an error
+   with a client, by default the client continues loading, starting a new cycle from 
+   the beginning. When -e command line option is specified, client with 
+   libcurl-error will not be scheduled no more for loading.
 
-* SIGINT and final statistics also dumps clients table to file $batch_name.ctx
+* Clients table dumped to file $batch_name.ctx. This is done when the loading
+    is accomplished either naturally or by SIGINT.
 
 * SIGINT closes loading and dumps final statistics to statistics file.
 
-* Loading statistics outputted to file $batch_name.txt
+* Loading statistics outputted to file $batch_name.txt with the last string as
+   final statistics string, separated by a string with asterisks.
 
 version 0.19 9/11/2006, svn-40
 

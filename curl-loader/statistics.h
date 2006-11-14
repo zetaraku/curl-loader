@@ -25,6 +25,8 @@
 #ifndef STATISTICS_H
 #define STATISTICS_H
 
+#include <stdio.h>
+#include <linux/types.h>
 /*
   HTTP/S Statistics
 */

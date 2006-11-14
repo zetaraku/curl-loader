@@ -112,8 +112,6 @@ extern int url_logging;
 */
 extern char config_file[PATH_MAX + 1];
 
-extern int stop_loading;
-
 /*
   Authentication login types for clients: 
   1) via GET and following POST or

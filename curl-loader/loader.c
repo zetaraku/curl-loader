@@ -578,7 +578,6 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
               url_print ? url : "", url_diff ? url_target : "");
 
       cctx->client_state = CSTATE_ERROR;
-      cctx->errors_num++;
 
       stat_err_inc (cctx);
       hdrs_clear_all (cctx);
@@ -589,16 +588,14 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
           fprintf(cctx->file_output, "%ld %s => Send header: eff-url: %s, url: %s\n", 
                   cctx->cycle_num, cctx->client_name, url_print ? url : "", url_diff ? url_target : "");
 
-      if (cctx->is_https)
-        cctx->bctx->https_delta.data_out += (u_long) size; 
-      else 
-        cctx->bctx->http_delta.data_out += (u_long) size;
+      stat_data_out_add (cctx, (u_long) size);
 
-      if (!cctx->hdrs_req)
+      if (! hdrs_req (cctx))
         {
-          cctx->hdrs_req++;
-          stat_req_inc (cctx);
-          cctx->req_tmsec = get_tick_count ();
+          /* First header of the HTTP-request. */
+          hdrs_req_inc (cctx);
+          stat_req_inc (cctx); /* Increment number of requests */
+          cctx->req_timestamp = get_tick_count ();
         }
       hdrs_clear_non_req (cctx);
       break;
@@ -609,7 +606,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   cctx->cycle_num, cctx->client_name, url_print ? url : "",
                   url_diff ? url_target : "");
 
-      cctx->bctx->http_delta.data_out += (u_long) size;
+      stat_data_out_add (cctx, (u_long) size);
       hdrs_clear_all (cctx);
       break;
 
@@ -619,7 +616,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   cctx->cycle_num, cctx->client_name, url_print ? url : "",
                   url_diff ? url_target : "");
 
-      cctx->bctx->https_delta.data_out += (unsigned long) size;
+      stat_data_out_add (cctx, (u_long) size);
       hdrs_clear_all (cctx);
       break;
       
@@ -628,10 +625,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
          CURL library assists us by passing to the full HTTP-headers, 
          not just parts. 
       */
-      if (cctx->is_https)
-        cctx->bctx->https_delta.data_in += (u_long) size; 
-      else 
-        cctx->bctx->http_delta.data_in += (u_long) size;
+      stat_data_in_add (cctx, (u_long) size);
 
       {
         long response_status = 0, response_module = 0;
@@ -653,17 +647,21 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                       cctx->cycle_num, cctx->client_name, response_status,
                       url_print ? url : "", url_diff ? url_target : "");
             hdrs_clear_all (cctx);
-            break;  
+            break;
+
           case 2: /* 200 OK */
             if (verbose_logging)
               fprintf(cctx->file_output, "%ld %s:!! %ld OK: eff-url: %s, url: %s\n",
                       cctx->cycle_num, cctx->client_name, response_status,
                       url_print ? url : "", url_diff ? url_target : "");
 
-            if (!cctx->hdrs_2xx)
+            if (! hdrs_2xx (cctx))
               {
-                cctx->hdrs_2xx++;
-                stat_2xx_inc (cctx);
+                /* First header of 2xx response */
+                hdrs_2xx_inc (cctx);
+                stat_2xx_inc (cctx); /* Increment number of 2xx responses */
+
+                /* Count into the averages HTTP/S server response delay */
                 const u_long time_2xx_resp = get_tick_count ();
                 stat_appl_delay_2xx_add (cctx, time_2xx_resp);
                 stat_appl_delay_add (cctx, time_2xx_resp);
@@ -676,10 +674,11 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                     cctx->cycle_num, cctx->client_name, response_status, data,
                     url_print ? url : "", url_diff ? url_target : "");
 
-            if (!cctx->hdrs_3xx)
+            if (! hdrs_3xx (cctx))
               {
-                cctx->hdrs_3xx++;
-                stat_3xx_inc (cctx);
+                /* First header of 3xx response */
+                hdrs_3xx_inc (cctx);
+                stat_3xx_inc (cctx); /* Increment number of 3xx responses */
                 const u_long time_3xx_resp = get_tick_count ();
                 stat_appl_delay_add (cctx, time_3xx_resp);
               }
@@ -694,10 +693,12 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                     cctx->cycle_num, cctx->client_name, response_status, data,
                     url_print ? url : "", url_diff ? url_target : "");
 
-            if (!cctx->hdrs_5xx)
+            if (! hdrs_5xx (cctx))
               {
-                cctx->hdrs_5xx++;
-                stat_5xx_inc (cctx);
+                /* First header of 5xx response */
+                hdrs_5xx_inc (cctx);
+                stat_5xx_inc (cctx);  /* Increment number of 5xx responses */
+
                 const u_long time_5xx_resp = get_tick_count ();
                 stat_appl_delay_add (cctx, time_5xx_resp);
               }
@@ -719,7 +720,8 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
           fprintf(cctx->file_output, "%ld %s <= Recv data: eff-url: %s, url: %s\n", 
                   cctx->cycle_num, cctx->client_name, 
                   url_print ? url : "", url_diff ? url_target : "");
-      cctx->bctx->http_delta.data_in += (u_long) size;
+
+      stat_data_in_add (cctx,  (u_long) size);
       hdrs_clear_all (cctx);
       break;
 
@@ -728,7 +730,8 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
           fprintf(cctx->file_output, "%ld %s <= Recv ssl data: eff-url: %s, url: %s\n", 
                   cctx->cycle_num, cctx->client_name, 
                   url_print && url ? url : "", url_diff ? url_target : "");
-      cctx->bctx->https_delta.data_in += (u_long) size;
+
+      stat_data_in_add (cctx,  (u_long) size);
       hdrs_clear_all (cctx);
       break;
 

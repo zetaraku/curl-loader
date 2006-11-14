@@ -24,7 +24,7 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include <stdio.h>
+#include "statistics.h"
 
 #define CLIENT_NAME_LEN 32
 
@@ -98,16 +98,36 @@ typedef struct client_context
   char* post_data_login;
   char* post_data_logoff;
 
-  /* Flags to mark at the headers at first header */
+  /* 
+     Counter of the headers going in or our.  For the first header in request
+     or response, the respective counter is zero, whereas next headers of the same
+     request/response are positive numbers.
+
+     Indication of the first header is used to collect statistics.
+  */
   int hdrs_req;
 
   int hdrs_2xx;
   int hdrs_3xx;
   int hdrs_5xx;
 
-  unsigned long req_tmsec;
+  unsigned long req_timestamp;
+
+  stat_point st;
 
 } client_context;
+
+int hdrs_req (client_context* cctx);
+void hdrs_req_inc (client_context* cctx);
+
+int hdrs_2xx (client_context* cctx);
+void hdrs_2xx_inc (client_context* cctx);
+
+int hdrs_3xx (client_context* cctx);
+void hdrs_3xx_inc (client_context* cctx);
+
+int hdrs_5xx (client_context* cctx);
+void hdrs_5xx_inc (client_context* cctx);
 
 void hdrs_clear_all (client_context* cctx);
 void hdrs_clear_non_req (client_context* cctx);
@@ -115,6 +135,8 @@ void hdrs_clear_non_2xx (client_context* cctx);
 void hdrs_clear_non_3xx (client_context* cctx);
 void hdrs_clear_non_5xx (client_context* cctx);
 
+void stat_data_out_add (client_context* cctx, u_long bytes);
+void stat_data_in_add (client_context* cctx, u_long bytes);
 void stat_err_inc (client_context* cctx);
 void stat_req_inc (client_context* cctx);
 void stat_2xx_inc (client_context* cctx);
@@ -126,6 +148,6 @@ void stat_appl_delay_2xx_add (client_context* cctx, unsigned long resp_timestamp
 
 void dump_client (FILE* file, client_context* cctx);
 
-extern int stop_loading; /* set to 1 by SIGINT */
+extern int stop_loading;
 
 #endif /*   CLIENT_H */

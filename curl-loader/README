@@ -96,16 +96,23 @@ http://curl.haxx.se/lxr/source/hiper/hipev.c
 
 
 MODES:
-One of the modes is storming mode, where all clients of a batch are starting 
+One of the modes is storming mode (-m1 command line), where all clients of a batch are starting 
 together. They are expected to finish their job within a certain timeout.
 After the timeout they are either completed fetching url, or are cutted
 and disconnected and a new cycle begins.
-Another mode is a so-called "smooth" (-m2 command line) (default mode), 
+
+Another mode is a so-called "smooth" (default mode or -m2 command line), 
 where each client spends as much time as wishes and starts another url or 
-another cycle only after completing the previous url.
+another cycle only after completing the previous url. When a client loading is
+terminated due to some reason, e.g. connection timeout, the default behavior
+is to schedule loading for this client at the next cycle. If -e option is passed to
+command line, the client will not be re-scheduled any more, which is usefull
+to get indication of errors by monitoring drop in number of active clients.
+
 A combination of the both modes (two separate instances of the program)
 can provide somehow realistic behavior with some "smooth" load plus
 "storming" bursts of requests.
+
 
 LICENSE:
 Actually it is GPL2 due to the code from iprouted2. However, if somebody
@@ -127,6 +134,7 @@ Usage: run as a root user:
 
 Possible options are:
 -c[onnection establishment timeout, seconds]
+-e[rror drop client (smooth mode). Client on error doesn't attempt loading any mode.]
 -f[ilename of configuration to run (batches of clients)]
 -l[ogfile rewind after this number of cycles]
 -m[ode of loading, 1 - storming, 2 - smooth (default)]
@@ -135,7 +143,7 @@ Possible options are:
 -s[tderr printout of client messages instead of to logfile - attn!- bulky]
 -t[hreads enable - enables threads, each runs a batch of clients]
 -v[erbose output to the logfiles; includes info about headers sent/received]
--u[rl logging - enables logging of url names to all client outputs]
+-u[rl logging - logs url names to logfile, when -v verbose option is used]
 
 Note, that running with threads (-t) may be less stable,
 whereas without this option runs only the first batch of clients specified.
@@ -245,6 +253,7 @@ ftp://username:password@hostname:port/etc-str
 
 
 STATISTICS (just added feature):
+
 Currently HTTP/HTTPS statistics includes the following counters:
    - requests num;
    - responses success num;
@@ -259,3 +268,39 @@ Currently HTTP/HTTPS statistics includes the following counters:
      but only for 2xx responses. The motivation for that is that 3xx redirections
      and 5xx server errors/rejects may not necessarily provide a true indication
      of a testing server working functionality.
+   - throughput out (batch average);
+   - throughput in (batch average);
+
+The statistics goes to the screen as well as to the file with name $batch_name.txt
+When the load completes or when the user presses CTRL-C (sometimes some clients
+may stall), the final load report is printed at the console as well as to the statistics
+file. 
+Some strings from the file:
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Time, Protocol, Clients, Req, Redirs, Resp-OK, Resp-Serv-Err, Err, Resp-Delay, Resp-Delay-OK, Thr-In, Thr-Out
+2, HTTP, 100, 155, 0, 96, 0, 0, 1154, 1154, 2108414, 15538
+2, HTTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
+4, HTTP, 100, 75, 32, 69, 0, 0, 1267, 1559, 1634656, 8181
+4, HTTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
+
+Cutted here
+
+36, HTTP, 39, 98, 35, 58, 0, 0, 869, 851, 1339168, 11392
+36, HTTPS, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0
+38, HTTP, 3, 91, 44, 62, 0, 0, 530, 587, 1353899, 10136
+38, HTTPS, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0
+*, *, *, *, *, *, *, *, *, *, *, *
+38, HTTP, 0, 2050, 643, 1407, 0, 213, 725, 812, 1610688, 11706
+38, HTTPS, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The section after asterisks is for final averages
+
+At the same time a clients dump file with name $batch_name.ctx is generated
+to provide detailed statistics about each client state and statistics counters.
+
+One string from the file
+18 (192.168.1.18) ,cycles:5,state:4,d_in:549508,d_out:3940,req:17,rsp_3xx:5,rsp_oks:12,rsp_5xx:0,err:3
+
+
+LIMITATIONS:
+See the TODO file for some of them.

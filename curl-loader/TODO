@@ -39,6 +39,11 @@ loading each second, etc
 5. The problem of the smooth mode is that it loads url after url without
 respecting the interleave timeouts. It should be corrected.
 
+6. When login failed due to server-error, we should not proceeed with UAS
+    and logoff, instead re-attempt the login. This is the behavior of the 
+    smooth mode on libcurl error, and should be extended to 5xx server 
+    errors, etc
+
 6. Support for resolving options: global DNS cache and cares library. 
 
 7. Future releases will hopefully incorporate libcurl HYPER API, using 

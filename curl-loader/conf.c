@@ -43,7 +43,7 @@ int url_logging = 0; /* Whether to include url to all log outputs. */
 char config_file[PATH_MAX + 1]; /* Name of the configuration file */
 
 unsigned long snapshot_timeout = 2000; /* milli-seconds */
-unsigned long error_recovery_client = 0; /* no error recovery */
+unsigned long error_recovery_client = 1; /* continue loading from the next cycle */
 
 
 
@@ -66,7 +66,7 @@ int parse_command_line (int argc, char *argv [])
           break;
           
         case 'e':
-          error_recovery_client = 1;
+          error_recovery_client = 0;
           break;
 
         case 'h':
@@ -159,7 +159,7 @@ void print_help ()
   fprintf (stderr, "usage: run as a root:\n");
   fprintf (stderr, "#./curl-loader -f <configuration file name> with [other options below]:\n");
   fprintf (stderr, " -c[onnection establishment timeout, seconds]\n");
-  fprintf (stderr, " -e[rror recovery client, which on error doesn't stop and continues next cycle]\n");
+  fprintf (stderr, " -e[rror drop client (smooth mode). Client on error doesn't attempt next cycle.]\n");
   fprintf (stderr, " -l[ogfile rewind after this number of cycles]\n");
   fprintf (stderr, " -m[ode of loading, 1 - storming, 2 - smooth (default)]\n");
   fprintf (stderr, " -o[utput to stdout bodies of downloaded files - attn!- bulky]\n");
