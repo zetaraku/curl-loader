@@ -1,4 +1,7 @@
-version 0.20
+version 0.20 14/11/2006, svn-48
+
+* Bugs fixed in storming mode, where cycling logoff was broken and some
+   interleave timeouts not respected.
 
 * Smooth mode set to be the default loading mode. When libcurl detects an error
    with a client, by default the client continues loading, starting a new cycle from 

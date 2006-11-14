@@ -99,13 +99,7 @@ MODES:
 One of the modes is storming mode (-m1 command line), where all clients 
 of a batch are starting together. They are expected to finish their job within 
 a certain timeout. After the timeout they are either completed fetching url, 
-or are cutted and disconnected and a new cycle begins. When the first 
-operation is login, storming mode may require large 10-20-30 sec time for
-all clients to accomplish. The indication of that may be "empty reply" ERROR 
-from server logged to log file. Thus, smooth mode, where all clients are 
-proceding independently, may be worth to consider. Smooth mode is better to
-use, when login operation is a single one and not in cycles, or when the tool
-is used just as a traffic generator.
+or are cutted and disconnected and a new cycle begins. 
 
 Another mode is a so-called "smooth" (default mode or -m2 command line), 
 where each client spends as much time as wishes and starts another url or 
@@ -120,11 +114,21 @@ is suitable for login-logoff cycles of load. Still, the limitation in TODO is, t
 it loads url after url without respecting the interleave timeouts. It will be
 hopefully corrected in next versions.
 
+When the first operation is login, storming mode may require large 10-20-30 
+sec time for all clients to accomplish. The indication of that may be 
+"empty reply" ERROR from server in log file. Thus, smooth mode, where 
+all clients are proceding independently, may be worth to consider. Storming
+mode is better to use, when login operation is a single one and not in cycles, 
+or when the tool is used just as a traffic generator. From another side
+errors in storming mode are the good indications of the server not being 
+able to coop with the burst of login requests, whereas smothing mode has a
+somehow adaptive character to the server responses rate.
+
 The problem of the both loading modes (particularly storming, where for smooth
 it may be sometimes adjusted by -c option ) is that all clients are starting
 loading immediately. It should be an option to configure calls-per-second
 number (CAPS), and enable a gradual loading, lets say 200 clients start
-loading each second, etc The issue is also in out TODO list.
+loading each second, etc. The issue is also in out TODO list.
 
 A combination of the both modes (two separate instances of the program)
 can provide somehow realistic behavior with some "smooth" load plus
