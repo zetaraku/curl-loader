@@ -26,10 +26,11 @@
 #define STATISTICS_H
 
 #include <stdio.h>
-#include <linux/types.h>
-/*
-  HTTP/S Statistics
-*/
+
+
+typedef unsigned long u_long;
+
+
 typedef struct stat_point
 {
   unsigned long long data_in;
