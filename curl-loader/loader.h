@@ -39,19 +39,18 @@ struct stat_point;
 
 /*---------  Common loading functions ----------------*/
 
-/*
-  Setup for a single curl handle (client): removes a handle from multi-handle, 
-  resets the handle, inits it, and, finally, adds the handle back to the
-  multi-handle.
-
-  Calls inside an application-specific routine to setup either HTTP or other
-  application (FTP, etc) specific features.
-
-  <ctx> - pointer to the client context;
-  <url_ctx> - pointer to 
-  <cycle_number> - used in storming mode;
-  <post_method> - when 'true', POST method is used instead of the default GET
-*/
+/****************************************************************************************
+* Function name - setup_curl_handle
+*
+* Description - Setup for a single curl handle (client): removes a handle from multi-handle, 
+*               resets the handle, inits it, and, finally, adds the handle back to the
+*               multi-handle.
+* Input -       *cctx - pointer to client context, which is linked to CURL handle to setup;
+*               *url_ctx - pointer to url-context, containing all url-related information;
+*               cycle_number - current number of loading cycle, passing here for storming mode;
+*               post_method - when 'true', POST method is used instead of the default GET
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 int setup_curl_handle (
                          struct client_context*const cctx, 
                          struct url_context* url_ctx, 

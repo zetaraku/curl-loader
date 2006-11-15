@@ -196,10 +196,15 @@ main (int argc, char *argv [])
   return 0;
 }
 
-/*
-  Runs the batch test. The function may be used as a 
-  POSIX thread function.
-*/
+/****************************************************************************************
+* Function name - batch_function
+* Description -   Runs the batch test either within the main-thread or in a separate thread.
+*
+* Input -         *batch_data contains loading configuration and active entities for a 
+*                  particular batch of clients.
+*
+* Return Code/Output - NULL in all cases
+****************************************************************************************/
 static void* batch_function (void * batch_data)
 {
   batch_context* bctx = (batch_context *) batch_data;
@@ -272,16 +277,6 @@ static void* batch_function (void * batch_data)
   */ 
   rval = ua_array[loading_mode] (cctx);
 
-  /*
-  if (loading_mode == LOAD_MODE_STORMING)
-    {
-      rval = user_activity_storm (cctx);
-    }
-  else
-    { 
-      rval = user_activity_smooth (cctx);
-    }
-  */
   if (rval == -1)
     {
       fprintf (stderr, "%s - \"%s\" -user activity failed.\n", 
@@ -290,7 +285,6 @@ static void* batch_function (void * batch_data)
     }
 
  cleanup:
-
   if (bctx->multiple_handle)
     curl_multi_cleanup(bctx->multiple_handle);
 
@@ -318,13 +312,18 @@ static void* batch_function (void * batch_data)
   return NULL;
 }
 
-/*
-  Initial initialization of curl multi-handle and 
-  the curl handles (clients), used in the batch.
-*/
-static int initial_handles_init (client_context*const cdata)
+/****************************************************************************************
+* Function name - initial_handles_init
+*
+* Description - Initial initialization of curl multi-handle and the curl handles (clients), 
+*               used in the batch
+* Input -       *ctx_array - array of clients for a particular batch of clients
+*
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
+static int initial_handles_init (client_context*const ctx_array)
 {
-  batch_context* bctx = cdata->bctx;
+  batch_context* bctx = ctx_array->bctx;
   int k = 0;
 
   /* Init CURL multi-handle. */
@@ -339,7 +338,7 @@ static int initial_handles_init (client_context*const cdata)
   /* Allocate and fill login/logoff POST strings for each client. */ 
   if (bctx->do_login)
     {
-      if (alloc_init_client_post_buffers (cdata) == -1)
+      if (alloc_init_client_post_buffers (ctx_array) == -1)
         {
           fprintf (stderr, "%s - error: alloc_client_post_buffers () .\n", __func__);
           return -1;
@@ -363,17 +362,19 @@ static int initial_handles_init (client_context*const cdata)
 }
 
 
-/*
-  Setup for a single curl handle (client): removes a handle from multi-handle, 
-  resets the handle, inits it, and, finally, adds the handle back to the
-  multi-handle.
 
-  <ctx> - pointer to the client context
-  <url_index> - either URL_INDEX_LOGIN_URL, URL_INDEX_LOGOFF_URL or
-  some number eq or above URL_INDEX_UAS_URL_START
-  <cycle_number> - used in storming mode.
-  <post_method> - when 'true', POST method is used instead of the default GET
-*/
+/****************************************************************************************
+* Function name - setup_curl_handle
+*
+* Description - Setup for a single curl handle (client): removes a handle from multi-handle, 
+*               resets the handle, inits it, and, finally, adds the handle back to the
+*               multi-handle.
+* Input -       *cctx - pointer to client context, which is linked to CURL handle to setup;
+*               *url_ctx - pointer to url-context, containing all url-related information;
+*               cycle_number - current number of loading cycle, passing here for storming mode;
+*               post_method - when 'true', POST method is used instead of the default GET
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 int setup_curl_handle (client_context*const cctx,
                          url_context* url_ctx,
                          long cycle_number,
@@ -474,14 +475,19 @@ int setup_curl_handle (client_context*const cctx,
   return 0;
 }
   
-/* 
-   Application/url-type specific setup 
-*/
-static 
-int setup_curl_handle_appl (
-                       client_context*const cctx,  
-                       url_context* url_ctx,
-                       int post_method)
+/****************************************************************************************
+* Function name - setup_curl_handle_appl
+*
+* Description - Application/url-type specific setup for a single curl handle (client)
+* Input -       *cctx - pointer to client context, which is linked to CURL handle to setup;
+*               *url_ctx - pointer to url-context, containing all url-related information;
+*               post_method - when 'true', POST method is used instead of the default GET
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
+static int setup_curl_handle_appl (
+                                   client_context*const cctx,  
+                                   url_context* url_ctx,
+                                   int post_method)
 {
   batch_context* bctx = cctx->bctx;
   CURL* handle = bctx->client_handles_array[cctx->client_index];
@@ -539,9 +545,18 @@ int setup_curl_handle_appl (
   return 0;
 }
 
-/*
-  Used to log activities of each client . 
-*/
+/****************************************************************************************
+* Function name - client_tracing_function
+* 
+* Description - Used to log activities of each client to $batch_name.log file
+* Input -       *handle - pointer to CURL handle;
+*               type - type of libcurl information passed, like headers, data, info, etc
+*               *data- pointer to data, like headers, etc
+*               size - number of bytes passed with data-pointer
+*               *userp - pointer to user-specific data, which in our case is the 
+*                        client_context structure
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 static int client_tracing_function (CURL *handle, curl_infotype type, 
                                     unsigned char *data, size_t size, void *userp)
 {
@@ -754,6 +769,14 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
   return 0;
 }
 
+/****************************************************************************************
+* Function name - alloc_init_client_post_buffers
+*
+* Description - Allocate and initialize buffers to be used for POST-ing
+* Input -       *ctx - pointer to client context
+*
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 static int alloc_init_client_post_buffers (client_context* cctx)
 {
   int i;
@@ -834,6 +857,16 @@ static int alloc_init_client_post_buffers (client_context* cctx)
   return 0;
 }
 
+/****************************************************************************************
+* Function name - alloc_init_client_contexts
+*
+* Description - Allocate and initialize client contexts
+* Input -       *bctx - back-pointer to batch context to be set to all clients  of the batch
+*               *output_file - output file to be used by all clients of the batch
+* Output -      **p_cctx - pointer to client contexts array to be allocated and initialized
+*
+* Return Code -  On Success - 0, on Error -1
+****************************************************************************************/
 static int alloc_init_client_contexts (
                                        client_context** p_cctx, 
                                        batch_context* bctx,
@@ -890,6 +923,13 @@ static int alloc_init_client_contexts (
   return 0;
 }
 
+/****************************************************************************************
+* Function name - free_batch_data_allocations
+*
+* Description - Deallocates all batch allocations
+* Input -       *bctx - pointer to batch context to release its allocations
+* Return Code/Output - None
+****************************************************************************************/
 static void free_batch_data_allocations (batch_context* bctx)
 {
   int i;
@@ -927,7 +967,15 @@ static void free_batch_data_allocations (batch_context* bctx)
     }
 }
 
-static int create_ip_addrs (batch_context* bctx, int bctx_num)
+/****************************************************************************************
+* Function name - create_ip_addrs
+*
+* Description - Adds ip-addresses of batches of loading clients to network adapter/s
+* Input -       *bctx_array - pointer to the array of batch contexts
+*               bctx_num - number of batch contexts in <bctx_array>
+* Return Code/Output - None
+****************************************************************************************/
+static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
 {
   int bi, cli; /* Batch and client indexes */
   struct in_addr in_address;
@@ -944,7 +992,7 @@ static int create_ip_addrs (batch_context* bctx, int bctx_num)
   for (bi = 0 ; bi < bctx_num ; bi++) 
     {
       /* Allocate array of IP-addresses */
-      if (!(ip_addresses[bi] = (char**)calloc (bctx[bi].client_num, 
+      if (!(ip_addresses[bi] = (char**)calloc (bctx_array[bi].client_num, 
                                                sizeof (char *))))
         {
           fprintf (stderr, 
@@ -954,11 +1002,11 @@ static int create_ip_addrs (batch_context* bctx, int bctx_num)
         }
 
       /* Set them to the batch contexts to remember them. */
-      bctx[bi].ip_addr_array = ip_addresses[bi]; 
+      bctx_array[bi].ip_addr_array = ip_addresses[bi]; 
 
       /* Allocate for each client a buffer and snprintf to it the IP-address string.
        */
-      for (cli = 0; cli < bctx[bi].client_num; cli++)
+      for (cli = 0; cli < bctx_array[bi].client_num; cli++)
         {
           if (!(ip_addresses[bi][cli] = (char*)calloc (IPADDR_STR_SIZE, sizeof (char))))
             {
@@ -969,7 +1017,7 @@ static int create_ip_addrs (batch_context* bctx, int bctx_num)
  
           /* Advance the ip-address, using client index as the offset. 
            */
-          in_address.s_addr = htonl (bctx[bi].ip_addr_min + cli);
+          in_address.s_addr = htonl (bctx_array[bi].ip_addr_min + cli);
 
           if (! (dotted_ip_addr = inet_ntoa (in_address)))
             {
@@ -985,8 +1033,8 @@ static int create_ip_addrs (batch_context* bctx, int bctx_num)
          Add all the addresses to the network interface as secondary ip-addresses.
          using netlink userland-kernel interface.
       */
-      if (add_secondary_ip_addrs (bctx[bi].net_interface, bctx[bi].client_num, 
-                                  (const char** const) ip_addresses[bi], bctx[bi].cidr_netmask) == -1)
+      if (add_secondary_ip_addrs (bctx_array[bi].net_interface, bctx_array[bi].client_num, 
+                                  (const char** const) ip_addresses[bi], bctx_array[bi].cidr_netmask) == -1)
         {
           fprintf (stderr, 
                    "%s - error: add_secondary_ip_addrs() - failed for batch = %d\n", 
