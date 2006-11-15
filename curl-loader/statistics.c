@@ -145,19 +145,20 @@ void dump_final_statistics (client_context* cctx)
     {
 
       print_statistics_footer (bctx->statistics_file);
+      print_statistics_header (bctx->statistics_file);
 
       const unsigned long loading_time = (now - bctx->start_time > 0) ? 
         (now - bctx->start_time) : 1;
  
       print_statistics_data (bctx->statistics_file,
-                             0, // timestamp - TODO
+                             loading_time/1000,
                              "HTTP", 
                              bctx->active_clients_count, 
                              &bctx->http_total,
                              loading_time);
 
       print_statistics_data (bctx->statistics_file, 
-                             0, // timestamp - TODO
+                             loading_time/1000,
                              "HTTPS", 
                              bctx->active_clients_count, 
                              &bctx->https_delta,
@@ -263,7 +264,7 @@ static void dump_stat_to_screen (
 void print_statistics_header (FILE* file)
 {
     fprintf (file, 
-             "Time, Protocol, Clients, Req, Redirs, Resp-OK, Resp-Serv-Err, Err, Resp-Delay, Resp-Delay-OK, Thr-In, Thr-Out\n");
+             "Time,Appl,Clients,Req,Redirs,Resp-OK,Resp-Serv-Err,Err,Resp-Delay,Resp-Delay-OK,Thr-In,Thr-Out\n");
     fflush (file);
 }
 
