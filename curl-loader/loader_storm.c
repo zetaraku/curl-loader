@@ -38,9 +38,14 @@ static int login_clients_storm (client_context*const cctx_array, int cycle);
 static int logoff_clients_storm (client_context*const cctx_array, int cycle);
 static int mget_url_storm (batch_context* bctx, float m_time);
 
-/*
-  Simulates user activity upon storm loading mode.
-*/
+
+/****************************************************************************************
+* Function name - user_activity_storm
+*
+* Description - Simulates user-activities, like login, uas, logoff, using STORM-MODE
+* Input -       *cctx_array - array of client contexts (related to a certain batch of clients)
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 int user_activity_storm (client_context*const cctx_array)
 {
   batch_context* bctx = cctx_array->bctx;

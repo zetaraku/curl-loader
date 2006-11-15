@@ -134,6 +134,15 @@ typedef struct
   char   			buf[256];
 } Request;
 
+
+/*******************************************************************************
+* Function name - add_secondary_ip_to_device
+*
+* Description - Adds a secondary IPv4 address to a valid networking device.
+* Input -       *device - network device name as linux sees it, like "eth0"
+*               *ip_slash_mask - string in the form of ipv4/mask, e.g. "192.168.0.1/24"
+* Return Code/Output - On Success - 0, on Error -1
+********************************************************************************/
 int add_secondary_ip_to_device(const char*const device, 
                                const char*const ip_slash_mask) 
 {
@@ -797,6 +806,17 @@ ll_name_to_index(char *name)
   return 0;
 }
 
+
+/*******************************************************************************
+* Function name - add_secondary_ip_addrs
+*
+* Description - Adds all secondary IPv4 addresses from array to network interface
+* Input -       *interface - network device name as linux sees it, like "eth0"
+*               addr_number - number of addresses to add
+*               *addresses - array of strings of ipv4 addresses
+*               netmask - CIDR notation netmask
+* Return Code/Output - On Success - 0, on Error -1
+********************************************************************************/
 int add_secondary_ip_addrs (const char*const interface, int addr_number, 
                         const char**const addresses, int netmask)
 {

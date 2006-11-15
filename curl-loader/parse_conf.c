@@ -141,6 +141,15 @@ static char* eat_ws (char*ptr, size_t*const len);
 static int is_ws (char*const ptr);
 static int is_non_ws (char*const ptr);
 
+
+/*******************************************************************************
+* Function name - parse_config_file
+*
+* Description - Parses configuration file and fills batch contexts in array
+* Output -       *bctx_array - array of batch contexts to be filled on parsing
+* Input-              bctx_array_size - number of bctx contexts in <bctx_array>.
+* Return Code/Output - On Success - number of batches >=1, on Error -1
+********************************************************************************/
 int parse_config_file (char* const filename, 
                        batch_context* bctx_array, 
                        size_t bctx_array_size)

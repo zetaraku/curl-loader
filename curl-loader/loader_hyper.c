@@ -30,6 +30,14 @@
 #include "client.h"
 #include "conf.h"
 
+
+/****************************************************************************************
+* Function name - user_activity_hyper
+*
+* Description - Simulates user-activities, like login, uas, logoff, using HYPER-MODE
+* Input -       *cctx_array - array of client contexts (related to a certain batch of clients)
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 int user_activity_hyper (client_context*const cctx_array)
 {
   (void) cctx_array;

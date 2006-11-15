@@ -52,7 +52,13 @@ static int on_cycling_completed (client_context* cctx);
 static int setup_login_logoff (client_context* cctx, const int login);
 static int setup_uas (client_context* cctx);
 
-
+/****************************************************************************************
+* Function name - user_activity_smooth
+*
+* Description - Simulates user-activities, like login, uas, logoff, using SMOOTH-MODE
+* Input -       *cctx_array - array of client contexts (related to a certain batch of clients)
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 int user_activity_smooth (client_context* cctx)
 {
   int j;
