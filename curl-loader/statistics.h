@@ -27,26 +27,28 @@
 
 #include <stdio.h>
 
-
-typedef unsigned long u_long;
-
-
+/*
+  stat_point - is the object used to keep all statistics
+  counters together and collect statistics.
+*/
 typedef struct stat_point
 {
-  unsigned long long data_in;
-  unsigned long long data_out;
+  unsigned long long data_in; /* Inbound bytes number */
+  unsigned long long data_out; /* Outbound bytes number */
 
-  u_long requests; /* number of requests issued */
-  u_long resp_redirs;  /* number of 3xx redirections */
-  u_long resp_oks;       /* number of 2xx responses */
-  u_long resp_serv_errs; /* number of 5xx responses */
-  u_long other_errs; /* Errors of resolving, connecting, internal errors, etc. */
+  unsigned long requests; /* Number of requests issued */
+  unsigned long resp_redirs;  /* Number of 3xx redirections */
+  unsigned long resp_oks;       /* Number of 2xx responses */
+  unsigned long resp_serv_errs; /* Number of 5xx responses */
+  unsigned long other_errs; /* Errors of resolving, connecting, internal errors, etc. */
 
-  int appl_delay_points;
-  u_long  appl_delay; /* Average delay in msec between request and response */
+  int appl_delay_points; /* Num of data points used to calculate average 
+                            application delay */
+  unsigned long  appl_delay; /* Average delay in msec between request and response */
 
-  int appl_delay_2xx_points;
-  u_long  appl_delay_2xx; /* Average delay in msec between request and 2xx-OK response */
+  int appl_delay_2xx_points; /* Num of data points used to calculate average 
+                                application delay for 2xx-OK responses*/
+  unsigned long  appl_delay_2xx; /* Average delay in msec between request and 2xx-OK response */
 
 } stat_point;
 

@@ -27,10 +27,10 @@ DEBUG_FLAGS= -g
 LD=gcc
 
 #Linker Flags
-LDFLAGS=-L./lib
+LDFLAGS=-L./lib  -L/usr/local/ssl/lib
 
 #Link Libraries. RedHat/FC require sometimes lidn
-LIBS= -ldl -lpthread -lrt -lidn -L/usr/local/ssl/lib -lssl -lcrypto -lcurl -lz#-lcares
+LIBS= -ldl -lpthread -lrt -lidn -lssl -lcrypto -lcurl -lz#-lcares
 
 # Include directories
 INCDIR=-I. -I./inc -I/usr/local/ssl/include

@@ -588,7 +588,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
           fprintf(cctx->file_output, "%ld %s => Send header: eff-url: %s, url: %s\n", 
                   cctx->cycle_num, cctx->client_name, url_print ? url : "", url_diff ? url_target : "");
 
-      stat_data_out_add (cctx, (u_long) size);
+      stat_data_out_add (cctx, (unsigned long) size);
 
       if (! hdrs_req (cctx))
         {
@@ -606,7 +606,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   cctx->cycle_num, cctx->client_name, url_print ? url : "",
                   url_diff ? url_target : "");
 
-      stat_data_out_add (cctx, (u_long) size);
+      stat_data_out_add (cctx, (unsigned long) size);
       hdrs_clear_all (cctx);
       break;
 
@@ -616,7 +616,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   cctx->cycle_num, cctx->client_name, url_print ? url : "",
                   url_diff ? url_target : "");
 
-      stat_data_out_add (cctx, (u_long) size);
+      stat_data_out_add (cctx, (unsigned long) size);
       hdrs_clear_all (cctx);
       break;
       
@@ -625,7 +625,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
          CURL library assists us by passing to the full HTTP-headers, 
          not just parts. 
       */
-      stat_data_in_add (cctx, (u_long) size);
+      stat_data_in_add (cctx, (unsigned long) size);
 
       {
         long response_status = 0, response_module = 0;
@@ -662,7 +662,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                 stat_2xx_inc (cctx); /* Increment number of 2xx responses */
 
                 /* Count into the averages HTTP/S server response delay */
-                const u_long time_2xx_resp = get_tick_count ();
+                const unsigned long time_2xx_resp = get_tick_count ();
                 stat_appl_delay_2xx_add (cctx, time_2xx_resp);
                 stat_appl_delay_add (cctx, time_2xx_resp);
               }
@@ -679,7 +679,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                 /* First header of 3xx response */
                 hdrs_3xx_inc (cctx);
                 stat_3xx_inc (cctx); /* Increment number of 3xx responses */
-                const u_long time_3xx_resp = get_tick_count ();
+                const unsigned long time_3xx_resp = get_tick_count ();
                 stat_appl_delay_add (cctx, time_3xx_resp);
               }
             hdrs_clear_non_3xx (cctx);
@@ -699,7 +699,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                 hdrs_5xx_inc (cctx);
                 stat_5xx_inc (cctx);  /* Increment number of 5xx responses */
 
-                const u_long time_5xx_resp = get_tick_count ();
+                const unsigned long time_5xx_resp = get_tick_count ();
                 stat_appl_delay_add (cctx, time_5xx_resp);
               }
             hdrs_clear_non_5xx (cctx);
@@ -721,7 +721,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   cctx->cycle_num, cctx->client_name, 
                   url_print ? url : "", url_diff ? url_target : "");
 
-      stat_data_in_add (cctx,  (u_long) size);
+      stat_data_in_add (cctx,  (unsigned long) size);
       hdrs_clear_all (cctx);
       break;
 
@@ -731,7 +731,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   cctx->cycle_num, cctx->client_name, 
                   url_print && url ? url : "", url_diff ? url_target : "");
 
-      stat_data_in_add (cctx,  (u_long) size);
+      stat_data_in_add (cctx,  (unsigned long) size);
       hdrs_clear_all (cctx);
       break;
 

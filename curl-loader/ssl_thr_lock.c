@@ -32,9 +32,9 @@ void locking_function (int mode, int n, const char * file, int line)
         MUTEX_UNLOCK(mutex_arr[n]);
 }
   
-u_long id_function(void)
+unsigned long id_function(void)
 {
-    return ((u_long)THREAD_ID);
+    return ((unsigned long)THREAD_ID);
 }
   
 int thread_openssl_setup(void)

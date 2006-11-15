@@ -137,7 +137,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
     while(CURLM_CALL_MULTI_PERFORM == curl_multi_perform(mhandle,still_running))
       ;
 
-    u_long now = get_tick_count(); 
+    unsigned long now = get_tick_count(); 
 
     if ((now - bctx->last_measure) > snapshot_timeout) 
       {

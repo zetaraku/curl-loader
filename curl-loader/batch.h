@@ -151,8 +151,8 @@ typedef struct batch_context
 
   FILE* statistics_file;
 
-  u_long start_time; 
-  u_long last_measure;
+  unsigned long start_time; 
+  unsigned long last_measure;
 
   stat_point http_delta;
   stat_point http_total;

@@ -13,7 +13,7 @@
 #include <openssl/crypto.h>
 
 void locking_function (int mode, int n, const char * file, int line);
-u_long id_function(void);
+unsigned long id_function(void);
 
 int thread_openssl_setup(void);
 int thread_openssl_cleanup(void);

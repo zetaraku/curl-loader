@@ -135,8 +135,8 @@ void hdrs_clear_non_2xx (client_context* cctx);
 void hdrs_clear_non_3xx (client_context* cctx);
 void hdrs_clear_non_5xx (client_context* cctx);
 
-void stat_data_out_add (client_context* cctx, u_long bytes);
-void stat_data_in_add (client_context* cctx, u_long bytes);
+void stat_data_out_add (client_context* cctx, unsigned long bytes);
+void stat_data_in_add (client_context* cctx, unsigned long bytes);
 void stat_err_inc (client_context* cctx);
 void stat_req_inc (client_context* cctx);
 void stat_2xx_inc (client_context* cctx);

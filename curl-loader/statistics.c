@@ -30,7 +30,7 @@
 #include "statistics.h"
 
 static void dump_statistics (
-                             u_long period, 
+                             unsigned long period, 
                              stat_point *http, 
                              stat_point *https);
 
@@ -38,16 +38,16 @@ static void print_statistics_footer (FILE* file);
 
 static void print_statistics_data (
                                    FILE* file, 
-                                   u_long timestamp,
+                                   unsigned long timestamp,
                                    char* prot,
                                    long clients_num, 
                                    stat_point *sd,
-                                   u_long period);
+                                   unsigned long period);
 
 static void dump_stat_to_screen (
                                  char* protocol, 
                                  stat_point* sd, 
-                                 u_long period);
+                                 unsigned long period);
 
 static void dump_clients (client_context* cctx_array);
 
@@ -121,7 +121,7 @@ unsigned long get_tick_count ()
 void dump_final_statistics (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
-  u_long now = get_tick_count();
+  unsigned long now = get_tick_count();
 
   dump_intermediate_statistics (bctx->active_clients_count, 
                                 now - bctx->last_measure,
@@ -146,7 +146,7 @@ void dump_final_statistics (client_context* cctx)
 
       print_statistics_footer (bctx->statistics_file);
 
-      const u_long loading_time = (now - bctx->start_time > 0) ? 
+      const unsigned long loading_time = (now - bctx->start_time > 0) ? 
         (now - bctx->start_time) : 1;
  
       print_statistics_data (bctx->statistics_file,
@@ -185,8 +185,8 @@ void dump_intermediate_statistics (int clients,
 
 void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
 {
-  const u_long now_time = get_tick_count ();
-  const u_long delta_time = now_time - bctx->last_measure;
+  const unsigned long now_time = get_tick_count ();
+  const unsigned long delta_time = now_time - bctx->last_measure;
 
     if (stop_loading)
     {
@@ -202,7 +202,7 @@ void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
 
   if (bctx->statistics_file)
   {
-    const u_long timestamp_sec =  (now_time - bctx->start_time) / 1000;
+    const unsigned long timestamp_sec =  (now_time - bctx->start_time) / 1000;
 
     print_statistics_data (bctx->statistics_file,
                            timestamp_sec,
@@ -229,7 +229,7 @@ void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
 }
 
 static void dump_statistics (
-                             u_long period,  
+                             unsigned long period,  
                              stat_point *http, 
                              stat_point *https)
 {
@@ -249,7 +249,7 @@ static void dump_statistics (
 static void dump_stat_to_screen (
                                  char* protocol, 
                                  stat_point* sd, 
-                                 u_long period)
+                                 unsigned long period)
 {
   fprintf(stderr, "%s - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld,  Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec), Thr-In: %lld (Bytes/sec), Thr-Out: %lld (Bytes/sec)\n",
           protocol, sd->requests, sd->resp_redirs, sd->resp_oks, sd->resp_serv_errs, 
@@ -274,11 +274,11 @@ static void print_statistics_footer (FILE* file)
 }
 
 static void print_statistics_data (FILE* file, 
-                                   u_long timestamp,
+                                   unsigned long timestamp,
                                    char* prot,
                                    long clients_num, 
                                    stat_point *sd,
-                                   u_long period)
+                                   unsigned long period)
 {
     period /= 1000;
     if (period == 0)

@@ -83,7 +83,7 @@ void hdrs_clear_non_5xx (client_context* cctx)
 
 
 
-void stat_data_out_add (client_context* cctx, u_long bytes)
+void stat_data_out_add (client_context* cctx, unsigned long bytes)
 {
   cctx->st.data_out += bytes;
 
@@ -91,7 +91,7 @@ void stat_data_out_add (client_context* cctx, u_long bytes)
     (cctx->bctx->http_delta.data_out += bytes);
 }
 
-void stat_data_in_add (client_context* cctx, u_long bytes)
+void stat_data_in_add (client_context* cctx, unsigned long bytes)
 {
   cctx->st.data_in += bytes;
   
@@ -130,7 +130,7 @@ void stat_5xx_inc (client_context* cctx)
     cctx->bctx->http_delta.resp_serv_errs++;
 }
 
-void stat_appl_delay_add (client_context* cctx, u_long resp_timestamp)
+void stat_appl_delay_add (client_context* cctx, unsigned long resp_timestamp)
 {
   if (resp_timestamp > cctx->req_timestamp)
     {
@@ -148,7 +148,7 @@ void stat_appl_delay_add (client_context* cctx, u_long resp_timestamp)
         }
     }
 }
-void stat_appl_delay_2xx_add (client_context* cctx, u_long resp_timestamp)
+void stat_appl_delay_2xx_add (client_context* cctx, unsigned long resp_timestamp)
 {
     if (resp_timestamp > cctx->req_timestamp)
     {
