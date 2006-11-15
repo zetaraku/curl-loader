@@ -84,7 +84,7 @@ static void free_batch_data_allocations (struct batch_context* bctx);
 
 int stop_loading = 0;
 
-void sigint_handler (int signum)
+static void sigint_handler (int signum)
 {
   (void) signum;
 
@@ -92,6 +92,15 @@ void sigint_handler (int signum)
 
   fprintf (stderr, "\n\n======= SIGINT Received ============.\n");
 }
+
+typedef int (*pf_user_activity) (struct client_context*const);
+
+static pf_user_activity ua_array[3] = 
+{ 
+  user_activity_hyper,
+  user_activity_storm,
+  user_activity_smooth
+};
 
 int 
 main (int argc, char *argv [])
@@ -260,20 +269,22 @@ static void* batch_function (void * batch_data)
   /* 
      Now run login, user-defined actions, like fetching various urls and and 
      sleeping in between, and logoff.
-  */
+  */ 
+  rval = ua_array[loading_mode] (cctx);
+
+  /*
   if (loading_mode == LOAD_MODE_STORMING)
     {
-      /* MODE_LOAD_STORM */
       rval = user_activity_storm (cctx);
     }
-  else /* LOAD_MODE_SMOOTH */
+  else
     { 
       rval = user_activity_smooth (cctx);
     }
-
+  */
   if (rval == -1)
     {
-      fprintf (stderr, "%s - \"%s\" -user_activity_storm() failed.\n", 
+      fprintf (stderr, "%s - \"%s\" -user activity failed.\n", 
                __func__, bctx->batch_name);
       goto cleanup;
     }

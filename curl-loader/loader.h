@@ -75,15 +75,17 @@ int create_batch_data_array (char*const input_string,
                              struct batch_context*const bctx);
 
 
+/* ------------- Hyper-mode loading  function ----------------*/
 
+int user_activity_hyper (struct client_context*const cctx_array);
 
-/* ------------- Storm loading  functions ----------------*/
+/* ------------- Storm-mode loading  function ----------------*/
 
-int user_activity_storm (struct client_context*const cdata);
+int user_activity_storm (struct client_context*const cctx_array);
 
-/*-------------- Smooth loading functions ----------------*/
+/*-------------- Smooth-mode loading function ----------------*/
 
-int user_activity_smooth (struct client_context* cctx);
+int user_activity_smooth (struct client_context*const cctx_array);
 
 extern int stop_loading;
 

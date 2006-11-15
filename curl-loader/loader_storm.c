@@ -33,17 +33,17 @@
 #define POST_LOGIN 1
 #define POST_LOGOFF 0
 
-static int posting_credentials_storm (client_context* clients, int in_off);
-static int login_clients_storm (client_context* cctx, int cycle);
-static int logoff_clients_storm (client_context*const cctx, int cycle);
+static int posting_credentials_storm (client_context*const cctx_array, int in_off);
+static int login_clients_storm (client_context*const cctx_array, int cycle);
+static int logoff_clients_storm (client_context*const cctx_array, int cycle);
 static int mget_url_storm (batch_context* bctx, float m_time);
 
 /*
   Simulates user activity upon storm loading mode.
 */
-int user_activity_storm (client_context*const cdata)
+int user_activity_storm (client_context*const cctx_array)
 {
-  batch_context* bctx = cdata->bctx;
+  batch_context* bctx = cctx_array->bctx;
   long cycle = 0, k = 0;
   long u_index = 0;
 
@@ -55,7 +55,7 @@ int user_activity_storm (client_context*const cdata)
   */
   if (bctx->do_login && !bctx->login_cycling)
     {
-      if (login_clients_storm (cdata, 0) == -1)
+      if (login_clients_storm (cctx_array, 0) == -1)
         {
           fprintf (stderr, "%s - \"%s\" - login_clients_storm() failed.\n", 
                    __func__, bctx->batch_name);
@@ -75,7 +75,7 @@ int user_activity_storm (client_context*const cdata)
        */
       if (bctx->do_login && bctx->login_cycling)
         {
-          if (login_clients_storm (cdata, cycle) == -1)
+          if (login_clients_storm (cctx_array, cycle) == -1)
             {
               fprintf (stderr, "%s - login_clients_storm() failed.\n", __func__);
               return -1;
@@ -100,12 +100,12 @@ int user_activity_storm (client_context*const cdata)
           */
           for (k = 0 ; k < bctx->client_num ; k++)
             {
-              if (cdata[k].client_state != CSTATE_ERROR)
-                cdata[k].client_state = CSTATE_UAS_CYCLING;
+              if (cctx_array[k].client_state != CSTATE_ERROR)
+                cctx_array[k].client_state = CSTATE_UAS_CYCLING;
               //fprintf (stderr, "%s - client_num %ld, state %d\n", 
-              //        __func__, k, cdata[k].client_state);
+              //        __func__, k, cctx_array[k].client_state);
 
-              setup_curl_handle (&cdata[k],
+              setup_curl_handle (&cctx_array[k],
                                    &bctx->uas_url_ctx_array[u_index], /* index of url string in array */
                                    cycle,
                                    0);
@@ -134,7 +134,7 @@ int user_activity_storm (client_context*const cdata)
       */
       if (bctx->do_logoff && bctx->logoff_cycling)
         {
-          if (logoff_clients_storm (cdata, cycle) == -1)
+          if (logoff_clients_storm (cctx_array, cycle) == -1)
             {
               fprintf (stderr, "%s - logoff_clients_storm() failed .\n", __func__);
               return -1;
@@ -149,7 +149,7 @@ int user_activity_storm (client_context*const cdata)
          and a limited history run in the logfile. 
       */
       if (cycle > 0 && ! (cycle%logfile_rewind_cycles_num))
-          rewind (cdata->file_output);
+          rewind (cctx_array->file_output);
       
       // Bring statistics at the end of each cycle
       dump_intermediate_and_advance_total_statistics (bctx);
@@ -160,7 +160,7 @@ int user_activity_storm (client_context*const cdata)
   */
   if (bctx->do_logoff && ! bctx->logoff_cycling)
     {
-      if (logoff_clients_storm (cdata, 0) == -1)
+      if (logoff_clients_storm (cctx_array, 0) == -1)
         {
           fprintf (stderr, "%s - logoff_clients_storm() failed .\n", __func__);
           return -1;
@@ -172,15 +172,15 @@ int user_activity_storm (client_context*const cdata)
 
   for (k = 0 ; k < bctx->client_num ; k++)
     {
-      if (cdata[k].client_state != CSTATE_ERROR)
+      if (cctx_array[k].client_state != CSTATE_ERROR)
       {
-        cdata[k].client_state = CSTATE_FINISHED_OK;
+        cctx_array[k].client_state = CSTATE_FINISHED_OK;
       }
       //fprintf (stderr, "%s - client_num %ld, state %d\n", 
-      //         __func__, k, cdata[k].client_state);
+      //         __func__, k, cctx_array[k].client_state);
     }
 
-  dump_final_statistics (cdata);
+  dump_final_statistics (cctx_array);
   
   fprintf (stderr, "\n%s - cycling done, exiting .\n\n", __func__);
   return 0;
@@ -228,9 +228,9 @@ static int mget_url_storm (batch_context* bctx, float m_time)
 
 /*
 */
-static int posting_credentials_storm (client_context* clients, int in_off)
+static int posting_credentials_storm (client_context*const cctx_array, int in_off)
 {
-  batch_context* bctx = clients->bctx;
+  batch_context* bctx = cctx_array->bctx;
   int i = 0;
 
   if ((in_off != POST_LOGIN) && (in_off != POST_LOGOFF))
@@ -268,7 +268,7 @@ static int posting_credentials_storm (client_context* clients, int in_off)
          removed from MCURL.
        */
       curl_easy_setopt(bctx->client_handles_array[i], CURLOPT_POSTFIELDS, 
-                       in_off ? clients[i].post_data_login : clients[i].post_data_logoff);
+                       in_off ? cctx_array[i].post_data_login : cctx_array[i].post_data_logoff);
 
       curl_multi_add_handle(bctx->multiple_handle, 
                             bctx->client_handles_array[i]);
@@ -285,19 +285,19 @@ static int posting_credentials_storm (client_context* clients, int in_off)
   return 0;
 }
 
-static int login_clients_storm (client_context* cdata, int cycle)
+static int login_clients_storm (client_context*const cctx_array, int cycle)
 {
   int k = 0;
-  batch_context* bctx= cdata->bctx;
+  batch_context* bctx= cctx_array->bctx;
 
   /* Setup client handles for GET-method. */
   for (k = 0 ; k < bctx->client_num ; k++)
     {
-      cdata[k].client_state = CSTATE_LOGIN;
+      cctx_array[k].client_state = CSTATE_LOGIN;
       //fprintf (stderr, "%s - client_num %d, state %d\n", 
       //         __func__, k, CSTATE_LOGIN);
 
-      setup_curl_handle (&cdata[k], /* pointer to client context */
+      setup_curl_handle (&cctx_array[k], /* pointer to client context */
                            &bctx->login_url, /* login url */
                            cycle, /* zero cycle */
                            0 /*without POST buffers as a more general case*/  
@@ -322,7 +322,7 @@ static int login_clients_storm (client_context* cdata, int cycle)
     }
   
   /* Make POSTing of login credentials for each client. Pass POST-buffers. */
-  if (posting_credentials_storm (cdata, POST_LOGIN) == -1)
+  if (posting_credentials_storm (cctx_array, POST_LOGIN) == -1)
     {
       fprintf (stderr, "%s - \"%s\" - error: posting_credentials_storm()- failed.\n", 
                __func__, bctx->batch_name);
@@ -331,22 +331,22 @@ static int login_clients_storm (client_context* cdata, int cycle)
   return 0;
 }
 
-static int logoff_clients_storm (client_context*const cdata, int cycle)
+static int logoff_clients_storm (client_context*const cctx_array, int cycle)
 {
   int k = 0;
-  batch_context* bctx = cdata->bctx;
+  batch_context* bctx = cctx_array->bctx;
 
   /* 
      Setup the last url for logoff without any POST-buffer 
   */
   for (k = 0 ; k < bctx->client_num ; k++)
     {
-      if (cdata[k].client_state != CSTATE_ERROR) 
-        cdata[k].client_state = CSTATE_LOGOFF;
+      if (cctx_array[k].client_state != CSTATE_ERROR) 
+        cctx_array[k].client_state = CSTATE_LOGOFF;
       //fprintf (stderr, "%s - client_num %d, state %d\n", 
-      //        __func__, k, cdata[k].client_state);
+      //        __func__, k, cctx_array[k].client_state);
 
-      setup_curl_handle (&cdata[k],
+      setup_curl_handle (&cctx_array[k],
                            &bctx->logoff_url, 
                            cycle, /* Cycle number does not matter here */
                            0 /* General case, without POST */
@@ -375,7 +375,7 @@ static int logoff_clients_storm (client_context*const cdata, int cycle)
         Sets the POSTing logoff buffer to the curl-handlers and 
         POSTs the last url or the url, retrived by the previous GET 
       */
-      if (posting_credentials_storm (cdata, POST_LOGOFF) == -1)
+      if (posting_credentials_storm (cctx_array, POST_LOGOFF) == -1)
         {
           fprintf (stderr, "%s - \"%s\" - posting_credentials_storm()- failed to logoff.\n", 
                    __func__, bctx->batch_name);
