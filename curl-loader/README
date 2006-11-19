@@ -1,4 +1,4 @@
-    curl-loader, version 0.19
+    curl-loader, version 0.20
 
     Robert Iakobashvili, Ashdod, Israel, coroberti@gmail.com
     Michael Moser, Modiin, Israel, moser.michael@gmail.com
@@ -254,14 +254,7 @@ should not appear or just to be simply commented out by '#'.
 
 For more examples, please, look at configs directory.
 
-Note, that currently there is a limit of 1000 sockets per batch of clients.
-Running thousands and more clients, please do not forget the options:
-- to increase limit of open desriptors in shell by running e.g. "#ulimit -n 10000":
-- to increase total limit of  open descriptors in system somewhere in /proc
-- to consider reusing sockets in time-wait state: by "#echo 1 > 
-  /proc/sys/net/ipv4/tcp_tw_recycle"
-- and/or  "#echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse"
-
+LOGIN/LOGOFF HTTP METHODS:
 There are two login modes supported. GET+POST and POST-only. 
 There are three logoff modes supported as GET-only, GET+POST and POST-only.
 HTTP cookies are enabled in curl-loader by default.
@@ -273,8 +266,22 @@ via ftp-url according to the RFC 1738), like:
 ftp://username:password@hostname:port/etc-str
 
 
-STATISTICS (just added feature):
+LOGFILE:
+The semantics of logfile output, using command line options -v (verbous) and -u 
+(url print):
+"Cycle number", "Client number (ip-address)" - some information string, e.g.:
 
+4 39 (192.168.0.39)  :== Info:   Trying 10.30.6.42... : eff-url: http://10.30.6.42:8888/server/Admin/ServiceList.do, url:
+
+Which meas: cycle: 4, client number 39 with ipv4 address (192.168.0.39), 
+status of the message is Info, eff-url - is the url, used right now, "url:" is 
+empty, which means, that it is the same as effective.
+
+Effective url may be a result of redirection and, thus, "url:" 
+(target url, specified in batch configuration file) will be printed as well.
+
+
+STATISTICS (just added feature):
 Currently HTTP/HTTPS statistics includes the following counters:
    - requests num;
    - responses success num;
