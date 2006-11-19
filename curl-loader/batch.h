@@ -52,112 +52,154 @@ typedef struct batch_context
 
   /*------------------------ GENERAL SECTION ------------------------------ */
 
-  char batch_name[BATCH_NAME_SIZE];  /* Some non-empty name of a batch load 
-                                        without empty spaces, tabs, etc */
+   /* Some non-empty name of a batch load without empty spaces, tabs, etc */
+  char batch_name[BATCH_NAME_SIZE];
 
-  int client_num;  /* Number of clients (each client with its own IP-address) 
-                      in the batch */
+  /* Number of clients (each client with its own IP-address) in the batch */
+  int client_num;
   
-  char net_interface[16]; /* Name of the network interface to be used for 
-                             loading, e.g. "eth0", "eth1:16" */
+   /* Name of the network interface to be used for loading, e.g. "eth0", "eth1:16" */
+  char net_interface[16];
 
-  int cidr_netmask;  /* CIDR netmask number from 0 to 32, like 16 or 24, etc. */
+  /* CIDR netmask number from 0 to 32, like 16 or 24, etc. */
+  int cidr_netmask;
   
-  long ip_addr_min; /* Minimal ip-address of a client in the batch (host order). */
+  /* Minimal ip-address of a client in the batch (host order). */
+  long ip_addr_min;
   
-  long ip_addr_max; /* Maximum ip-address of a client in the batch (host order).*/
+  /* Maximum ip-address of a client in the batch (host order).*/
+  long ip_addr_max;
   
-  long cycles_num; /* Number of cycles to repeat the urls downloads and 
-                      afterwards sleeping cycles. Zero means run it forever */
+   /* 
+      Number of cycles to repeat the urls downloads and afterwards sleeping 
+      cycles. Zero means run it forever. 
+   */
+  long cycles_num;
 
   
 
   /*------------------------ LOGIN SECTION -------------------------------- */
 
-  int do_login; /* Flag, whether to do authentication. If zero - don't do, else 
-                  do it. When zero, username, password, etc are not relevant. */
+  /* 
+     Flag, whether to do authentication. If zero - don't do, else 
+     do it. When zero, other fields of the login section are not relevant
+     and should be commented out in the configuration file.
+  */
+  int do_login;
 
-  char login_username[32]; /* Authentication login_username */
+  /* Authentication login_username */
+  char login_username[32];
  
-  char login_password[32];  /* Authentication login_password */
+  /* Authentication login_password */
+  char login_password[32];
   
-  size_t login_req_type; /* either 
-                            LOGIN_REQ_TYPE_GET_AND_POST or 
-                            LOGIN_REQ_TYPE_POST 
-                         */
+  /* 
+     Either LOGIN_REQ_TYPE_GET_AND_POST or LOGIN_REQ_TYPE_POST
+  */
+  size_t login_req_type;
 
-  /* The string to be used as the base for post message */
+  /* The string to be used as the base for login post message */
   char login_post_str [POST_BUFFER_SIZE + 1];
 
-  url_context login_url; /* The url for login. */
+   /* The url object for login. */
+  url_context login_url;
 
-  int login_cycling; /* Whether to include login to cycling or not. */
+  /* Whether to include login to cycling or not. */
+  int login_cycling;
 
 
 
   /*------- UAS (User Activity Simulation) SECTION - fetching urls ----- */
 
+   /* Whether to proceed with UAS, When zero, other fields of the UAS section 
+      are not relevant and should be commented out in the configuration file.*/
+  int do_uas;
 
-  int do_uas ; /* Whether to proceed with UAS */
-
-  int uas_urls_num; /* Number of total urls, should be more or equal to 1 */
+  /* Number of total urls, should be more or equal to 1 */
+  int uas_urls_num;
   
 
 
 
   /*------------------------LOGOFF SECTION ---------------------------------*/
 
+  /* 
+     Flag, whether to do logoff. If zero - don't do, else 
+     do it. When zero, other fields of the logoff section are not relevant
+     and should be commented out in the configuration file.
+  */
   int do_logoff;
 
-  size_t logoff_req_type; /* 
-                             LOGOFF_REQ_TYPE_GET, 
-                             LOGOFF_REQ_TYPE_GET_AND_POST,
-                             LOGOFF_REQ_TYPE_POST
-                          */
+  /* 
+     LOGOFF_REQ_TYPE_GET, 
+     LOGOFF_REQ_TYPE_GET_AND_POST,
+     LOGOFF_REQ_TYPE_POST
+  */
+  size_t logoff_req_type;
 
+  /* The string to be used as the base for login post message */
   char logoff_post_str[POST_BUFFER_SIZE + 1];
 
+  /* The url object for logoff. */
   url_context logoff_url;
 
+  /* Whether to include login to cycling or not. */
   int logoff_cycling;
 
 
   /*------------------------- ASSISTING SECTION ----------------------------*/
 
-  CURL **client_handles_array; /* Array of client handles of client_num size. 
-                                  Each handle means a single curl connection */
+   /* 
+      Array of client handles of client_num size. Each handle means a single 
+      curl connection 
+   */
+  CURL **client_handles_array;
 
-  CURLM *multiple_handle; /* Multiple handle for curl. Contains all 
-                             curl handles of a batch */
+  /* Multiple handle for curl. Contains all curl handles of a batch */
+  CURLM *multiple_handle;
   
-  char** ip_addr_array; /* Assisting array of pointers to ip-addresses */
+   /* Assisting array of pointers to ip-addresses */
+  char** ip_addr_array;
 
-  size_t batch_init_state; /* Current parsing state. Used on reading and 
-                              parsing conf-file. */ 
+  /* Current parsing state. Used on reading and parsing conf-file. */ 
+  size_t batch_init_state; 
 
-  char error_buffer[CURL_ERROR_SIZE]; /* common buffer for all batch clients */
+  /* Common error buffer for all batch clients */
+  char error_buffer[CURL_ERROR_SIZE];
 
-  url_context* uas_url_ctx_array; /* Array of all url contexts */
+  /* Array of all UAS url contexts */
+  url_context* uas_url_ctx_array;
 
-  int url_index; /* Index of the parsed url in uas_url_ctx_array below.
-                  Further used by the storm-mode as the current url index. */
+  /* Index of the parsed url in uas_url_ctx_array below.
+     Further used by the storm-mode as the current url index. */
+  int url_index;
 
+  /* Array of all client contexts for te batch */
   struct client_context* cctx_array;
 
-  int active_clients_count; /* Counter used mainlu by smooth mode */
+  /* Counter used mainly by smooth mode */
+  int active_clients_count;
 
 
    /*--------------- STATISTICS  --------------------------------------------*/
 
+  /* The file to be used for statistics output */
   FILE* statistics_file;
 
+  /* Timestamp, when the loading started */
   unsigned long start_time; 
+
+  /* The last timestamp */
   unsigned long last_measure;
 
+  /* HTTP counters since the last measurements */
   stat_point http_delta;
+  /* HTTP counters since the loading started */
   stat_point http_total;
 
+  /* HTTPS counters since the last measurements */
   stat_point https_delta;
+  /* HTTPS counters since the loading started */
   stat_point https_total;
 
 } batch_context;

@@ -191,6 +191,15 @@ int user_activity_storm (client_context*const cctx_array)
   return 0;
 }
 
+/****************************************************************************************
+* Function name - mget_url_storm
+*
+* Description - Performs actual fetching of urls for a whole batch.
+
+* Input -       *bctx - pointer to the batch of contexts
+*                     m_time - the time limit for the whole batch of clients to accomplish fetching.
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 static int mget_url_storm (batch_context* bctx, float m_time)
 {
   struct timeval timeout;
@@ -231,8 +240,17 @@ static int mget_url_storm (batch_context* bctx, float m_time)
   return 0;
 }
 
-/*
-*/
+/****************************************************************************************
+* Function name - posting_credentials_storm
+*
+* Description - Adds postfields with credentials to curl handles and runs mget_url_storm
+                       for the actual POST-ing
+
+* Input -       *cctx_array - pointer to the array of all client contexts
+*                     in_off - flag, when POST_LOGIN uses login credentials, else on POST_LOGOFF-
+*                                   logoff.
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 static int posting_credentials_storm (client_context*const cctx_array, int in_off)
 {
   batch_context* bctx = cctx_array->bctx;
@@ -290,6 +308,15 @@ static int posting_credentials_storm (client_context*const cctx_array, int in_of
   return 0;
 }
 
+/****************************************************************************************
+* Function name - login_clients_storm
+*
+* Description - Manages the actual logic of login, which may require either GET+POST or 
+                       POST-only methods
+* Input -       *cctx_array - pointer to the array of all client contexts
+*                     cycle - number of the current load cycle (login may be configured as cycling)
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 static int login_clients_storm (client_context*const cctx_array, int cycle)
 {
   int k = 0;
@@ -336,6 +363,15 @@ static int login_clients_storm (client_context*const cctx_array, int cycle)
   return 0;
 }
 
+/****************************************************************************************
+* Function name - logoff_clients_storm
+*
+* Description - Manages the actual logic of logoff, which may require be done by GET-only,
+                       GET+POST or POST-only methods
+* Input -       *cctx_array - pointer to the array of all client contexts
+*                     cycle - number of the current load cycle (logoff may be configured as cycling)
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 static int logoff_clients_storm (client_context*const cctx_array, int cycle)
 {
   int k = 0;

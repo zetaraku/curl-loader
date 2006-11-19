@@ -93,6 +93,14 @@ int user_activity_smooth (client_context* cctx)
   return 0;
 }
 
+/****************************************************************************************
+* Function name - mget_url_smooth
+*
+* Description - Performs actual fetching of urls for a whole batch. Starts with initial fetch
+*                     by mperform_smooth () and further acts using mperform_smooth () on select events
+* Input -       *bctx - pointer to the batch of contexts
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 static int mget_url_smooth (batch_context* bctx)  		       
 {
     CURLM *mhandle =  bctx->multiple_handle;
@@ -136,11 +144,24 @@ static int mget_url_smooth (batch_context* bctx)
     return 0;
 }
 
+/****************************************************************************************
+* Function name - mperform_smooth
+*
+* Description - Uses curl_multi_perform () for initial url-fetch and to react on socket events.
+*                     Uses curl_multi_info_read () to test url-fetch completion events and to proceed
+*                     with the next step for the client, using load_next_step (). Cares about statistics
+*                     at certain timeouts.
+*
+* Input -       *bctx - pointer to the batch of contexts;
+*                     *still_running - pointer to counter of still running clients (CURL handles)
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 static int mperform_smooth (batch_context* bctx, int* still_running)
 {
     CURLM *mhandle =  bctx->multiple_handle;     
     
-    while(CURLM_CALL_MULTI_PERFORM == curl_multi_perform(mhandle,still_running))
+    while(CURLM_CALL_MULTI_PERFORM == 
+          curl_multi_perform(mhandle, still_running))
       ;
 
     unsigned long now = get_tick_count(); 
@@ -199,6 +220,17 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
     return 0;
 }
 
+/****************************************************************************************
+* Function name - load_next_step
+*
+* Description - Called at initialization and further after url-fetch completion indication (that
+*                     may be an error status as well). Either sets to client the next url to load, or sets it
+*                     at completion state: CSTATE_ERROR or CSTATE_FINISHED_OK.
+*
+* Input -       *cctx - pointer to the client context
+*
+* Return Code/Output - CSTATE enumeration with the state of loading
+****************************************************************************************/
 static int load_next_step (client_context* cctx)
 {
   switch (cctx->client_state)
@@ -220,46 +252,16 @@ static int load_next_step (client_context* cctx)
   return CSTATE_ERROR;
 }
 
-static int load_init_state (client_context* cctx)
-{
-  batch_context* bctx = cctx->bctx;
 
-  if (bctx->do_login) /* Normally first operation is login, but who is normal? */
-      return load_login_state (cctx);
-  else if (bctx->do_uas) /* Sometimes, no login is defined. Just a traffic-gen */
-      return load_uas_state (cctx);
-  else if (bctx->do_logoff) /* Logoff only?  If this is what a user wishing ...  */
-      return load_logoff_state (cctx);
-
-  return (cctx->client_state = CSTATE_ERROR);
-}
-
-static int load_error_state (client_context* cctx)
-{
-  batch_context* bctx = cctx->bctx;
-
-  if (error_recovery_client)
-    {
-      advance_cycle_num (cctx);
-
-      if (cctx->cycle_num >= bctx->cycles_num)
-        {
-          return CSTATE_ERROR;
-        }
-      else
-        {
-          if (bctx->do_login && bctx->login_cycling)
-            return load_login_state (cctx);
-          else if (bctx->do_uas)
-            return load_uas_state (cctx);
-          else if (bctx->do_logoff && bctx->logoff_cycling)
-            return load_logoff_state (cctx);
-        }
-    }
- 
-  /* Thus, the client will not be scheduled for load any more. */
-  return CSTATE_ERROR;
-}
+/****************************************************************************************
+* Function name - is_last_cycling_state
+*
+* Description - Figures out, whether the current state of client is the last cycling state.
+*                     Only in the last cycling state the number of cycles is advanced.
+* Input -       *cctx - pointer to the client context
+*
+* Return Code/Output - true, when the last cycling state, else - false
+****************************************************************************************/
 static int is_last_cycling_state (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
@@ -283,12 +285,28 @@ static int is_last_cycling_state (client_context* cctx)
   return 0;
 }
 
+/****************************************************************************************
+* Function name - advance_cycle_num
+*
+* Description - Advances number of cycles, when the full cycle is done with all url-fetches
+* Input -       *cctx - pointer to the client context
+*
+* Return Code/Output - None
+****************************************************************************************/
 static void advance_cycle_num (client_context* cctx)
 {
   cctx->cycle_num++;
 }
 
-static int on_cycling_completed  (client_context* cctx)
+/****************************************************************************************
+* Function name - on_cycling_completed
+*
+* Description - Either goes to logoff state (logoff-no-cycling) of to CSTATE_FINISHED_OK
+* Input -       *cctx - pointer to the client context
+*
+* Return Code/Output - CSTATE enumeration with client state
+****************************************************************************************/
+static int on_cycling_completed (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
 
@@ -301,6 +319,15 @@ static int on_cycling_completed  (client_context* cctx)
   return (cctx->client_state = CSTATE_FINISHED_OK);
 }
 
+/****************************************************************************************
+* Function name - setup_login_logoff
+*
+* Description - Sets up login or logoff url, depending on flag <login>
+* Input -       *cctx - pointer to the client context
+*                     login - when true - login state, when false logoff state is set
+*
+* Return Code/Output - CSTATE enumeration with client state
+****************************************************************************************/
 static int setup_login_logoff (client_context* cctx, const int login)
 {
   batch_context* bctx = cctx->bctx;
@@ -366,6 +393,14 @@ static int setup_login_logoff (client_context* cctx, const int login)
   return cctx->client_state = login ? CSTATE_LOGIN : CSTATE_LOGOFF;
 }
 
+/****************************************************************************************
+* Function name - setup_uas
+*
+* Description - Sets UAS state url
+* Input -       *cctx - pointer to the client context
+*
+* Return Code/Output - CSTATE enumeration with client state
+****************************************************************************************/
 static int setup_uas (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
@@ -379,6 +414,75 @@ static int setup_uas (client_context* cctx)
   return cctx->client_state = CSTATE_UAS_CYCLING;
 }
 
+/****************************************************************************************
+* Function name - load_init_state
+*
+* Description - Called by load_next_step () to set the very first url to fetch, which depends on
+*                     user-defined batch configuration.
+* Input -       *cctx - pointer to the client context
+*
+* Return Code/Output - CSTATE enumeration with the state of loading
+****************************************************************************************/
+static int load_init_state (client_context* cctx)
+{
+  batch_context* bctx = cctx->bctx;
+
+  if (bctx->do_login) /* Normally first operation is login, but who is normal? */
+      return load_login_state (cctx);
+  else if (bctx->do_uas) /* Sometimes, no login is defined. Just a traffic-gen */
+      return load_uas_state (cctx);
+  else if (bctx->do_logoff) /* Logoff only?  If this is what a user wishing ...  */
+      return load_logoff_state (cctx);
+
+  return (cctx->client_state = CSTATE_ERROR);
+}
+
+/****************************************************************************************
+* Function name - load_error_state
+*
+* Description - Called by load_next_step () for the client in CSTATE_ERROR. If the global
+*                     flag <error_recovery_client> is not false, re-schedules the client for next cycle 
+*                     of loading.
+* Input -       *cctx - pointer to the client context
+*
+* Return Code/Output - CSTATE enumeration with the state of loading
+****************************************************************************************/
+static int load_error_state (client_context* cctx)
+{
+  batch_context* bctx = cctx->bctx;
+
+  if (error_recovery_client)
+    {
+      advance_cycle_num (cctx);
+
+      if (cctx->cycle_num >= bctx->cycles_num)
+        {
+          return CSTATE_ERROR;
+        }
+      else
+        {
+          if (bctx->do_login && bctx->login_cycling)
+            return load_login_state (cctx);
+          else if (bctx->do_uas)
+            return load_uas_state (cctx);
+          else if (bctx->do_logoff && bctx->logoff_cycling)
+            return load_logoff_state (cctx);
+        }
+    }
+ 
+  /* Thus, the client will not be scheduled for load any more. */
+  return CSTATE_ERROR;
+}
+
+/****************************************************************************************
+* Function name - load_login_state
+*
+* Description - Called by load_next_step () for the client in CSTATE_LOGIN state to schedule
+*                     the next loading url.
+* Input -       *cctx - pointer to the client context
+*
+* Return Code/Output - CSTATE enumeration with the state of loading
+****************************************************************************************/
 static int load_login_state (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
@@ -428,6 +532,15 @@ static int load_login_state (client_context* cctx)
   return setup_login_logoff (cctx, 1);
 }
 
+/****************************************************************************************
+* Function name - load_uas_state
+*
+* Description - Called by load_next_step () for the client in CSTATE_UAS state to schedule the
+*                     next loading url.
+* Input -       *cctx - pointer to the client context
+*
+* Return Code/Output - CSTATE enumeration with the state of loading
+****************************************************************************************/
 static int load_uas_state (client_context* cctx)
 { 
   batch_context* bctx = cctx->bctx;
@@ -478,6 +591,15 @@ static int load_uas_state (client_context* cctx)
   return setup_uas (cctx);
 }
 
+/****************************************************************************************
+* Function name - load_logoff_state
+*
+* Description - Called by load_next_step () for the client in CSTATE_LOGOFF state to 
+*                     schedule the next loading url.
+* Input -       *cctx - pointer to the client context
+*
+* Return Code/Output - CSTATE enumeration with the state of loading
+****************************************************************************************/
 static int load_logoff_state (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
