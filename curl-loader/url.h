@@ -26,6 +26,11 @@
 
 #include <stddef.h>
 
+  /* 
+     Current loading step: login, uas, logoff. If we are in the loading step 
+     login - take login url, logoff - take logoff url. For UAS step - take the 
+     next url according to <url_uas_num>. 
+  */
 typedef enum url_load_step
   {
     URL_LOAD_UNDEF = 0, /*calloc sets it */
@@ -62,7 +67,11 @@ typedef struct url_context
   /* Application type of url */
   url_appl_type url_appl_type;
 
-  /* Load step: login, uas, logoff */
+  /* 
+     Current loading step: login, uas, logoff. If we are in the loading step 
+     login - take login url, logoff - take logoff url. For UAS step - take the 
+     next url according to <url_uas_num>. 
+  */
   url_load_step url_lstep;
 
   long url_uas_num;

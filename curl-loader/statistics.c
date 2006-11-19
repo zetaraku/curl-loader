@@ -105,6 +105,14 @@ void stat_point_reset (stat_point* p)
   p->appl_delay_2xx = 0;
 }
 
+
+/****************************************************************************************
+* Function name - get_tick_count
+*
+* Description - Delivers timestamp in milliseconds.
+*
+* Return Code/Output - timestamp in milliseconds or -1 on errors
+****************************************************************************************/
 unsigned long get_tick_count ()
 {
   struct timeval  tval;
@@ -118,12 +126,23 @@ unsigned long get_tick_count ()
   return tval.tv_sec * 1000 + (tval.tv_usec / 1000);
 }
 
+
+/****************************************************************************************
+* Function name - dump_final_statistics
+*
+* Description - Dumps final statistics counters to stderr and statistics file using 
+*                     print_intermediate_statistics and print_statistics_* functions as well as calls
+*                     dump_clients () to dump the clients table.
+* Input -       *cctx - pointer to client context, where the decision to complete loading 
+*                     (and dump) has been made. 
+* Return Code/Output - None
+****************************************************************************************/
 void dump_final_statistics (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
   unsigned long now = get_tick_count();
 
-  dump_intermediate_statistics (bctx->active_clients_count, 
+  print_intermediate_statistics (bctx->active_clients_count, 
                                 now - bctx->last_measure,
                                 &bctx->http_delta,  
                                 &bctx->https_delta);
@@ -168,7 +187,19 @@ void dump_final_statistics (client_context* cctx)
   dump_clients (cctx);
 }
 
-void dump_intermediate_statistics (int clients, 
+/****************************************************************************************
+* Function name - print_intermediate_statistics
+*
+* Description - Dumps final statistics counters to stderr and statistics file using 
+*                     print_intermediate_statistics and print_statistics_* functions as well as calls
+*                     dump_clients () to dump the clients table.
+* Input -       clients - number of active clients
+*                     period - latest time period in milliseconds
+*                     *http - pointer to the HTTP collected statistics to output
+*                     *https - pointer to the HTTPS collected statistics to output
+* Return Code/Output - None
+****************************************************************************************/
+void print_intermediate_statistics (int clients, 
                                    unsigned long period,  
                                    stat_point *http, 
                                    stat_point *https)
@@ -184,6 +215,16 @@ void dump_intermediate_statistics (int clients,
   dump_stat_to_screen ("HTTPS", https, period);
 }
 
+
+/****************************************************************************************
+* Function name - dump_final_statistics
+*
+* Description - Dumps intermediate statistics for the latest loading time period and adds
+*                     this statistics to the total loading counters 
+* Input -       *bctx - pointer to batch context
+*
+* Return Code/Output - None
+****************************************************************************************/
 void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
 {
   const unsigned long now_time = get_tick_count ();
@@ -195,7 +236,7 @@ void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
       exit (1); 
     }
 
-  dump_intermediate_statistics( 
+  print_intermediate_statistics( 
                                bctx->active_clients_count, 
                                delta_time, 
                                &bctx->http_delta,  
@@ -261,6 +302,13 @@ static void dump_stat_to_screen (
   //         sd->appl_delay_points, sd->appl_delay_2xx_points);
 }
 
+/****************************************************************************************
+* Function name - print_statistics_header
+*
+* Description - Prints to a file header for statistics numbers, describing counters
+* Input -       *file - open file pointer
+* Return Code/Output - None
+****************************************************************************************/
 void print_statistics_header (FILE* file)
 {
     fprintf (file, 
@@ -268,6 +316,14 @@ void print_statistics_header (FILE* file)
     fflush (file);
 }
 
+/****************************************************************************************
+* Function name - print_statistics_footer
+*
+* Description - Prints to a file separation string between the intermediate statistics and 
+*                     the final statistics number for the total loading process
+* Input -       *file - open file pointer
+* Return Code/Output - None
+****************************************************************************************/
 static void print_statistics_footer (FILE* file)
 {
     fprintf (file, "*, *, *, *, *, *, *, *, *, *, *, *\n");

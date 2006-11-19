@@ -33,41 +33,106 @@
 */
 typedef struct stat_point
 {
-  unsigned long long data_in; /* Inbound bytes number */
-  unsigned long long data_out; /* Outbound bytes number */
+   /* Inbound bytes number */
+  unsigned long long data_in;
+   /* Outbound bytes number */
+  unsigned long long data_out;
 
-  unsigned long requests; /* Number of requests issued */
-  unsigned long resp_redirs;  /* Number of 3xx redirections */
-  unsigned long resp_oks;       /* Number of 2xx responses */
-  unsigned long resp_serv_errs; /* Number of 5xx responses */
-  unsigned long other_errs; /* Errors of resolving, connecting, internal errors, etc. */
+   /* Number of requests issued */
+  unsigned long requests;
 
-  int appl_delay_points; /* Num of data points used to calculate average 
-                            application delay */
-  unsigned long  appl_delay; /* Average delay in msec between request and response */
+  /* Number of 3xx redirections */
+  unsigned long resp_redirs;
 
-  int appl_delay_2xx_points; /* Num of data points used to calculate average 
-                                application delay for 2xx-OK responses*/
-  unsigned long  appl_delay_2xx; /* Average delay in msec between request and 2xx-OK response */
+  /* Number of 2xx responses */
+  unsigned long resp_oks;
+
+  /* Number of 5xx responses */
+  unsigned long resp_serv_errs;
+
+  /* Errors of resolving, connecting, internal errors, etc. */
+  unsigned long other_errs;
+
+   /* Num of data points used to calculate average application delay */
+  int appl_delay_points;
+  /* Average delay in msec between request and response */
+  unsigned long  appl_delay;
+
+  /* 
+     Num of data points used to calculate average application delay 
+     for 2xx-OK responses.
+  */
+  int appl_delay_2xx_points;
+   /* Average delay in msec between request and 2xx-OK response */
+  unsigned long  appl_delay_2xx;
 
 } stat_point;
 
 void stat_point_add (stat_point* left, stat_point* right);
 void stat_point_reset (stat_point* point);
 
+/****************************************************************************************
+* Function name - get_tick_count
+*
+* Description - Delivers timestamp in milliseconds.
+*
+* Return Code/Output - timestamp in milliseconds or -1 on errors
+****************************************************************************************/
 unsigned long get_tick_count ();
 
 struct client_context;
 struct batch_context;
 
+/****************************************************************************************
+* Function name - dump_final_statistics
+*
+* Description - Dumps final statistics counters to stderr and statistics file using 
+*                     print_intermediate_statistics and print_statistics_* functions as well as calls
+*                     dump_clients () to dump the clients table.
+* Input -       *cctx - pointer to client context, where the decision to complete loading 
+*                     (and dump) has been made. 
+* Return Code/Output - None
+****************************************************************************************/
 void dump_final_statistics (struct client_context* cctx);
-void dump_intermediate_statistics (
+
+/****************************************************************************************
+* Function name - dump_final_statistics
+*
+* Description - Dumps intermediate statistics for the latest loading time period and adds
+*                     this statistics to the total loading counters 
+* Input -       *bctx - pointer to batch context
+*
+* Return Code/Output - None
+****************************************************************************************/
+void dump_intermediate_and_advance_total_statistics(struct batch_context* bctx);
+
+
+/****************************************************************************************
+* Function name - print_intermediate_statistics
+*
+* Description - Dumps final statistics counters to stderr and statistics file using 
+*                     print_intermediate_statistics and print_statistics_* functions as well as calls
+*                     dump_clients () to dump the clients table.
+* Input -       clients - number of active clients
+*                     period - latest time period in milliseconds
+*                     *http - pointer to the HTTP collected statistics to output
+*                     *https - pointer to the HTTPS collected statistics to output
+* Return Code/Output - None
+****************************************************************************************/
+void print_intermediate_statistics (
                                    int clients, 
                                    unsigned long period,  
                                    stat_point *http, 
                                    stat_point *https);
-void dump_intermediate_and_advance_total_statistics(struct batch_context* bctx);
 
+
+/****************************************************************************************
+* Function name - print_statistics_header
+*
+* Description - Prints to a file header for statistics numbers, describing counters
+* Input -       *file - open file pointer
+* Return Code/Output - None
+****************************************************************************************/
 void print_statistics_header (FILE* file);
 
 #endif /* STATISTICS_H */

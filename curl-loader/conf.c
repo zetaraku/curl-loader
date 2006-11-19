@@ -30,20 +30,46 @@
 /*
   Command line configuration options. Setting defaults here.
 */
-int connect_timeout = 5; /* Configurable time to cut connect () in prog */  
-int verbose_logging = 0; /* Flag, whether to perform verbose logging */
-int threads_run = 0; /* Flag, whether to run batches as batch per thread. */
-int logfile_rewind_cycles_num = 10; /* Rewind logfile after num cycles */
-int reuse_connection_forbidden = 1; /* Non-zero - dont reuse connections */
-int output_to_stdout = 0; /* Whether to stdout the downloaded file body */
-int stderr_print_client_msg = 0; /* If to output client messages to stderr, 
-                                     otherwise to logfile */
-int loading_mode = LOAD_MODE_DEFAULT; /* Storming or smooth loading */
-int url_logging = 0; /* Whether to include url to all log outputs. */
-char config_file[PATH_MAX + 1]; /* Name of the configuration file */
+ /* Configurable time to cut connect () in prog */  
+int connect_timeout = 5;
 
-unsigned long snapshot_timeout = 2000; /* milli-seconds */
-unsigned long error_recovery_client = 1; /* continue loading from the next cycle */
+/* Flag, whether to perform verbose logging */
+int verbose_logging = 0;
+
+/* Flag, whether to run batches as batch per thread. */
+int threads_run = 0;
+
+/* Rewind logfile after num cycles */
+int logfile_rewind_cycles_num = 10;
+
+ /* Non-zero - dont reuse connections */
+int reuse_connection_forbidden = 1;
+
+/* Whether to stdout the downloaded file body */
+int output_to_stdout = 0;
+
+/* If to output client messages to stderr, otherwise to logfile */
+int stderr_print_client_msg = 0;
+
+/* Storming or smooth loading */
+int loading_mode = LOAD_MODE_DEFAULT;
+
+ /* Whether to include url to all log outputs. */
+int url_logging = 0;
+
+/* Name of the configuration file */
+char config_file[PATH_MAX + 1];
+
+/* TODO: make it configurable vis command-line.
+   Milli-seconds between intermidiate statistics printouts in smooth-mode. 
+*/
+unsigned long snapshot_timeout = 2000;
+
+/* 
+   On errors, whether to continue loading for this client 
+   from the next cycle, or to give it up.
+ */
+unsigned long error_recovery_client = 1;
 
 
 

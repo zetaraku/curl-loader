@@ -45,7 +45,7 @@ struct stat_point;
 * Description - Setup for a single curl handle (client): removes a handle from multi-handle, 
 *               resets the handle, inits it, and, finally, adds the handle back to the
 *               multi-handle.
-* Input -       *cctx - pointer to client context, which is linked to CURL handle to setup;
+* Input -       *cctx - pointer to client context, which contains CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
 *               cycle_number - current number of loading cycle, passing here for storming mode;
 *               post_method - when 'true', POST method is used instead of the default GET

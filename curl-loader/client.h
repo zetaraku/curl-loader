@@ -114,13 +114,20 @@ typedef struct client_context
      Indication of the first header is used to collect statistics.
   */
   int hdrs_req;
-
   int hdrs_2xx;
   int hdrs_3xx;
   int hdrs_5xx;
 
+  /* 
+     Timestamp of a request sent. Used to calculate server 
+     application response delay. 
+  */
   unsigned long req_timestamp;
 
+  /*
+    Client-based statistics. Parallel to updating batch statistics, 
+    the client-based statistics is updated.
+  */
   stat_point st;
 
 } client_context;
@@ -156,6 +163,11 @@ void stat_appl_delay_2xx_add (client_context* cctx, unsigned long resp_timestamp
 
 void dump_client (FILE* file, client_context* cctx);
 
+/*
+  Flag used to indicate, that no more loading is necessary.
+  Time to dump the final statistics, clients table and exit.
+  Set by SIGINT.
+*/
 extern int stop_loading;
 
 #endif /*   CLIENT_H */
