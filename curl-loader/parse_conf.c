@@ -482,6 +482,8 @@ static int set_value_to_param (
                    __func__, bctx->client_num);
           return -1;
         }
+
+      /*
       if (! (bctx->client_handles_array = 
              (CURL **)calloc (bctx->client_num, sizeof (CURL *))))
         {
@@ -490,6 +492,7 @@ static int set_value_to_param (
                    __func__);
           return -1;
         }
+      */
       break;
 
     case INTERFACE:

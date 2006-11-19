@@ -290,8 +290,8 @@ static void* batch_function (void * batch_data)
 
   for (i = 0 ; i < bctx->client_num ; i++)
     {
-      if (bctx->client_handles_array[i])
-        curl_easy_cleanup(bctx->client_handles_array[i]);
+      if (bctx->cctx_array[i].handle)
+        curl_easy_cleanup(bctx->cctx_array[i].handle);
 
       /* Free POST-buffers */
       if (cctx[i].post_data_login)
@@ -348,7 +348,7 @@ static int initial_handles_init (client_context*const ctx_array)
   /* Initialize all the CURL handlers */
   for (k = 0 ; k < bctx->client_num ; k++)
     {
-      if (!(bctx->client_handles_array[k] = curl_easy_init ()))
+      if (!(bctx->cctx_array[k].handle = curl_easy_init ()))
         {
           fprintf (stderr,"%s - error: curl_easy_init () failed for k=%d.\n",
                    __func__, k);
@@ -381,7 +381,7 @@ int setup_curl_handle (client_context*const cctx,
                          int post_method)
 {
   batch_context* bctx = cctx->bctx;
-  CURL* handle = bctx->client_handles_array[cctx->client_index];
+  CURL* handle = cctx->handle; //bctx->client_handles_array[cctx->client_index];
 
   if (!cctx || !url_ctx)
     {
@@ -489,8 +489,8 @@ static int setup_curl_handle_appl (
                                    url_context* url_ctx,
                                    int post_method)
 {
-  batch_context* bctx = cctx->bctx;
-  CURL* handle = bctx->client_handles_array[cctx->client_index];
+  //  batch_context* bctx = cctx->bctx;
+  CURL* handle = cctx->handle; // bctx->client_handles_array[cctx->client_index];
 
   cctx->is_https = (url_ctx->url_appl_type == URL_APPL_HTTPS);
 
@@ -765,7 +765,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
       fprintf (stderr, "default OUT - \n");
     }
 
-  fflush (cctx->file_output);
+  // fflush (cctx->file_output); // Don't do it
   return 0;
 }
 
@@ -901,7 +901,7 @@ static int alloc_init_client_contexts (
                sizeof(cctx[i].client_name) - 1, 
                "%d (%s) ", i + 1, bctx->ip_addr_array[i]);
 
-      /* 
+       /* 
          Set index of the client within the batch.
          Useful to get the client's CURL handle from bctx. 
       */
@@ -933,13 +933,6 @@ static int alloc_init_client_contexts (
 static void free_batch_data_allocations (batch_context* bctx)
 {
   int i;
-
-  /* Free the CURL handles. */
-  if (bctx->client_num > 0 && bctx->client_handles_array)
-    {
-      free (bctx->client_handles_array);
-      bctx->client_handles_array = NULL;
-    }
 
   /* Free the login and logoff urls */
   free (bctx->login_url.url_str);

@@ -246,7 +246,7 @@ static int mget_url_storm (batch_context* bctx, float m_time)
 * Description - Adds postfields with credentials to curl handles and runs mget_url_storm
                        for the actual POST-ing
 
-* Input -       *cctx_array - pointer to the array of all client contexts
+* Input -       *cctx_array - pointer to the array of all client contexts of the batch
 *                     in_off - flag, when POST_LOGIN uses login credentials, else on POST_LOGOFF-
 *                                   logoff.
 * Return Code/Output - On Success - 0, on Error -1
@@ -290,11 +290,11 @@ static int posting_credentials_storm (client_context*const cctx_array, int in_of
          Fill POST login or logoff fields. Note, that it should be done on CURL handle
          removed from MCURL.
        */
-      curl_easy_setopt(bctx->client_handles_array[i], CURLOPT_POSTFIELDS, 
+      curl_easy_setopt(cctx_array[i].handle /*bctx->client_handles_array[i]*/, CURLOPT_POSTFIELDS, 
                        in_off ? cctx_array[i].post_data_login : cctx_array[i].post_data_logoff);
 
       curl_multi_add_handle(bctx->multiple_handle, 
-                            bctx->client_handles_array[i]);
+                            cctx_array[i].handle /*bctx->client_handles_array[i]*/);
     }
 
   /* Make the actual posting */

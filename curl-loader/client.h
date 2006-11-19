@@ -24,6 +24,8 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+#include <curl/curl.h>
+
 #include "statistics.h"
 
 #define CLIENT_NAME_LEN 32
@@ -64,6 +66,12 @@ typedef struct client_context
       <Current Cycle Num> SP <Client Seq Num> SP <Client IP-address> 
    */
   char client_name[CLIENT_NAME_LEN];
+
+  /* 
+     Library handle, representing all knowledge about the client from the
+     side of libcurl.
+  */
+  CURL* handle;
  
   long cycle_num;  /* Current cycle number. Useful for multiple runs. */                          
 

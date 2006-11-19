@@ -375,7 +375,7 @@ static int setup_login_logoff (client_context* cctx, const int login)
          which may be the result of redirection/s,  but use HTTP POST 
          request method with post login/logoff fields. 
       */
-      CURL* handle = bctx->client_handles_array[cctx->client_index];
+      CURL* handle = cctx->handle; // bctx->client_handles_array[cctx->client_index];
 
       curl_multi_remove_handle (bctx->multiple_handle, handle);
       

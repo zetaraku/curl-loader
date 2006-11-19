@@ -153,7 +153,7 @@ typedef struct batch_context
       Array of client handles of client_num size. Each handle means a single 
       curl connection 
    */
-  CURL **client_handles_array;
+  //CURL **client_handles_array;
 
   /* Multiple handle for curl. Contains all curl handles of a batch */
   CURLM *multiple_handle;
@@ -174,7 +174,7 @@ typedef struct batch_context
      Further used by the storm-mode as the current url index. */
   int url_index;
 
-  /* Array of all client contexts for te batch */
+  /* Array of all client contexts for the batch */
   struct client_context* cctx_array;
 
   /* Counter used mainly by smooth mode */
