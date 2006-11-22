@@ -1,3 +1,12 @@
+version 0.21 22/11/2006, svn-61
+
+* Building bug fix and more explanations about building requirements.
+
+* Code commented mostly and function headers added
+
+* CURL handles moved from array in batch to the client context, to which
+  it belongs
+
 version 0.20 14/11/2006, svn-48
 
 * Bugs fixed in storming mode, where cycling logoff was broken and some

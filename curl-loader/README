@@ -1,4 +1,4 @@
-    curl-loader, version 0.20
+    curl-loader, version 0.21
 
     Robert Iakobashvili, Ashdod, Israel, coroberti@gmail.com
     Michael Moser, Modiin, Israel, moser.michael@gmail.com
@@ -65,13 +65,17 @@ Supposed to work on linux 2.4 and 2.6 kernels.
 BUILDING:
 In most cases just run make and relax. For some linux distributions, however, 
 matters should be fine tuned in build_curl.sh and Makefile (libidn issues, etc). 
-Sorry. Please, fill you free to contact us for assistance.
-Tarball of curl should be fetched by wget from the curl web-site. 
-If your computer does not have Internet connection, bring the package yourself 
-and put it inside to the distribution to the directory "packages".
-We are normally building it at Debian. When libcurl of curl-loader have building 
-issues, correct them in the Makefile and build_curl.sh. To build with optimization, 
-please, follow the instructions in Makefile and build_curl.sh
+Building requirements include openssl libraries as well as development package
+with include files. Adjust the build_curl.sh and Makefile variables to point
+to the openssl headers and libraries. Another known issue is linidn.so, which
+means, that some linux distributions do have some libidn.so.11, but not libidn.so.
+Resolve it by creating a softlink.
+If still any building issues, please, fill you free to contact us for assistance.
+
+Tarball of curl is included to the current release. We are normally building it 
+at Debian. When libcurl of curl-loader have building issues, correct them in the 
+Makefile and build_curl.sh. To build with optimization, please, follow the 
+instructions in Makefile and build_curl.sh
 
 CONFIGURATION:
 ./curl_loader -h output is your friend. Some examples of configuration are 
