@@ -27,6 +27,7 @@
 #include <curl/curl.h>
 
 #include "statistics.h"
+#include "timer_node.h"
 
 #define CLIENT_NAME_LEN 32
 
@@ -62,6 +63,10 @@ struct batch_context;
 */
 typedef struct client_context
 {
+  /* Thus, we can use it as a timer_node without disclosing all other
+     structure of client_context */
+  timer_node tn;
+
    /*
       <Current Cycle Num> SP <Client Seq Num> SP <Client IP-address> 
    */
