@@ -72,6 +72,9 @@ means, that some linux distributions do have some libidn.so.11, but not libidn.s
 Resolve it by creating a softlink.
 If still any building issues, please, fill you free to contact us for assistance.
 
+If you want to specify an openssl directory then please export environment variable
+OPENSSLDIR with the value of that directory.
+
 Tarball of curl is included to the current release. We are normally building it 
 at Debian. When libcurl of curl-loader have building issues, correct them in the 
 Makefile and build_curl.sh. To build with optimization, please, follow the 
@@ -80,6 +83,7 @@ instructions in Makefile and build_curl.sh
 CONFIGURATION:
 ./curl_loader -h output is your friend. Some examples of configuration are 
 suggested in the files, located in "configs" directory.
+
 
 ENVIRONMENT: ATTENTION !!! IMPORTANT !!!
 Running hundreds and thousands of clients, please do not forget:

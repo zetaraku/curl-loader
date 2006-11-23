@@ -26,14 +26,17 @@ DEBUG_FLAGS= -g
 #Linker mapping
 LD=gcc
 
+ 
+OPENSSLDIR=$(shell $(CURDIR)/openssldir.sh)
+
 #Linker Flags
-LDFLAGS=-L./lib  -L/usr/local/ssl/lib
+LDFLAGS=-L./lib
 
 #Link Libraries. RedHat/FC require sometimes lidn
-LIBS= -ldl -lpthread -lrt -lidn -lssl -lcrypto -lcurl -lz#-lcares
+LIBS= -ldl -lpthread -lrt -lidn -lcurl -lz -L$(OPENSSLDIR)/lib -lssl -L$(OPENSSLDIR)/lib -lcrypto 
 
 # Include directories
-INCDIR=-I. -I./inc -I/usr/local/ssl/include
+INCDIR=-I. -I$(OPENSSLDIR)/include -I./inc 
 
 LIBCURL=libcurl
 
