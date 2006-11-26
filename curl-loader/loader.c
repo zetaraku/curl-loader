@@ -216,6 +216,14 @@ static void* batch_function (void * batch_data)
   
   int  i = 0, rval = -1;
 
+  if (!bctx)
+    {
+      fprintf (stderr, 
+               "%s - error: batch_data input is zero.\n", __func__);
+      return NULL;
+    }
+ 
+
   if (! stderr_print_client_msg)
     {
       /*
@@ -381,7 +389,7 @@ int setup_curl_handle (client_context*const cctx,
                          int post_method)
 {
   batch_context* bctx = cctx->bctx;
-  CURL* handle = cctx->handle; //bctx->client_handles_array[cctx->client_index];
+  CURL* handle = cctx->handle;
 
   if (!cctx || !url_ctx)
     {
@@ -402,8 +410,24 @@ int setup_curl_handle (client_context*const cctx,
   curl_easy_setopt (handle, CURLOPT_NOSIGNAL, 1);
     
   /* Set the url */
-  curl_easy_setopt (handle, CURLOPT_URL, url_ctx->url_str);
+  if (url_ctx->url_str && url_ctx->url_str[0])
+    {
+      curl_easy_setopt (handle, CURLOPT_URL, url_ctx->url_str);
+    }
+  else
+    {
+      fprintf (stderr,"%s - error: empty url provided.\n",
+                   __func__);
+      exit (-1);
+    }
   
+  //if (url_ctx->url_uas_num != 0)
+  //  {
+  //    fprintf (stderr,"%s - error: index %ld provided\n", 
+  //              __func__, url_ctx->url_uas_num);
+  //    exit (-2);
+  //   }
+
   /* Set the index to client for smooth-mode */
   if (url_ctx->url_uas_num >= 0)
     cctx->uas_url_curr_index = url_ctx->url_uas_num;
@@ -490,7 +514,7 @@ static int setup_curl_handle_appl (
                                    int post_method)
 {
   //  batch_context* bctx = cctx->bctx;
-  CURL* handle = cctx->handle; // bctx->client_handles_array[cctx->client_index];
+  CURL* handle = cctx->handle;
 
   cctx->is_https = (url_ctx->url_appl_type == URL_APPL_HTTPS);
 
@@ -884,8 +908,6 @@ static int alloc_init_client_contexts (
       return -1;
     }
 
-  *p_cctx = cctx;
-
   /* 
      Iterate through client contexts and initialize them. 
   */
@@ -919,6 +941,8 @@ static int alloc_init_client_contexts (
     }
 
   bctx->cctx_array = cctx;
+
+  *p_cctx = cctx;
 
   return 0;
 }

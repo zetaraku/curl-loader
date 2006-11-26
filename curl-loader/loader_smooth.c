@@ -63,6 +63,13 @@ int user_activity_smooth (client_context* cctx)
 {
   int j;
   batch_context* bctx = cctx->bctx;
+
+  if (!bctx)
+    {
+      fprintf (stderr, 
+               "%s - error: bctx in the first cctx input is zero.\n", __func__);
+      return -1;
+    }
   
   bctx->start_time = bctx->last_measure = get_tick_count();
 
@@ -103,7 +110,7 @@ int user_activity_smooth (client_context* cctx)
 ****************************************************************************************/
 static int mget_url_smooth (batch_context* bctx)  		       
 {
-    CURLM *mhandle =  bctx->multiple_handle;
+  //CURLM *mhandle =  bctx->multiple_handle;
     float max_timeout = DEFAULT_SMOOTH_URL_COMPLETION_TIME;
     
     if (bctx->uas_url_ctx_array)
@@ -126,7 +133,7 @@ static int mget_url_smooth (batch_context* bctx)
         timeout.tv_usec = 500000;   
 
         max_timeout -= ((float)timeout.tv_sec + (float)timeout.tv_usec/1000000.0) ; 
-        curl_multi_fdset(mhandle, &fdread, &fdwrite, &fdexcep, &maxfd);
+        curl_multi_fdset(bctx->multiple_handle, &fdread, &fdwrite, &fdexcep, &maxfd);
         //        fprintf (stderr, "%s - Waiting for %d clients with seconds %f.\n", 
         //        name, still_running, max_timeout);
 
@@ -316,6 +323,7 @@ static int on_cycling_completed (client_context* cctx)
   if (bctx->do_logoff && !bctx->logoff_cycling)
     return load_logoff_state (cctx);
 
+  curl_multi_remove_handle (bctx->multiple_handle, cctx->handle);
   return (cctx->client_state = CSTATE_FINISHED_OK);
 }
 
@@ -457,7 +465,8 @@ static int load_error_state (client_context* cctx)
 
       if (cctx->cycle_num >= bctx->cycles_num)
         {
-          return CSTATE_ERROR;
+          curl_multi_remove_handle (bctx->multiple_handle, cctx->handle);
+          return (cctx->client_state = CSTATE_ERROR);
         }
       else
         {
@@ -471,7 +480,8 @@ static int load_error_state (client_context* cctx)
     }
  
   /* Thus, the client will not be scheduled for load any more. */
-  return CSTATE_ERROR;
+  curl_multi_remove_handle (bctx->multiple_handle, cctx->handle);
+  return (cctx->client_state = CSTATE_ERROR);
 }
 
 /****************************************************************************************

@@ -108,7 +108,6 @@ typedef struct batch_context
   int login_cycling;
 
 
-
   /*------- UAS (User Activity Simulation) SECTION - fetching urls ----- */
 
    /* Whether to proceed with UAS, When zero, other fields of the UAS section 
@@ -118,7 +117,12 @@ typedef struct batch_context
   /* Number of total urls, should be more or equal to 1 */
   int uas_urls_num;
   
+  /* Array of all UAS url contexts */
+  url_context* uas_url_ctx_array;
 
+  /* Index of the parsed url in uas_url_ctx_array below.
+     Further used by the storm-mode as the current url index. */
+  int url_index;
 
 
   /*------------------------LOGOFF SECTION ---------------------------------*/
@@ -167,12 +171,7 @@ typedef struct batch_context
   /* Common error buffer for all batch clients */
   char error_buffer[CURL_ERROR_SIZE];
 
-  /* Array of all UAS url contexts */
-  url_context* uas_url_ctx_array;
 
-  /* Index of the parsed url in uas_url_ctx_array below.
-     Further used by the storm-mode as the current url index. */
-  int url_index;
 
   /* Array of all client contexts for the batch */
   struct client_context* cctx_array;

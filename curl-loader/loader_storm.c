@@ -52,6 +52,13 @@ int user_activity_storm (client_context*const cctx_array)
   long cycle = 0, k = 0;
   long u_index = 0;
 
+    if (!bctx)
+    {
+      fprintf (stderr, 
+               "%s - error: bctx is zero.\n", __func__);
+      return -1;
+    }
+
   bctx->start_time = bctx->last_measure = get_tick_count();
 
   /* 
@@ -97,20 +104,19 @@ int user_activity_storm (client_context*const cctx_array)
         {
           // fprintf (stderr,"\n\"%s\" - %s - cycle %ld of fetching url %ld .\n\n",
           //         bctx->batch_name, __func__, cycle, u_index);
-
+     
           /* 
              Remove all CURL handles (clients) from the CURL multi-handle.
              Reset each CURL handle (client), reset-up the handle with new url
              params and add it back to the CURL multi-handle.
-          */
+          */ 
           for (k = 0 ; k < bctx->client_num ; k++)
             {
-              if (cctx_array[k].client_state != CSTATE_ERROR)
-                cctx_array[k].client_state = CSTATE_UAS_CYCLING;
-              //fprintf (stderr, "%s - client_num %ld, state %d\n", 
+               cctx_array[k].client_state = CSTATE_UAS_CYCLING;
+              //fprintf (stderr, "%s - cn %ld, state %d", 
               //        __func__, k, cctx_array[k].client_state);
 
-              setup_curl_handle (&cctx_array[k],
+               setup_curl_handle (&cctx_array[k],
                                    &bctx->uas_url_ctx_array[u_index], /* index of url string in array */
                                    cycle,
                                    0);
@@ -158,6 +164,7 @@ int user_activity_storm (client_context*const cctx_array)
       
       // Bring statistics at the end of each cycle
       dump_intermediate_and_advance_total_statistics (bctx);
+
     }
 
   /* 
@@ -293,7 +300,7 @@ static int posting_credentials_storm (client_context*const cctx_array, int in_of
       curl_easy_setopt(cctx_array[i].handle /*bctx->client_handles_array[i]*/, CURLOPT_POSTFIELDS, 
                        in_off ? cctx_array[i].post_data_login : cctx_array[i].post_data_logoff);
 
-      curl_multi_add_handle(bctx->multiple_handle, 
+      curl_multi_add_handle(bctx->multiple_handle,
                             cctx_array[i].handle /*bctx->client_handles_array[i]*/);
     }
 
