@@ -369,11 +369,15 @@ static int setup_login_logoff (client_context* cctx, const int login)
           post_standalone = 1;
         }
 
-      setup_curl_handle (cctx,
+      if (setup_curl_handle (cctx,
                            login ? &bctx->login_url : &bctx->logoff_url,
                            0, /* Not applicable for the smooth mode */
                            post_standalone /* If 'true' -POST, else GET */  
-                           );
+                             ) == -1)
+        {
+          fprintf(stderr,"%s error: setup_curl_handle - failed\n", __func__);
+          return -1;
+        }
     }
   else
     {
@@ -413,12 +417,16 @@ static int setup_uas (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
 
-  setup_curl_handle (cctx,
+  if (setup_curl_handle (cctx,
                        &bctx->uas_url_ctx_array[cctx->uas_url_curr_index], /* current url */
                        0, /* Cycle, do we need it? */ 
                        0 /* GET - zero, unless we'll need to make POST here */
-                       );
-
+                         ) == -1)
+    {
+      fprintf(stderr,"%s error: setup_curl_handle - failed\n", __func__);
+      return -1;
+    }
+  
   return cctx->client_state = CSTATE_UAS_CYCLING;
 }
 

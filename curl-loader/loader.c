@@ -42,6 +42,8 @@
 #include <arpa/inet.h>
 
 #include <curl/curl.h>
+#include <curl/multi.h>
+
 
 #include "batch.h"
 #include "client.h"
@@ -362,6 +364,16 @@ static int initial_handles_init (client_context*const ctx_array)
                    __func__, k);
           return -1;
         }
+      /* Add it to multi-*/
+
+      int m_error = -1;
+      if ((m_error = curl_multi_add_handle(bctx->multiple_handle,
+                                           bctx->cctx_array[k].handle)) != CURLM_OK)
+        {
+          fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
+                   __func__, m_error);
+          return -1;
+        }
     }
         
   bctx->active_clients_count = bctx->client_num;
@@ -390,6 +402,7 @@ int setup_curl_handle (client_context*const cctx,
 {
   batch_context* bctx = cctx->bctx;
   CURL* handle = cctx->handle;
+  int m_error = -1;
 
   if (!cctx || !url_ctx)
     {
@@ -400,10 +413,17 @@ int setup_curl_handle (client_context*const cctx,
     Remove the handle from the multiple handle and reset it. 
     Still the handle remembers DNS, cookies, etc. 
   */
-  curl_multi_remove_handle (bctx->multiple_handle, handle);
+  if ((m_error = curl_multi_remove_handle (bctx->multiple_handle, 
+                                           handle)) != CURLM_OK)
+    {
+      fprintf (stderr,"%s - error: curl_multi_remove_handle () failed with error %d.\n",
+               __func__, m_error);
+      return -1;
+    }
+  
   curl_easy_reset (handle);
-
-  /* Bind the handle to a certain IP-address */
+      
+      /* Bind the handle to a certain IP-address */
   curl_easy_setopt (handle, CURLOPT_INTERFACE, 
                     bctx->ip_addr_array [cctx->client_index]);
 
@@ -494,7 +514,12 @@ int setup_curl_handle (client_context*const cctx,
     }
      
   /* The handle is supposed to be removed before. */
-  curl_multi_add_handle(bctx->multiple_handle, handle);
+  if ((m_error = curl_multi_add_handle(bctx->multiple_handle, handle)) != CURLM_OK)
+    {
+      fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
+               __func__, m_error);
+          return -1;
+    }
 
   return 0;
 }

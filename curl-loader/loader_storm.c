@@ -116,10 +116,15 @@ int user_activity_storm (client_context*const cctx_array)
               //fprintf (stderr, "%s - cn %ld, state %d", 
               //        __func__, k, cctx_array[k].client_state);
 
-               setup_curl_handle (&cctx_array[k],
+
+               if (setup_curl_handle (&cctx_array[k],
                                    &bctx->uas_url_ctx_array[u_index], /* index of url string in array */
                                    cycle,
-                                   0);
+                                      0) == -1)
+                 {
+                   fprintf(stderr,"%s error: setup_curl_handle - failed\n", __func__);
+                   return -1;
+                 }
             }
             
           /* Fetch the new url by each client of the batch.*/
@@ -336,11 +341,15 @@ static int login_clients_storm (client_context*const cctx_array, int cycle)
       //fprintf (stderr, "%s - client_num %d, state %d\n", 
       //         __func__, k, CSTATE_LOGIN);
 
-      setup_curl_handle (&cctx_array[k], /* pointer to client context */
+      if (setup_curl_handle (&cctx_array[k], /* pointer to client context */
                            &bctx->login_url, /* login url */
                            cycle, /* zero cycle */
                            0 /*without POST buffers as a more general case*/  
-                           );
+                             ) == -1)
+        {
+          fprintf(stderr,"%s error: setup_curl_handle - failed\n", __func__);
+          return -1;
+        }
     }
 
   if (bctx->login_req_type == LOGIN_REQ_TYPE_GET_AND_POST)
@@ -394,11 +403,15 @@ static int logoff_clients_storm (client_context*const cctx_array, int cycle)
       //fprintf (stderr, "%s - client_num %d, state %d\n", 
       //        __func__, k, cctx_array[k].client_state);
 
-      setup_curl_handle (&cctx_array[k],
+      if (setup_curl_handle (&cctx_array[k],
                            &bctx->logoff_url, 
                            cycle, /* Cycle number does not matter here */
                            0 /* General case, without POST */
-                           );
+                             ) == -1)
+            {
+              fprintf(stderr,"%s error: setup_curl_handle - failed\n", __func__);
+              return -1;
+            }
     }
 
   if (bctx->logoff_req_type != LOGOFF_REQ_TYPE_POST)

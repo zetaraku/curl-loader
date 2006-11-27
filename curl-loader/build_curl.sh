@@ -20,6 +20,7 @@ if [ ! -d ./packages/curl-${CURL_VER} ]; then
 
     echo "patching curl"
     patch -d curl -p1 < ../patches/patch-curl-${CURL_VER} || exit 1
+    patch -d curl -p1 < ../patches/patch-fdset-protection
 
     popd # back from ./packages
     
