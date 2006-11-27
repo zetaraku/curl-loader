@@ -7,6 +7,9 @@
    Robert Iakobashvili <coroberti@gmail.com>
 */
 
+// must be first include
+#include "fdsetsize.h"
+
 #include <pthread.h>
 
 #include "ssl_thr_lock.h"

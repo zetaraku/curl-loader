@@ -16,6 +16,9 @@
  * Cutted and combined by Robert Iakobashvili, <coroberti@gmail.com>
  */
 
+// must be first include
+#include "fdsetsize.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

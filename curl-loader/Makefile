@@ -13,7 +13,7 @@ OBJ:=$(patsubst %.$(SRC_SUFFIX), $(OBJ_DIR)/$(basename %).o, $(wildcard *.$(SRC_
 CC=gcc
 
 #C Compiler Flags
-CFLAGS= -W -Wall -Wpointer-arith -pipe
+CFLAGS= -W -Wall -Wpointer-arith -pipe -DCURL_LOADER_FD_SETSIZE=20000
 
 #Debug flags. For optimized version remove -g and uncomment OPT_FLAGS below
 # To build libcurl with optimization, go to build_curl.sh and follow instructions

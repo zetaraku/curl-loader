@@ -21,6 +21,9 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+// must be first include
+#include "fdsetsize.h"
+
 #include <errno.h>
 #include <stdlib.h>
 

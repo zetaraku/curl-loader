@@ -24,6 +24,9 @@
 * great CURL-project authors and contributors.
 */
 
+// must be first include
+#include "fdsetsize.h"
+
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
