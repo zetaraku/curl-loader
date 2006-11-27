@@ -47,6 +47,9 @@
 #include <curl/curl.h>
 #include <curl/multi.h>
 
+// getrlimit
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "batch.h"
 #include "client.h"
@@ -107,6 +110,9 @@ static pf_user_activity ua_array[3] =
   user_activity_smooth
 };
 
+
+
+
 int 
 main (int argc, char *argv [])
 {
@@ -114,6 +120,8 @@ main (int argc, char *argv [])
   pthread_t tid[BATCHES_MAX_NUM];
   int batches_num = 0; 
   int i = 0, error = 0;
+  struct rlimit file_limit;
+  int ret;
 
   signal (SIGPIPE, SIG_IGN);
 
@@ -130,10 +138,21 @@ main (int argc, char *argv [])
                "%s - error: lacking root preveledges to run this program.\n", __func__);
       return -1;
     }
+   memset(bc_arr, 0, sizeof(bc_arr));
 
-  memset(bc_arr, 0, sizeof(bc_arr));
+  
+  
+  ret = getrlimit(RLIMIT_NOFILE, &file_limit);
 
-  /* 
+  if (!ret && file_limit.rlim_cur > CURL_LOADER_FD_SETSIZE) {
+    fprintf(stderr, " %s - error: The current file resource limit is larger then this program allows for.\n"
+		    "This program allows for maximum of %d file descriptors, the current system limit is %d\n"
+		    "You can either lower the current system limit (ulimit -n) or change program limit\n"
+		    "To change the program limit, please edit the Makefile (change CURL_LOADER_FD_SETSIZE value to larger value) and recompile.", __func__ , CURL_LOADER_FD_SETSIZE, (int) file_limit.rlim_cur );   
+    return -1;
+  }
+
+ /* 
      Parse the configuration file. 
   */
   if ((batches_num = parse_config_file (config_file, bc_arr, 
