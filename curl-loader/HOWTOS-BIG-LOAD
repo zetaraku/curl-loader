@@ -1,0 +1,52 @@
+Temporary instructions till we migrate
+to epoll-based I/O demultiplexing (or kevent based?),
+supporting tens of thousand of clients in one thread.
+
+1. Compile with optimization;
+
+Since you need performance. Edit Makefile by uncommenting OPT_FLAGS
+and commenting DEBUG_FLAGS. Edit build_curl.sh and place to CFLAFS
+-O2 (libcurl uses this option) instead of -g.
+
+2. Load as a su;
+
+3. Increase the default number of allowed open descriptors (sockets);
+ 
+Run #ulimit -n 10000
+If running several instances of curl-loader, consider increase of system
+limits for open descriptors, if necessary.
+
+4. Create configuration files for each instance of curl-loader to run.
+
+What is important is to give a unique BATCH_NAME for each batch-file,
+used by a separate instance of curl-loader. Logfile, report file, etc 
+have name, which are derivatives of the BATCH_NAME, and when several
+instances of curl-loader are writing to the same file, this is not
+helpful and crashes. Please, use non-overlapping ranges of IP-addresses
+in different configuration files, else clients will compete for addresses 
+to bind to.
+
+5. Connections re-use.
+
+The default behavior is after HTTP response to close the tcp-connection
+and to establish a new one for the next request. If you are specifying 
+-r command-line option, the connection will not closed and will be re-used
+for the next request. This option (-r) enables to reach huge http req/resp
+numbers.
+
+6. Troubleshooting
+
+First runs one may try with commend-line options -v (verbose) and -u (url
+in logs). Grep to look for the errors and their reasons. If an error is
+"Connection timeout", you may try to increase the connection establishment
+timeout (the default is 5 seconds - huge, but "ih veis"), using -c command-line
+option.
+
+If any assistance required, please, don't hesitate to contact us.
+
+7. Statistics.
+
+After end of run, or after SIGINT (Cntl-C), the final results are calculated
+and printed to the console as well as to the file $BATCH_NAME.txt.
+Current results are presented in each row, and average summary as the last
+raws, separated from the rest by asterisks.
