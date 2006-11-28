@@ -65,7 +65,7 @@
 */
 #define MAX_FD_IN_THREAD 1000
 #define EXPLORER_USERAGENT_STR "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" 
-
+#define OPEN_FDS_SUGGESTION 10000
 
 static int create_ip_addrs (batch_context* bctx, int bctx_num);
 static int client_tracing_function (CURL *handle, 
@@ -111,8 +111,6 @@ static pf_user_activity ua_array[3] =
 };
 
 
-
-
 int 
 main (int argc, char *argv [])
 {
@@ -122,6 +120,9 @@ main (int argc, char *argv [])
   int i = 0, error = 0;
   struct rlimit file_limit;
   int ret;
+
+  fprintf(stderr, " __FD_SETSIZE %d  FD_SETSIZE %d __NFDBITS %d  \n",
+          __FD_SETSIZE,  FD_SETSIZE, __NFDBITS );
 
   signal (SIGPIPE, SIG_IGN);
 
@@ -144,12 +145,24 @@ main (int argc, char *argv [])
   
   ret = getrlimit(RLIMIT_NOFILE, &file_limit);
 
-  if (!ret && file_limit.rlim_cur > CURL_LOADER_FD_SETSIZE) {
-    fprintf(stderr, " %s - error: The current file resource limit is larger then this program allows for.\n"
-		    "This program allows for maximum of %d file descriptors, the current system limit is %d\n"
-		    "You can either lower the current system limit (ulimit -n) or change program limit\n"
-		    "To change the program limit, please edit the Makefile (change CURL_LOADER_FD_SETSIZE value to larger value) and recompile.", __func__ , CURL_LOADER_FD_SETSIZE, (int) file_limit.rlim_cur );   
-    return -1;
+  if (!ret && file_limit.rlim_cur < OPEN_FDS_SUGGESTION)
+    {
+      fprintf(stderr, 
+              " %s - ERROR: the current limit of open descriptors for a process is below %d."
+              "Consider, increase of the limit in your shell, e.g. using ulimit -n %d command\n",
+              __func__, OPEN_FDS_SUGGESTION, OPEN_FDS_SUGGESTION);
+      exit (-1);
+    }
+
+  if (!ret && file_limit.rlim_cur > CURL_LOADER_FD_SETSIZE)
+    {
+      fprintf(stderr, 
+              " %s - WARNING: The current file resource limit is larger then this program allows for.\n"
+              "This program allows for maximum of %d file descriptors, the current system limit is %d\n"
+              "If you will get notifications, like \"fd (socket) <num> is less than FD_SETSIZE\" increase\n" 
+              "CURL_LOADER_FD_SETSIZE in Makefile and recompile.\n", 
+              __func__ , CURL_LOADER_FD_SETSIZE, (int) file_limit.rlim_cur );   
+    sleep (3);
   }
 
  /* 
