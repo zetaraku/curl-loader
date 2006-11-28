@@ -148,21 +148,21 @@ main (int argc, char *argv [])
   if (!ret && file_limit.rlim_cur < OPEN_FDS_SUGGESTION)
     {
       fprintf(stderr, 
-              " %s - ERROR: the current limit of open descriptors for a process is below %d."
+              " %s - WARNING: the current limit of open descriptors for a process is below %d."
               "Consider, increase of the limit in your shell, e.g. using ulimit -n %d command\n",
               __func__, OPEN_FDS_SUGGESTION, OPEN_FDS_SUGGESTION);
-      exit (-1);
+      sleep (5);
     }
 
   if (!ret && file_limit.rlim_cur > CURL_LOADER_FD_SETSIZE)
     {
       fprintf(stderr, 
-              " %s - WARNING: The current file resource limit is larger then this program allows for.\n"
+              " %s - ERROR: The current file resource limit is larger then this program allows for.\n"
               "This program allows for maximum of %d file descriptors, the current system limit is %d\n"
               "If you will get notifications, like \"fd (socket) <num> is less than FD_SETSIZE\" increase\n" 
               "CURL_LOADER_FD_SETSIZE in Makefile and recompile.\n", 
               __func__ , CURL_LOADER_FD_SETSIZE, (int) file_limit.rlim_cur );   
-    sleep (3);
+    exit (-1);
   }
 
  /* 

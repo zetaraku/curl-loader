@@ -35,13 +35,19 @@ compete for the IP-addresses to bind to.
 
 5. Connections re-use.
 
+Attention: does not work with all servers, but worth trying.
 The default behavior is after HTTP response to close the tcp-connection
 and to establish a new one for the next request. If you are specifying 
 -r command-line option, the connection will not closed and will be re-used
 for the next request. This option (-r) enables to reach huge http req/resp
 numbers.
 
-6. Troubleshooting
+6. Try the non-default storming mode (commandline option -m1), which may 
+better suit your needs. See, README for explanations. A combination of
+-m1 and -r is a valid combination, still, if the server does not make
+problems with connections reuse.
+
+7. Troubleshooting
 
 Running first runs one may try command-line options -v (verbose) and -u (url
 in logs). Grep to look for the errors and their reasons. If an error is
@@ -52,7 +58,7 @@ option.
 If any assistance required, please, don't hesitate to contact us.
 
 
-7. Statistics.
+8. Statistics.
 
 After end of run, or after SIGINT (Cntl-C), the final results are calculated
 and printed to the console as well as to the file $BATCH_NAME.txt.

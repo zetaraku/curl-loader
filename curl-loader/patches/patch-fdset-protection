@@ -14,18 +14,18 @@ diff -Nru curl-7.16.0/lib/multi.c curl-7.16.0-rob/lib/multi.c
      for(i=0; i< MAX_SOCKSPEREASYHANDLE; i++) {
        curl_socket_t s = CURL_SOCKET_BAD;
  
-+      if (sockbunch[i] < 0 || sockbunch[i] > 65535)
++      if (sockbunch[i] < 0 /*|| sockbunch[i] > 65535*/)
 +        {
 +          break;
 +        }
 +        
-+        if (sockbunch[i] >= FD_SETSIZE)
-+        {
-+          fprintf (stderr, "\n\n%s - error: fd (socket) %d more, than FD_SETSIZE (%d)\n", 
-+                   __func__, sockbunch[i], FD_SETSIZE);
-+          fprintf (stderr, "Edit the Makefile and increase CURL_LOADER_FD_SETSIZE\n");
-+          break;
-+        }
++        //if (sockbunch[i] >= FD_SETSIZE)
++        //{
++        //  fprintf (stderr, "\n\n%s - error: fd (socket) %d more, than FD_SETSIZE (%d)\n", 
++        //           __func__, sockbunch[i], FD_SETSIZE);
++        //  fprintf (stderr, "Edit the Makefile and increase CURL_LOADER_FD_SETSIZE\n");
++        //  break;
++        //}
 +
        if(bitmap & GETSOCK_READSOCK(i)) {
          FD_SET(sockbunch[i], read_fd_set);
