@@ -1,3 +1,13 @@
+version 0.22 28/11/2006, svn-75
+
+* Fixed stack smashing bug after curl_multi_fdset (). Libcurl
+  cannot check, whether our descriptor is within valid FD_SETSIZE
+  range. Therefore, we are increasing FD_SETSIZE and doing the job.
+  Thanks to Evgeniy Polyakov <johnpol@2ka.mipt.ru> for reporting 
+  the problem.
+
+* HOWTOS-BIG-LOAD added to address the appropriate setup for large loads.
+
 version 0.21 22/11/2006, svn-62
 
 * Building bug fix and more explanations about building requirements.
