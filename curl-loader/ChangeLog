@@ -1,3 +1,14 @@
+version 0.23
+
+* The behavior of -r option reverted.
+   The default behavior of curl-loader now is after HTTP response to re-use the tcp-connection. 
+   If you are specifying -r command-line option, the connection will be closed and 
+   re-opened for the next request. Whether it is appropriate for you to work with
+   -r or without depends on your server support of Keep-Alive or closing connection
+   after response, and the purpose of your testing. Try with and without -r and see, what you get.
+
+* HTTP 4xx client errors are now supported with statistics, logging, etc
+
 version 0.22 28/11/2006, svn-75
 
 * Fixed stack smashing bug after curl_multi_fdset (). Libcurl

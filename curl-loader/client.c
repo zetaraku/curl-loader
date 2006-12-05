@@ -54,6 +54,15 @@ void hdrs_3xx_inc (client_context* cctx)
   cctx->hdrs_3xx++;
 }
 
+int hdrs_4xx (client_context* cctx)
+{
+  return cctx->hdrs_4xx;
+}
+void hdrs_4xx_inc (client_context* cctx)
+{
+  cctx->hdrs_4xx++;
+}
+
 int hdrs_5xx (client_context* cctx)
 {
   return cctx->hdrs_5xx;
@@ -66,23 +75,28 @@ void hdrs_5xx_inc (client_context* cctx)
 
 void hdrs_clear_all (client_context* cctx)
 {
-  cctx->hdrs_req = cctx->hdrs_2xx = cctx->hdrs_3xx = cctx->hdrs_5xx = 0;
+  cctx->hdrs_req = cctx->hdrs_2xx = cctx->hdrs_3xx = cctx->hdrs_4xx = 
+      cctx->hdrs_5xx = 0;
 }
 void hdrs_clear_non_req (client_context* cctx)
 {
-  cctx->hdrs_2xx = cctx->hdrs_3xx = cctx->hdrs_5xx = 0;
+  cctx->hdrs_2xx = cctx->hdrs_3xx = cctx->hdrs_4xx = cctx->hdrs_5xx = 0;
 }
 void hdrs_clear_non_2xx (client_context* cctx)
 {
-  cctx->hdrs_req = cctx->hdrs_3xx = cctx->hdrs_5xx = 0;
+  cctx->hdrs_req = cctx->hdrs_3xx = cctx->hdrs_4xx = cctx->hdrs_5xx = 0;
 }
 void hdrs_clear_non_3xx (client_context* cctx)
 {
-  cctx->hdrs_req = cctx->hdrs_2xx = cctx->hdrs_5xx = 0;
+  cctx->hdrs_req = cctx->hdrs_2xx = cctx->hdrs_4xx = cctx->hdrs_5xx = 0;
+}
+void hdrs_clear_non_4xx (client_context* cctx)
+{
+  cctx->hdrs_req = cctx->hdrs_2xx = cctx->hdrs_3xx = cctx->hdrs_5xx = 0;
 }
 void hdrs_clear_non_5xx (client_context* cctx)
 {
-  cctx->hdrs_req = cctx->hdrs_2xx = cctx->hdrs_3xx = 0;
+  cctx->hdrs_req = cctx->hdrs_2xx = cctx->hdrs_4xx = cctx->hdrs_3xx = 0;
 }
 
 
@@ -126,6 +140,12 @@ void stat_3xx_inc (client_context* cctx)
   cctx->st.resp_redirs++;
   cctx->is_https ? cctx->bctx->https_delta.resp_redirs++ :
     cctx->bctx->http_delta.resp_redirs++;
+}
+void stat_4xx_inc (client_context* cctx)
+{
+  cctx->st.resp_cl_errs++;
+  cctx->is_https ? cctx->bctx->https_delta.resp_cl_errs++ :
+    cctx->bctx->http_delta.resp_cl_errs++;
 }
 void stat_5xx_inc (client_context* cctx)
 {
@@ -176,9 +196,11 @@ void dump_client (FILE* file, client_context* cctx)
   if (!file || !cctx)
     return;
 
-  fprintf (file, "%s,cycles:%ld,state:%d,d_in:%lld,d_out:%lld,req:%ld,rsp_3xx:%ld,rsp_oks:%ld,rsp_5xx:%ld,err:%ld\n", 
+  fprintf (file, 
+           "%s,cycles:%ld,state:%d,b_in:%lld,b_out:%lld,req:%ld,rsp_3xx:%ld,rsp_oks:%ld,rsp_4xx:%ld,rsp_5xx:%ld,err:%ld\n", 
            cctx->client_name, cctx->cycle_num, cctx->client_state, 
            cctx->st.data_in,  cctx->st.data_out, cctx->st.requests, cctx->st.resp_redirs, 
-           cctx->st.resp_oks, cctx->st.resp_serv_errs, cctx->st.other_errs);
+           cctx->st.resp_oks, cctx->st.resp_cl_errs, cctx->st.resp_serv_errs, 
+           cctx->st.other_errs);
   fflush (file);
 }

@@ -33,14 +33,16 @@ helpful and crashful. Please, use in the configuration batch files
 non-overlapping ranges of IP-addresses, else libcurl virtual clients will 
 compete for the IP-addresses to bind to.
 
+
 5. Connections re-use.
 
 Attention: does not work with all servers, but worth trying.
-The default behavior is after HTTP response to close the tcp-connection
-and to establish a new one for the next request. If you are specifying 
--r command-line option, the connection will not closed and will be re-used
-for the next request. This option (-r) enables to reach huge http req/resp
-numbers.
+The default behavior of curl-loader now is after HTTP response to re-use the tcp-connection. 
+If you are specifying -r command-line option, the connection will be closed and 
+re-opened for the next request. Whether it is appropriate for you to work with
+-r or without depends on your server support of Keep-Alive or closing connection
+after response, and the purpose of your testing.
+Try with and without -r and see, what you get.
 
 6. Try the non-default storming mode (commandline option -m1), which may 
 better suit your needs. See, README for explanations. A combination of
@@ -58,9 +60,13 @@ option.
 If any assistance required, please, don't hesitate to contact us.
 
 
-8. Statistics.
+8. Logs and statistics.
 
 After end of run, or after SIGINT (Cntl-C), the final results are calculated
 and printed to the console as well as to the file $BATCH_NAME.txt.
 Current results are presented in each row, and average summary as the last
 raws, separated from the rest by asterisks.
+
+Pay attention, that $BATCH_NAME.log log file may become huge, particularly, 
+when using verbose output (-v -u). Commandline option -l may be useful in 
+storming mode. 

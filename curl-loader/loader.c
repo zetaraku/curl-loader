@@ -760,13 +760,14 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
             break;
 
           case 2: /* 200 OK */
-            if (verbose_logging)
-              fprintf(cctx->file_output, "%ld %s:!! %ld OK: eff-url: %s, url: %s\n",
-                      cctx->cycle_num, cctx->client_name, response_status,
-                      url_print ? url : "", url_diff ? url_target : "");
 
             if (! hdrs_2xx (cctx))
               {
+                if (verbose_logging)
+                    fprintf(cctx->file_output, "%ld %s:!! %ld OK: eff-url: %s, url: %s\n",
+                            cctx->cycle_num, cctx->client_name, response_status,
+                            url_print ? url : "", url_diff ? url_target : "");
+
                 /* First header of 2xx response */
                 hdrs_2xx_inc (cctx);
                 stat_2xx_inc (cctx); /* Increment number of 2xx responses */
@@ -780,12 +781,13 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
             break;
        
           case 3: /* 3xx REDIRECTIONS */
-            fprintf(cctx->file_output, "%ld %s:!! %ld REDIRECTION: %s: eff-url: %s, url: %s\n", 
-                    cctx->cycle_num, cctx->client_name, response_status, data,
-                    url_print ? url : "", url_diff ? url_target : "");
 
             if (! hdrs_3xx (cctx))
               {
+                fprintf(cctx->file_output, "%ld %s:!! %ld REDIRECTION: %s: eff-url: %s, url: %s\n", 
+                    cctx->cycle_num, cctx->client_name, response_status, data,
+                    url_print ? url : "", url_diff ? url_target : "");
+
                 /* First header of 3xx response */
                 hdrs_3xx_inc (cctx);
                 stat_3xx_inc (cctx); /* Increment number of 3xx responses */
@@ -795,16 +797,32 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
             hdrs_clear_non_3xx (cctx);
             break;
 
-          case 4: /* 4xx Client Error. Being a client side, can we ever get here?*/
+          case 4: /* 4xx Client Error */
+
+              if (! hdrs_4xx (cctx))
+              {
+                fprintf(cctx->file_output, "%ld %s :!! %ld CLIENT_ERROR : %s: eff-url: %s, url: %s\n", 
+                      cctx->cycle_num, cctx->client_name, response_status, data,
+                      url_print ? url : "", url_diff ? url_target : "");
+
+                /* First header of 4xx response */
+                hdrs_4xx_inc (cctx);
+                stat_4xx_inc (cctx);  /* Increment number of 4xx responses */
+
+                const unsigned long time_4xx_resp = get_tick_count ();
+                stat_appl_delay_add (cctx, time_4xx_resp);
+              }
+             hdrs_clear_non_4xx (cctx);
              break;
 
           case 5: /* 5xx Server Error */
-            fprintf(cctx->file_output, "%ld %s :!! %ld SERVER_ERROR : %s: eff-url: %s, url: %s\n", 
-                    cctx->cycle_num, cctx->client_name, response_status, data,
-                    url_print ? url : "", url_diff ? url_target : "");
 
             if (! hdrs_5xx (cctx))
               {
+                fprintf(cctx->file_output, "%ld %s :!! %ld SERVER_ERROR : %s: eff-url: %s, url: %s\n", 
+                    cctx->cycle_num, cctx->client_name, response_status, data,
+                    url_print ? url : "", url_diff ? url_target : "");
+
                 /* First header of 5xx response */
                 hdrs_5xx_inc (cctx);
                 stat_5xx_inc (cctx);  /* Increment number of 5xx responses */

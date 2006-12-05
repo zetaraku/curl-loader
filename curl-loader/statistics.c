@@ -63,8 +63,9 @@ void stat_point_add (stat_point* left, stat_point* right)
   left->data_out += right->data_out;
   
   left->requests += right->requests;
-  left->resp_redirs += right->resp_redirs;
   left->resp_oks += right->resp_oks;
+  left->resp_redirs += right->resp_redirs;
+  left->resp_cl_errs += right->resp_cl_errs;
   left->resp_serv_errs += right->resp_serv_errs;
   left->other_errs += right->other_errs;
   
@@ -98,8 +99,8 @@ void stat_point_reset (stat_point* p)
     return;
 
   p->data_in = p->data_out = 0;
-  p->requests = p->resp_redirs = p->resp_oks = p->resp_serv_errs = 
-    p->other_errs = 0;
+  p->requests = p->resp_redirs = p->resp_oks = p->resp_cl_errs = 
+      p->resp_serv_errs = p->other_errs = 0;
 
   p->appl_delay_points = 0;
   p->appl_delay = 0;
@@ -296,8 +297,9 @@ static void dump_stat_to_screen (
                                  stat_point* sd, 
                                  unsigned long period)
 {
-  fprintf(stderr, "%s - Req: %ld, Redirs: %ld, Resp-Ok: %ld, Resp-Serv-Err:%ld, Err: %ld,  Resp-Delay: %ld (msec), Resp-Delay-OK: %ld (msec), Thr-In: %lld (Bytes/sec), Thr-Out: %lld (Bytes/sec)\n",
-          protocol, sd->requests, sd->resp_redirs, sd->resp_oks, sd->resp_serv_errs, 
+  fprintf(stderr, "%s - Req: %ld, Redirs: %ld, Rsp-Ok: %ld, Rsp-Cl-Err:%ld, Rsp-Serv-Err:%ld, Err: %ld,  Delay: %ld (msec), Delay-2xx: %ld (msec), Thr-In: %lld (b/sec), Thr-Out: %lld (b/sec)\n",
+          protocol, sd->requests, sd->resp_redirs, sd->resp_oks, 
+          sd->resp_cl_errs, sd->resp_serv_errs, 
           sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, 
           sd->data_in/period, sd->data_out/period);
 
@@ -315,7 +317,7 @@ static void dump_stat_to_screen (
 void print_statistics_header (FILE* file)
 {
     fprintf (file, 
-             "Time,Appl,Clients,Req,Redirs,Resp-OK,Resp-Serv-Err,Err,Resp-Delay,Resp-Delay-OK,Thr-In,Thr-Out\n");
+             "Time,Appl,Clients,Req,Redirs,Rsp-OK,Rsp-Cl-Err,Rsp-Serv-Err,Err,Delay,Delay-2xx,Thr-In,Thr-Out\n");
     fflush (file);
 }
 
@@ -329,7 +331,7 @@ void print_statistics_header (FILE* file)
 ****************************************************************************************/
 static void print_statistics_footer (FILE* file)
 {
-    fprintf (file, "*, *, *, *, *, *, *, *, *, *, *, *\n");
+    fprintf (file, "*, *, *, *, *, *, *, *, *, *, *, *, *\n");
     fflush (file);
 }
 
@@ -346,9 +348,11 @@ static void print_statistics_data (FILE* file,
         period = 1;
       }
 
-    fprintf (file, "%ld, %s, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %lld, %lld\n",
-             timestamp, prot, clients_num, sd->requests, sd->resp_redirs, sd->resp_oks, sd->resp_serv_errs, 
-             sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, sd->data_in/period, sd->data_out/period);
+    fprintf (file, "%ld, %s, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %lld, %lld\n",
+             timestamp, prot, clients_num, sd->requests, sd->resp_redirs, 
+             sd->resp_oks, sd->resp_cl_errs, sd->resp_serv_errs, 
+             sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, 
+             sd->data_in/period, sd->data_out/period);
     fflush (file);
 }
 

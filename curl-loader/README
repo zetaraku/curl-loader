@@ -168,7 +168,7 @@ Possible options are:
 -l[ogfile rewind after this number of cycles]
 -m[ode of loading, 1 - storming, 2 - smooth (default)]
 -o[utput to stdout bodies of downloaded files - attn!- bulky]
--r[euse established connections, don't run close-open cycles]
+-r[euse connections disabled. Close connections and re-open them. Try with and without]
 -s[tderr printout of client messages instead of to logfile - attn!- bulky]
 -t[hreads enable - enables threads, each runs a batch of clients]
 -v[erbose output to the logfiles; includes info about headers sent/received]
@@ -178,6 +178,14 @@ Note, that running with threads (-t) may be less stable,
 whereas without this option runs only the first batch of clients specified.
 Thus, running several client batches without threads requires some script with
 several curl-loader processes.
+
+Connection Reuse Disable Option (-r):
+The default behavior of curlis after HTTP response to re-use the tcp-connection. 
+If you are specifying -r command-line option, the connection will be closed and 
+re-opened for the next request. Whether it is appropriate for you to work with
+-r or without depends on your server support of Keep-Alive or closing connection
+after response, and the purpose of your testing.
+Try with and without -r and see, what you get.
 
 Configuration file should possess at least one client batch defined
 with the following params in each batch:
@@ -294,6 +302,7 @@ Currently HTTP/HTTPS statistics includes the following counters:
    - requests num;
    - responses success num;
    - 3xx redirects num;
+   - client 4xx errors num;
    - server 5xx errors num;
    - other errors num, like resolving, tcp-connect, server closing or 
      empty responses number;
@@ -313,7 +322,7 @@ may stall), the final load report is printed at the console as well as to the st
 file. 
 Some strings from the file:
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Time, Protocol, Clients, Req, Redirs, Resp-OK, Resp-Serv-Err, Err, Resp-Delay, Resp-Delay-OK, Thr-In, Thr-Out
+Time, Protocol, Clients, Req, Redirs, Rsp-OK, Rsp-Serv-Err, Err, Delay, Delay-2xx, Thr-In, Thr-Out
 2, HTTP, 100, 155, 0, 96, 0, 0, 1154, 1154, 2108414, 15538
 2, HTTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
 4, HTTP, 100, 75, 32, 69, 0, 0, 1267, 1559, 1634656, 8181
@@ -335,8 +344,10 @@ At the same time a clients dump file with name $batch_name.ctx is generated
 to provide detailed statistics about each client state and statistics counters.
 
 One string from the file
-18 (192.168.1.18) ,cycles:5,state:4,d_in:549508,d_out:3940,req:17,rsp_3xx:5,rsp_oks:12,rsp_5xx:0,err:3
+18 (192.168.1.18) ,cycles:5,state:4,b_in:549508,b_out:3940,req:17,rsp_3xx:5,rsp_oks:12,rsp_4xx:0,rsp_5xx:0,err:3
 
+HOWTOS-BIG-LOAD
+file contains some useful tips.
 
 LIMITATIONS:
 See the TODO file for some of them.

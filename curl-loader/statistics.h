@@ -38,14 +38,17 @@ typedef struct stat_point
    /* Outbound bytes number */
   unsigned long long data_out;
 
-   /* Number of requests issued */
+   /* Number of requests received */
   unsigned long requests;
+
+  /* Number of 2xx responses */
+  unsigned long resp_oks;
 
   /* Number of 3xx redirections */
   unsigned long resp_redirs;
 
-  /* Number of 2xx responses */
-  unsigned long resp_oks;
+  /* Number of 4xx responses */
+  unsigned long resp_cl_errs;
 
   /* Number of 5xx responses */
   unsigned long resp_serv_errs;

@@ -44,7 +44,9 @@ respecting the interleave timeouts. It should be corrected.
     smooth mode on libcurl error, and should be extended to 5xx server 
     errors, etc
 
-6. Support for resolving options: global DNS cache and cares library. 
+6. Support for resolving options: global DNS cache and c-ares library.
+
+7. Rewind of the logfile for smooth-mode. It works only for storming mode now. 
 
 7. Future releases will hopefully incorporate libcurl HYPER API, using 
 curl_multi_socket() approach and epoll support by libevent as in
