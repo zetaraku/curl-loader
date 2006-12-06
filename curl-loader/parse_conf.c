@@ -479,7 +479,7 @@ static int set_value_to_param (
 
       /* fprintf (stderr, "\nclients number is %d\n", bctx->client_num); */
 
-      if (bctx->client_num < 1 || bctx->client_num > BATCH_MAX_CLIENTS_NUM)
+      if (bctx->client_num < 1) /* || bctx->client_num > BATCH_MAX_CLIENTS_NUM) */
         {
           fprintf (stderr, "%s - error: clients number (%d) is out of the range\n", 
                    __func__, bctx->client_num);
