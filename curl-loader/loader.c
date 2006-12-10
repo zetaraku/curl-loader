@@ -58,12 +58,6 @@
 #include "ssl_thr_lock.h"
 
 
-
-/*
-  The limitation is due to using select() in our mget_url ()
-  as well as in libcurl. Options are to consider are poll () and /dev/epoll.
-*/
-#define MAX_FD_IN_THREAD 1000
 #define EXPLORER_USERAGENT_STR "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" 
 #define OPEN_FDS_SUGGESTION 10000
 

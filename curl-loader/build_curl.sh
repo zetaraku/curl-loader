@@ -42,7 +42,7 @@ if [ ! -d ./packages/curl-${CURL_VER} ]; then
         --with-random=/dev/urandom \
         --with-ssl=/usr/include/openssl \
         --enable-shared=no \
-        CFLAGS=-g \
+        CFLAGS=-O3 \
         || exit 1
 
     popd # back from CURL_BUILD directory

@@ -1,11 +1,18 @@
-version 0.23
+version 0.23 06/12/2006, svn-79
 
+* The limitation of 1000 clients per batch have been removed. Try 1500, 2000 and
+  may be even more, but care about number of sockets available and their 
+  recycling.
+	
 * The behavior of -r option reverted.
-   The default behavior of curl-loader now is after HTTP response to re-use the tcp-connection. 
-   If you are specifying -r command-line option, the connection will be closed and 
-   re-opened for the next request. Whether it is appropriate for you to work with
-   -r or without depends on your server support of Keep-Alive or closing connection
-   after response, and the purpose of your testing. Try with and without -r and see, what you get.
+   The default behavior of curl-loader now is after HTTP response to re-use
+   the tcp-connection. If you are specifying -r command-line option, the 
+   connection will be closed and re-opened for the next request. Whether it is
+   appropriate for you to work with -r or without depends on your server support
+   of Keep-Alive or closing connection after response, and the purpose of your
+   testing. Try with and without -r and see, what you get.
+   Connection reuse default prevents extensive consumption of opened descriptors
+   (sockets) and ports with sockets in TIME_WAIT states.
 
 * HTTP 4xx client errors are now supported with statistics, logging, etc
 

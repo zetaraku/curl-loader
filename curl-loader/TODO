@@ -28,8 +28,8 @@ make <option> to support as options:
 debug=1, 0, default is 0 - no debugging symbols;
 opt=1, 0, default is 1 - build with optimization;
 profile=1,0, default is 0 - build without profiling -pg option
-resolver=no, global, cares, default is no. If "global" (global DNS cache) enabled,
-                prevent usage with -t (threads) option.
+resolver=no, global, cares, default is no. If "global" 
+(global DNS cache) enabled, prevent usage with -t (threads) option.
 
 4. The problem of the both loading modes is that all clients are starting
 loading immediately. It should be an option to configure calls-per-second

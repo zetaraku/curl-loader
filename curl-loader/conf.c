@@ -273,7 +273,7 @@ void print_help ()
   fprintf (stderr, "--------------------------------------------------------------------------------\n");
   fprintf (stderr, "For more examples, please, look at configs directory.\n");
   fprintf (stderr, "\n");
-  fprintf (stderr, "Note, that currently there is a limit of 1000 sockets per batch of clients.\n");
+  fprintf (stderr, "Note, that there is no any more limit of 1000 sockets per batch of clients.\n");
   fprintf (stderr, "Running thousands and more clients, please do not forget the options:\n");
   fprintf (stderr, "- to increase limit of open descriptors in shell by running e.g. #ulimit -n 10000:\n");
   fprintf (stderr, "- to increase total limit of  open descriptors in systeme somewhere in /proc\n");

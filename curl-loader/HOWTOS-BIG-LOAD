@@ -14,7 +14,7 @@ particular processor by -match /-mcpu gcc options.
 
 3. Increase the default number of allowed open descriptors (sockets);
  
-Run #ulimit -n 10000
+E.g. running #ulimit -n 10000
 If running several instances of curl-loader, consider increase of system
 limits for open descriptors, if necessary. Take your own account of the
 socket usage in the system, considering sockets faster recycling (less
@@ -22,6 +22,8 @@ time in the time-wait state), by setting, optionally, something like this:
       #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or  
       #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;
 
+Correct, if required, the value of CURL_LOADER_FD_SETSIZE (set to 20000 in 
+Makefile) to control the maximum fd, that may be used for select.
 
 4. Create configuration files for each instance of curl-loader to run.
 

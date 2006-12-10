@@ -94,13 +94,18 @@ Running hundreds and thousands of clients, please do not forget:
       #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;
 
 PERFORMANCE ISSUES:
-A limit of 1000 clients per batch (due to select) may be worked around by 
-a script, which runs several instances of curl_loader, each with 1000 clients.
-Running several batches with threads (option -t), each with 1000 clients is 
+There is no more a limit of 1000 clients per batch due to select FD_SETSIZE,
+so you can try 2000 and may be more number of clients from the single thread
+(select). Please, note, that you should care about available sockets and limits.
+Select also does not scale well with a high number of sockets, so you can try 
+a script, which runs several instances of curl_loader, each with 1000-2000 
+clients.
+Running several batches with threads (option -t), each with 1000-2000 clients is 
 another valid option, however, may be less stable - try it.
 Some future release will hopefully incorporate libcurl HYPER API, using 
 curl_multi_socket() approach and epoll API support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c
+Read also HOWTOS-BIG-LOAD.
 
 
 MODES:
@@ -186,6 +191,8 @@ re-opened for the next request. Whether it is appropriate for you to work with
 -r or without depends on your server support of Keep-Alive or closing connection
 after response, and the purpose of your testing.
 Try with and without -r and see, what you get.
+Connection reuse default (without -r option) is better to prevent extensive 
+consumption of opened descriptors (sockets) and ports.
 
 Configuration file should possess at least one client batch defined
 with the following params in each batch:

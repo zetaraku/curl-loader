@@ -17,11 +17,11 @@ CFLAGS= -W -Wall -Wpointer-arith -pipe -DCURL_LOADER_FD_SETSIZE=20000
 
 #Debug flags. For optimized version remove -g and uncomment OPT_FLAGS below
 # To build libcurl with optimization, go to build_curl.sh and follow instructions
-DEBUG_FLAGS= -g
+#DEBUG_FLAGS= -g
 
 #Optimization flags
-#OPT_FLAGS= -O3 -ffast-math -finline-functions -funroll-all-loops \
-#	-finline-limit=800 -mmmx -msse -foptimize-sibling-calls -fomit-frame-pointer
+OPT_FLAGS= -O3 -ffast-math -finline-functions -funroll-all-loops \
+	-finline-limit=800 -mmmx -msse -foptimize-sibling-calls -fomit-frame-pointer
 
 #Linker mapping
 LD=gcc
