@@ -7,13 +7,13 @@ ABOUT:
     Provides application load using libcurl/openssl stacks, simulating behaviour
 of thousands and tens of thousands clients, each with its own source IP-address.
     This version simulates HTTP/HTTPS and FTP/FTPS clients. Activities of each 
-virtual client are logged to file: resolving, connection establishment, request 
-headers sent, response headers received, data received/sent, errors from TCP, 
-SSL and application (HTTP, FTP) levels. The tool can be easily extended to 
-support telnet, tftp, ldap, etc other application protocols, supported by the 
+virtual client are logged to file: resolving, connection establishment, sending of 
+requests, receiving responses, headers and data received/sent, errors from 
+network, SSL and application (HTTP, FTP) levels. The tool can be easily extended 
+to generate telnet, tftp, ldap, etc other application load, supported by the 
 great libcurl library.
     Virtual clients are grouped to the so-called batches of clients, performing
-the same sort of activities. Configurable activities of the simulated clients are:
+the same sort of activities. Configurable activities for the simulated clients are:
 - authentication login;
 - user activity simulation by fetching several urls and timeouts in between;
 - logoff.
@@ -21,25 +21,27 @@ the same sort of activities. Configurable activities of the simulated clients ar
 
 SUCCESSFULLY USED:
 
-1. To simulate HTTP/HTTPS load of thousands of clients against an authentication 
+1. To simulate HTTP/S load of thousands of clients against an authentication 
    gateway for testing of the gateway performance in various scenarios.
 
-    curl-loader supplied client load against Apache web-server with the gateway 
-    in the middle, where the gateway performed browser hijacking and HTTP- 
-    redirection of the curl-clients to the HTTPS url at the gateway own 
-    web-server. HTTPS page of the web-server responded with a POST form to be 
-    filled with username and password for the client/user authentication against
+    curl-loader supplied HTTP/S client load against Apache web-server with the 
+    gateway in the middle, where the gateway made a browser hijacking and HTTP- 
+    redirection of the curl-clients to the HTTPS url at the gateway's own 
+    web-server. HTTPS page of the web-server provided a POST form to the user
+    with username and password for the client/user authentication against
     an external AAA (RADIUS) server. If the authentication was OK, user (a libcurl
     virtual client object) was allowed to enter the Internet and to perform some
     sort of simulated by curl-loader network activity, namely, fetching urls and 
     sleeping in between them.   
     
 2. To test web-server pages, authenticating tens and hundred thousand of
-    clients, where each clients comes to HTTPS url using GET and is redirected
-    to another url, providing authentication POST form. After client successful 
-    authentication the web-server sets cookies to the client. Client activities 
-    are further simulated by fetching urls and sleeping in between. Clients are 
-    doing logoff via GET to the logoff-url (using cookies).
+    clients, where each client comes to a HTTPS url using GET method and is
+    redirected by the web-server to another url, providing authentication POST 
+    form with username and password. After successful authentication of a client
+    the web-server sets to the client cookies. Client activities are further 
+    simulated by fetching urls and sleeping in between. Clients are doing logoff 
+    using GET-method to the web-server logoff-url, where the set cookies are used
+    by the web-server as the client identity.
 
 3. To generate Gbps traffic from thousands of TCP/HTTP clients and to test the 
     impact of thousands of firewalling and NAT iptables/ipset rules and 
@@ -57,28 +59,26 @@ MAY BE USED:
 3. For etc, etc, etc applications.
 
 OS SUPPORT:
-Currently linux due to actually unlimited number of secondary ip-addresses,
-that can be arranged at a network interface to bind each individual client
-to an IP-address.
 Supposed to work on linux 2.4 and 2.6 kernels.
 
 BUILDING:
 In most cases just run make and relax. For some linux distributions, however, 
 matters should be fine tuned in build_curl.sh and Makefile (libidn issues, etc). 
+
 Building requirements include openssl libraries as well as development package
 with include files. Adjust the build_curl.sh and Makefile variables to point
-to the openssl headers and libraries. Another known issue is linidn.so, which
-means, that some linux distributions do have some libidn.so.11, but not libidn.so.
-Resolve it by creating a softlink.
+to the openssl headers and libraries. If you want to specify an openssl 
+directory then export environment variable OPENSSLDIR with the value of
+that directory.
+
+Another known issue is linidn.so, which means, that some linux distributions 
+do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink.
+
+Tarball of curl is included to the current release. When libcurl of curl-loader 
+have building issues, correct them in the Makefile and build_curl.sh. To build 
+with optimization, please, follow the instructions in Makefile and build_curl.sh.
+
 If still any building issues, please, fill you free to contact us for assistance.
-
-If you want to specify an openssl directory then please export environment variable
-OPENSSLDIR with the value of that directory.
-
-Tarball of curl is included to the current release. We are normally building it 
-at Debian. When libcurl of curl-loader have building issues, correct them in the 
-Makefile and build_curl.sh. To build with optimization, please, follow the 
-instructions in Makefile and build_curl.sh
 
 CONFIGURATION:
 ./curl_loader -h output is your friend. Some examples of configuration are 
@@ -96,12 +96,14 @@ Running hundreds and thousands of clients, please do not forget:
 PERFORMANCE ISSUES:
 There is no more a limit of 1000 clients per batch due to select FD_SETSIZE,
 so you can try 2000 and may be more number of clients from the single thread
-(select). Please, note, that you should care about available sockets and limits.
-Select also does not scale well with a high number of sockets, so you can try 
-a script, which runs several instances of curl_loader, each with 1000-2000 
+(select). Please, care about available sockets and limits. System call select () 
+does not scale well with a big number of sockets, therefore, you can try a 
+script, which runs several instances of curl_loader, each with 1000-2000 
 clients.
+
 Running several batches with threads (option -t), each with 1000-2000 clients is 
 another valid option, however, may be less stable - try it.
+
 Some future release will hopefully incorporate libcurl HYPER API, using 
 curl_multi_socket() approach and epoll API support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c
@@ -114,7 +116,7 @@ of a batch are starting together. They are expected to finish their job within
 a certain timeout. After the timeout they are either completed fetching url, 
 or are cutted and disconnected and a new cycle begins. 
 
-Another mode is a so-called "smooth" (default mode or -m2 command line), 
+Another mode is a so-called "smooth" (the default mode or -m2 command line), 
 where each client spends as much time as wishes and starts another url or 
 another cycle only after completing the previous url. When a client loading is
 terminated due to some reason, e.g. connection timeout, the default behavior
@@ -162,7 +164,8 @@ loading behavior. Configuration file has one or more batches.
 UAS - user activity simulation - fetching url, sleeping, another url -sleeping
 cycles, simulating actual user activity.
 
-COMMAND-LINE AND CONFIG FILE
+
+COMMAND-LINE OPTIONS
 Usage: run as a root user:
 #./curl-loader -f <configuration filename> [other options]
 
@@ -179,21 +182,24 @@ Possible options are:
 -v[erbose output to the logfiles; includes info about headers sent/received]
 -u[rl logging - logs url names to logfile, when -v verbose option is used]
 
-Note, that running with threads (-t) may be less stable,
+Note, that curl-loader with threads (-t) may be less stable,
 whereas without this option runs only the first batch of clients specified.
 Thus, running several client batches without threads requires some script with
 several curl-loader processes.
 
 Connection Reuse Disable Option (-r):
-The default behavior of curlis after HTTP response to re-use the tcp-connection. 
-If you are specifying -r command-line option, the connection will be closed and 
-re-opened for the next request. Whether it is appropriate for you to work with
--r or without depends on your server support of Keep-Alive or closing connection
-after response, and the purpose of your testing.
+The default behavior of curl-loader after HTTP response is to re-use the 
+tcp-connection for the next request. If you are specifying -r command-line 
+option, the TCP connection will be closed and re-opened for the next request. 
+Whether it is appropriate for you to work with -r option or without, it  depends
+ on your server support of Keep-Alive and the purpose of your testing.
 Try with and without -r and see, what you get.
-Connection reuse default (without -r option) is better to prevent extensive 
+
+Connection reuse (without -r option) has advantages by decreasing
 consumption of opened descriptors (sockets) and ports.
 
+
+CONFIGURATION FILE
 Configuration file should possess at least one client batch defined
 with the following params in each batch:
 
@@ -304,7 +310,7 @@ Effective url may be a result of redirection and, thus, "url:"
 (target url, specified in batch configuration file) will be printed as well.
 
 
-STATISTICS (just added feature):
+STATISTICS (recently added feature):
 Currently HTTP/HTTPS statistics includes the following counters:
    - requests num;
    - responses success num;
@@ -345,7 +351,7 @@ Cutted here
 38, HTTP, 0, 2050, 643, 1407, 0, 213, 725, 812, 1610688, 11706
 38, HTTPS, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-The section after asterisks is for final averages
+The bottom strings after asterisks are for final averages.
 
 At the same time a clients dump file with name $batch_name.ctx is generated
 to provide detailed statistics about each client state and statistics counters.
@@ -354,7 +360,7 @@ One string from the file
 18 (192.168.1.18) ,cycles:5,state:4,b_in:549508,b_out:3940,req:17,rsp_3xx:5,rsp_oks:12,rsp_4xx:0,rsp_5xx:0,err:3
 
 HOWTOS-BIG-LOAD
-file contains some useful tips.
+The file contains some useful tips.
 
 LIMITATIONS:
 See the TODO file for some of them.

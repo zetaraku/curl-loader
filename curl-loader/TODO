@@ -34,31 +34,21 @@ resolver=no, global, cares, default is no. If "global"
 4. The problem of the both loading modes is that all clients are starting
 loading immediately. It should be an option to configure calls-per-second
 number (CAPS), and enable a gradual loading, lets say 200 clients start
-loading each second, etc
+loading each second, etc. Add the timer-queque scheduling.
 
 5. The problem of the smooth mode is that it loads url after url without
-respecting the interleave timeouts. It should be corrected.
+respecting the interleave timeouts. Add the timer-queque scheduling.
 
 6. When login failed due to server-error, we should not proceeed with UAS
-    and logoff, instead re-attempt the login. This is the behavior of the 
-    smooth mode on libcurl error, and should be extended to 5xx server 
-    errors, etc
+and logoff, instead re-attempt the login. This is the behavior of the 
+smooth mode on libcurl error, and should be extended to 5xx server 
+errors, etc
 
 6. Support for resolving options: global DNS cache and c-ares library.
 
-7. Rewind of the logfile for smooth-mode. It works only for storming mode now. 
+8. Rewind of the logfile for smooth-mode. It works only for storming mode now. 
 
-7. Future releases will hopefully incorporate libcurl HYPER API, using 
+9. Future releases will hopefully incorporate libcurl HYPER API, using 
 curl_multi_socket() approach and epoll support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
 from a single process can become a reality.
-
-8. Vlad proposed a management console to enable stopping/adding new
-clients in run-time;
-
-9. Another Vlad proposal is a server-side for the loading tool. Apache
-server will provide enough performance till a certain load, therefore,
-it is worth to create some server-side application usefull for testing
-devices in the middle. Thus, server-side statistics may be also become
-available to the same management console. Server-side HTTP stack may
-be e.g. from libwww.  
