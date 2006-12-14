@@ -47,20 +47,18 @@ void tq_release (timer_queue*const tq);
   tnode contains information such as next-timer and period
   returns the timer-id to be used in cancel timer.
 */
-long tq_schedule_timer (timer_queue*const tq, timer_node* const tnode);
+long tq_schedule_timer (timer_queue*const tq, struct timer_node* const tnode);
 
 int tq_cancel_timer (timer_queue*const tq, long timer_id);
 
-int tq_cancel_timers (timer_queue*const tq, timer_node* const tnode);
-
-int tq_cancel_all_timers (timer_queue*const tq);
+int tq_cancel_timers (timer_queue*const tq, struct timer_node* const tnode);
 
 long tq_time_to_nearest_timer (timer_queue*const tq);
 
 /*
   Pop the root node out of the heap
 */
-timer_node* tq_remove_nearest_timer (timer_queue*const tq);
+struct timer_node* tq_remove_nearest_timer (timer_queue*const tq);
                         
 
 #endif /* TIMER_QUEUE_H */

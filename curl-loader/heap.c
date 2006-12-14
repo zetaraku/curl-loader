@@ -42,7 +42,7 @@ static long heap_get_node_id (heap*const h);
 /* Puts node to the heap slot and updates id of the node. */
 static void heap_put_node_to_slot (heap*const h, size_t slot, hnode*const node);
 	
-static hnode* heap_remove_node (heap*const h, const size_t slot);
+
 
 /* Heapifies to the up direction, so called parent path heapification */
 static void filter_up (heap*const h, size_t index);

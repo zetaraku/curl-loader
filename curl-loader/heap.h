@@ -30,7 +30,10 @@ typedef struct hnode
   /* Base for the "allocatable" property. */
   allocatable alloc;	
   
-  /* The unique id of the node. */
+  /* 
+     The unique id of the node. When used in timer-queue, 
+     we place here timer-id.
+  */
   long node_id;
 
   /* Pointer to the user-data context to keep with the node. */
@@ -125,6 +128,8 @@ hnode* heap_pop (heap*const h);
 long heap_push (heap* const h, hnode* const nd, int keep_node_id);
 
 hnode* heap_top_node (heap*const h);
+
+hnode* heap_remove_node (heap*const h, const size_t slot);
 
 int heap_empty (heap*const h);
 
