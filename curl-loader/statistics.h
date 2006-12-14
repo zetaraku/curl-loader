@@ -27,6 +27,8 @@
 
 #include <stdio.h>
 
+#include "timer_tick.h"
+
 /*
   stat_point - is the object used to keep all statistics
   counters together and collect statistics.
@@ -74,14 +76,6 @@ typedef struct stat_point
 void stat_point_add (stat_point* left, stat_point* right);
 void stat_point_reset (stat_point* point);
 
-/****************************************************************************************
-* Function name - get_tick_count
-*
-* Description - Delivers timestamp in milliseconds.
-*
-* Return Code/Output - timestamp in milliseconds or -1 on errors
-****************************************************************************************/
-unsigned long get_tick_count ();
 
 struct client_context;
 struct batch_context;
