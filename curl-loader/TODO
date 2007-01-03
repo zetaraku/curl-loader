@@ -36,7 +36,7 @@ loading immediately. It should be an option to configure calls-per-second
 number (CAPS), and enable a gradual loading, lets say 200 clients start
 loading each second, etc. Add the timer-queque scheduling.
 
-5. The problem of the smooth mode is that it loads url after url without
+5. And the problem of the smooth mode is that it loads url after url without
 respecting the interleave timeouts. Add the timer-queque scheduling.
 
 6. When login failed due to server-error, we should not proceeed with UAS
@@ -46,9 +46,12 @@ errors, etc
 
 6. Support for resolving options: global DNS cache and c-ares library.
 
-8. Rewind of the logfile for smooth-mode. It works only for storming mode now. 
+8. Rewind of the logfile for smooth-mode. It works only for storming mode now.
 
-9. Future releases will hopefully incorporate libcurl HYPER API, using 
+9. There are some issues with FTP load, that will be resolved by the upcoming
+    release of libcurl. 
+
+10. Future releases will hopefully incorporate libcurl HYPER API, using 
 curl_multi_socket() approach and epoll support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
 from a single process can become a reality.
