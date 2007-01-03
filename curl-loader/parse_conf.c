@@ -708,7 +708,7 @@ static int validate_batch_general (batch_context*const bctx)
                  __func__);
         return -1;
     }
-    if ((bctx->ip_addr_max - bctx->ip_addr_min) < bctx->client_num)
+    if ((bctx->ip_addr_max - bctx->ip_addr_min + 1) < bctx->client_num)
     {
         fprintf (stderr, "%s - error: range of ip-addresses "
                  "is less than number of clients.\n"
@@ -751,7 +751,7 @@ static int validate_batch_login (batch_context*const bctx)
 
     // Let empty passwords in
 
-    if (bctx->login_req_type != LOGIN_REQ_TYPE_POST ||
+    if (bctx->login_req_type != LOGIN_REQ_TYPE_POST &&
         bctx->login_req_type != LOGIN_REQ_TYPE_GET_AND_POST)
     {
         fprintf (stderr, "%s - error: LOGIN_REQ_TYPE is out of valid range .\n", 
@@ -836,8 +836,8 @@ static int validate_batch_logoff (batch_context*const bctx)
         return 0;
     }
 
-    if (bctx->login_req_type != LOGOFF_REQ_TYPE_GET_AND_POST ||
-        bctx->login_req_type != LOGOFF_REQ_TYPE_GET ||
+    if (bctx->login_req_type != LOGOFF_REQ_TYPE_GET_AND_POST &&
+        bctx->login_req_type != LOGOFF_REQ_TYPE_GET &&
         bctx->login_req_type != LOGOFF_REQ_TYPE_POST)
     {
         fprintf (stderr, "%s - error: LOGOFF_REQ_TYPE is out of valid range .\n", 
