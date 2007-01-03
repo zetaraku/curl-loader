@@ -6,12 +6,12 @@
 ABOUT:
     Provides application load using libcurl/openssl stacks, simulating behaviour
 of thousands and tens of thousands clients, each with its own source IP-address.
-    This version simulates HTTP/HTTPS and FTP/FTPS clients. Activities of each 
-virtual client are logged to file: resolving, connection establishment, sending of 
-requests, receiving responses, headers and data received/sent, errors from 
-network, SSL and application (HTTP, FTP) levels. The tool can be easily extended 
-to generate telnet, tftp, ldap, etc other application load, supported by the 
-great libcurl library.
+    This version simulates HTTP/HTTPS and FTP/FTPS (experimental) clients. 
+Activities of each virtual client are logged to file: resolving, connection
+ establishment, sending of requests, receiving responses, headers and data 
+received/sent, errors from network, SSL and application (HTTP, FTP) levels. 
+The tool can be easily extended to generate telnet, tftp, ldap, etc other 
+application load, supported by the great libcurl library.
     Virtual clients are grouped to the so-called batches of clients, performing
 the same sort of activities. Configurable activities for the simulated clients are:
 - authentication login;
@@ -68,7 +68,7 @@ matters should be fine tuned in build_curl.sh and Makefile (libidn issues, etc).
 Building requirements include openssl libraries as well as development package
 with include files. Adjust the build_curl.sh and Makefile variables to point
 to the openssl headers and libraries. If you want to specify an openssl 
-directory then export environment variable OPENSSLDIR with the value of
+directory, export environment variable OPENSSLDIR with the value of
 that directory.
 
 Another known issue is linidn.so, which means, that some linux distributions 
@@ -79,6 +79,7 @@ have building issues, correct them in the Makefile and build_curl.sh. To build
 with optimization, please, follow the instructions in Makefile and build_curl.sh.
 
 If still any building issues, please, fill you free to contact us for assistance.
+
 
 CONFIGURATION:
 ./curl_loader -h output is your friend. Some examples of configuration are 
@@ -148,6 +149,35 @@ loading each second, etc. The issue is also in out TODO list.
 A combination of the both modes (two separate instances of the program)
 can provide somehow realistic behavior with some "smooth" load plus
 "storming" bursts of requests.
+
+
+SMOOTH MODE LOADING OPTIONS:
+
+First option is to define number of clients in CLIENTS_NUM. Thus, number of
+CAPS (call per seconds) is derived from the clients number and duration of
+load for each cycle comprising from:
+- login time and sleeping after login interval;
+- uas time for each url with possible redirections, intervals betwee urls and 
+  after uas interval;
+- logoff time and sleeping after logoff interval;
+All these actions and time intervals are configurable in batch file, whereas
+url retrival time is also server and network dependent and not always easy 
+to predict. The result is that number of clients/requests is a known parameter,
+and number of CAPS is something to be estimated from the time of test and
+number of requests.
+Tag CAPS_INITIAL_NUM in batch configuration file serves to assist for the first 
+mode not schedule all clients simulteneous for load, but rather to smooth the 
+initial requests flow for the first url.
+
+Second option is to define number of CAPS explicitly by the tag 
+CAPS_MODE_STEADY_NUM in the batch configuration file. Thus, every second 
+will be scheduled or re-scheduled not more than CAPS_MODE_STEADY_NUM clients. 
+Number of concurrent clients is defined by the CAPS number and the duration of 
+a loading cycle as defined by the batch file configuration. Limit of concurrent 
+clients number still needs to be predicted and defined in batch file 
+CLIENTS_NUM tag as well as it should be allocated an appropriate range of 
+ip-addresses for the clients.
+
 
 
 LICENSE:
@@ -289,7 +319,7 @@ There are three logoff modes supported as GET-only, GET+POST and POST-only.
 HTTP cookies are enabled in curl-loader by default.
 
 
-FTP/FTPS LOAD (just added feature):
+FTP/FTPS LOAD (experimental):
 To generate FTP/FTPS load, please, use UAS section and pass user credentials
 via ftp-url according to the RFC 1738), like:
 ftp://username:password@hostname:port/etc-str
