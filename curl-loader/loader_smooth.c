@@ -44,12 +44,27 @@ static int schedule_initial (batch_context* bctx);
 static int schedule_initial_continue (batch_context* bctx, unsigned long now_time);
 static int mget_url_smooth (batch_context* bctx);
 static int mperform_smooth (batch_context* bctx, int* still_running);
+
 static int load_next_step (client_context* cctx, unsigned long now_time);
-static int load_init_state (client_context* cctx);
+
 static int load_error_state (client_context* cctx);
+static int load_init_state (client_context* cctx);
 static int load_login_state (client_context* cctx);
 static int load_uas_state (client_context* cctx);
 static int load_logoff_state (client_context* cctx);
+static int load_final_ok_state (client_context* cctx);
+
+typedef int (*load_state_func)  (client_context* cctx);
+
+static const load_state_func load_state_func_table [] =
+{
+	load_error_state,
+	load_init_state,
+	load_login_state,
+	load_uas_state,
+	load_logoff_state,
+	load_final_ok_state,
+};
 
 static int is_last_cycling_state (client_context* cctx);
 static void advance_cycle_num (client_context* cctx);
@@ -75,7 +90,7 @@ int user_activity_smooth (client_context* cctx_array)
       return -1;
     }
   
-  bctx->start_time = bctx->last_measure = get_tick_count();
+  bctx->start_time = bctx->last_measure = get_tick_count ();
   bctx->sec_current = 0;
   bctx->active_clients_count = 0;
 
@@ -114,28 +129,41 @@ int user_activity_smooth (client_context* cctx_array)
 *
 * Description - First initialization of our virtual clients (CURL handles)
 *                       setting first url to fetch and scheduling them according to 
-*                       initial CAPS, if appropriate.
+*                       clients increment for initial gradual loading.
 *
 * Input -       *bctx - pointer to the batch of contexts
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 static int schedule_initial (batch_context* bctx)
 {
+	/* Return, if initial gradual scheduling of all new clients is accomplished */
 	if (bctx->client_num <= bctx->clients_initial_running_num)
 	{
 		bctx->do_start_load_gradual = 0;
 		return 0;
 	}
 
+	/* Calculate number of new clients to schedule */
 	const long clients_sched = bctx->clients_initial_inc ? 
-		min (bctx->clients_initial_inc, bctx->client_num - bctx->clients_initial_running_num) : bctx->client_num; 
+		min (bctx->clients_initial_inc, bctx->client_num - bctx->clients_initial_running_num) : 
+		bctx->client_num; 
 
-	bctx->do_start_load_gradual = 0; /* to prevent recursive behavior in load_next_step () */
+	/* 
+		 Disable do_start_load_gradual to prevent recursive 
+		 calls in load_next_step () 
+	*/
+	bctx->do_start_load_gradual = 0;
 
+	/* 
+		 Schedule new clients by initializing thier CURL handle with
+		 URL, etc paramaters and adding it to MCURL multi-handle.
+	*/
 	long j;
-	for (j = bctx->clients_initial_running_num ; j < bctx->clients_initial_running_num + clients_sched; j++)
+	for (j = bctx->clients_initial_running_num; 
+			 j < bctx->clients_initial_running_num + clients_sched; 
+			 j++)
 	{
-		/* Runs load_init_state () for each client (context) */
+		/* Runs load_init_state () for each new client (context) */
 		if (load_next_step (&bctx->cctx_array[j], bctx->start_time) == -1)
 		{
 			fprintf(stderr,"%s error: load_next_step() initial failed\n", __func__);
@@ -143,6 +171,10 @@ static int schedule_initial (batch_context* bctx)
 		}
 	}
 
+	/* 
+		 Re-calculate assisting counters and enable back 
+		 do_start_load_gradual, if required.
+	*/
 	if (bctx->clients_initial_inc)
 	{
 		bctx->clients_initial_running_num += clients_sched;
@@ -160,7 +192,7 @@ static int schedule_initial (batch_context* bctx)
 *
 * Description - Continue initialization of our virtual clients (CURL handles)
 *                       by adding more clients each new second and scheduling 
-*                       them according to initial CAPS.
+*                       them according to clients increment for initial gradual loading.
 *
 * Input -       *bctx - pointer to the batch of contexts
 *                   now_time -  current time in millisecond ticks
@@ -259,8 +291,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 	{
 		dump_intermediate_and_advance_total_statistics (bctx);
 	}
- 
-	  
+
 	while( (msg = curl_multi_info_read (mhandle, &msg_num)) != 0)
 	{
 		if (msg->msg == CURLMSG_DONE)
@@ -272,6 +303,12 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
 			curl_easy_getinfo (handle, CURLINFO_PRIVATE, &cctx);
 
+			if (!cctx)
+			{
+				fprintf (stderr, "%s - error: cctx is a NULL pointer.\n", __func__);
+				return -1;
+			}
+
 			if (msg->data.result)
 			{
 				// fprintf (stderr, "res is %d ", msg->data.result);
@@ -281,7 +318,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 				// cctx->client_name, msg->data.result, curl_easy_strerror(msg->data.result ));
 			}
 
-			if (! (++cycle_counter%TIME_RECALCULATION_MSG_NUM))
+			if (! (++cycle_counter % TIME_RECALCULATION_MSG_NUM))
 			{
 				now = get_tick_count ();
 			}
@@ -290,9 +327,6 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 			load_next_step (cctx, now);
 			//fprintf (stderr, "%s - after load_next_step client state %d.\n", __func__, client_state);
 
-			//if (client_state == CSTATE_ERROR || client_state == CSTATE_FINISHED_OK) 
-			//      bctx->active_clients_count--; 
-          
 			if (msg_num <= 0)
 			{
 				break;  /* If no messages left in the queue - go out */
@@ -308,9 +342,10 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 /****************************************************************************************
 * Function name - load_next_step
 *
-* Description - Called at initialization and further after url-fetch completion indication (that
-*                     may be an error status as well). Either sets to client the next url to load, or sets it
-*                     at completion state: CSTATE_ERROR or CSTATE_FINISHED_OK.
+* Description - Called at initialization and further after url-fetch completion 
+*                        indication (that may be an error status as well). Either sets 
+*                        to client the next url to load, or sets it at completion state: 
+*                        CSTATE_ERROR or CSTATE_FINISHED_OK.
 *
 * Input -       *cctx - pointer to the client context
 *
@@ -331,36 +366,29 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 		}
 	}
 
-	switch (cctx->client_state)
-	{
-	case CSTATE_ERROR:
-      rval_load = load_error_state (cctx);
-		break;
-	case CSTATE_INIT:
-      rval_load = load_init_state (cctx);
-		break;
-	case CSTATE_LOGIN:
-	rval_load = load_login_state (cctx);
-	      break;
-	case CSTATE_UAS_CYCLING:
-      rval_load = load_uas_state (cctx);
-		break;
-	case CSTATE_LOGOFF:
-      rval_load = load_logoff_state (cctx);
-		break;
-	case CSTATE_FINISHED_OK:
-      rval_load = CSTATE_FINISHED_OK;
-		break;
-	}
+	/* 
+		 Initialize virtual client kept CURL handle for the 
+		 next step of loading.
+	*/
+	rval_load = load_state_func_table[cctx->client_state + 1] (cctx);
 
+	/* 
+		 If there are still clients not scheduled, continue their gradual
+		 scheduling. It makes scheduling of a certain number of clients
+		 at each new second of the run-time.
+	*/
 	if (bctx->do_start_load_gradual)
 	{
 		schedule_initial_continue (bctx, now_time);
 	}
   
+	/* 
+		 Schedule virtual clients by adding them to multi-handle, 
+		 if the clients are not in error or finished final states.
+	*/
 	if (rval_load != CSTATE_ERROR && rval_load != CSTATE_FINISHED_OK) 
 	{
-		if (curl_multi_add_handle(bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
+		if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
 		{
 			bctx->active_clients_count++;
 		}
@@ -387,10 +415,8 @@ static int is_last_cycling_state (client_context* cctx)
     case CSTATE_LOGIN:
       return (bctx->login_cycling && !bctx->do_uas && 
               !(bctx->do_logoff && bctx->logoff_cycling)) ? 1 : 0;
-
     case CSTATE_UAS_CYCLING:
       return (!(bctx->do_logoff && bctx->logoff_cycling)) ? 1 : 0;
-
     case CSTATE_LOGOFF: /* Logoff cycling, if exists, 
                            supposed to be the last state of a cycle. */
       return bctx->logoff_cycling ? 1 : 0;
@@ -432,7 +458,6 @@ static int on_cycling_completed (client_context* cctx)
   if (bctx->do_logoff && !bctx->logoff_cycling)
     return load_logoff_state (cctx);
 
-  // curl_multi_remove_handle (bctx->multiple_handle, cctx->handle);
   return (cctx->client_state = CSTATE_FINISHED_OK);
 }
 
@@ -467,11 +492,12 @@ static int setup_login_logoff (client_context* cctx, const int login)
     {
       /* 
          Three possible cases are treated here:
-         - GET, which is by itself enough for logoff (thanks to cookies)
+         - GET, which is by itself enough for logoff (thanks to cookies);
          - GET, which will be later followed by later POST login/logoff;
          - POST, which is the standalone login/logoff, without any previous GET;
       */
       int post_standalone = 0;
+
       if ((login && bctx->login_req_type == LOGIN_REQ_TYPE_POST) ||
           (!login && bctx->logoff_req_type == LOGOFF_REQ_TYPE_POST))
         {
@@ -499,16 +525,12 @@ static int setup_login_logoff (client_context* cctx, const int login)
       */
       CURL* handle = cctx->handle;
 
-      //curl_multi_remove_handle (bctx->multiple_handle, handle);
-      
       /* 
          Just add POSTFIELDS. Note, that it should be done on CURL handle 
 	   outside (removed) from MCURL handle. Add it back afterwords.
       */
-      curl_easy_setopt(handle, CURLOPT_POSTFIELDS, 
+      curl_easy_setopt (handle, CURLOPT_POSTFIELDS, 
                        login ? cctx->post_data_login : cctx->post_data_logoff);
-
-      //curl_multi_add_handle(bctx->multiple_handle, handle);
     }
 
   return cctx->client_state = login ? CSTATE_LOGIN : CSTATE_LOGOFF;
@@ -553,7 +575,7 @@ static int load_init_state (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
 
-  if (bctx->do_login) /* Normally first operation is login, but who is normal? */
+  if (bctx->do_login) /* Normally, the very first operation is login, but who is normal? */
       return load_login_state (cctx);
   else if (bctx->do_uas) /* Sometimes, no login is defined. Just a traffic-gen */
       return load_uas_state (cctx);
@@ -583,7 +605,6 @@ static int load_error_state (client_context* cctx)
 
       if (cctx->cycle_num >= bctx->cycles_num)
         {
-            //curl_multi_remove_handle (bctx->multiple_handle, cctx->handle);
           return (cctx->client_state = CSTATE_ERROR);
         }
       else
@@ -598,15 +619,15 @@ static int load_error_state (client_context* cctx)
     }
  
   /* Thus, the client will not be scheduled for load any more. */
-  //curl_multi_remove_handle (bctx->multiple_handle, cctx->handle);
   return (cctx->client_state = CSTATE_ERROR);
 }
 
 /****************************************************************************************
 * Function name - load_login_state
 *
-* Description - Called by load_next_step () for the client in CSTATE_LOGIN state to schedule
-*                     the next loading url.
+* Description - Called by load_next_step () for the client in CSTATE_LOGIN 
+*                        state to schedule the next loading url.
+*
 * Input -       *cctx - pointer to the client context
 *
 * Return Code/Output - CSTATE enumeration with the state of loading
@@ -641,8 +662,10 @@ static int load_login_state (client_context* cctx)
                 }
               else
                 {
-                  /* Configured to cycle, but the state is the last cycling state 
-                     and also the only cycling state, therefore, continue login. */
+                  /* 
+					 Configured to cycle, but the state is the last cycling state 
+                     and also the only cycling state, therefore, continue login. 
+				  */
                   return setup_login_logoff (cctx, 1); /* 1 - means login */
                 }
             }
@@ -679,7 +702,7 @@ static int load_uas_state (client_context* cctx)
 
        if (cctx->uas_url_curr_index >= (size_t)(bctx->uas_urls_num))
         {
-          /* Accomplished all the urls for a single UAS -cycle. */
+          /* Finished with all the urls for a single UAS -cycle. */
 
           cctx->uas_url_curr_index = 0;
  
@@ -764,7 +787,7 @@ static int load_logoff_state (client_context* cctx)
                     return load_login_state  (cctx);
                   else if (bctx->do_uas)
                     return load_uas_state (cctx);
-                  else /* logoff is the only cycling state - strange, but allow it */
+                  else /* logoff is the only cycling state? Sounds strange, but allow it */
                     return setup_login_logoff (cctx, 0); /* 0 - means logoff */
                 }
             }
@@ -778,4 +801,8 @@ static int load_logoff_state (client_context* cctx)
   return setup_login_logoff (cctx, 0);
 }
 
-
+static int load_final_ok_state (client_context* cctx)
+{
+	(void) cctx;
+	return CSTATE_FINISHED_OK;
+}
