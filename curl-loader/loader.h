@@ -43,8 +43,8 @@ struct stat_point;
 * Function name - setup_curl_handle
 *
 * Description - Setup for a single curl handle (client): removes a handle from multi-handle, 
-*               resets the handle, inits it, and, finally, adds the handle back to the
-*               multi-handle.
+*               and inits it, using setup_curl_handle_init () function, and, finally, 
+*               adds the handle back to the multi-handle.
 * Input -       *cctx - pointer to client context, which contains CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
 *               cycle_number - current number of loading cycle, passing here for storming mode;
@@ -56,6 +56,26 @@ int setup_curl_handle (
                          struct url_context* url_ctx, 
                          long cycle_number,
                          int post_method);
+
+/****************************************************************************************
+* Function name - setup_curl_handle_init
+*
+* Description - Resets client context kept CURL handle and inits it locally and using 
+*                       setup_curl_handle_appl () function for the application-specific 
+*                       (HTTP/FTP) initialization.
+*
+* Input -       *cctx - pointer to client context, which contains CURL handle pointer;
+*               *url_ctx - pointer to url-context, containing all url-related information;
+*               cycle_number - current number of loading cycle, passing here for storming mode;
+*               post_method - when 'true', POST method is used instead of the default GET
+* Return Code/Output - On Success - 0, on Error -1
+***************************************************************************************
+*/
+int setup_curl_handle_init (
+    struct client_context*const cctx,
+    struct url_context* url_ctx,
+    long cycle_number,
+    int post_method);
 
 /*******************************************************************************
 * Function name - add_secondary_ip_to_device

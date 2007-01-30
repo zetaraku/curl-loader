@@ -76,7 +76,11 @@ typedef struct batch_context
    */
   long cycles_num;
 
-  
+   /* 
+      Clients added per second for the loading start phase.
+  */
+  long clients_initial_inc;
+
 
   /*------------------------ LOGIN SECTION -------------------------------- */
 
@@ -153,12 +157,6 @@ typedef struct batch_context
 
   /*------------------------- ASSISTING SECTION ----------------------------*/
 
-   /* 
-      Array of client handles of client_num size. Each handle means a single 
-      curl connection 
-   */
-  //CURL **client_handles_array;
-
   /* Multiple handle for curl. Contains all curl handles of a batch */
   CURLM *multiple_handle;
   
@@ -171,13 +169,21 @@ typedef struct batch_context
   /* Common error buffer for all batch clients */
   char error_buffer[CURL_ERROR_SIZE];
 
-
-
   /* Array of all client contexts for the batch */
   struct client_context* cctx_array;
 
-  /* Counter used mainly by smooth mode */
+  /* Counter used mainly by smooth mode: active clients */
   int active_clients_count;
+
+  /* Second current of loading. */
+  long sec_current;
+
+  /* Whether to proceed with initial scheduling */
+  int do_start_load_gradual;
+
+  /* Number of already scheduled clients */
+  int clients_initial_running_num;
+
 
 
    /*--------------- STATISTICS  --------------------------------------------*/

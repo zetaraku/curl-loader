@@ -1,5 +1,4 @@
-    curl-loader, version 0.21
-
+    curl-loader
     Robert Iakobashvili, Ashdod, Israel, coroberti@gmail.com
     Michael Moser, Modiin, Israel, moser.michael@gmail.com
 
@@ -165,7 +164,7 @@ url retrival time is also server and network dependent and not always easy
 to predict. The result is that number of clients/requests is a known parameter,
 and number of CAPS is something to be estimated from the time of test and
 number of requests.
-Tag CAPS_INITIAL_NUM in batch configuration file serves to assist for the first 
+Tag  CLIENTS_INITIAL_INC in batch configuration file serves to assist for the first 
 mode not schedule all clients simulteneous for load, but rather to smooth the 
 initial requests flow for the first url.
 
@@ -179,12 +178,12 @@ CLIENTS_NUM tag as well as it should be allocated an appropriate range of
 ip-addresses for the clients.
 
 To summarize:
-Option 1: To define number of clients in CLIENTS_NUM and CAPS_INITIAL_NUM and
-to get estimations of actual caps;
-Option 2: To define the CAPS_MODE_STEADY_NUM and CAPS_INITIAL_NUM, if different
-from the steady-state caps number, whereas number of clients will be reported
-for the loader. Still, CLIENTS_NUM should be defined as the maximum limit of
-the clients allowed in order to control the ranges of ip-addresses.
+Option 1: To define number of clients in CLIENTS_NUM, optionally 
+CLIENTS_INITIAL_INC and look at the resulted caps number;
+Option 2: To define the CAPS_MODE_STEADY_NUM and, optionally,
+CLIENTS_INITIAL_INC, whereas number of clients will be reported
+by the loader. Still, CLIENTS_NUM to be defined as the limit of
+the clients allowed; this is to control the ranges of ip-addresses.
 
 
 LICENSE:

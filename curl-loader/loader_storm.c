@@ -52,7 +52,7 @@ static int mget_url_storm (batch_context* bctx, float m_time);
 int user_activity_storm (client_context*const cctx_array)
 {
   batch_context* bctx = cctx_array->bctx;
-  long cycle = 0, k = 0;
+  long cycle, i, k;
   long u_index = 0;
 
     if (!bctx)
@@ -61,6 +61,21 @@ int user_activity_storm (client_context*const cctx_array)
                "%s - error: bctx is zero.\n", __func__);
       return -1;
     }
+
+		/* Add handles to multi_handle */
+		int m_error = -1;
+		for (i = 0 ; k < bctx->client_num ; i++)
+		{
+			if ((m_error = curl_multi_add_handle(
+						 bctx->multiple_handle,
+						 bctx->cctx_array[i].handle)) != CURLM_OK)
+			{
+				fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
+								 __func__, m_error);
+				return -1;
+			}
+		}
+   bctx->active_clients_count = bctx->client_num;
 
   bctx->start_time = bctx->last_measure = get_tick_count();
 

@@ -67,6 +67,7 @@ static int netmask_parser (batch_context*const bctx, char*const value);
 static int ip_addr_min_parser (batch_context*const bctx, char*const value);
 static int ip_addr_max_parser (batch_context*const bctx, char*const value);
 static int cycles_num_parser (batch_context*const bctx, char*const value);
+static int clients_initial_inc_parser (batch_context*const bctx, char*const value);
 
 static int login_parser (batch_context*const bctx, char*const value);
 static int login_username_parser (batch_context*const bctx, char*const value);
@@ -103,6 +104,8 @@ static const tag_parser_pair tp_map [] =
     {"IP_ADDR_MIN", ip_addr_min_parser},
     {"IP_ADDR_MAX", ip_addr_max_parser},
     {"CYCLES_NUM", cycles_num_parser},
+    {"CLIENTS_INITIAL_INC", clients_initial_inc_parser},
+    
 
     /*------------------------ LOGIN SECTION -------------------------------- */
     {"LOGIN", login_parser},
@@ -351,15 +354,25 @@ static int ip_addr_max_parser (batch_context*const bctx, char*const value)
 static int cycles_num_parser (batch_context*const bctx, char*const value)
 {
     bctx->cycles_num = atol (value);
-    if (bctx->cycles_num <= 0)
+    if (bctx->cycles_num < 0)
     {
-        fprintf (stderr, 
-                 "%s - note: cycles_num (%s) should be 0  or positive\n", 
-                 __func__, value);
         bctx->cycles_num = LONG_MAX - 1;
     }
     return 0;
 }
+static int clients_initial_inc_parser (batch_context*const bctx, char*const value)
+{
+    bctx->clients_initial_inc = atol (value);
+    if (bctx->clients_initial_inc < 0)
+    {
+        fprintf (stderr, 
+                 "%s - error: clients_initial_inc (%s) should be a zero or positive number\n", 
+                 __func__, value);
+        return -1;
+    }
+    return 0;
+}
+
 
 static int login_parser (batch_context*const bctx, char*const value)
 {
@@ -685,27 +698,23 @@ static int validate_batch_general (batch_context*const bctx)
 {
     if (!strlen (bctx->batch_name))
     {
-        fprintf (stderr, "%s - error: BATCH_NAME is empty.\n", 
-                 __func__);
+        fprintf (stderr, "%s - error: BATCH_NAME is empty.\n", __func__);
         return -1;
     }
     if (bctx->client_num < 1)
     {
-        fprintf (stderr, "%s - error: CLIENT_NUM is less than 1.\n", 
-                 __func__);
+        fprintf (stderr, "%s - error: CLIENT_NUM is less than 1.\n", __func__);
         return -1;
     }
     //TODO: validate existence of the network interface
     if (!strlen (bctx->net_interface))
     {
-        fprintf (stderr, "%s - error: INTERFACE name is empty.\n", 
-                 __func__);
+        fprintf (stderr, "%s - error: INTERFACE name is empty.\n", __func__);
         return -1;
     }
     if (bctx->cidr_netmask < 0 || bctx->cidr_netmask > 32)
     {
-        fprintf (stderr, "%s - error: NETMASK out of the valid range.\n", 
-                 __func__);
+        fprintf (stderr, "%s - error: NETMASK out of the valid range.\n", __func__);
         return -1;
     }
     if ((bctx->ip_addr_max - bctx->ip_addr_min + 1) < bctx->client_num)
@@ -716,13 +725,17 @@ static int validate_batch_general (batch_context*const bctx)
                  __func__);
         return -1;
     }
-
-    if (bctx->cycles_num < 1)
+    if (bctx->cycles_num < 0)
     {
-        fprintf (stderr, "%s - error: CYCLES_NUM is less than 0.\n", 
-                 __func__);
+        fprintf (stderr, "%s - error: CYCLES_NUM is negative.\n",__func__);
         return -1;
     }
+    if (bctx->clients_initial_inc < 0)
+    {
+        fprintf (stderr, "%s - error: CLIENTS_INITIAL_INC is negative.\n",__func__);
+        return -1;
+    }
+  
     return 0;
 }
 

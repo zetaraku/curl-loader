@@ -145,7 +145,7 @@ main (int argc, char *argv [])
               " %s - WARNING: the current limit of open descriptors for a process is below %d."
               "Consider, increase of the limit in your shell, e.g. using ulimit -n %d command\n",
               __func__, OPEN_FDS_SUGGESTION, OPEN_FDS_SUGGESTION);
-      sleep (5);
+      sleep (1);
     }
 
   if (!ret && file_limit.rlim_cur > CURL_LOADER_FD_SETSIZE)
@@ -395,17 +395,17 @@ static int initial_handles_init (client_context*const ctx_array)
         }
       /* Add it to multi-*/
 
-      int m_error = -1;
-      if ((m_error = curl_multi_add_handle(bctx->multiple_handle,
-                                           bctx->cctx_array[k].handle)) != CURLM_OK)
-        {
-          fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
-                   __func__, m_error);
-          return -1;
-        }
+      //int m_error = -1;
+      //if ((m_error = curl_multi_add_handle(bctx->multiple_handle,
+      //                                     bctx->cctx_array[k].handle)) != CURLM_OK)
+      //  {
+      //    fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
+      //             __func__, m_error);
+      //    return -1;
+      //  }
     }
         
-  bctx->active_clients_count = bctx->client_num;
+  //bctx->active_clients_count = bctx->client_num;
 
   return 0;
 }
@@ -416,8 +416,8 @@ static int initial_handles_init (client_context*const ctx_array)
 * Function name - setup_curl_handle
 *
 * Description - Setup for a single curl handle (client): removes a handle from multi-handle, 
-*               resets the handle, inits it, and, finally, adds the handle back to the
-*               multi-handle.
+*               and inits it, using setup_curl_handle_init () function, and, finally, 
+*               adds the handle back to the multi-handle.
 * Input -       *cctx - pointer to client context, which contains CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
 *               cycle_number - current number of loading cycle, passing here for storming mode;
@@ -450,6 +450,49 @@ int setup_curl_handle (client_context*const cctx,
       return -1;
     }
   
+  if (setup_curl_handle_init (cctx, url_ctx, cycle_number, post_method) == -1)
+  {
+      fprintf (stderr,"%s - error: failed.\n",__func__);
+      return -1;
+  }
+     
+  /* The handle is supposed to be removed before. */
+  if ((m_error = curl_multi_add_handle(bctx->multiple_handle, handle)) != CURLM_OK)
+    {
+      fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
+               __func__, m_error);
+          return -1;
+    }
+
+  return 0;
+}
+
+/****************************************************************************************
+* Function name - setup_curl_handle_init
+*
+* Description - Resets client context kept CURL handle and inits it locally and using 
+*                       setup_curl_handle_appl () function for the application-specific 
+*                       (HTTP/FTP) initialization.
+*
+* Input -       *cctx - pointer to client context, which contains CURL handle pointer;
+*               *url_ctx - pointer to url-context, containing all url-related information;
+*               cycle_number - current number of loading cycle, passing here for storming mode;
+*               post_method - when 'true', POST method is used instead of the default GET
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
+int setup_curl_handle_init (client_context*const cctx,
+                         url_context* url_ctx,
+                         long cycle_number,
+                         int post_method)
+{
+  batch_context* bctx = cctx->bctx;
+  CURL* handle = cctx->handle;
+
+  if (!cctx || !url_ctx)
+    {
+      return -1;
+    }
+
   curl_easy_reset (handle);
       
       /* Bind the handle to a certain IP-address */
@@ -470,13 +513,6 @@ int setup_curl_handle (client_context*const cctx,
       exit (-1);
     }
   
-  //if (url_ctx->url_uas_num != 0)
-  //  {
-  //    fprintf (stderr,"%s - error: index %ld provided\n", 
-  //              __func__, url_ctx->url_uas_num);
-  //    exit (-2);
-  //   }
-
   /* Set the index to client for smooth-mode */
   if (url_ctx->url_uas_num >= 0)
     cctx->uas_url_curr_index = url_ctx->url_uas_num;
@@ -542,14 +578,6 @@ int setup_curl_handle (client_context*const cctx,
       return -1;
     }
      
-  /* The handle is supposed to be removed before. */
-  if ((m_error = curl_multi_add_handle(bctx->multiple_handle, handle)) != CURLM_OK)
-    {
-      fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
-               __func__, m_error);
-          return -1;
-    }
-
   return 0;
 }
   

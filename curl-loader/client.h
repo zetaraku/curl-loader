@@ -181,4 +181,9 @@ void dump_client (FILE* file, client_context* cctx);
 */
 extern int stop_loading;
 
+#define min(a,b) \
+       ({ typeof (a) _a = (a); \
+           typeof (b) _b = (b); \
+         _a < _b ? _a : _b; })
+
 #endif /*   CLIENT_H */
