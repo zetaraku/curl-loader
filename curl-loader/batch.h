@@ -29,6 +29,7 @@
 
 #include <curl/curl.h>
 
+#include "timer_queue.h"
 #include "url.h"
 #include "statistics.h"
 
@@ -193,6 +194,8 @@ typedef struct batch_context
   */
   int clients_initial_running_num;
 
+  /*  Waiting queue to keep interleev timeouts in smooth mode */
+  timer_queue* waiting_queue;
 
 
    /*--------------- STATISTICS  --------------------------------------------*/

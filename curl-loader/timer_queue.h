@@ -59,6 +59,8 @@ long tq_time_to_nearest_timer (timer_queue*const tq);
   Pop the root node out of the heap
 */
 struct timer_node* tq_remove_nearest_timer (timer_queue*const tq);
+
+int tq_empty (timer_queue*const tq);
                         
 
 #endif /* TIMER_QUEUE_H */

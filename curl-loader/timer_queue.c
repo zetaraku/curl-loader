@@ -208,3 +208,17 @@ long tq_time_to_nearest_timer (timer_queue*const tq)
 
     return ((timer_node *) h->heap[0]->ctx)->next_timer;
 }
+
+/*
+  Pop the root node out of the heap
+*/
+timer_node* tq_remove_nearest_timer (timer_queue*const tq)
+{
+	return (timer_node *) heap_pop ((heap *const) tq);
+}
+
+int tq_empty (timer_queue*const tq)
+{
+	return heap_empty ((heap *const) tq);
+}
+

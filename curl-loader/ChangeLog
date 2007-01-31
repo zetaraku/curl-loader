@@ -1,3 +1,13 @@
+version 0.30
+
+* Added support for gradual increase of clients number at the loading
+   initial phase. Use tag CLIENTS_INITIAL_INC in GENERAL section
+   to specify the number of loading clients to be added each second till
+   the total clients number, specified by CLIENTS_NUM tag.
+
+* The interleave timeout numbers will be interpreted now as milliseconds,
+   not seconds as before. Take care to update your configuration files
+
 version 0.23 06/12/2006, svn-79
 
 * The limitation of 1000 clients per batch have been removed. Try 1500, 2000 and

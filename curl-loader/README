@@ -125,9 +125,7 @@ command line, the client will not be re-scheduled any more, which is usefull
 to get indication of errors by monitoring drop in number of active clients. Look
 in logfile for errors, and when connection timeout error appears, adjust the
 connection timeout using -c command line option. Note, that the smooth mode
-is suitable for login-logoff cycles of load. Still, the limitation in TODO is, that
-it loads url after url without respecting the interleave timeouts. It will be
-hopefully corrected in next versions.
+is suitable for login-logoff cycles of load.
 
 When the first operation is login, storming mode may require large 10-20-30 
 sec time for all clients to accomplish. The indication of that may be 
@@ -164,9 +162,10 @@ url retrival time is also server and network dependent and not always easy
 to predict. The result is that number of clients/requests is a known parameter,
 and number of CAPS is something to be estimated from the time of test and
 number of requests.
-Tag  CLIENTS_INITIAL_INC in batch configuration file serves to assist for the first 
-mode not schedule all clients simulteneous for load, but rather to smooth the 
-initial requests flow for the first url.
+Tag  CLIENTS_INITIAL_INC in batch configuration file serves in gradual increase 
+of clients number at the loading initial phase. Use tag CLIENTS_INITIAL_INC in 
+GENERAL section to specify the number of loading clients to be added each second till
+the total clients number, specified by CLIENTS_NUM tag.
 
 Second option is to define number of CAPS explicitly by the tag 
 CAPS_MODE_STEADY_NUM in the batch configuration file. Thus, every second 
@@ -242,7 +241,8 @@ with the following params in each batch:
 ----------------------------------------------------------------------------
 ########### GENERAL SECTION ################################
 BATCH_NAME= bulk_batch     # The name of the batch. Logfile - bulk_batch.log
-CLIENTS_NUM=3              # Number of clients in the batch
+CLIENTS_NUM=300                 # Number of clients in the batch
+CLIENTS_INITIAL_INC=30 # Clients to be added each second till CLIENTS_NUM
 INTERFACE = eth0           # Name of the network interface from which to load 
 NETMASK=20                 # Netmask in CIDR-notation (number of bits with 1)
 IP_ADDR_MIN= 192.168.1.1   # The client addresses starting address
@@ -276,7 +276,7 @@ LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the
 
 #LOGIN_URL=                 # A valid http or https url to be used for login
 #LOGIN_URL_MAX_TIME=        # Maximum batch time in seconds to login
-#LOGIN_URL_INTERLEAVE_TIME= # Time in seconds to sleep after login
+#LOGIN_URL_INTERLEAVE_TIME= # Time in msec to sleep after login
 #LOGIN_CYCLING=             # If 'y' login should be run in cycles, and not 
                             # just done only once
 
@@ -287,11 +287,11 @@ UAS_URLS_NUM = 2 # Number of urls
 
 UAS_URL=ftp://anonymous:stam@localhost/curl-7.16.0.tar.gz # Rather large file
 UAS_URL_MAX_TIME = 20        # Maximum batch time in seconds to fetch the url
-UAS_URL_INTERLEAVE_TIME = 0  # Time in seconds to sleep after fetching the url
+UAS_URL_INTERLEAVE_TIME = 0  # Time in msec to sleep after fetching the url
 
 UAS_URL= http://localhost/apache2-default/index.html
 UAS_URL_MAX_TIME = 4        # Maximum batch time in seconds to fetch the url
-UAS_URL_INTERLEAVE_TIME = 0 # Time in seconds to sleep after fetching the url
+UAS_URL_INTERLEAVE_TIME = 0 # Time in msec to sleep after fetching the url
 
 # You may add any number of urls providing 3-tags for each url as above,
 # but do not forget to update the UAS_URLS_NUM.
@@ -303,7 +303,7 @@ LOGOFF=n                 # If 'y' or 'Y', login enabled, and other tags of the
 #LOGOFF_POST_STR=        # String to be used for logoff, like "op=logoff" 
 #LOGOFF_URL=             # A valid http or https url to be used for logoff
 #LOGOFF_URL_MAX_TIME=    # Maximum batch time in seconds to logoff
-#LOGOFF_URL_INTERLEAVE_TIME= # Time in seconds to sleep after logoff
+#LOGOFF_URL_INTERLEAVE_TIME= # Time in msec to sleep after logoff
 #LOGOFF_CYCLING=         # If 'y' login should be run in cycles, and not just 
                          # done only once
 --------------------------------------------------------------------------------

@@ -61,8 +61,8 @@ typedef struct url_context
    */
   float url_completion_time;
 
-  /* Sleeping interval after fetching this url. Used in storming mode. */
-  int url_interleave_time;
+  /* Sleeping interval after fetching this url in msec.*/
+  unsigned long url_interleave_time;
 
   /* Application type of url */
   url_appl_type url_appl_type;

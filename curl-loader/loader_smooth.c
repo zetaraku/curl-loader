@@ -44,17 +44,23 @@ static int add_loading_clients (batch_context* bctx);
 static int add_loading_clients_cont (batch_context* bctx, unsigned long now_time);
 static int mget_url_smooth (batch_context* bctx);
 static int mperform_smooth (batch_context* bctx, int* still_running);
+static int schedule_clients_from_waiting_queue (
+	batch_context* bctx, 
+	unsigned long now_time);
 
 static int load_next_step (client_context* cctx, unsigned long now_time);
 
-static int load_error_state (client_context* cctx);
-static int load_init_state (client_context* cctx);
-static int load_login_state (client_context* cctx);
-static int load_uas_state (client_context* cctx);
-static int load_logoff_state (client_context* cctx);
-static int load_final_ok_state (client_context* cctx);
+/*
+  Next step initialization functions relevant the client state.
+*/
+static int load_error_state (client_context* cctx, unsigned long *wait_msec);
+static int load_init_state (client_context* cctx, unsigned long *wait_msec);
+static int load_login_state (client_context* cctx, unsigned long *wait_msec);
+static int load_uas_state (client_context* cctx, unsigned long *wait_msec);
+static int load_logoff_state (client_context* cctx, unsigned long *wait_msec);
+static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec);
 
-typedef int (*load_state_func)  (client_context* cctx);
+typedef int (*load_state_func)  (client_context* cctx, unsigned long *wait_msec);
 
 static const load_state_func load_state_func_table [] =
 {
@@ -68,7 +74,7 @@ static const load_state_func load_state_func_table [] =
 
 static int is_last_cycling_state (client_context* cctx);
 static void advance_cycle_num (client_context* cctx);
-static int on_cycling_completed (client_context* cctx);
+static int on_cycling_completed (client_context* cctx, unsigned long *wait_msec);
 
 static int setup_login_logoff (client_context* cctx, const int login);
 static int setup_uas (client_context* cctx);
@@ -90,6 +96,18 @@ int user_activity_smooth (client_context* cctx_array)
       return -1;
     }
   
+  /* Make smooth-mode specific initializations */
+  if (tq_init (
+			bctx->waiting_queue,
+			bctx->client_num, /* tq size */
+			0, /* tq increase step; 0 - means don't increase */
+			bctx->client_num /* number of nodes to prealloc */
+			) == -1)
+  {
+     fprintf (stderr, "%s - error: failed to initialize waiting queue.\n", __func__);
+     return -1;
+  }
+  
   bctx->start_time = bctx->last_measure = get_tick_count ();
   bctx->sec_current = 0;
   bctx->active_clients_count = 0;
@@ -101,23 +119,23 @@ int user_activity_smooth (client_context* cctx_array)
   }
   
   while (bctx->active_clients_count || bctx->do_clients_gradual_inc)
-	{
+  {
 	  if (!bctx->active_clients_count && bctx->do_clients_gradual_inc)
-		{
-			if (add_loading_clients (bctx) == -1)
-			{
-				fprintf (stderr, "%s error: add_loading_clients () failed in while.\n", 
-								 __func__) ;
-				return -1;
-			}
-		}
+	  {
+		  if (add_loading_clients (bctx) == -1)
+		  {
+			  fprintf (stderr, "%s error: add_loading_clients () failed in while.\n", 
+						  __func__) ;
+			  return -1;
+		  }
+	  }
 
 	  if (mget_url_smooth (bctx) == -1) 
 	  {
 		  fprintf (stderr, "%s error: mget_url () failed.\n", __func__) ;
 		  return -1;
 	  }
-	}
+  }
 
   dump_final_statistics (cctx_array);
 
@@ -160,8 +178,8 @@ static int add_loading_clients (batch_context* bctx)
 	*/
 	long j;
 	for (j = bctx->clients_initial_running_num; 
-			 j < bctx->clients_initial_running_num + clients_sched; 
-			 j++)
+		  j < bctx->clients_initial_running_num + clients_sched; 
+		  j++)
 	{
 		/* Runs load_init_state () for each new client (context) */
 		if (load_next_step (&bctx->cctx_array[j], bctx->start_time) == -1)
@@ -278,7 +296,7 @@ static int mget_url_smooth (batch_context* bctx)
 static int mperform_smooth (batch_context* bctx, int* still_running)
 {
 	CURLM *mhandle =  bctx->multiple_handle;
-	unsigned long now;
+	unsigned long now_time;
 	int cycle_counter = 0;	
 	int msg_num = 0;
 	CURLMsg *msg;
@@ -287,8 +305,8 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 			curl_multi_perform(mhandle, still_running))
       ;
 
-	now = get_tick_count ();
-	if ((now - bctx->last_measure) > snapshot_timeout) 
+	now_time = get_tick_count ();
+	if ((now_time - bctx->last_measure) > snapshot_timeout) 
 	{
 		dump_intermediate_and_advance_total_statistics (bctx);
 	}
@@ -321,11 +339,11 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
 			if (! (++cycle_counter % TIME_RECALCULATION_MSG_NUM))
 			{
-				now = get_tick_count ();
+				now_time = get_tick_count ();
 			}
 
 			/*cstate client_state =  */
-			load_next_step (cctx, now);
+			load_next_step (cctx, now_time);
 			//fprintf (stderr, "%s - after load_next_step client state %d.\n", __func__, client_state);
 
 			if (msg_num <= 0)
@@ -335,6 +353,43 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
 			cycle_counter++;
 		}
+	}
+
+	schedule_clients_from_waiting_queue (bctx, now_time);
+
+	return 0;
+}
+
+static int
+schedule_clients_from_waiting_queue (batch_context* bctx, unsigned long now_time)
+{
+	timer_queue* tq = bctx->waiting_queue;
+
+	if (!tq)
+		return -1;
+
+	if (tq_empty (tq))
+		return 0;
+
+	while (! tq_empty (tq))
+	{
+		long time_nearest = tq_time_to_nearest_timer (tq);
+
+		if (time_nearest <= (long)now_time)
+		{
+			timer_node* tnode = tq_remove_nearest_timer (tq);
+
+			if (! tnode)
+				return -1;
+
+			client_context* cctx = (client_context *) tnode;
+						
+			/* Schedule the client immediately */
+			if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
+				bctx->active_clients_count++;	
+		}
+		else
+			break;
 	}
 
 	return 0;
@@ -356,6 +411,7 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 {
 	batch_context* bctx = cctx->bctx;
 	int rval_load = CSTATE_ERROR;
+	unsigned long interleave_waiting_time = 0;
 	
 	/* Remove handle from the multiple handle, if it was added there before. */
 	if (cctx->client_state != CSTATE_INIT)
@@ -368,10 +424,13 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 	}
 
 	/* 
-		 Initialize virtual client kept CURL handle for the 
-		 next step of loading.
+		 Initialize virtual client's CURL handle for the 
+		 next step of loading by using load_* function relevant
+		 for the client state.
 	*/
-	rval_load = load_state_func_table[cctx->client_state + 1] (cctx);
+	rval_load = load_state_func_table[cctx->client_state + 1] (
+		cctx, 
+		&interleave_waiting_time);
 
 	/* 
 		 If there are still clients not scheduled, continue their gradual
@@ -389,9 +448,25 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 	*/
 	if (rval_load != CSTATE_ERROR && rval_load != CSTATE_FINISHED_OK) 
 	{
-		if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
+		if (! interleave_waiting_time)
 		{
-			bctx->active_clients_count++;
+			/* Schedule the client immediately */
+			if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
+				bctx->active_clients_count++;
+		}
+		else
+		{
+			/* 
+				 Postpone client scheduling for the interleave_waiting_time msec by 
+				 placing it to the timer queue. 
+			*/
+			cctx->tn.next_timer = now_time + interleave_waiting_time;
+
+			if (tq_schedule_timer (bctx->waiting_queue, (struct timer_node *) cctx) == -1)
+			{
+				fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
+				return -1;
+			}
 		}
 	}
 	return rval_load;
@@ -449,17 +524,17 @@ static void advance_cycle_num (client_context* cctx)
 *
 * Return Code/Output - CSTATE enumeration with client state
 ****************************************************************************************/
-static int on_cycling_completed (client_context* cctx)
+static int on_cycling_completed (client_context* cctx, unsigned long *wait_msec)
 {
-  batch_context* bctx = cctx->bctx;
+	batch_context* bctx = cctx->bctx;
 
-  /* 
-     Go to not-cycling logoff, else to the finish-line. 
-  */
-  if (bctx->do_logoff && !bctx->logoff_cycling)
-    return load_logoff_state (cctx);
+	/* 
+		 Go to not-cycling logoff, else to the finish-line. 
+	*/
+	if (bctx->do_logoff && !bctx->logoff_cycling)
+		return load_logoff_state (cctx, wait_msec);
 
-  return (cctx->client_state = CSTATE_FINISHED_OK);
+	return (cctx->client_state = CSTATE_FINISHED_OK);
 }
 
 /****************************************************************************************
@@ -569,19 +644,28 @@ static int setup_uas (client_context* cctx)
 * Description - Called by load_next_step () for setting up of the very first url to fetch
 *
 * Input -       *cctx - pointer to the client context
+*                     *wait_msec - pointer to time to wait till next scheduling (interleave time).
 *
 * Return Code/Output - CSTATE enumeration with the state of loading
 ****************************************************************************************/
-static int load_init_state (client_context* cctx)
+static int load_init_state (client_context* cctx, unsigned long *wait_msec)
 {
   batch_context* bctx = cctx->bctx;
 
+  *wait_msec = 0;
+
   if (bctx->do_login) /* Normally, the very first operation is login, but who is normal? */
-      return load_login_state (cctx);
+  {
+	  return load_login_state (cctx, wait_msec);
+  }
   else if (bctx->do_uas) /* Sometimes, no login is defined. Just a traffic-gen */
-      return load_uas_state (cctx);
+  {
+	  return load_uas_state (cctx, wait_msec);
+  }
   else if (bctx->do_logoff) /* Logoff only?  If this is what a user wishing ...  */
-      return load_logoff_state (cctx);
+  {
+	  return load_logoff_state (cctx, wait_msec);
+  }
 
   return (cctx->client_state = CSTATE_ERROR);
 }
@@ -593,31 +677,38 @@ static int load_init_state (client_context* cctx)
 *                     flag <error_recovery_client> is not false, re-schedules the client for next cycle 
 *                     of loading.
 * Input -       *cctx - pointer to the client context
+*                     *wait_msec - pointer to time to wait till next scheduling (interleave time).
 *
 * Return Code/Output - CSTATE enumeration with the state of loading
 ****************************************************************************************/
-static int load_error_state (client_context* cctx)
+static int load_error_state (client_context* cctx, unsigned long *wait_msec)
 {
-  batch_context* bctx = cctx->bctx;
+	batch_context* bctx = cctx->bctx;
 
-  if (error_recovery_client)
-    {
-      advance_cycle_num (cctx);
-
-      if (cctx->cycle_num >= bctx->cycles_num)
-        {
-          return (cctx->client_state = CSTATE_ERROR);
-        }
-      else
-        {
-          if (bctx->do_login && bctx->login_cycling)
-            return load_login_state (cctx);
-          else if (bctx->do_uas)
-            return load_uas_state (cctx);
-          else if (bctx->do_logoff && bctx->logoff_cycling)
-            return load_logoff_state (cctx);
-        }
-    }
+	if (error_recovery_client)
+	{
+		advance_cycle_num (cctx);
+		
+		if (cctx->cycle_num >= bctx->cycles_num)
+		{
+			return (cctx->client_state = CSTATE_ERROR);
+		}
+		else
+		{
+			if (bctx->do_login && bctx->login_cycling)
+			{
+				return load_login_state (cctx, wait_msec);
+			}
+			else if (bctx->do_uas)
+			{
+				return load_uas_state (cctx, wait_msec);
+			}
+			else if (bctx->do_logoff && bctx->logoff_cycling)
+			{
+				return load_logoff_state (cctx, wait_msec);
+			}
+		}
+	}
  
   /* Thus, the client will not be scheduled for load any more. */
   return (cctx->client_state = CSTATE_ERROR);
@@ -630,10 +721,11 @@ static int load_error_state (client_context* cctx)
 *                        state to schedule the next loading url.
 *
 * Input -       *cctx - pointer to the client context
+*                     *wait_msec - pointer to time to wait till next scheduling (interleave time).
 *
 * Return Code/Output - CSTATE enumeration with the state of loading
 ****************************************************************************************/
-static int load_login_state (client_context* cctx)
+static int load_login_state (client_context* cctx, unsigned long *wait_msec)
 {
   batch_context* bctx = cctx->bctx;
 
@@ -642,43 +734,48 @@ static int load_login_state (client_context* cctx)
     Sometimes, the operation contains two elements: GET and POST.
   */
   if (cctx->client_state == CSTATE_LOGIN)
-    {
-      if ((bctx->login_req_type != LOGIN_REQ_TYPE_GET_AND_POST) ||
-          (bctx->login_req_type == LOGIN_REQ_TYPE_GET_AND_POST && !cctx->get_post_count))
-        {
-          /* Accomplished a single login operation. */
+	{
+		if ((bctx->login_req_type != LOGIN_REQ_TYPE_GET_AND_POST) ||
+				(bctx->login_req_type == LOGIN_REQ_TYPE_GET_AND_POST && !cctx->get_post_count))
+		{
+			/* 
+				 Indeed, accomplished a single login operation. 
+			*/
 
-          if (is_last_cycling_state (cctx))
-            {
-              /*
-                If we are login cycling and the last/only cycling state,
-                we are in charge for advancing cycles counter.
-              */
-              advance_cycle_num (cctx);
+			/* Mind the interleave timeout after login */
+			*wait_msec = bctx->login_url.url_interleave_time;
 
-              if (cctx->cycle_num >= bctx->cycles_num)
-                {
-                  /* Either jump to logoff or to finish_ok. */
-                  return on_cycling_completed (cctx);
-                }
-              else
-                {
-                  /* 
-					 Configured to cycle, but the state is the last cycling state 
-                     and also the only cycling state, therefore, continue login. 
-				  */
-                  return setup_login_logoff (cctx, 1); /* 1 - means login */
-                }
-            }
+			if (is_last_cycling_state (cctx))
+			{
+				/*
+					If we are login cycling and the last/only cycling state,
+					we are in charge for advancing cycles counter.
+				*/
+				advance_cycle_num (cctx);
+
+				if (cctx->cycle_num >= bctx->cycles_num)
+				{
+					/* Either jump to logoff or to finish_ok. */
+					return on_cycling_completed (cctx, wait_msec);
+				}
+				else
+				{
+					/* 
+						 Configured to cycle, but the state is the last cycling state 
+						 and the only cycling state, therefore, continue login. 
+					*/
+					return setup_login_logoff (cctx, 1); /* 1 - means login */
+				}
+			}
  
-          if (bctx->do_uas)
-            return load_uas_state (cctx);
-          else if (bctx->do_logoff)
-            return load_logoff_state (cctx);
-          else
-            return (cctx->client_state = CSTATE_FINISHED_OK);
-        }
-    }
+			if (bctx->do_uas)
+				return load_uas_state (cctx, wait_msec);
+			else if (bctx->do_logoff)
+				return load_logoff_state (cctx, wait_msec);
+			else
+				return (cctx->client_state = CSTATE_FINISHED_OK);
+		}
+	}
 
   /* Non-LOGIN states are all falling below: */
   return setup_login_logoff (cctx, 1);
@@ -690,54 +787,59 @@ static int load_login_state (client_context* cctx)
 * Description - Called by load_next_step () for the client in CSTATE_UAS state to schedule the
 *                     next loading url.
 * Input -       *cctx - pointer to the client context
+*                     *wait_msec - pointer to time to wait till next scheduling (interleave time).
 *
 * Return Code/Output - CSTATE enumeration with the state of loading
 ****************************************************************************************/
-static int load_uas_state (client_context* cctx)
+static int load_uas_state (client_context* cctx, unsigned long *wait_msec)
 { 
   batch_context* bctx = cctx->bctx;
 
   if (cctx->client_state == CSTATE_UAS_CYCLING)
-    {
-      cctx->uas_url_curr_index++;
+	{
+		/* Mind the interleave timeout after each url, if any. */
+		*wait_msec = bctx->uas_url_ctx_array[cctx->uas_url_curr_index].url_interleave_time;
 
-       if (cctx->uas_url_curr_index >= (size_t)(bctx->uas_urls_num))
-        {
-          /* Finished with all the urls for a single UAS -cycle. */
+		/* Now, advance the url index */
+		cctx->uas_url_curr_index++;
 
-          cctx->uas_url_curr_index = 0;
+		if (cctx->uas_url_curr_index >= (size_t)(bctx->uas_urls_num))
+		{
+			/* Finished with all the urls for a single UAS -cycle. */
+
+			cctx->uas_url_curr_index = 0;
  
-          if (is_last_cycling_state (cctx))
-            {
-              /* If UAS is the last cycling state, advance cycle counter. */
-              advance_cycle_num (cctx);
+			if (is_last_cycling_state (cctx))
+			{
+				/* If UAS is the last cycling state, advance cycle counter. */
+				advance_cycle_num (cctx);
 
-              if (cctx->cycle_num >= bctx->cycles_num)
-                {
-                  /* Either logoff or finish_ok. */
-                  return on_cycling_completed (cctx);
-                }
-              else
-                {
-                  /* Continue cycling - take another cycle */
-                  if (bctx->do_login && bctx->login_cycling)
-                    return load_login_state  (cctx);
-                  else
-                    return setup_uas (cctx);
-                }
-            }
+				if (cctx->cycle_num >= bctx->cycles_num)
+				{
+					/* Either logoff or finish_ok. */
+					return on_cycling_completed (cctx, wait_msec);
+				}
+				else
+				{
+					/* Continue cycling - take another cycle */
+					if (bctx->do_login && bctx->login_cycling)
+						return load_login_state  (cctx, wait_msec);
+					else
+						return setup_uas (cctx);
+				}
+			}
 
-          /* 
-             We are not the last cycling state. A guess is, that the
-             next state is logoff with cycling.
-          */
-          return load_logoff_state (cctx);
-        }
-    }
+			/* 
+				 We are not the last cycling state. A guess is, that the
+				 next state is logoff with cycling.
+			*/
+			return load_logoff_state (cctx, wait_msec);
+		}
+	}
   else
-    {
-      cctx->uas_url_curr_index = 0;
-    }
+	{
+		cctx->uas_url_curr_index = 0;
+	}
 
   /* Non-UAS states are all falling below: */
   return setup_uas (cctx);
@@ -749,10 +851,11 @@ static int load_uas_state (client_context* cctx)
 * Description - Called by load_next_step () for the client in CSTATE_LOGOFF state to 
 *                     schedule the next loading url.
 * Input -       *cctx - pointer to the client context
+*                     *wait_msec - pointer to time to wait till next scheduling (interleave time).
 *
 * Return Code/Output - CSTATE enumeration with the state of loading
 ****************************************************************************************/
-static int load_logoff_state (client_context* cctx)
+static int load_logoff_state (client_context* cctx, unsigned long *wait_msec)
 {
   batch_context* bctx = cctx->bctx;
 
@@ -761,49 +864,55 @@ static int load_logoff_state (client_context* cctx)
     Sometimes, the operation contains two elements: GET and POST.
   */
   if (cctx->client_state == CSTATE_LOGOFF)
-    {
-      if ((bctx->logoff_req_type != LOGOFF_REQ_TYPE_GET_AND_POST) ||
-          (bctx->logoff_req_type == LOGOFF_REQ_TYPE_GET_AND_POST && !cctx->get_post_count))
-        {
-          /* 
-             Indeed, we have accomplished a single logoff operation. 
-          */
-          if (is_last_cycling_state (cctx))
-            {
-              /*
-                If logoff cycling ,we are in charge for advancing cycles counter.
-              */
-              advance_cycle_num (cctx);
+	{
+		if ((bctx->logoff_req_type != LOGOFF_REQ_TYPE_GET_AND_POST) ||
+				(bctx->logoff_req_type == LOGOFF_REQ_TYPE_GET_AND_POST && !cctx->get_post_count))
+		{
+			/* 
+				 Indeed, we have accomplished a single logoff operation. 
+			*/
 
-              if (cctx->cycle_num >= bctx->cycles_num)
-                {
-                  return on_cycling_completed (cctx); /* Goes to finish-ok */
-                }
-              else
-                {
-                  /*
-                    Continue cycling - take another cycle
-                  */
-                  if (bctx->do_login && bctx->login_cycling)
-                    return load_login_state  (cctx);
-                  else if (bctx->do_uas)
-                    return load_uas_state (cctx);
-                  else /* logoff is the only cycling state? Sounds strange, but allow it */
-                    return setup_login_logoff (cctx, 0); /* 0 - means logoff */
-                }
-            }
+			/* Mind the interleave timeout after login */
+			*wait_msec = bctx->logoff_url.url_interleave_time;
+
+			if (is_last_cycling_state (cctx))
+			{
+				/*
+					If logoff cycling ,we are in charge for advancing cycles counter.
+				*/
+				advance_cycle_num (cctx);
+
+				if (cctx->cycle_num >= bctx->cycles_num)
+				{
+					return on_cycling_completed (cctx, wait_msec); /* Goes to finish-ok */
+				}
+				else
+				{
+					/*
+						Continue cycling - take another cycle
+					*/
+					if (bctx->do_login && bctx->login_cycling)
+						return load_login_state  (cctx, wait_msec);
+					else if (bctx->do_uas)
+						return load_uas_state (cctx, wait_msec);
+					else /* logoff is the only cycling state? Sounds strange, but allow it */
+						return setup_login_logoff (cctx, 0); /* 0 - means logoff */
+				}
+			}
  
-          /* If not doing logoff cycling, means single logoff done - go to finish-ok */
-          return (cctx->client_state = CSTATE_FINISHED_OK);
-        }
-    }
+			/* If not doing logoff cycling, means single logoff done - go to finish-ok */
+			return (cctx->client_state = CSTATE_FINISHED_OK);
+		}
+	}
 
   /* Non-LOGOFF states are all falling below: */
   return setup_login_logoff (cctx, 0);
 }
 
-static int load_final_ok_state (client_context* cctx)
+static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec)
 {
 	(void) cctx;
+	(void) wait_msec;
+
 	return CSTATE_FINISHED_OK;
 }

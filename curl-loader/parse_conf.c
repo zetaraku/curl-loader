@@ -444,7 +444,7 @@ static int login_url_max_time_parser (batch_context*const bctx, char*const value
 }
 static int login_url_interleave_time_parser (batch_context*const bctx, char*const value)
 {
-    bctx->login_url.url_interleave_time = atoi (value);
+    bctx->login_url.url_interleave_time = atol (value);
     return 0;
 }
 static int login_cycling_parser (batch_context*const bctx, char*const value)
@@ -525,7 +525,7 @@ static int uas_url_max_time_parser (batch_context*const bctx, char*const value)
 static int uas_url_interleave_time_parser (batch_context*const bctx, char*const value)
 {
     bctx->uas_url_ctx_array[bctx->url_index].url_interleave_time = 
-        atoi(value);
+        atol(value);
     bctx->url_index++; /* advance the position */
     return 0;
 }
@@ -592,7 +592,7 @@ static int logoff_url_max_time_parser (batch_context*const bctx, char*const valu
 }
 static int logoff_url_interleave_time_parser (batch_context*const bctx, char*const value)
 {
-   bctx->logoff_url.url_interleave_time = atoi (value);
+   bctx->logoff_url.url_interleave_time = atol (value);
    return 0;
 }
 static int logoff_cycling_parser (batch_context*const bctx, char*const value)
@@ -787,14 +787,6 @@ static int validate_batch_login (batch_context*const bctx)
         return -1;
     }
 
-    if (bctx->login_url.url_interleave_time < 0)
-    {
-        fprintf (stderr, 
-                 "%s - error: LOGIN_URL_INTERLEAVE_TIME should not be negative.\n", 
-                 __func__);
-        return -1;
-    }
-
     return 0;
 }
 
@@ -873,13 +865,6 @@ static int validate_batch_logoff (batch_context*const bctx)
         return -1;
     }
 
-    if (bctx->logoff_url.url_interleave_time < 0)
-    {
-        fprintf (stderr, 
-                 "%s - error: LOGOFF_URL_INTERLEAVE_TIME should not be negative.\n", 
-                 __func__);
-        return -1;
-    }
     return 0;
 }
 

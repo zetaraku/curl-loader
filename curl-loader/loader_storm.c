@@ -113,7 +113,7 @@ int user_activity_storm (client_context*const cctx_array)
         }
 
       /* Sleep in between the login urls. */
-      sleep (bctx->login_url.url_interleave_time);
+      usleep (1000* bctx->login_url.url_interleave_time);
 
       /*
          UAS - user activity simulation, fetching urls from the UAS-array.
@@ -160,7 +160,7 @@ int user_activity_storm (client_context*const cctx_array)
           //        __func__, cycle, u_index);
 
           /* Sleep in between the urls, simulating user-activity. */
-          sleep (bctx->uas_url_ctx_array[u_index].url_interleave_time);
+          usleep (1000*bctx->uas_url_ctx_array[u_index].url_interleave_time);
         }
 
       /* 
@@ -176,7 +176,7 @@ int user_activity_storm (client_context*const cctx_array)
         }
 
       /* Sleep in between the logoff urls. */
-      sleep (bctx->logoff_url.url_interleave_time);
+      usleep (1000 * bctx->logoff_url.url_interleave_time);
  
       /* 
          After completing a cycle - rewind the file. Thus, we are keeping the current run
@@ -311,7 +311,7 @@ static int posting_credentials_storm (client_context*const cctx_array, int in_of
      An average user is used to read and think a bit 
      prior to posting his credentials.
   */
-  sleep (sleep_time);
+  usleep (1000*sleep_time);
 
   /* Add the POST fields */
   for (i = 0 ; i < bctx->client_num; i++)
