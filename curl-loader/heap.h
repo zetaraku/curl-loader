@@ -30,7 +30,7 @@ typedef struct hnode
   /* Base for the "allocatable" property. */
   allocatable alloc;	
   
-  /* 
+  /*
      The unique id of the node. When used in timer-queue, 
      we place here timer-id.
   */
@@ -105,6 +105,7 @@ typedef struct heap
 } heap;
 
 
+void node_reset (hnode*const nd);
 
 int heap_init (heap*const h,
                size_t initial_heap_size,

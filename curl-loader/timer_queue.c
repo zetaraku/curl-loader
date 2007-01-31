@@ -88,7 +88,9 @@ long tq_schedule_timer (timer_queue*const tq,
         return -1;
     }
     
-    if (tnode->next_timer < 0 || tnode->period < 0 || tnode->period < TQ_RESOLUTION)
+    if (tnode->next_timer < 0 || tnode->period < 0 || 
+				(tnode->period && tnode->period < TQ_RESOLUTION)
+			)
     {
         fprintf (stderr, 
                  "%s - error: tnode fields outside of valid range: next_timer (%ld), period (%ld).\n",
@@ -153,7 +155,8 @@ int tq_cancel_timer (timer_queue*const tq, long timer_id)
     }
     else
     {
-        memset (node, 0, sizeof (*node));
+	   node_reset (node);
+
         mpool_return_obj (h->nodes_mpool, (allocatable *) node);
     }
     
@@ -180,7 +183,8 @@ int tq_cancel_timers (timer_queue*const tq, timer_node* const tnode)
 
             if (node)
             {
-                memset (node, 0, sizeof (*node));
+			 node_reset (node);
+
                 mpool_return_obj (h->nodes_mpool, (allocatable *) node);
                 // to count or not to count?
             }
@@ -212,9 +216,21 @@ long tq_time_to_nearest_timer (timer_queue*const tq)
 /*
   Pop the root node out of the heap
 */
-timer_node* tq_remove_nearest_timer (timer_queue*const tq)
+void* tq_remove_nearest_timer (timer_queue*const tq)
 {
-	return (timer_node *) heap_pop ((heap *const) tq);
+	heap* h = (heap *) tq;
+	hnode* node = heap_pop ((heap *const) tq);
+
+	if (!node)
+		return NULL;
+
+	void* context = node->ctx;
+
+	node_reset (node);
+
+	mpool_return_obj (h->nodes_mpool, (allocatable *)node);
+
+	return context;
 }
 
 int tq_empty (timer_queue*const tq)

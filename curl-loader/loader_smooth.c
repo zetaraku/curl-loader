@@ -36,6 +36,7 @@
 #include "batch.h"
 #include "client.h"
 #include "conf.h"
+#include "heap.h"
 
 #define DEFAULT_SMOOTH_URL_COMPLETION_TIME 6.0
 #define TIME_RECALCULATION_MSG_NUM 100
@@ -88,58 +89,68 @@ static int setup_uas (client_context* cctx);
 ****************************************************************************************/
 int user_activity_smooth (client_context* cctx_array)
 {
-  batch_context* bctx = cctx_array->bctx;
+	batch_context* bctx = cctx_array->bctx;
 
-  if (!bctx)
-    {
-      fprintf (stderr, "%s - error: bctx is a NULL pointer.\n", __func__);
-      return -1;
-    }
+	if (!bctx)
+	{
+		fprintf (stderr, "%s - error: bctx is a NULL pointer.\n", __func__);
+		return -1;
+	}
+
+	/* Make smooth-mode specific initializations */
+
+	if (! (bctx->waiting_queue = calloc (1, sizeof (heap))))
+	{
+		fprintf (stderr, "%s - error: failed to allocate queue.\n", __func__);
+		return -1;
+	}
   
-  /* Make smooth-mode specific initializations */
-  if (tq_init (
-			bctx->waiting_queue,
-			bctx->client_num, /* tq size */
-			0, /* tq increase step; 0 - means don't increase */
-			bctx->client_num /* number of nodes to prealloc */
-			) == -1)
-  {
-     fprintf (stderr, "%s - error: failed to initialize waiting queue.\n", __func__);
-     return -1;
-  }
+	if (tq_init (
+				bctx->waiting_queue,
+				bctx->client_num, /* tq size */
+				0, /* tq increase step; 0 - means don't increase */
+				bctx->client_num /* number of nodes to prealloc */
+				) == -1)
+	{
+		fprintf (stderr, "%s - error: failed to initialize waiting queue.\n", __func__);
+		return -1;
+	}
   
-  bctx->start_time = bctx->last_measure = get_tick_count ();
-  bctx->sec_current = 0;
-  bctx->active_clients_count = 0;
+	bctx->start_time = bctx->last_measure = get_tick_count ();
+	bctx->sec_current = 0;
+	bctx->active_clients_count = 0;
 
-  if (add_loading_clients (bctx) == -1)
-  {
-	  fprintf (stderr, "%s error: add_loading_clients () failed.\n", __func__) ;
-	  return -1;
-  }
+	if (add_loading_clients (bctx) == -1)
+	{
+		fprintf (stderr, "%s error: add_loading_clients () failed.\n", __func__);
+		return -1;
+	}
   
-  while (bctx->active_clients_count || bctx->do_clients_gradual_inc)
-  {
-	  if (!bctx->active_clients_count && bctx->do_clients_gradual_inc)
-	  {
-		  if (add_loading_clients (bctx) == -1)
-		  {
-			  fprintf (stderr, "%s error: add_loading_clients () failed in while.\n", 
-						  __func__) ;
-			  return -1;
-		  }
-	  }
+	while (bctx->active_clients_count ||
+				 bctx->do_clients_gradual_inc ||
+				 ! tq_empty (bctx->waiting_queue)
+		)
+	{
+		if (!bctx->active_clients_count && bctx->do_clients_gradual_inc)
+		{
+			if (add_loading_clients (bctx) == -1)
+			{
+				fprintf (stderr, "%s error: add_loading_clients () failed in while.\n", 
+								 __func__) ;
+				return -1;
+			}
+		}
 
-	  if (mget_url_smooth (bctx) == -1) 
-	  {
-		  fprintf (stderr, "%s error: mget_url () failed.\n", __func__) ;
-		  return -1;
-	  }
-  }
+		if (mget_url_smooth (bctx) == -1) 
+		{
+			fprintf (stderr, "%s error: mget_url () failed.\n", __func__) ;
+			return -1;
+		}
+	}
 
-  dump_final_statistics (cctx_array);
+	dump_final_statistics (cctx_array);
 
-  return 0;
+	return 0;
 }
 
 /****************************************************************************************
@@ -377,16 +388,21 @@ schedule_clients_from_waiting_queue (batch_context* bctx, unsigned long now_time
 
 		if (time_nearest <= (long)now_time)
 		{
-			timer_node* tnode = tq_remove_nearest_timer (tq);
+			client_context* cctx = (client_context *) tq_remove_nearest_timer (tq);
 
-			if (! tnode)
+			if (!cctx)
+			{
+				fprintf (stderr, "%s - error: cctx from tq_remove_nearest_timer is NULL.\n", 
+								 __func__);
 				return -1;
-
-			client_context* cctx = (client_context *) tnode;
+			}
 						
 			/* Schedule the client immediately */
 			if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
-				bctx->active_clients_count++;	
+			{
+				bctx->active_clients_count++;
+				//fprintf (stderr, "%s - client added after wq to work.\n", __func__);
+			}
 		}
 		else
 			break;
@@ -466,6 +482,10 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 			{
 				fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
 				return -1;
+			}
+			else
+			{
+				//fprintf (stderr, "%s - scheduled client to wq.\n", __func__);
 			}
 		}
 	}

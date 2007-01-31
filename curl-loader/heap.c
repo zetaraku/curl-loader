@@ -51,6 +51,16 @@ static void filter_up (heap*const h, size_t index);
 static void filter_down (heap*const h, size_t index);
 
 
+void node_reset (hnode*const nd)
+{
+	if (!nd)
+		return;
+
+	nd->node_id = 0;
+	nd->ctx = 0;
+	nd->alloc.link.next = 0;
+}
+
 int heap_init (heap*const h,
                size_t initial_heap_size,
                size_t increase_step,

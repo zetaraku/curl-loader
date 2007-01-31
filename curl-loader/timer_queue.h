@@ -56,9 +56,10 @@ int tq_cancel_timers (timer_queue*const tq, struct timer_node* const tnode);
 long tq_time_to_nearest_timer (timer_queue*const tq);
 
 /*
-  Pop the root node out of the heap
+	Pop the root node out of the heap and return it to allocator.
+	Returns pointer to the timer context.
 */
-struct timer_node* tq_remove_nearest_timer (timer_queue*const tq);
+void* tq_remove_nearest_timer (timer_queue*const tq);
 
 int tq_empty (timer_queue*const tq);
                         
