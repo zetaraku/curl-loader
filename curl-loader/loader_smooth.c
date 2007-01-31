@@ -40,8 +40,8 @@
 #define DEFAULT_SMOOTH_URL_COMPLETION_TIME 6.0
 #define TIME_RECALCULATION_MSG_NUM 100
 
-static int schedule_initial (batch_context* bctx);
-static int schedule_initial_continue (batch_context* bctx, unsigned long now_time);
+static int add_loading_clients (batch_context* bctx);
+static int add_loading_clients_cont (batch_context* bctx, unsigned long now_time);
 static int mget_url_smooth (batch_context* bctx);
 static int mperform_smooth (batch_context* bctx, int* still_running);
 
@@ -94,19 +94,19 @@ int user_activity_smooth (client_context* cctx_array)
   bctx->sec_current = 0;
   bctx->active_clients_count = 0;
 
-  if (schedule_initial (bctx) == -1)
+  if (add_loading_clients (bctx) == -1)
   {
-	  fprintf (stderr, "%s error: schedule_initial () failed.\n", __func__) ;
+	  fprintf (stderr, "%s error: add_loading_clients () failed.\n", __func__) ;
 	  return -1;
   }
   
-  while (bctx->active_clients_count || bctx->do_start_load_gradual)
+  while (bctx->active_clients_count || bctx->do_clients_gradual_inc)
 	{
-	  if (!bctx->active_clients_count && bctx->do_start_load_gradual)
+	  if (!bctx->active_clients_count && bctx->do_clients_gradual_inc)
 		{
-			if (schedule_initial (bctx) == -1)
+			if (add_loading_clients (bctx) == -1)
 			{
-				fprintf (stderr, "%s error: schedule_initial () failed in while.\n", 
+				fprintf (stderr, "%s error: add_loading_clients () failed in while.\n", 
 								 __func__) ;
 				return -1;
 			}
@@ -125,7 +125,7 @@ int user_activity_smooth (client_context* cctx_array)
 }
 
 /****************************************************************************************
-* Function name - schedule_initial
+* Function name - add_loading_clients
 *
 * Description - First initialization of our virtual clients (CURL handles)
 *                       setting first url to fetch and scheduling them according to 
@@ -134,12 +134,12 @@ int user_activity_smooth (client_context* cctx_array)
 * Input -       *bctx - pointer to the batch of contexts
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-static int schedule_initial (batch_context* bctx)
+static int add_loading_clients (batch_context* bctx)
 {
 	/* Return, if initial gradual scheduling of all new clients is accomplished */
 	if (bctx->client_num <= bctx->clients_initial_running_num)
 	{
-		bctx->do_start_load_gradual = 0;
+		bctx->do_clients_gradual_inc = 0;
 		return 0;
 	}
 
@@ -149,14 +149,14 @@ static int schedule_initial (batch_context* bctx)
 		bctx->client_num; 
 
 	/* 
-		 Disable do_start_load_gradual to prevent recursive 
+		 Disable do_clients_gradual_inc flag to prevent recursive 
 		 calls in load_next_step () 
 	*/
-	bctx->do_start_load_gradual = 0;
+	bctx->do_clients_gradual_inc = 0;
 
 	/* 
 		 Schedule new clients by initializing thier CURL handle with
-		 URL, etc paramaters and adding it to MCURL multi-handle.
+		 URL, etc. parameters and adding it to MCURL multi-handle.
 	*/
 	long j;
 	for (j = bctx->clients_initial_running_num; 
@@ -173,14 +173,14 @@ static int schedule_initial (batch_context* bctx)
 
 	/* 
 		 Re-calculate assisting counters and enable back 
-		 do_start_load_gradual, if required.
+		 do_clients_gradual_inc, if required.
 	*/
 	if (bctx->clients_initial_inc)
 	{
 		bctx->clients_initial_running_num += clients_sched;
 		if (bctx->clients_initial_running_num < bctx->client_num)
 		{
-			bctx->do_start_load_gradual = 1;
+			bctx->do_clients_gradual_inc = 1;
 		}
 	}
 	
@@ -188,26 +188,27 @@ static int schedule_initial (batch_context* bctx)
 }
 
 /****************************************************************************************
-* Function name - schedule_initial_continue
+* Function name - add_loading_clients_cont
 *
 * Description - Continue initialization of our virtual clients (CURL handles)
 *                       by adding more clients each new second and scheduling 
-*                       them according to clients increment for initial gradual loading.
+*                       them according to clients increment for initial gradual loading
+*                       using add_loading_clients () function.
 *
 * Input -       *bctx - pointer to the batch of contexts
 *                   now_time -  current time in millisecond ticks
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-static int schedule_initial_continue (batch_context* bctx, unsigned long now_time)
+static int add_loading_clients_cont (batch_context* bctx, unsigned long now_time)
 {
 	long sec = (now_time - bctx->start_time)/1000;
 
 	if (sec > bctx->sec_current)
 	{
-		/* New second. Calling to schedule more clients. */
 		bctx->sec_current = sec;
 		
-		return schedule_initial (bctx);
+		/* New second. Calling to schedule more clients. */
+		return add_loading_clients (bctx);
 	}
 	return 0;
 }
@@ -377,9 +378,9 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 		 scheduling. It makes scheduling of a certain number of clients
 		 at each new second of the run-time.
 	*/
-	if (bctx->do_start_load_gradual)
+	if (bctx->do_clients_gradual_inc)
 	{
-		schedule_initial_continue (bctx, now_time);
+		add_loading_clients_cont (bctx, now_time);
 	}
   
 	/* 

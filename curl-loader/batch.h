@@ -175,13 +175,22 @@ typedef struct batch_context
   /* Counter used mainly by smooth mode: active clients */
   int active_clients_count;
 
-  /* Second current of loading. */
+  /* 
+	 Whether to do gradual increase of loading clients to prevent
+	 a simulteneous huge flow of client requests to server.
+  */
+  int do_clients_gradual_inc;
+
+  /* 
+	 Time since loading running in seconds. Used to schedule new
+	 clients in a gradual fashion, when <clients_initial_inc> is positive. 
+ */
   long sec_current;
 
-  /* Whether to proceed with initial scheduling */
-  int do_start_load_gradual;
-
-  /* Number of already scheduled clients */
+  /* 
+	 Number of already scheduled clients. Used to schedule new
+	 clients in a gradual fashion, when <clients_initial_inc> is positive. 
+  */
   int clients_initial_running_num;
 
 
