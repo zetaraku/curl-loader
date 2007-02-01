@@ -126,12 +126,13 @@ int user_activity_smooth (client_context* cctx_array)
 		return -1;
 	}
   
-	while (bctx->active_clients_count ||
-				 bctx->do_clients_gradual_inc ||
-				 ! tq_empty (bctx->waiting_queue)
+	while (
+		bctx->active_clients_count ||
+		bctx->do_client_num_gradual_increase ||
+		! tq_empty (bctx->waiting_queue)
 		)
 	{
-		if (!bctx->active_clients_count && bctx->do_clients_gradual_inc)
+		if (!bctx->active_clients_count && bctx->do_client_num_gradual_increase)
 		{
 			if (add_loading_clients (bctx) == -1)
 			{
@@ -165,23 +166,25 @@ int user_activity_smooth (client_context* cctx_array)
 ****************************************************************************************/
 static int add_loading_clients (batch_context* bctx)
 {
-	/* Return, if initial gradual scheduling of all new clients is accomplished */
+	/* 
+		 Return, if initial gradual scheduling of all new clients has been accomplished. 
+	*/
 	if (bctx->client_num <= bctx->clients_initial_running_num)
 	{
-		bctx->do_clients_gradual_inc = 0;
+		bctx->do_client_num_gradual_increase = 0;
 		return 0;
 	}
 
-	/* Calculate number of new clients to schedule */
+	/* Calculate number of the new clients to schedule. */
 	const long clients_sched = bctx->clients_initial_inc ? 
 		min (bctx->clients_initial_inc, bctx->client_num - bctx->clients_initial_running_num) : 
 		bctx->client_num; 
 
 	/* 
-		 Disable do_clients_gradual_inc flag to prevent recursive 
+		 Disable do_client_num_gradual_increase flag to prevent recursive 
 		 calls in load_next_step () 
 	*/
-	bctx->do_clients_gradual_inc = 0;
+	bctx->do_client_num_gradual_increase = 0;
 
 	/* 
 		 Schedule new clients by initializing thier CURL handle with
@@ -192,7 +195,7 @@ static int add_loading_clients (batch_context* bctx)
 		  j < bctx->clients_initial_running_num + clients_sched; 
 		  j++)
 	{
-		/* Runs load_init_state () for each new client (context) */
+		/* Runs load_init_state () for each newly added client. */
 		if (load_next_step (&bctx->cctx_array[j], bctx->start_time) == -1)
 		{
 			fprintf(stderr,"%s error: load_next_step() initial failed\n", __func__);
@@ -202,14 +205,14 @@ static int add_loading_clients (batch_context* bctx)
 
 	/* 
 		 Re-calculate assisting counters and enable back 
-		 do_clients_gradual_inc, if required.
+		 do_client_num_gradual_increase flag, if required.
 	*/
 	if (bctx->clients_initial_inc)
 	{
 		bctx->clients_initial_running_num += clients_sched;
 		if (bctx->clients_initial_running_num < bctx->client_num)
 		{
-			bctx->do_clients_gradual_inc = 1;
+			bctx->do_client_num_gradual_increase = 1;
 		}
 	}
 	
@@ -221,8 +224,8 @@ static int add_loading_clients (batch_context* bctx)
 *
 * Description - Continue initialization of our virtual clients (CURL handles)
 *                       by adding more clients each new second and scheduling 
-*                       them according to clients increment for initial gradual loading
-*                       using add_loading_clients () function.
+*                       them according to client's increment number for initial gradual 
+*                       loading. Uses add_loading_clients () function.
 *
 * Input -       *bctx - pointer to the batch of contexts
 *                   now_time -  current time in millisecond ticks
@@ -232,7 +235,7 @@ static int add_loading_clients_cont (batch_context* bctx, unsigned long now_time
 {
 	long sec = (now_time - bctx->start_time)/1000;
 
-	if (sec > bctx->sec_current)
+	if (sec > bctx->sec_current) /* If a new second, schedule more clients. */
 	{
 		bctx->sec_current = sec;
 		
@@ -440,55 +443,54 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 	}
 
 	/* 
-		 Initialize virtual client's CURL handle for the 
-		 next step of loading by using load_* function relevant
-		 for the client state.
+		 Initialize virtual client's CURL handle for the next step of loading by calling
+		 load_* function relevant for the client state.
 	*/
-	rval_load = load_state_func_table[cctx->client_state + 1] (
-		cctx, 
-		&interleave_waiting_time);
+	rval_load = load_state_func_table[cctx->client_state+1](cctx, &interleave_waiting_time);
 
 	/* 
-		 If there are still clients not scheduled, continue their gradual
-		 scheduling. It makes scheduling of a certain number of clients
-		 at each new second of the run-time.
+		 If there are still not scheduled clients, thus, continue their gradual
+		 scheduling.
 	*/
-	if (bctx->do_clients_gradual_inc)
+	if (bctx->do_client_num_gradual_increase)
 	{
 		add_loading_clients_cont (bctx, now_time);
 	}
   
 	/* 
+		 Just return for error or finished states: "finita la comedia".
+	*/
+	if (rval_load == CSTATE_ERROR || rval_load == CSTATE_FINISHED_OK)
+	{
+		return rval_load;
+	} 
+
+	/* 
 		 Schedule virtual clients by adding them to multi-handle, 
 		 if the clients are not in error or finished final states.
 	*/
-	if (rval_load != CSTATE_ERROR && rval_load != CSTATE_FINISHED_OK) 
+	if (! interleave_waiting_time)
 	{
-		if (! interleave_waiting_time)
-		{
-			/* Schedule the client immediately */
-			if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
-				bctx->active_clients_count++;
-		}
-		else
-		{
-			/* 
-				 Postpone client scheduling for the interleave_waiting_time msec by 
-				 placing it to the timer queue. 
-			*/
-			cctx->tn.next_timer = now_time + interleave_waiting_time;
-
-			if (tq_schedule_timer (bctx->waiting_queue, (struct timer_node *) cctx) == -1)
-			{
-				fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
-				return -1;
-			}
-			else
-			{
-				//fprintf (stderr, "%s - scheduled client to wq.\n", __func__);
-			}
-		}
+		/* Schedule the client immediately */
+		if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
+			bctx->active_clients_count++;
 	}
+	else
+	{
+		/* 
+			 Postpone client scheduling for the interleave_waiting_time msec by 
+			 placing it to the timer queue. 
+		*/
+		cctx->tn.next_timer = now_time + interleave_waiting_time;
+		
+		if (tq_schedule_timer (bctx->waiting_queue, (struct timer_node *) cctx) == -1)
+		{
+			fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
+			return -1;
+		}
+		//fprintf (stderr, "%s - scheduled client to wq.\n", __func__);
+	}
+
 	return rval_load;
 }
 
@@ -931,8 +933,7 @@ static int load_logoff_state (client_context* cctx, unsigned long *wait_msec)
 
 static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec)
 {
-	(void) cctx;
-	(void) wait_msec;
+	(void) cctx; (void) wait_msec;
 
 	return CSTATE_FINISHED_OK;
 }

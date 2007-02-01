@@ -208,7 +208,8 @@ void print_help ()
   fprintf (stderr, " ----------------------------------------------------------------------------\n");
   fprintf (stderr, "########### GENERAL SECTION ################################\n");
   fprintf (stderr, "BATCH_NAME= bulk_batch     # The name of the batch.\n");
-  fprintf (stderr, "CLIENTS_NUM=3              # Number of clients in the batch\n");
+  fprintf (stderr, "CLIENTS_NUM=300            # Number of clients in the batch\n");
+  fprintf (stderr, "CLIENTS_INITIAL_INC=30 # Startup increase num per second till CLIENTS_NUM reached\n");
   fprintf (stderr, "INTERFACE = eth0           # Name of interface from which to load \n");
   fprintf (stderr, "NETMASK=20                 # Netmask in CIDR-notation (number of bits with 1)\n");
   fprintf (stderr, "IP_ADDR_MIN= 192.168.1.1   # The client addresses starting address\n");
@@ -243,7 +244,7 @@ void print_help ()
   fprintf (stderr, "\n");
   fprintf (stderr, "#LOGIN_URL=                 # A valid http or https url to be used for login\n");
   fprintf (stderr, "#LOGIN_URL_MAX_TIME=        # Maximum batch time in seconds to login\n");
-  fprintf (stderr, "#LOGIN_URL_INTERLEAVE_TIME= # Time in seconds to sleep after login\n");
+  fprintf (stderr, "#LOGIN_URL_INTERLEAVE_TIME= # Time in msec to sleep after login\n");
   fprintf (stderr, "#LOGIN_CYCLING=             # If 'y' login should be run in cycles, and not \n");
   fprintf (stderr, "                            # just done only once\n");
   fprintf (stderr, "\n");
@@ -254,7 +255,7 @@ void print_help ()
   fprintf (stderr, "\n");
   fprintf (stderr, "UAS_URL=http://localhost/apache2-default/ACE-INSTALL.html\n");
   fprintf (stderr, "UAS_URL_MAX_TIME = 6        # Maximum batch time in seconds to fetch the url\n");
-  fprintf (stderr, "UAS_URL_INTERLEAVE_TIME = 0 # Time in seconds to sleep after fetching the url\n");
+  fprintf (stderr, "UAS_URL_INTERLEAVE_TIME = 0 # Time in msec to sleep after fetching the url\n");
   fprintf (stderr, "\n");
   fprintf (stderr, "UAS_URL= http://localhost/apache2-default/index.html\n");
   fprintf (stderr, "UAS_URL_MAX_TIME = 4        # Maximum batch time in seconds to fetch the url\n");
@@ -267,7 +268,7 @@ void print_help ()
   fprintf (stderr, "#LOGOFF_POST_STR=        # String to be used for logoff, like \"op=logoff\" \n");
   fprintf (stderr, "#LOGOFF_URL=             # A valid http or https url to be used for logoff\n");
   fprintf (stderr, "#LOGOFF_URL_MAX_TIME=    # Maximum batch time in seconds to logoff\n");
-  fprintf (stderr, "#LOGOFF_URL_INTERLEAVE_TIME= # Time in seconds to sleep after logoff\n");
+  fprintf (stderr, "#LOGOFF_URL_INTERLEAVE_TIME= # Time in msec to sleep after logoff\n");
   fprintf (stderr, "#LOGOFF_CYCLING=         # If 'y' login should be run in cycles, and not just \n");
    fprintf (stderr, "                        # done only once\n");
   fprintf (stderr, "--------------------------------------------------------------------------------\n");
@@ -275,7 +276,7 @@ void print_help ()
   fprintf (stderr, "\n");
   fprintf (stderr, "Note, that there is no any more limit of 1000 sockets per batch of clients.\n");
   fprintf (stderr, "Running thousands and more clients, please do not forget the options:\n");
-  fprintf (stderr, "- to increase limit of open descriptors in shell by running e.g. #ulimit -n 10000:\n");
+  fprintf (stderr, "- to increase limit of open descriptors in shell by running e.g. #ulimit -n 20000:\n");
   fprintf (stderr, "- to increase total limit of  open descriptors in systeme somewhere in /proc\n");
   fprintf (stderr, "- to consider reusing sockets in time-wait state: by #echo 1 > \n");
   fprintf (stderr, " /proc/sys/net/ipv4/tcp_tw_recycle\n");

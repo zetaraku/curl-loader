@@ -180,7 +180,7 @@ typedef struct batch_context
 	 Whether to do gradual increase of loading clients to prevent
 	 a simulteneous huge flow of client requests to server.
   */
-  int do_clients_gradual_inc;
+  int do_client_num_gradual_increase;
 
   /* 
 	 Time since loading running in seconds. Used to schedule new

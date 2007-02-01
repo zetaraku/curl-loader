@@ -27,7 +27,7 @@
 #include "heap.h"
 #include "timer_node.h"
 
-#define TQ_RESOLUTION 100 /* 100 msec */
+#define TQ_RESOLUTION 9 /* 9 msec */
 
 /* 	
    Prototype of the function to be used to compare heap-kept objects

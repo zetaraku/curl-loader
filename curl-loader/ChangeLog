@@ -1,5 +1,11 @@
 version 0.30
 
+* Smooth mode now respects the interleave timeouts between urls,
+   when the timeouts configured to be some values in milliseconds above
+   10 msec. This is achived by keeping clients in heap-based timer-queue.
+   When an interleave timeout is specified as 0, next url or next action of
+    such clients is scheduled immediately without timer-queue involvment.
+	
 * Added support for gradual increase of clients number at the loading
    initial phase. Use tag CLIENTS_INITIAL_INC in GENERAL section
    to specify the number of loading clients to be added each second till
