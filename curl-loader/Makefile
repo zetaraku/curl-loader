@@ -2,7 +2,7 @@
 TARGET=curl-loader
 TAGFILE=.tagfile
 
-CURL_VER:=7.16.0
+CURL_VER:=7.16.1
 OBJ_DIR:=obj
 SRC_SUFFIX:=c
 OBJ:=$(patsubst %.$(SRC_SUFFIX), $(OBJ_DIR)/$(basename %).o, $(wildcard *.$(SRC_SUFFIX)))

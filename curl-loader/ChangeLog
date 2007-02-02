@@ -1,5 +1,8 @@
 version 0.30
 
+* Advanced to the newest libcurl version curl-7.16.1 to fix several FTP and 
+  multi-handle issues
+	
 * Smooth mode now respects the interleave timeouts between urls,
    when the timeouts configured to be some values in milliseconds above
    10 msec. This is achived by keeping clients in heap-based timer-queue.

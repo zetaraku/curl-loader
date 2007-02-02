@@ -14,7 +14,7 @@ particular processor by -match /-mcpu gcc option directives.
 
 3. Increase the default number of allowed open descriptors (sockets);
  
-E.g. running #ulimit -n 10000
+E.g. running #ulimit -n 20000
 If running several instances of curl-loader, consider increase of system
 limits for open descriptors, if necessary. Take your own account of the
 socket usage in the system, considering sockets faster recycling (less
@@ -25,6 +25,9 @@ time in the time-wait state), by setting, optionally, something like this:
 Correct, if required, the value of CURL_LOADER_FD_SETSIZE (set to 20000 in 
 Makefile) to control the maximum fd, that may be used for select.
 
+Increase the maximum number of open descriptors in your linux system, if required,
+using linux HOWTOS.
+
 4. Create configuration files for each instance of curl-loader to run.
 
 What is important is to give a unique BATCH_NAME for each batch-file,
@@ -34,6 +37,9 @@ instances of curl-loader are writing to the same file, this is not
 helpful and crashful. Please, use in the configuration batch files 
 non-overlapping ranges of IP-addresses, else libcurl virtual clients will 
 compete for the IP-addresses to bind to.
+
+Use CLIENTS_INITIAL_INC tag in smooth mode to increase number of your 
+clients gradually at start-up in order not boom the server.
 
 
 5. Connections re-use.
