@@ -43,6 +43,10 @@
 
 static int add_loading_clients (batch_context* bctx);
 static int add_loading_clients_cont (batch_context* bctx, unsigned long now_time);
+static int client_add_to_load (batch_context* bctx, client_context* cctx);
+static int client_remove_from_load (batch_context* bctx, client_context* cctx);
+
+
 static int mget_url_smooth (batch_context* bctx);
 static int mperform_smooth (batch_context* bctx, int* still_running);
 static int schedule_clients_from_waiting_queue (
@@ -132,7 +136,7 @@ int user_activity_smooth (client_context* cctx_array)
 		! tq_empty (bctx->waiting_queue)
 		)
 	{
-		if (!bctx->active_clients_count && bctx->do_client_num_gradual_increase)
+		if (! bctx->active_clients_count && bctx->do_client_num_gradual_increase)
 		{
 			if (add_loading_clients (bctx) == -1)
 			{
@@ -142,7 +146,7 @@ int user_activity_smooth (client_context* cctx_array)
 			}
 		}
 
-		if (mget_url_smooth (bctx) == -1) 
+		if (mget_url_smooth (bctx) == -1)
 		{
 			fprintf (stderr, "%s error: mget_url () failed.\n", __func__) ;
 			return -1;
@@ -400,11 +404,10 @@ schedule_clients_from_waiting_queue (batch_context* bctx, unsigned long now_time
 				return -1;
 			}
 
-			/* Schedule the client immediately */
-			if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
+			if (client_add_to_load (bctx, cctx) == -1)
 			{
-				bctx->active_clients_count++;
-				//fprintf (stderr, "%s - client added after wq to work.\n", __func__);
+				fprintf (stderr, "%s - error: client_add_to_load () failed .\n", __func__);
+				return -1;
 			}
 		}
 		else
@@ -435,10 +438,10 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 	/* Remove handle from the multiple handle, if it was added there before. */
 	if (cctx->client_state != CSTATE_INIT)
 	{
-		if (curl_multi_remove_handle (bctx->multiple_handle, cctx->handle) == CURLM_OK)
+		if (client_remove_from_load (bctx, cctx) == -1)
 		{
-			if (bctx->active_clients_count > 0)
-				bctx->active_clients_count--;
+			fprintf (stderr, "%s - client_remove_from_load () failed.\n", __func__);
+			return -1;
 		}
 	}
 
@@ -472,8 +475,11 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 	if (! interleave_waiting_time)
 	{
 		/* Schedule the client immediately */
-		if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
-			bctx->active_clients_count++;
+		if (client_add_to_load (bctx, cctx) == -1)
+		{
+			fprintf (stderr, "%s - error: client_add_to_load () failed .\n", __func__);
+			return -1;
+		}
 	}
 	else
 	{
@@ -936,4 +942,40 @@ static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec)
 	(void) cctx; (void) wait_msec;
 
 	return CSTATE_FINISHED_OK;
+}
+
+static int client_add_to_load (batch_context* bctx, client_context* cctx)
+{
+	/* Schedule the client immediately */
+	if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
+	{
+		bctx->active_clients_count++;
+		//fprintf (stderr, "%s - client added.\n", __func__);
+	}
+	else
+	{
+		fprintf (stderr, "%s - curl_multi_add_handle () failed.\n", __func__);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int client_remove_from_load (batch_context* bctx, client_context* cctx)
+{
+	if (curl_multi_remove_handle (bctx->multiple_handle, cctx->handle) == CURLM_OK)
+	{
+		if (bctx->active_clients_count > 0)
+		{
+			bctx->active_clients_count--;
+		}
+		//fprintf (stderr, "%s - client removed.\n", __func__);
+	}
+	else
+	{
+		fprintf (stderr, "%s - curl_multi_remove_handle () failed.\n", __func__);
+		return -1;
+	}
+
+	return 0;	
 }
