@@ -23,19 +23,33 @@
 #ifndef MPOOL_H
 #define MPOOL_H
 
+/*
+	Object linkable supplies "linkable" property, when
+	inherited.
+*/
 typedef struct linkable
 {
   struct linkable* next;
 } linkable;
 
+/*
+	Object allocatable supplies "allocatable" property, when
+	inherited.
+*/
 typedef struct allocatable
 {
   struct linkable link;
 
+  /* Don't null the structure as a whole. The field to be managed by
+	 an allocator and is important for its internal housekeeping 
+  */
   int mem_block_start;
 } allocatable;
 
-
+/*
+	Memory pool. 
+	Attention: Non-thread safe.
+*/
 typedef struct mpool
 {
   /* Freelist free_list_head */
@@ -57,18 +71,86 @@ typedef struct mpool
   int obj_alloc_num;
 } mpool;
 
+/****************************************************************************************
+* Function name - mpool_init
+*
+* Description - Performs initialization of an allocated memory pool.
+*
+* Input -       *mpool - pointer to an allocated mpool
+*               object_size -  required size of object
+*               num_obj -  number of objects to be allocated for the memory pool
+*
+* Return Code/Output - On success - 0, on error - (-1)
+****************************************************************************************/
 int mpool_init (mpool* mpool, size_t object_size, int num_obj);
 
+/****************************************************************************************
+* Function name - mpool_free
+*
+* Description - Releases memory all allocated memory from a pool. Pool itself remains allocated.
+*
+* Input -       *mpool - pointer to an allocated mpool
+*
+* Return Code/Output - none
+****************************************************************************************/
 void mpool_free (mpool* mpool);
 
+/****************************************************************************************
+* Function name - mpool_size
+*
+* Description -  Returns number of allocated objects
+*
+* Input -       *mpool - pointer to an allocated mpool
+*
+* Return Code/Output - On success - number of objects, on error - (-1)
+****************************************************************************************/
 int mpool_size (mpool* mpool);
 
+/****************************************************************************************
+* Function name - mpool_allocate
+*
+* Description - Allocates for an initialized pool additionally some more objects 
+*
+* Input -       *mpool - pointer to an initialized mpool
+*               num_obj -  number of objects to be added for a memory pool
+*
+* Return Code/Output - On success - 0, on error - (-1)
+****************************************************************************************/
 int mpool_allocate (mpool* mpool, size_t size_alloc);
 
-int mpool_mem_release (mpool* mpool, size_t size_del);
+/****************************************************************************************
+* Function name - mpool_mem_release
+*
+* Description - Releases from mpool to OS a specified number of objects 
+*
+* Input -       *mpool - pointer to an initialized mpool
+*               num_obj -  number of objects to be released from a memory pool
+*
+* Return Code/Output - On success - 0, on error - (-1)
+****************************************************************************************/
+int mpool_mem_release (mpool* mpool, size_t num_obj);
 
+/****************************************************************************************
+* Function name - mpool_take_obj
+*
+* Description - Takes object from a memory pool
+*
+* Input -       *mpool - pointer to an initialized mpool
+*
+* Return Code/Output - On success - pointer to object, on error - NULL
+****************************************************************************************/
 struct allocatable* mpool_take_obj (mpool* mpool);
 
+/****************************************************************************************
+* Function name - mpool_take_obj
+*
+* Description - Returns object to a memory pool
+*
+* Input -       *mpool - pointer to an initialized mpool
+*               *item - pointer to an object
+*
+* Return Code/Output - On success - 0, on error - (-1)
+****************************************************************************************/
 int mpool_return_obj (mpool* mpool, allocatable* new_item);
 
 

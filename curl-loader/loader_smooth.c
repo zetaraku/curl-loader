@@ -391,15 +391,15 @@ schedule_clients_from_waiting_queue (batch_context* bctx, unsigned long now_time
 
 		if (time_nearest <= (long)now_time)
 		{
-			client_context* cctx = (client_context *) tq_remove_nearest_timer (tq);
+			client_context* cctx = 0; /* timer-node is the first field of client_context object */
 
-			if (!cctx)
+			if (tq_remove_nearest_timer (tq,  (timer_node **) &cctx) == -1 || !cctx)
 			{
-				fprintf (stderr, "%s - error: cctx from tq_remove_nearest_timer is NULL.\n", 
+				fprintf (stderr, "%s - error: tq_remove_nearest_timer () failed or timer context is NULL.\n", 
 								 __func__);
 				return -1;
 			}
-						
+
 			/* Schedule the client immediately */
 			if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
 			{

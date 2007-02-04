@@ -51,16 +51,40 @@ static void filter_up (heap*const h, size_t index);
 static void filter_down (heap*const h, size_t index);
 
 
-void node_reset (hnode*const nd)
+/****************************************************************************************
+* Function name - node_reset
+*
+* Description - Set to zero the fields, that allowed to be zeroed. Use this function 
+*               and node memset.
+*
+* Input -       *node - pointer to an hnode object
+*
+* Return Code/Output - none
+****************************************************************************************/
+void node_reset (hnode*const node)
 {
-	if (!nd)
+	if (!node)
 		return;
 
-	nd->node_id = 0;
-	nd->ctx = 0;
-	nd->alloc.link.next = 0;
+	node->node_id = 0;
+	node->ctx = 0;
+	node->alloc.link.next = 0;
 }
 
+/****************************************************************************************
+* Function name - heap_init
+*
+* Description - Performs initialization of an allocated heap.
+*
+* Input -       *h - pointer to an allocated heap
+*               initial_heap_size -  initial size to start
+*               increase_step -  size to increase heap, when deciding to do so
+*               comparator -  user-function, that compares user-objects, kept by the heap
+*               dumper -  user-function, that dumps user-objects, kept by the heap
+*               nodes_prealloc -  number of hnodes to be pre-allocated at initialization
+*
+* Return Code/Output - On success - 0, on error -1
+****************************************************************************************/
 int heap_init (heap*const h,
                size_t initial_heap_size,
                size_t increase_step,
@@ -128,6 +152,16 @@ int heap_init (heap*const h,
   return 0;
 }
 
+/****************************************************************************************
+* Function name - heap_reset
+*
+* Description - De-allocates memory and inits to the initial values heap, but does not deallocate
+*               the heap itself.
+*
+* Input -       *h - pointer to an initialized heap
+*
+* Return Code/Output - none
+****************************************************************************************/
 void heap_reset (heap*const h)
 {
   if (h->heap)
@@ -146,6 +180,15 @@ void heap_reset (heap*const h)
   memset (h, 0, sizeof (*h));
 }
 
+/****************************************************************************************
+* Function name - heap_dump
+*
+* Description - Dumps heap fields. Uses user-provided function to dump user objects
+*
+* Input -       *h - pointer to an initialized heap
+*
+* Return Code/Output - none
+****************************************************************************************/
 void heap_dump (heap*const h)
 {
   size_t j = 0;
@@ -169,6 +212,17 @@ void heap_dump (heap*const h)
     }	
 }
 
+
+/****************************************************************************************
+* Function name - heap_prealloc
+*
+* Description - Pre-allocates a certain number of hnodes for a heap
+*
+* Input -       *h - pointer to an initialized heap
+*               nodes_prealloc -  number of hnodes to be pre-allocated at initialization
+*
+* Return Code/Output - On success - 0, on error -1
+****************************************************************************************/
 int heap_prealloc (heap*const h, size_t nodes_prealloc)
 {
   if (! h || ! nodes_prealloc)
@@ -192,6 +246,15 @@ int heap_prealloc (heap*const h, size_t nodes_prealloc)
   return 0;
 }
 
+/****************************************************************************************
+* Function name - heap_pop
+*
+* Description - Takes the root node out of the heap and restores heap structure
+*
+* Input -       *h - pointer to an initialized heap
+*
+* Return Code/Output - On success - pointer to hnode, on error - NULL
+****************************************************************************************/
 hnode* heap_pop (heap*const h)
 {
   if (!h || h->curr_heap_size <= 0)
@@ -203,6 +266,15 @@ hnode* heap_pop (heap*const h)
   return heap_remove_node (h, 0);
 }
 
+/****************************************************************************************
+* Function name - heap_top_node
+*
+* Description -  Provides access to the topest node
+*
+* Input -       *h - pointer to an initialized heap
+*
+* Return Code/Output - On success -  pointer to the topest node, on error - NULL
+****************************************************************************************/
 hnode*  heap_top_node (heap*const h)
 {
   if (!h || h->curr_heap_size <= 0)
@@ -213,6 +285,15 @@ hnode*  heap_top_node (heap*const h)
   return h->heap[0];
 }
 
+/****************************************************************************************
+* Function name - heap_empty
+*
+* Description -  Tests, whether a heap is empty
+*
+* Input -       *h - pointer to an initialized heap
+*
+* Return Code/Output - Positive number, if empty, zero- if non-empty
+****************************************************************************************/
 int heap_empty (heap*const h)
 {
   return ! h->curr_heap_size;
@@ -270,6 +351,18 @@ int heap_increase (heap*const h)
   return 0;
 }
 
+/****************************************************************************************
+* Function name - heap_push
+*
+* Description -  Pushes a new hnode to the heap
+*
+* Input -       *h - pointer to an initialized heap
+*               *node - pointer to an initialized heap
+*               keep_node_id - flag, whether to respect the <node-id> from the node
+*                              (support for periodical timer)
+*
+* Return Code/Output - On success - 0 or positive node-id, on error - (-1)
+****************************************************************************************/
 long heap_push (heap* const h, hnode* const nd, int keep_node_id)
 {
   long new_node_id = -1;

@@ -48,9 +48,19 @@ void timer_node_dump (hnode* const h)
     fprintf (stderr, "n_timer=%ld ", ((timer_node *) h->ctx)->next_timer);
 }
 
-/*
-  Inside sets fcomp and fdump ptfs
-*/
+/****************************************************************************************
+* Function name - tq_init
+*
+* Description - Performs initialization of an allocated timer queue. Inside sets comparator and
+*               dump functions for a timer node objects.
+*
+* Input -       *tq - pointer to an allocated timer queue, e.g. heap
+*               tq_size -  the size of the queue required
+*               tq_increase_step -  number of objects to be allocated by each allocation operation
+*               nodes_num_prealloc -  number of objects to be pre-allocated at initialization
+*
+* Return Code/Output - On success - 0, on error -1
+****************************************************************************************/
 int tq_init (timer_queue*const tq,
              size_t tq_initial_size,
              size_t tq_increase_step,
@@ -70,15 +80,31 @@ int tq_init (timer_queue*const tq,
                       nodes_num_prealloc);
 }
 
+/****************************************************************************************
+* Function name - tq_release
+*
+* Description - De-allocates all allocated memory
+*
+* Input -       *tq - pointer to an allocated timer queue, e.g. heap
+*
+* Return Code/Output - None
+****************************************************************************************/
 void tq_release (timer_queue*const tq)
 {
     return heap_reset ((heap*const) tq);
 }
 
-/*
-  tnode contains information such as next-timer and period
-  returns the timer-id to be used in cancel timer.
-*/
+/****************************************************************************************
+* Function name - tq_schedule_timer
+*
+* Description - Schedules timer, using timer-node information
+*
+* Input -       *tq - pointer to an allocated timer queue, e.g. heap
+*               *tnode -  pointer to the user-allocated timer node with filled next-timer and, 
+*                         optionally, period
+*
+* Return Code/Output - On success - timer-id to be used in tq_cancel_timer (), on error -1
+****************************************************************************************/
 long tq_schedule_timer (timer_queue*const tq, 
                         timer_node* const tnode)
 {
@@ -120,6 +146,16 @@ long tq_schedule_timer (timer_queue*const tq,
     return heap_push (tq, new_hnode, 0);
 }
 
+/****************************************************************************************
+* Function name - tq_cancel_timer
+*
+* Description - Cancels timer, using timer-id returned by tq_schedule_timer ()
+*
+* Input -       *tq - pointer to a timer queue, e.g. heap
+*               timer_id -  number returned by tq_schedule_timer ()
+*
+* Return Code/Output - On success - 0, on error -1
+****************************************************************************************/
 int tq_cancel_timer (timer_queue*const tq, long timer_id)
 {
     heap* h = (heap *) tq;
@@ -163,17 +199,28 @@ int tq_cancel_timer (timer_queue*const tq, long timer_id)
     return 0;
 }
 
-int tq_cancel_timers (timer_queue*const tq, timer_node* const tnode)
+/****************************************************************************************
+* Function name - tq_cancel_timers
+*
+* Description - Cancels all timers in timer queue, scheduled for some pointer to context
+*
+* Input -       *tq - pointer to a timer queue, e.g. heap
+*               *tnode -  pointer to timer context (timer-node) to be searched for
+*
+* Return Code/Output - On success - zero of positive number of cancelled timers, on error -1
+****************************************************************************************/
+int tq_cancel_timers (timer_queue*const tq, struct timer_node* const tnode)
 {
+    hnode* node = 0;
+    size_t index = 0;
+    int counter = 0;
+    heap* h = (heap *) tq;
+
     if (!tq || !tnode)
     {
         fprintf (stderr, "%s - error: wrong input.\n", __func__);
         return -1;
     }
-
-    heap* h = (heap *) tq;
-    hnode* node = 0;
-    size_t index = 0;
 
     for (index = 0; index < h->curr_heap_size;)
     {
@@ -185,8 +232,12 @@ int tq_cancel_timers (timer_queue*const tq, timer_node* const tnode)
             {
 			 node_reset (node);
 
-                mpool_return_obj (h->nodes_mpool, (allocatable *) node);
-                // to count or not to count?
+			 if (mpool_return_obj (h->nodes_mpool, (allocatable *) node) == -1)
+			 {
+				 fprintf (stderr, "%s - error: mpool_return_obj () failed.\n", __func__);
+				 return -1;
+			 }
+                counter++;
             }
             else
             {
@@ -200,9 +251,19 @@ int tq_cancel_timers (timer_queue*const tq, timer_node* const tnode)
         }
     }
     
-    return 0;
+    return counter;
 }
 
+/****************************************************************************************
+* Function name - tq_time_to_nearest_timer
+*
+* Description - Returns time (msec) to the nearest timer in queue, or -1, when no timers queued
+*               Returned time is taked from timer-node field next-timer 
+*
+* Input -       *tq - pointer to a timer queue, e.g. heap
+*
+* Return Code/Output - On success - time in msec , on error -1
+****************************************************************************************/
 long tq_time_to_nearest_timer (timer_queue*const tq)
 {
     heap* h = (heap *) tq;
@@ -213,26 +274,46 @@ long tq_time_to_nearest_timer (timer_queue*const tq)
     return ((timer_node *) h->heap[0]->ctx)->next_timer;
 }
 
-/*
-  Pop the root node out of the heap
-*/
-void* tq_remove_nearest_timer (timer_queue*const tq)
+/****************************************************************************************
+* Function name - tq_time_to_nearest_timer
+*
+* Description - Removed nearest timer from the queue and fills <tnode> pointer to the timer context
+*               Internally performs necessary rearrangements of the queue.
+*
+* Input -       *tq - pointer to a timer queue, e.g. heap
+* Input/Output- **tnode - second pointer to a timer node to be filled 
+*
+* Return Code/Output - On success - 0, on error -1
+****************************************************************************************/
+int tq_remove_nearest_timer (timer_queue*const tq, timer_node** tnode)
 {
 	heap* h = (heap *) tq;
 	hnode* node = heap_pop ((heap *const) tq);
 
 	if (!node)
-		return NULL;
+		return -1;
 
-	void* context = node->ctx;
+	*tnode = node->ctx;
 
 	node_reset (node);
 
-	mpool_return_obj (h->nodes_mpool, (allocatable *)node);
+	if (mpool_return_obj (h->nodes_mpool, (allocatable *)node) == -1)
+	{
+		return -1;
+	}
 
-	return context;
+	return 0;
 }
 
+/****************************************************************************************
+* Function name - tq_empty
+*
+* Description -   Evaluates, whether a timer queue is empty 
+*
+* Input -         *tq - pointer to a timer queue, e.g. heap
+*
+* Return Code/Output - If empty - positive value, if full - 0
+****************************************************************************************/
 int tq_empty (timer_queue*const tq)
 {
 	return heap_empty ((heap *const) tq);

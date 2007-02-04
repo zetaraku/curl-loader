@@ -281,8 +281,10 @@ static int pre_parser (char** ptr, size_t* len)
     return 0;
 }
 
-/*
+/**
+**
 ** TAG PARSERS
+**
 */
 static int batch_name_parser (batch_context*const bctx, char*const value)
 {
@@ -787,43 +789,69 @@ static int validate_batch_login (batch_context*const bctx)
         return -1;
     }
 
+   if (bctx->login_url.url_interleave_time > 0 && 
+			bctx->login_url.url_interleave_time < 10)
+    {
+        fprintf (stderr, 
+                 "%s - error: LOGIN_URL_INTERLEAVE_TIME should be either 0 or above 10 msec.\n", 
+                 __func__);
+        return -1;
+    }
+
     return 0;
 }
 
 static int validate_batch_uas (batch_context*const bctx)
 {
-    if (! bctx->do_uas)
-    {
-        if (bctx->uas_urls_num)
-        {
-            fprintf (stderr, "%s - error: when UAS section is disabled by \"UAS=N\", \n"
-                     "comment out all tags of the section after the tag UAS string.\n", 
-                 __func__);
-            return -1;
-        }
-        return 0;
-    }
+	if (! bctx->do_uas)
+	{
+		if (bctx->uas_urls_num)
+		{
+			fprintf (stderr, "%s - error: when UAS section is disabled by \"UAS=N\", \n"
+							 "comment out all tags of the section after the tag UAS string.\n", 
+							 __func__);
+			return -1;
+		}
+		return 0;
+	}
 
-    if (bctx->uas_urls_num < 1)
-    {
-        fprintf (stderr, "%s - error: at least a single url is expected "
-                 "for a valid UAS section .\n", __func__);
-        return -1;
-    }
+	if (bctx->uas_urls_num < 1)
+	{
+		fprintf (stderr, "%s - error: at least a single url is expected "
+						 "for a valid UAS section .\n", __func__);
+		return -1;
+	}
 
-    int k = 0;
-    for (k = 0; k < bctx->uas_urls_num; k++)
-    {
-        if (!bctx->uas_url_ctx_array[k].url_str || !strlen (bctx->uas_url_ctx_array[k].url_str))
-        {
-            fprintf (stderr, 
-                     "%s - error: empty UAS_URL in position %d.\n"
-                     "Check, that number of UAS_URL triplets is equal to UAS_URLS_NUM.\n", 
-                     __func__, k);
-            return -1;
-        }
-    }
-    return 0;
+	int k = 0;
+	for (k = 0; k < bctx->uas_urls_num; k++)
+	{
+		if (!bctx->uas_url_ctx_array[k].url_str || !strlen (bctx->uas_url_ctx_array[k].url_str))
+		{
+			fprintf (stderr, 
+							 "%s - error: empty UAS_URL in position %d.\n"
+							 "Check, that number of UAS_URL triplets is equal to UAS_URLS_NUM.\n", 
+							 __func__, k);
+			return -1;
+		}
+
+		if (bctx->uas_url_ctx_array[k].url_completion_time < 0.0)
+		{
+			fprintf (stderr, 
+							 "%s - error: UAS_URL_MAX_TIME should not be negative.\n", 
+							 __func__);
+			return -1;
+		}			
+
+		if (bctx->uas_url_ctx_array[k].url_interleave_time > 0 && 
+				bctx->uas_url_ctx_array[k].url_interleave_time < 10)
+		{
+			fprintf (stderr, 
+							 "%s - error: UAS_URL_INTERLEAVE_TIME should be either 0 or above 10 msec.\n", 
+							 __func__);
+			return -1;
+		}
+	}
+	return 0;
 }
 
 static int validate_batch_logoff (batch_context*const bctx)
@@ -861,6 +889,15 @@ static int validate_batch_logoff (batch_context*const bctx)
     {
         fprintf (stderr, 
                  "%s - error: LOGOFF_URL_MAX_TIME should not be negative.\n", 
+                 __func__);
+        return -1;
+    }
+
+   if (bctx->logoff_url.url_interleave_time > 0 && 
+			bctx->logoff_url.url_interleave_time < 10)
+    {
+        fprintf (stderr, 
+                 "%s - error: LOGOFF_URL_INTERLEAVE_TIME should be either 0 or above 10 msec.\n", 
                  __func__);
         return -1;
     }

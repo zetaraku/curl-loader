@@ -52,7 +52,7 @@ clean:
 	rm -f $(OBJ_DIR)/*.o $(TARGET) core*
 
 cleanall: clean
-	rm -rf ./build ./packages/curl-$(CURL_VER) ./inc ./lib ./bin $(TAGFILE) *~ *.log *.txt *.ctx
+	rm -rf ./build ./packages/curl-$(CURL_VER) ./packages/curl ./inc ./lib ./bin $(TAGFILE) *~ *.log *.txt *.ctx
 
 tags:
 	etags --members -o $(TAGFILE) *.h *.c
