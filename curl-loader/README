@@ -137,26 +137,20 @@ errors in storming mode are the good indications of the server not being
 able to coop with the burst of login requests, whereas smothing mode has a
 somehow adaptive character to the server responses rate.
 
-The problem of the both loading modes (particularly storming, where for smooth
-it may be sometimes adjusted by -c option ) is that all clients are starting
-loading immediately. It should be an option to configure calls-per-second
-number (CAPS), and enable a gradual loading, lets say 200 clients start
-loading each second, etc. The issue is also in out TODO list.
-
 A combination of the both modes (two separate instances of the program)
 can provide somehow realistic behavior with some "smooth" load plus
 "storming" bursts of requests.
 
 
-SMOOTH MODE LOADING OPTIONS:
-
-First option is to define number of clients in CLIENTS_NUM. Thus, number of
-CAPS (call per seconds) is derived from the clients number and duration of
+SMOOTH MODE CLIENTS_INITIAL_INC TAG:
+When number of clients is defined by CLIENTS_NUM tag, the number of
+CAPS (call per seconds) is derived from the clients number and a duration of
 load for each cycle comprising from:
-- login time and sleeping after login interval;
+- login time with possible redirections and sleeping after login interval;
 - uas time for each url with possible redirections, intervals betwee urls and 
   after uas interval;
-- logoff time and sleeping after logoff interval;
+- logoff time with possible redirections and sleeping after logoff interval;
+
 All these actions and time intervals are configurable in batch file, whereas
 url retrival time is also server and network dependent and not always easy 
 to predict. The result is that number of clients/requests is a known parameter,
@@ -166,23 +160,6 @@ Tag  CLIENTS_INITIAL_INC in batch configuration file serves in gradual increase
 of clients number at the loading initial phase. Use tag CLIENTS_INITIAL_INC in 
 GENERAL section to specify the number of loading clients to be added each second till
 the total clients number, specified by CLIENTS_NUM tag.
-
-Second option is to define number of CAPS explicitly by the tag 
-CAPS_MODE_STEADY_NUM in the batch configuration file. Thus, every second 
-will be scheduled or re-scheduled not more than CAPS_MODE_STEADY_NUM clients. 
-Number of concurrent clients is defined by the CAPS number and the duration of 
-a loading cycle as defined by the batch file configuration. Limit of concurrent 
-clients number still needs to be predicted and defined in batch file 
-CLIENTS_NUM tag as well as it should be allocated an appropriate range of 
-ip-addresses for the clients.
-
-To summarize:
-Option 1: To define number of clients in CLIENTS_NUM, optionally 
-CLIENTS_INITIAL_INC and look at the resulted caps number;
-Option 2: To define the CAPS_MODE_STEADY_NUM and, optionally,
-CLIENTS_INITIAL_INC, whereas number of clients will be reported
-by the loader. Still, CLIENTS_NUM to be defined as the limit of
-the clients allowed; this is to control the ranges of ip-addresses.
 
 
 LICENSE:
@@ -319,6 +296,7 @@ should not appear or just to be simply commented out by '#'.
 
 For more examples, please, look at configs directory.
 
+
 LOGIN/LOGOFF HTTP METHODS:
 There are two login modes supported. GET+POST and POST-only. 
 There are three logoff modes supported as GET-only, GET+POST and POST-only.
@@ -329,6 +307,7 @@ FTP/FTPS LOAD (experimental):
 To generate FTP/FTPS load, please, use UAS section and pass user credentials
 via ftp-url according to the RFC 1738), like:
 ftp://username:password@hostname:port/etc-str
+See at configs/ftp.conf
 
 
 LOGFILE:
