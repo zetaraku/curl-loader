@@ -62,20 +62,21 @@ int user_activity_storm (client_context*const cctx_array)
       return -1;
     }
 
-		/* Add handles to multi_handle */
-		int m_error = -1;
-		for (i = 0 ; k < bctx->client_num ; i++)
+  /* Add handles to multi_handle */
+  int m_error = -1;
+  for (i = 0 ; i < bctx->client_num ; i++)
+	{
+		if ((m_error = curl_multi_add_handle(
+					 bctx->multiple_handle,
+					 bctx->cctx_array[i].handle)) != CURLM_OK)
 		{
-			if ((m_error = curl_multi_add_handle(
-						 bctx->multiple_handle,
-						 bctx->cctx_array[i].handle)) != CURLM_OK)
-			{
-				fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
-								 __func__, m_error);
-				return -1;
-			}
+			fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
+							 __func__, m_error);
+			return -1;
 		}
-   bctx->active_clients_count = bctx->client_num;
+	}
+
+  bctx->active_clients_count = bctx->client_num;
 
   bctx->start_time = bctx->last_measure = get_tick_count();
 
