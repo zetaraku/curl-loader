@@ -129,15 +129,16 @@ int user_activity_smooth (client_context* cctx_array)
 		fprintf (stderr, "%s error: add_loading_clients () failed.\n", __func__);
 		return -1;
 	}
-  
-	while (
-		bctx->active_clients_count ||
-		bctx->do_client_num_gradual_increase ||
-		! tq_empty (bctx->waiting_queue)
-		)
+
+	int act_waiting_clients = 0;
+
+	while ((act_waiting_clients = pending_active_and_waiting_clients_num (bctx)) ||
+				 bctx->do_client_num_gradual_increase)
 	{
-		if (! bctx->active_clients_count && bctx->do_client_num_gradual_increase)
+		if (!act_waiting_clients  && bctx->do_client_num_gradual_increase)
 		{
+			//fprintf (stderr, "%s - from while calling add_loading_clients()\n", __func__);
+
 			if (add_loading_clients (bctx) == -1)
 			{
 				fprintf (stderr, "%s error: add_loading_clients () failed in while.\n", 
@@ -184,6 +185,7 @@ static int add_loading_clients (batch_context* bctx)
 		min (bctx->clients_initial_inc, bctx->client_num - bctx->clients_initial_running_num) : 
 		bctx->client_num; 
 
+	fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_sched);
 	/* 
 		 Disable do_client_num_gradual_increase flag to prevent recursive 
 		 calls in load_next_step () 
@@ -237,12 +239,13 @@ static int add_loading_clients (batch_context* bctx)
 ****************************************************************************************/
 static int add_loading_clients_cont (batch_context* bctx, unsigned long now_time)
 {
-	long sec = (now_time - bctx->start_time)/1000;
+	unsigned long sec = (now_time - bctx->start_time)/1000;
 
 	if (sec > bctx->sec_current) /* If a new second, schedule more clients. */
 	{
 		bctx->sec_current = sec;
-		
+					
+		//fprintf (stderr, "%s - from add_loading_clients_cont add_loading_clients()\n", __func__);
 		/* New second. Calling to schedule more clients. */
 		return add_loading_clients (bctx);
 	}
@@ -978,4 +981,11 @@ static int client_remove_from_load (batch_context* bctx, client_context* cctx)
 	}
 
 	return 0;	
+}
+
+int pending_active_and_waiting_clients_num (batch_context* bctx)
+{
+	return bctx->waiting_queue ? 
+		(bctx->active_clients_count + tq_size (bctx->waiting_queue)) :
+		bctx->active_clients_count;
 }

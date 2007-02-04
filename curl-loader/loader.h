@@ -141,8 +141,6 @@ int user_activity_storm (struct client_context*const cctx_array);
 
 /*-------------- Smooth-mode loading function ----------------*/
 
-/* ------------- Storm-mode loading  function ----------------*/
-
 /****************************************************************************************
 * Function name - user_activity_smooth
 *
@@ -151,6 +149,8 @@ int user_activity_storm (struct client_context*const cctx_array);
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int user_activity_smooth (struct client_context*const cctx_array);
+
+
 
 extern int stop_loading;
 

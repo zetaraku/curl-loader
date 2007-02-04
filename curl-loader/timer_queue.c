@@ -114,9 +114,7 @@ long tq_schedule_timer (timer_queue*const tq,
         return -1;
     }
     
-    if (tnode->next_timer < 0 || tnode->period < 0 || 
-				(tnode->period && tnode->period < TQ_RESOLUTION)
-			)
+    if (tnode->period && tnode->period < TQ_RESOLUTION)
     {
         fprintf (stderr, 
                  "%s - error: tnode fields outside of valid range: next_timer (%ld), period (%ld).\n",
@@ -319,3 +317,16 @@ int tq_empty (timer_queue*const tq)
 	return heap_empty ((heap *const) tq);
 }
 
+/****************************************************************************************
+* Function name - tq_size
+*
+* Description -  Returns current size of timer-queue
+*
+* Input -        *tq - pointer to an initialized timer queue, e.g. heap
+*
+* Return Code/Output - On Success - zero or positive number, on error - (-1)
+****************************************************************************************/
+int tq_size (timer_queue*const tq)
+{
+	return heap_size ((heap *const) tq);
+}

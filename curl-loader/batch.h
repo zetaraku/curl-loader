@@ -186,7 +186,7 @@ typedef struct batch_context
 	 Time since loading running in seconds. Used to schedule new
 	 clients in a gradual fashion, when <clients_initial_inc> is positive. 
  */
-  long sec_current;
+  unsigned long sec_current;
 
   /* 
 	 Number of already scheduled clients. Used to schedule new
@@ -220,6 +220,8 @@ typedef struct batch_context
   stat_point https_total;
 
 } batch_context;
+
+
 
 
 #endif /* BATCH_H */

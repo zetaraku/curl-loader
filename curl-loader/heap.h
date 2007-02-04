@@ -238,4 +238,15 @@ hnode* heap_remove_node (heap*const h, const size_t slot);
 ****************************************************************************************/
 int heap_empty (heap*const h);
 
+/****************************************************************************************
+* Function name - heap_size
+*
+* Description -  Returns current size of heap
+*
+* Input -        *h - pointer to an initialized heap
+*
+* Return Code/Output - On Success - zero or positive number, on error - (-1)
+****************************************************************************************/
+int heap_size (heap*const h);
+
 #endif /* HEAP_H */

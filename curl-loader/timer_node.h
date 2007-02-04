@@ -25,11 +25,8 @@
 
 typedef struct timer_node
 {
-  long next_timer;
-  long period;
-
-  // void* timer_ctx;
-	
+  unsigned long next_timer;
+  unsigned long period;
 } timer_node;
 
 

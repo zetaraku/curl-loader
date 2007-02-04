@@ -174,6 +174,9 @@ void stat_appl_delay_2xx_add (client_context* cctx, unsigned long resp_timestamp
 
 void dump_client (FILE* file, client_context* cctx);
 
+/* Currently, in smooth mode */
+int pending_active_and_waiting_clients_num (struct batch_context* bctx);
+
 /*
   Flag used to indicate, that no more loading is necessary.
   Time to dump the final statistics, clients table and exit.

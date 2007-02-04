@@ -569,3 +569,20 @@ void filter_down (heap*const h, size_t index)
   /* Place target to the available vacated position */
   heap_put_node_to_slot (h, curr_pos, target);
 }
+
+/****************************************************************************************
+* Function name - heap_size
+*
+* Description -  Returns current size of heap
+*
+* Input -        *h - pointer to an initialized heap
+*
+* Return Code/Output - On Success - zero or positive number, on error - (-1)
+****************************************************************************************/
+int heap_size (heap*const h)
+{
+	if (!h)
+		return -1;
+	
+	return h->curr_heap_size;
+}

@@ -138,6 +138,16 @@ int tq_remove_nearest_timer (timer_queue*const tq, struct timer_node** tnode);
 ****************************************************************************************/
 int tq_empty (timer_queue*const tq);
                         
+/****************************************************************************************
+* Function name - tq_size
+*
+* Description -  Returns current size of timer-queue
+*
+* Input -        *tq - pointer to an initialized timer queue, e.g. heap
+*
+* Return Code/Output - On Success - zero or positive number, on error - (-1)
+****************************************************************************************/
+int tq_size (timer_queue*const tq);
 
 #endif /* TIMER_QUEUE_H */
 

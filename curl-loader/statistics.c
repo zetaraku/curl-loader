@@ -146,10 +146,11 @@ void dump_final_statistics (client_context* cctx)
   batch_context* bctx = cctx->bctx;
   unsigned long now = get_tick_count();
 
-  print_intermediate_statistics (bctx->active_clients_count, 
-                                now - bctx->last_measure,
-                                &bctx->http_delta,  
-                                &bctx->https_delta);
+  print_intermediate_statistics (
+		pending_active_and_waiting_clients_num (bctx),
+		now - bctx->last_measure,
+		&bctx->http_delta,  
+		&bctx->https_delta);
 
   stat_point_add (&bctx->http_total, &bctx->http_delta);
   stat_point_add (&bctx->https_total, &bctx->https_delta);  
@@ -173,19 +174,21 @@ void dump_final_statistics (client_context* cctx)
       const unsigned long loading_time = (now - bctx->start_time > 0) ? 
         (now - bctx->start_time) : 1;
  
-      print_statistics_data (bctx->statistics_file,
-                             loading_time/1000,
-                             "HTTP", 
-                             bctx->active_clients_count, 
-                             &bctx->http_total,
-                             loading_time);
-
-      print_statistics_data (bctx->statistics_file, 
-                             loading_time/1000,
-                             "HTTPS", 
-                             bctx->active_clients_count, 
-                             &bctx->https_delta,
-                             loading_time);
+      print_statistics_data (
+				bctx->statistics_file,
+				loading_time/1000,
+				"HTTP",
+				pending_active_and_waiting_clients_num (bctx),
+				&bctx->http_total,
+				loading_time);
+			
+      print_statistics_data (
+				bctx->statistics_file, 
+				loading_time/1000,
+				"HTTPS",
+				pending_active_and_waiting_clients_num (bctx),
+				&bctx->https_delta,
+				loading_time);
     }
 
   dump_clients (cctx);
@@ -240,29 +243,31 @@ void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
       exit (1); 
     }
 
-  print_intermediate_statistics( 
-                               bctx->active_clients_count, 
-                               delta_time, 
-                               &bctx->http_delta,  
-                               &bctx->https_delta);
+  print_intermediate_statistics(
+		pending_active_and_waiting_clients_num (bctx),
+		delta_time, 
+		&bctx->http_delta,  
+		&bctx->https_delta);
 
   if (bctx->statistics_file)
   {
     const unsigned long timestamp_sec =  (now_time - bctx->start_time) / 1000;
 
-    print_statistics_data (bctx->statistics_file,
-                           timestamp_sec,
-                           "HTTP", 
-                           bctx->active_clients_count, 
-                           &bctx->http_delta,
-                           delta_time ? delta_time : 1);
+    print_statistics_data (
+			bctx->statistics_file,
+			timestamp_sec,
+			"HTTP",
+			pending_active_and_waiting_clients_num (bctx),
+			&bctx->http_delta,
+			delta_time ? delta_time : 1);
     
-    print_statistics_data (bctx->statistics_file, 
-                           timestamp_sec,
-                           "HTTPS", 
-                           bctx->active_clients_count, 
-                           &bctx->https_delta,
-                           delta_time ? delta_time : 1);
+    print_statistics_data (
+			bctx->statistics_file, 
+			timestamp_sec,
+			"HTTPS", 
+			pending_active_and_waiting_clients_num (bctx),
+			&bctx->https_delta,
+			delta_time ? delta_time : 1);
   }
 
   stat_point_add (&bctx->http_total, &bctx->http_delta);
