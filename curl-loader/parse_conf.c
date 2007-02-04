@@ -793,8 +793,10 @@ static int validate_batch_login (batch_context*const bctx)
 			bctx->login_url.url_interleave_time < 10)
     {
         fprintf (stderr, 
-                 "%s - error: LOGIN_URL_INTERLEAVE_TIME should be either 0 or above 10 msec.\n", 
-                 __func__);
+                 "%s - error: LOGIN_URL_INTERLEAVE_TIME should be either 0 or above 10 msec.\n"
+			  "ATTENTION !!! The value starting from version 0.30 is not in seconds, but in msec.\n"
+			 "Please, correct the value from seconds to milliseconds.\n\n"
+			 , __func__);
         return -1;
     }
 
@@ -846,8 +848,10 @@ static int validate_batch_uas (batch_context*const bctx)
 				bctx->uas_url_ctx_array[k].url_interleave_time < 10)
 		{
 			fprintf (stderr, 
-							 "%s - error: UAS_URL_INTERLEAVE_TIME should be either 0 or above 10 msec.\n", 
-							 __func__);
+							 "%s - error: UAS_URL_INTERLEAVE_TIME should be either 0 or above 10 msec.\n"
+							 "ATTENTION !!! The value starting from version 0.30 is not in seconds, but in msec.\n"
+							 "Please, correct the value from seconds to milliseconds.\n\n"
+							 , __func__);
 			return -1;
 		}
 	}
@@ -897,7 +901,9 @@ static int validate_batch_logoff (batch_context*const bctx)
 			bctx->logoff_url.url_interleave_time < 10)
     {
         fprintf (stderr, 
-                 "%s - error: LOGOFF_URL_INTERLEAVE_TIME should be either 0 or above 10 msec.\n", 
+                 "%s - error: LOGOFF_URL_INTERLEAVE_TIME should be either 0 or above 10 msec.\n"
+			  "ATTENTION !!! The value starting from version 0.30 is not in seconds, but in msec.\n"
+			 "Please, correct the value from seconds to milliseconds.\n\n", 
                  __func__);
         return -1;
     }
