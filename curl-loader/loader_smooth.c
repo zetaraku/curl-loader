@@ -101,7 +101,7 @@ int user_activity_smooth (client_context* cctx_array)
 		return -1;
 	}
 
-	/* Make smooth-mode specific initializations */
+	/* Make smooth-mode specific allocations and initializations */
 
 	if (! (bctx->waiting_queue = calloc (1, sizeof (heap))))
 	{
@@ -156,15 +156,25 @@ int user_activity_smooth (client_context* cctx_array)
 
 	dump_final_statistics (cctx_array);
 
+	/* 
+		 Release resources 
+	*/
+	if (bctx->waiting_queue)
+	{
+		tq_release (bctx->waiting_queue);
+		free (bctx->waiting_queue);
+		bctx->waiting_queue = 0;
+	}
+
 	return 0;
 }
 
 /****************************************************************************************
 * Function name - add_loading_clients
 *
-* Description - First initialization of our virtual clients (CURL handles)
+* Description - Initialization of our virtual clients (CURL handles)
 *                       setting first url to fetch and scheduling them according to 
-*                       clients increment for initial gradual loading.
+*                       clients increment for gradual loading.
 *
 * Input -       *bctx - pointer to the batch of contexts
 * Return Code/Output - On Success - 0, on Error -1
@@ -381,6 +391,20 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 	return 0;
 }
 
+/****************************************************************************************
+* Function name - schedule_clients_from_waiting_queue
+*
+* Description - Fetches from the waiting timer queue timers and dispatches them
+*                          Within the current hypostasesis, it just takes our timer nodes (client contexts)
+*                          with waiting time expired, treats them as client-contexts and adds them to
+*                          the loading machinery.
+*                          TODO: extend the API to handle other timers, not only client contexts, e.g.
+*                          by adding to the timer-node timer-specific handle_timeout () method.
+*
+* Input -       *bctx - pointer to the batch of contexts;
+*                     now_time -  current time passed in msec
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 static int
 schedule_clients_from_waiting_queue (batch_context* bctx, unsigned long now_time)
 {
@@ -497,7 +521,8 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 			fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
 			return -1;
 		}
-		//fprintf (stderr, "%s - scheduled client to wq.\n", __func__);
+		//fprintf (stderr, "%s - scheduled client to wq with wtime %ld\n", 
+		//				 __func__, interleave_waiting_time);
 	}
 
 	return rval_load;
@@ -947,6 +972,16 @@ static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec)
 	return CSTATE_FINISHED_OK;
 }
 
+/****************************************************************************************
+* Function name - client_add_to_load
+*
+* Description - Adds client context to the batch context multiple handle for loading
+*
+* Input -       *bctx - pointer to the batch context
+*                     *cctx - pointer to the client context
+*
+* Return Code/Output - On success -0, on error - (-1)
+****************************************************************************************/
 static int client_add_to_load (batch_context* bctx, client_context* cctx)
 {
 	/* Schedule the client immediately */
@@ -964,6 +999,17 @@ static int client_add_to_load (batch_context* bctx, client_context* cctx)
 	return 0;
 }
 
+/****************************************************************************************
+* Function name - client_remove_from_load
+*
+* Description - Removes client context to from batch context multiple handle to remove the
+*                          client from loading machinery
+*
+* Input -       *bctx - pointer to the batch context
+*                     *cctx - pointer to the client context
+*
+* Return Code/Output - On success -0, on error - (-1)
+****************************************************************************************/
 static int client_remove_from_load (batch_context* bctx, client_context* cctx)
 {
 	if (curl_multi_remove_handle (bctx->multiple_handle, cctx->handle) == CURLM_OK)
@@ -983,6 +1029,15 @@ static int client_remove_from_load (batch_context* bctx, client_context* cctx)
 	return 0;	
 }
 
+/****************************************************************************************
+* Function name - client_remove_from_load
+*
+* Description - Returns the sum of active and waiting (for load scheduling) clients
+*
+* Input -       *bctx - pointer to the batch context
+*
+* Return Code/Output - Sum of active and waiting (for load scheduling) clients
+****************************************************************************************/
 int pending_active_and_waiting_clients_num (batch_context* bctx)
 {
 	return bctx->waiting_queue ? 

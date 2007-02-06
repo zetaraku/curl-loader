@@ -145,7 +145,7 @@ main (int argc, char *argv [])
               " %s - WARNING: the current limit of open descriptors for a process is below %d."
               "Consider, increase of the limit in your shell, e.g. using ulimit -n %d command\n",
               __func__, OPEN_FDS_SUGGESTION, OPEN_FDS_SUGGESTION);
-      sleep (1);
+      sleep (3);
     }
 
   if (!ret && file_limit.rlim_cur > CURL_LOADER_FD_SETSIZE)
@@ -189,6 +189,7 @@ main (int argc, char *argv [])
       fprintf (stderr, "\nRUNNING WITHOUT THREADS\n\n");
       sleep (1) ;
       batch_function (&bc_arr[0]);
+	 fprintf (stderr, "\n exited batch_function\n\n");
     }
   else
     {

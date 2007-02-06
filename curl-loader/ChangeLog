@@ -1,26 +1,29 @@
-version 0.24
+version 0.24, 06/02/2007, svn 106
 
-* Advanced to the newest libcurl version curl-7.16.1 to fix several FTP and 
-  multi-handle issues
-	
+
 * Smooth mode now respects the interleave timeouts between urls,
    when the timeouts configured to be some values in milliseconds above
    10 msec. This is achived by keeping clients in heap-based timer queue.
    When an interleave timeout is specified as 0, next url or next action of
     such clients is scheduled immediately without timer-queue scheduling.
-	
+
 * Added support for gradual increase of clients number at the loading
-   initial phase. Use tag CLIENTS_INITIAL_INC in GENERAL section
+   start. Use tag CLIENTS_INITIAL_INC in GENERAL section
    to specify the number of loading clients to be added each second till
-   the total clients number, specified by CLIENTS_NUM tag.
+   the total client number, specified by CLIENTS_NUM tag.
 
 * The interleave timeout numbers will be interpreted now as milliseconds,
    not seconds as before. Take care to update your configuration files.
 
-* Configuration file parser was re-designed to be based on TAG-tag_parser_func
-   mapping. The big "object-oriented" parsing switch has been waived out.
+* Configuration file parser has been re-designed to be based on 
+   TAG-tag_parser_func mapping. The big "object-oriented" parsing switch
+   has been waived out.
 
-* TODO list corrected.
+* TODO list updated.
+
+* Advanced to the newest libcurl version 7.16.1 to fix several FTP and 
+  multi-handle issues
+
 
 
 version 0.23 06/12/2006, svn-79

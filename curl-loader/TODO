@@ -42,6 +42,8 @@ smooth mode on libcurl error, and should be extended to 5xx server
 errors, etc
 
 6. Rewind of the logfile for smooth-mode. It works only for storming mode now.
+We can use timer-queue scheduling feature now. Just to add generalization
+of timer-event handling.
 
 7. Future releases will hopefully incorporate libcurl HYPER API, using 
 curl_multi_socket() approach and epoll support by libevent as in
@@ -51,3 +53,5 @@ from a single process can become a reality.
 8. CAPS (calls per second number) to be managed by the tag 
 CAPS_MODE_STEADY_NUM. Thus, number of clients will be a derivative
 number, that will vary according to CAPS number achived.
+
+9. Investigate and fix a bug with ftp.
