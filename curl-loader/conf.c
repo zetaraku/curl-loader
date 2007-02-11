@@ -42,8 +42,12 @@ int verbose_logging = 0;
 /* Flag, whether to run batches as batch per thread. */
 int threads_run = 0;
 
-/* Rewind logfile after num cycles */
-int logfile_rewind_cycles_num = 10;
+/* 
+   Rewind logfile after:
+   - storm-mode: num cycles; 
+   - smooth-mode - time in seconds 
+*/
+int logfile_rewind_number = 10;
 
  /* Non-zero - dont reuse connections */
 int reuse_connection_forbidden = 0;
@@ -116,7 +120,7 @@ int parse_command_line (int argc, char *argv [])
             
         case 'l': /* Number of cycles before a logfile rewinds. */
           if (!optarg || 
-              (logfile_rewind_cycles_num = atoi (optarg)) < 2)
+              (logfile_rewind_number = atoi (optarg)) < 2)
             {
               fprintf (stderr, 
                        "%s: error: -l option should be followed by a number above 2.\n",
@@ -189,7 +193,7 @@ void print_help ()
   fprintf (stderr, "#./curl-loader -f <configuration file name> with [other options below]:\n");
   fprintf (stderr, " -c[onnection establishment timeout, seconds]\n");
   fprintf (stderr, " -e[rror drop client (smooth mode). Client on error doesn't attempt next cycle.]\n");
-  fprintf (stderr, " -l[ogfile rewind after this number of cycles]\n");
+  fprintf (stderr, " -l[ogfile rewind - storm-mode: after the number of cycles, smooth-mode: this num of seconds]\n");
   fprintf (stderr, " -m[ode of loading, 1 - storming, 2 - smooth (default)]\n");
   fprintf (stderr, " -o[utput to stdout bodies of downloaded files - attn!- bulky]\n");
   fprintf (stderr, " -r[euse onnections disabled. Close connections and re-open them. Try with and without]\n");

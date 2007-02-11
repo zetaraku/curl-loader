@@ -183,7 +183,7 @@ int user_activity_storm (client_context*const cctx_array)
          After completing a cycle - rewind the file. Thus, we are keeping the current run
          and a limited history run in the logfile. 
       */
-      if (cycle > 0 && ! (cycle%logfile_rewind_cycles_num))
+      if (cycle > 0 && ! (cycle%logfile_rewind_number))
           rewind (cctx_array->file_output);
       
       // Bring statistics at the end of each cycle

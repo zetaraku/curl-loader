@@ -1003,6 +1003,12 @@ static int alloc_init_client_contexts (
   for (i = 0 ; i < bctx->client_num ; i++)
     {
       /* 
+         Set the timer handling function, which is used by the smooth 
+         loading mode. 
+      */
+      set_timer_handling_func (&cctx[i], handle_cctx_timer);
+
+      /* 
          Build client name for logging, based on sequence number and 
          ip-address for each simulated client. 
       */

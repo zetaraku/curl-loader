@@ -409,12 +409,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
  * Function name - schedule_clients_from_waiting_queue
  *
  * Description - Fetches from the waiting timer queue timers and dispatches them
- *               Within the current hypostasesis, it just takes our timer nodes (client contexts)
- *               with waiting time expired, treats them as client-contexts and adds them to
- *               the loading machinery.
- *
- *               TODO: extend the API to handle other timers, not only client contexts, e.g.
- *               by adding to the timer-node timer-specific handle_timeout () method.
+ *               by calling timer-node specific handle_timeout () method.
  *
  * Input -       *bctx - pointer to the batch of contexts;
  *               now_time -  current time passed in msec
@@ -438,18 +433,10 @@ schedule_clients_from_waiting_queue (batch_context* bctx, unsigned long now_time
 
       if (time_nearest <= (long)now_time)
         {
-          client_context* cctx = 0; /* timer-node is the first field of client_context object */
-
-          if (tq_remove_nearest_timer (tq,  (timer_node **) &cctx) == -1 || !cctx)
+          if (tq_dispatch_nearest_timer (tq, bctx, now_time) == -1)
             {
-              fprintf (stderr, "%s - error: tq_remove_nearest_timer () failed or timer context is NULL.\n", 
+              fprintf (stderr, "%s - error: tq_dispatch_nearest_timer () failed or handle_timer () returns (-1).\n", 
                        __func__);
-              return -1;
-            }
-
-          if (client_add_to_load (bctx, cctx) == -1)
-            {
-              fprintf (stderr, "%s - error: client_add_to_load () failed .\n", __func__);
               return -1;
             }
         }
@@ -1065,4 +1052,31 @@ int pending_active_and_waiting_clients_num (batch_context* bctx)
   return bctx->waiting_queue ? 
     (bctx->active_clients_count + tq_size (bctx->waiting_queue)) :
     bctx->active_clients_count;
+}
+
+int handle_cctx_timer (
+                       timer_node* timer_node, 
+                       void* pvoid_param,
+                       unsigned long ulong_param)
+{
+  client_context* cctx = (client_context *) timer_node;
+  batch_context* bctx = cctx->bctx;
+  (void)pvoid_param;
+  (void)ulong_param;
+
+  return client_add_to_load (bctx, cctx);
+}
+
+int handle_logfile_rewinding_timer  (
+                                     timer_node* timer_node, 
+                                     void* pvoid_param, 
+                                     unsigned long ulong_param)
+{
+  batch_context* bctx = (batch_context *) pvoid_param;
+  (void) timer_node;
+  (void) ulong_param;
+
+  rewind (bctx->cctx_array->file_output);
+
+  return 0;
 }

@@ -23,10 +23,26 @@
 #ifndef TIMER_NODE_H
 #define TIMER_NODE_H
 
+/* forward declaration */
+struct timer_node;
+
+/* Prototype of the function to be called on timer expiration.*/
+typedef int (*handle_timer) (struct timer_node*, void*, unsigned long);
+
+/*
+  struct timer_node - 
+  to be use in timer_queue as user data structure.
+ */
 typedef struct timer_node
 {
+  /* The next timer shot in seconds since epoch (Jan 1 1970) */
   unsigned long next_timer;
+
+  /* Interval in msec between periodic timer shots. Zero for non-periodic timer. */
   unsigned long period;
+  
+  /* Function to call on timer expiration. Trying to be Object Oriented ...*/
+  handle_timer func_timer;
 } timer_node;
 
 

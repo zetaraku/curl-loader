@@ -274,7 +274,7 @@ long tq_time_to_nearest_timer (timer_queue*const tq)
 /****************************************************************************************
 * Function name - tq_time_to_nearest_timer
 *
-* Description - Removed nearest timer from the queue and fills <tnode> pointer to the timer context
+* Description - Removes nearest timer from the queue and fills <tnode> pointer to the timer context
 *               Internally performs necessary rearrangements of the queue.
 *
 * Input -       *tq - pointer to a timer queue, e.g. heap
@@ -301,6 +301,54 @@ int tq_remove_nearest_timer (timer_queue*const tq, timer_node** tnode)
 
   return 0;
 }
+
+/****************************************************************************************
+* Function name - tq_dispatch_nearest_timer
+*
+* Description - Removes nearest timer from the queue, calls for handle_timer () of the
+*               timer node kept as timer context. Internally performs necessary rearrangements 
+*               of the queue, re-schedules periodic timers and manages memory agaist mpool, if required.
+*
+* Input -       *tq - pointer to a timer queue, e.g. heap
+*                 *vp_param - void pointer passed parameter
+*                 now_time - current time since epoch in msec
+*
+* Return Code/Output - On success - 0, on error -1
+****************************************************************************************/
+int tq_dispatch_nearest_timer (timer_queue*const tq, void* vp_param, unsigned long now_time)
+{
+  heap* h = (heap *) tq;
+  hnode* node = heap_pop ((heap *const) tq);
+  timer_node* tnode = (timer_node *) node->ctx;
+
+  int rval = tnode->func_timer (tnode, vp_param, now_time);
+
+  if (rval)
+    goto node_return;
+
+  if (tnode->period)
+    {
+      tnode->next_timer = now_time + tnode->period;
+      
+      if (heap_push (tq, node, 1) == -1)
+        {
+          goto node_return;
+        }
+      return 0;
+    }
+
+ node_return:
+  node_reset (node);
+  
+  if (mpool_return_obj (h->nodes_mpool, (allocatable *)node) == -1)
+    {
+      return -1;
+    }
+
+  return rval;
+}
+
+
 
 /****************************************************************************************
 * Function name - tq_empty
