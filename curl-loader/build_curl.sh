@@ -9,10 +9,10 @@ if [ ! -d ./packages/curl-${CURL_VER} ]; then
 
     pushd ./packages || exit 1
 
-    if [ ! -f ./packages/curl-${CURL_VER}.tar.gz ]; then
-        echo "downloading curl tarball from the official curl site"
-        wget --tries=5 -c http://curl.haxx.se/download/curl-${CURL_VER}.tar.gz || exit 1
-    fi
+    #if [ ! -f ./packages/curl-${CURL_VER}.tar.gz ]; then
+    #    echo "downloading curl tarball from the official curl site"
+    #    wget --tries=5 -c http://curl.haxx.se/download/curl-${CURL_VER}.tar.gz || exit 1
+    #fi
 
     echo "extracting curl sources"
     tar zxf curl-${CURL_VER}.tar.gz || exit 1

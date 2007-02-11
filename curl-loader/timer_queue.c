@@ -189,9 +189,8 @@ int tq_cancel_timer (timer_queue*const tq, long timer_id)
     }
     else
     {
-	   node_reset (node);
-
-        mpool_return_obj (h->nodes_mpool, (allocatable *) node);
+      node_reset (node);
+      mpool_return_obj (h->nodes_mpool, (allocatable *) node);
     }
     
     return 0;
@@ -209,47 +208,47 @@ int tq_cancel_timer (timer_queue*const tq, long timer_id)
 ****************************************************************************************/
 int tq_cancel_timers (timer_queue*const tq, struct timer_node* const tnode)
 {
-    hnode* node = 0;
-    size_t index = 0;
-    int counter = 0;
-    heap* h = (heap *) tq;
+  hnode* node = 0;
+  size_t index = 0;
+  int counter = 0;
+  heap* h = (heap *) tq;
 
-    if (!tq || !tnode)
+  if (!tq || !tnode)
     {
-        fprintf (stderr, "%s - error: wrong input.\n", __func__);
-        return -1;
+      fprintf (stderr, "%s - error: wrong input.\n", __func__);
+      return -1;
     }
 
-    for (index = 0; index < h->curr_heap_size;)
+  for (index = 0; index < h->curr_heap_size;)
     {
-        if (h->heap[index]->ctx == tnode)
+      if (h->heap[index]->ctx == tnode)
         {
-            node = heap_remove_node (h, index);
+          node = heap_remove_node (h, index);
 
-            if (node)
+          if (node)
             {
-			 node_reset (node);
+              node_reset (node);
 
-			 if (mpool_return_obj (h->nodes_mpool, (allocatable *) node) == -1)
-			 {
-				 fprintf (stderr, "%s - error: mpool_return_obj () failed.\n", __func__);
-				 return -1;
-			 }
-                counter++;
+              if (mpool_return_obj (h->nodes_mpool, (allocatable *) node) == -1)
+                {
+                  fprintf (stderr, "%s - error: mpool_return_obj () failed.\n", __func__);
+                  return -1;
+                }
+              counter++;
             }
-            else
+          else
             {
-                fprintf (stderr, "%s - error: node removal failed.\n", __func__);
-                return -1;
+              fprintf (stderr, "%s - error: node removal failed.\n", __func__);
+              return -1;
             }
         }
-        else
+      else
         {
-            ++index;
+          ++index;
         }
     }
     
-    return counter;
+  return counter;
 }
 
 /****************************************************************************************
@@ -285,22 +284,22 @@ long tq_time_to_nearest_timer (timer_queue*const tq)
 ****************************************************************************************/
 int tq_remove_nearest_timer (timer_queue*const tq, timer_node** tnode)
 {
-	heap* h = (heap *) tq;
-	hnode* node = heap_pop ((heap *const) tq);
+  heap* h = (heap *) tq;
+  hnode* node = heap_pop ((heap *const) tq);
 
-	if (!node)
-		return -1;
+  if (!node)
+    return -1;
 
-	*tnode = node->ctx;
+  *tnode = node->ctx;
 
-	node_reset (node);
+  node_reset (node);
 
-	if (mpool_return_obj (h->nodes_mpool, (allocatable *)node) == -1)
-	{
-		return -1;
-	}
+  if (mpool_return_obj (h->nodes_mpool, (allocatable *)node) == -1)
+    {
+      return -1;
+    }
 
-	return 0;
+  return 0;
 }
 
 /****************************************************************************************

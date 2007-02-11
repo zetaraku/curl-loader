@@ -183,7 +183,7 @@ void heap_reset (heap*const h)
 /****************************************************************************************
 * Function name - heap_dump
 *
-* Description - Dumps heap fields. Uses user-provided function to dump user objects
+* Description - Dumps heap fields. Uses user-provided function to dump user object content
 *
 * Input -       *h - pointer to an initialized heap
 *
@@ -299,6 +299,15 @@ int heap_empty (heap*const h)
   return ! h->curr_heap_size;
 }
 
+/****************************************************************************************
+* Function name - heap_increase
+*
+* Description - Increases size of the heap adding <heap_increase_step> hnodes
+*
+* Input -       *h - pointer to an initialized heap
+*
+* Return Code/Output - On success - 0, on error -1
+****************************************************************************************/
 int heap_increase (heap*const h)
 {
   hnode** new_heap = 0, **old_heap = 0;
@@ -357,7 +366,7 @@ int heap_increase (heap*const h)
 * Description -  Pushes a new hnode to the heap
 *
 * Input -       *h - pointer to an initialized heap
-*               *node - pointer to an initialized heap
+*               *nd - pointer to node
 *               keep_node_id - flag, whether to respect the <node-id> from the node
 *                              (support for periodical timer)
 *
@@ -412,6 +421,15 @@ long heap_push (heap* const h, hnode* const nd, int keep_node_id)
   return new_node_id;
 }
 
+/****************************************************************************************
+* Function name - heap_get_node_id
+*
+* Description -  Provides a "free" id
+*
+* Input -       *h - pointer to an initialized heap
+*
+* Return Code/Output - node-id
+****************************************************************************************/
 long heap_get_node_id (heap*const h)
 {
   while (++h->ids_last < h->max_heap_size && h->ids_arr[h->ids_last] >= 0)
@@ -426,6 +444,17 @@ long heap_get_node_id (heap*const h)
   return (long) h->ids_last;
 }
 
+/****************************************************************************************
+* Function name - heap_put_node_to_slot
+*
+* Description -  Puts hnode to a certain slot position and updates the node id
+*
+* Input -       *h - pointer to an initialized heap
+*               slot - index of the heap-array (slot) to be used for hnode
+*               *nd - pointer to hnode
+*
+* Return Code/Output - none
+****************************************************************************************/
 void heap_put_node_to_slot (heap*const h, size_t slot, hnode*const nd)
 {
   /* Insert node into the specified slot of the heap */
@@ -435,6 +464,17 @@ void heap_put_node_to_slot (heap*const h, size_t slot, hnode*const nd)
   h->ids_arr[nd->node_id] = slot;
 }
 
+/****************************************************************************************
+* Function name - heap_remove_node
+*
+* Description -  Removes hnode from a certain slot position, reheapefies the heap and marks
+*                              the slot in the ids array as available (-1)
+*
+* Input -       *h - pointer to an initialized heap
+*               slot - index of the heap-array (slot), where to remove hnode
+*
+* Return Code/Output - On success - a valid hnode, on error - 0
+****************************************************************************************/
 hnode* heap_remove_node (heap*const h, const size_t slot)
 {
   hnode* mved_end_node = 0;
@@ -492,6 +532,16 @@ hnode* heap_remove_node (heap*const h, const size_t slot)
   return removed_node;
 }
 
+/****************************************************************************************
+* Function name -  filter_up
+*
+* Description -  Heap structure restoration to the up direction
+*
+* Input -       *h - pointer to an initialized heap
+*               index - position, from which to start
+*
+* Return Code/Output - none
+****************************************************************************************/
 void filter_up (heap*const h, size_t index)
 {
   int curr_pos = index;
@@ -522,6 +572,16 @@ void filter_up (heap*const h, size_t index)
   heap_put_node_to_slot (h, curr_pos, target);
 }
 
+/****************************************************************************************
+* Function name -  filter_down
+*
+* Description -  Heap structure restoration to the down direction
+*
+* Input -       *h - pointer to an initialized heap
+*               index - position, from which to start
+*
+* Return Code/Output - none
+****************************************************************************************/
 void filter_down (heap*const h, size_t index)
 {
   void* target = h->heap [index];
@@ -581,8 +641,8 @@ void filter_down (heap*const h, size_t index)
 ****************************************************************************************/
 int heap_size (heap*const h)
 {
-	if (!h)
-		return -1;
+  if (!h)
+    return -1;
 	
-	return h->curr_heap_size;
+  return h->curr_heap_size;
 }

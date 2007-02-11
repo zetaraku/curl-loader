@@ -394,20 +394,8 @@ static int initial_handles_init (client_context*const ctx_array)
                    __func__, k);
           return -1;
         }
-      /* Add it to multi-*/
-
-      //int m_error = -1;
-      //if ((m_error = curl_multi_add_handle(bctx->multiple_handle,
-      //                                     bctx->cctx_array[k].handle)) != CURLM_OK)
-      //  {
-      //    fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
-      //             __func__, m_error);
-      //    return -1;
-      //  }
     }
         
-  //bctx->active_clients_count = bctx->client_num;
-
   return 0;
 }
 
@@ -713,7 +701,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
       cctx->client_state = CSTATE_ERROR;
 
       stat_err_inc (cctx);
-      hdrs_clear_all (cctx);
+      first_hdrs_clear_all (cctx);
       break;
 
     case CURLINFO_HEADER_OUT:
@@ -723,14 +711,14 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
 
       stat_data_out_add (cctx, (unsigned long) size);
 
-      if (! hdrs_req (cctx))
+      if (! first_hdr_req (cctx))
         {
           /* First header of the HTTP-request. */
-          hdrs_req_inc (cctx);
+          first_hdr_req_inc (cctx);
           stat_req_inc (cctx); /* Increment number of requests */
-          cctx->req_timestamp = get_tick_count ();
+          cctx->req_sent_timestamp = get_tick_count ();
         }
-      hdrs_clear_non_req (cctx);
+      first_hdrs_clear_non_req (cctx);
       break;
 
     case CURLINFO_DATA_OUT:
@@ -740,7 +728,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   url_diff ? url_target : "");
 
       stat_data_out_add (cctx, (unsigned long) size);
-      hdrs_clear_all (cctx);
+      first_hdrs_clear_all (cctx);
       break;
 
     case CURLINFO_SSL_DATA_OUT:
@@ -750,7 +738,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   url_diff ? url_target : "");
 
       stat_data_out_add (cctx, (unsigned long) size);
-      hdrs_clear_all (cctx);
+      first_hdrs_clear_all (cctx);
       break;
       
     case CURLINFO_HEADER_IN:
@@ -779,12 +767,12 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
               fprintf(cctx->file_output, "%ld %s:!! %ld CONTINUE: eff-url: %s, url: %s\n", 
                       cctx->cycle_num, cctx->client_name, response_status,
                       url_print ? url : "", url_diff ? url_target : "");
-            hdrs_clear_all (cctx);
+            first_hdrs_clear_all (cctx);
             break;
 
           case 2: /* 200 OK */
 
-            if (! hdrs_2xx (cctx))
+            if (! first_hdr_2xx (cctx))
               {
                 if (verbose_logging)
                     fprintf(cctx->file_output, "%ld %s:!! %ld OK: eff-url: %s, url: %s\n",
@@ -792,7 +780,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                             url_print ? url : "", url_diff ? url_target : "");
 
                 /* First header of 2xx response */
-                hdrs_2xx_inc (cctx);
+                first_hdr_2xx_inc (cctx);
                 stat_2xx_inc (cctx); /* Increment number of 2xx responses */
 
                 /* Count into the averages HTTP/S server response delay */
@@ -800,60 +788,60 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                 stat_appl_delay_2xx_add (cctx, time_2xx_resp);
                 stat_appl_delay_add (cctx, time_2xx_resp);
               }
-            hdrs_clear_non_2xx (cctx);
+            first_hdrs_clear_non_2xx (cctx);
             break;
        
           case 3: /* 3xx REDIRECTIONS */
 
-            if (! hdrs_3xx (cctx))
+            if (! first_hdr_3xx (cctx))
               {
                 fprintf(cctx->file_output, "%ld %s:!! %ld REDIRECTION: %s: eff-url: %s, url: %s\n", 
                     cctx->cycle_num, cctx->client_name, response_status, data,
                     url_print ? url : "", url_diff ? url_target : "");
 
                 /* First header of 3xx response */
-                hdrs_3xx_inc (cctx);
+                first_hdr_3xx_inc (cctx);
                 stat_3xx_inc (cctx); /* Increment number of 3xx responses */
                 const unsigned long time_3xx_resp = get_tick_count ();
                 stat_appl_delay_add (cctx, time_3xx_resp);
               }
-            hdrs_clear_non_3xx (cctx);
+            first_hdrs_clear_non_3xx (cctx);
             break;
 
           case 4: /* 4xx Client Error */
 
-              if (! hdrs_4xx (cctx))
+              if (! first_hdr_4xx (cctx))
               {
                 fprintf(cctx->file_output, "%ld %s :!! %ld CLIENT_ERROR : %s: eff-url: %s, url: %s\n", 
                       cctx->cycle_num, cctx->client_name, response_status, data,
                       url_print ? url : "", url_diff ? url_target : "");
 
                 /* First header of 4xx response */
-                hdrs_4xx_inc (cctx);
+                first_hdr_4xx_inc (cctx);
                 stat_4xx_inc (cctx);  /* Increment number of 4xx responses */
 
                 const unsigned long time_4xx_resp = get_tick_count ();
                 stat_appl_delay_add (cctx, time_4xx_resp);
               }
-             hdrs_clear_non_4xx (cctx);
+             first_hdrs_clear_non_4xx (cctx);
              break;
 
           case 5: /* 5xx Server Error */
 
-            if (! hdrs_5xx (cctx))
+            if (! first_hdr_5xx (cctx))
               {
                 fprintf(cctx->file_output, "%ld %s :!! %ld SERVER_ERROR : %s: eff-url: %s, url: %s\n", 
                     cctx->cycle_num, cctx->client_name, response_status, data,
                     url_print ? url : "", url_diff ? url_target : "");
 
                 /* First header of 5xx response */
-                hdrs_5xx_inc (cctx);
+                first_hdr_5xx_inc (cctx);
                 stat_5xx_inc (cctx);  /* Increment number of 5xx responses */
 
                 const unsigned long time_5xx_resp = get_tick_count ();
                 stat_appl_delay_add (cctx, time_5xx_resp);
               }
-            hdrs_clear_non_5xx (cctx);
+            first_hdrs_clear_non_5xx (cctx);
             break;
 
           default :
@@ -873,7 +861,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   url_print ? url : "", url_diff ? url_target : "");
 
       stat_data_in_add (cctx,  (unsigned long) size);
-      hdrs_clear_all (cctx);
+      first_hdrs_clear_all (cctx);
       break;
 
     case CURLINFO_SSL_DATA_IN:
@@ -883,7 +871,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                   url_print && url ? url : "", url_diff ? url_target : "");
 
       stat_data_in_add (cctx,  (unsigned long) size);
-      hdrs_clear_all (cctx);
+      first_hdrs_clear_all (cctx);
       break;
 
     default:

@@ -115,8 +115,10 @@ typedef struct batch_context
 
   /*------- UAS (User Activity Simulation) SECTION - fetching urls ----- */
 
-   /* Whether to proceed with UAS, When zero, other fields of the UAS section 
-      are not relevant and should be commented out in the configuration file.*/
+   /* 
+      Whether to proceed with UAS, When zero, other fields of the UAS section 
+      are not relevant and should be commented out in the configuration file.
+   */
   int do_uas;
 
   /* Number of total urls, should be more or equal to 1 */

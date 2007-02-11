@@ -51,6 +51,11 @@ typedef enum url_appl_type
     URL_APPL_FTPS,
   } url_appl_type;
 
+
+/*
+  url_context - structure, that concentrates our knowledge about the url
+  to fetch.
+*/
 typedef struct url_context
 {
    /* URL buffer */
@@ -68,9 +73,10 @@ typedef struct url_context
   url_appl_type url_appl_type;
 
   /* 
-     Current loading step: login, uas, logoff. If we are in the loading step 
-     login - take login url, logoff - take logoff url. For UAS step - take the 
-     next url according to <url_uas_num>. 
+     At which loading step the url is used: login, uas, logoff. 
+     
+     If we are in the loading step login - take login url, logoff - take logoff url. 
+     For UAS step - take the next url according to <url_uas_num>. 
   */
   url_load_step url_lstep;
 

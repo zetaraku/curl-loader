@@ -25,78 +25,83 @@
 
 
 #include "client.h"
-#include "batch.h" /* we need only statistics structure */
-
-int hdrs_req (client_context* cctx)
-{
-  return cctx->hdrs_req;
-}
-void hdrs_req_inc (client_context* cctx)
-{
-  cctx->hdrs_req++;
-}
-
-int hdrs_2xx (client_context* cctx)
-{
-  return cctx->hdrs_2xx;
-}
-void hdrs_2xx_inc (client_context* cctx)
-{
-  cctx->hdrs_2xx++;
-}
-
-int hdrs_3xx (client_context* cctx)
-{
-  return cctx->hdrs_3xx++;
-}
-void hdrs_3xx_inc (client_context* cctx)
-{
-  cctx->hdrs_3xx++;
-}
-
-int hdrs_4xx (client_context* cctx)
-{
-  return cctx->hdrs_4xx;
-}
-void hdrs_4xx_inc (client_context* cctx)
-{
-  cctx->hdrs_4xx++;
-}
-
-int hdrs_5xx (client_context* cctx)
-{
-  return cctx->hdrs_5xx;
-}
-void hdrs_5xx_inc (client_context* cctx)
-{
-  cctx->hdrs_5xx++;
-}
+#include "batch.h"
 
 
-void hdrs_clear_all (client_context* cctx)
+/*
+  Accessors to the flags-counters of headers.
+  Incrementing counters for the flags-counters of headers.
+*/
+int first_hdr_req (client_context* cctx)
 {
-  cctx->hdrs_req = cctx->hdrs_2xx = cctx->hdrs_3xx = cctx->hdrs_4xx = 
-      cctx->hdrs_5xx = 0;
+  return cctx->first_hdr_req;
 }
-void hdrs_clear_non_req (client_context* cctx)
+void first_hdr_req_inc (client_context* cctx)
 {
-  cctx->hdrs_2xx = cctx->hdrs_3xx = cctx->hdrs_4xx = cctx->hdrs_5xx = 0;
+  cctx->first_hdr_req++;
 }
-void hdrs_clear_non_2xx (client_context* cctx)
+int first_hdr_2xx (client_context* cctx)
 {
-  cctx->hdrs_req = cctx->hdrs_3xx = cctx->hdrs_4xx = cctx->hdrs_5xx = 0;
+  return cctx->first_hdr_2xx;
 }
-void hdrs_clear_non_3xx (client_context* cctx)
+void first_hdr_2xx_inc (client_context* cctx)
 {
-  cctx->hdrs_req = cctx->hdrs_2xx = cctx->hdrs_4xx = cctx->hdrs_5xx = 0;
+  cctx->first_hdr_2xx++;
 }
-void hdrs_clear_non_4xx (client_context* cctx)
+int first_hdr_3xx (client_context* cctx)
 {
-  cctx->hdrs_req = cctx->hdrs_2xx = cctx->hdrs_3xx = cctx->hdrs_5xx = 0;
+  return cctx->first_hdr_3xx++;
 }
-void hdrs_clear_non_5xx (client_context* cctx)
+void first_hdr_3xx_inc (client_context* cctx)
 {
-  cctx->hdrs_req = cctx->hdrs_2xx = cctx->hdrs_4xx = cctx->hdrs_3xx = 0;
+  cctx->first_hdr_3xx++;
+}
+
+int first_hdr_4xx (client_context* cctx)
+{
+  return cctx->first_hdr_4xx;
+}
+void first_hdr_4xx_inc (client_context* cctx)
+{
+  cctx->first_hdr_4xx++;
+}
+int first_hdr_5xx (client_context* cctx)
+{
+  return cctx->first_hdr_5xx;
+}
+void first_hdr_5xx_inc (client_context* cctx)
+{
+  cctx->first_hdr_5xx++;
+}
+
+
+/*
+  Reseting to zero counters for the flags-counters of headers.
+*/
+void first_hdrs_clear_all (client_context* cctx)
+{
+  cctx->first_hdr_req = cctx->first_hdr_2xx = cctx->first_hdr_3xx = cctx->first_hdr_4xx = 
+      cctx->first_hdr_5xx = 0;
+}
+void first_hdrs_clear_non_req (client_context* cctx)
+{
+  cctx->first_hdr_2xx = cctx->first_hdr_3xx = cctx->first_hdr_4xx = cctx->first_hdr_5xx = 0;
+}
+void first_hdrs_clear_non_2xx (client_context* cctx)
+{
+  cctx->first_hdr_req = cctx->first_hdr_3xx = cctx->first_hdr_4xx = cctx->first_hdr_5xx = 0;
+}
+void first_hdrs_clear_non_3xx (client_context* cctx)
+{
+  cctx->first_hdr_req = cctx->first_hdr_2xx = cctx->first_hdr_4xx = cctx->first_hdr_5xx = 0;
+}
+void first_hdrs_clear_non_4xx (client_context* cctx)
+{
+  cctx->first_hdr_req = cctx->first_hdr_2xx = cctx->first_hdr_3xx = cctx->first_hdr_5xx = 0;
+}
+void first_hdrs_clear_non_5xx (client_context* cctx)
+{
+  cctx->first_hdr_req = cctx->first_hdr_2xx = cctx->first_hdr_4xx = cctx->first_hdr_3xx = 0;
 }
 
 
@@ -156,45 +161,46 @@ void stat_5xx_inc (client_context* cctx)
 
 void stat_appl_delay_add (client_context* cctx, unsigned long resp_timestamp)
 {
-  if (resp_timestamp > cctx->req_timestamp)
+  if (resp_timestamp > cctx->req_sent_timestamp)
     {
       if (cctx->is_https)
         {
           cctx->bctx->https_delta.appl_delay = 
             (cctx->bctx->https_delta.appl_delay * cctx->bctx->https_delta.appl_delay_points +
-             resp_timestamp - cctx->req_timestamp) / ++cctx->bctx->https_delta.appl_delay_points;
+             resp_timestamp - cctx->req_sent_timestamp) / ++cctx->bctx->https_delta.appl_delay_points;
         }
       else
         {
           cctx->bctx->http_delta.appl_delay = 
             (cctx->bctx->http_delta.appl_delay * cctx->bctx->http_delta.appl_delay_points +
-             resp_timestamp - cctx->req_timestamp) / ++cctx->bctx->http_delta.appl_delay_points;
+             resp_timestamp - cctx->req_sent_timestamp) / ++cctx->bctx->http_delta.appl_delay_points;
         }
     }
 }
 void stat_appl_delay_2xx_add (client_context* cctx, unsigned long resp_timestamp)
 {
-    if (resp_timestamp > cctx->req_timestamp)
+    if (resp_timestamp > cctx->req_sent_timestamp)
     {
       if (cctx->is_https)
         {
           cctx->bctx->https_delta.appl_delay_2xx = 
             (cctx->bctx->https_delta.appl_delay_2xx * cctx->bctx->https_delta.appl_delay_2xx_points +
-             resp_timestamp - cctx->req_timestamp) / ++cctx->bctx->https_delta.appl_delay_2xx_points;
+             resp_timestamp - cctx->req_sent_timestamp) / ++cctx->bctx->https_delta.appl_delay_2xx_points;
         }
       else
         {
           cctx->bctx->http_delta.appl_delay_2xx = 
             (cctx->bctx->http_delta.appl_delay_2xx * cctx->bctx->http_delta.appl_delay_2xx_points +
-             resp_timestamp - cctx->req_timestamp) / ++cctx->bctx->http_delta.appl_delay_2xx_points;
+             resp_timestamp - cctx->req_sent_timestamp) / ++cctx->bctx->http_delta.appl_delay_2xx_points;
         }
     }
 }
 
 void dump_client (FILE* file, client_context* cctx)
 {
+  
   if (!file || !cctx)
-    return;
+	 return;
 
   fprintf (file, 
            "%s,cycles:%ld,state:%d,b_in:%lld,b_out:%lld,req:%ld,rsp_3xx:%ld,rsp_oks:%ld,rsp_4xx:%ld,rsp_5xx:%ld,err:%ld\n", 
