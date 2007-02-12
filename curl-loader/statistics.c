@@ -32,6 +32,9 @@
 
 #include "statistics.h"
 
+#define SECURE_APPL_STR "HTTPS/FTPS"
+#define UNSECURE_APPL_STR "HTTP/FTP"
+
 static void dump_statistics (
                              unsigned long period, 
                              stat_point *http, 
@@ -177,7 +180,7 @@ void dump_final_statistics (client_context* cctx)
       print_statistics_data (
 				bctx->statistics_file,
 				loading_time/1000,
-				"HTTP",
+				UNSECURE_APPL_STR,
 				pending_active_and_waiting_clients_num (bctx),
 				&bctx->http_total,
 				loading_time);
@@ -185,7 +188,7 @@ void dump_final_statistics (client_context* cctx)
       print_statistics_data (
 				bctx->statistics_file, 
 				loading_time/1000,
-				"HTTPS",
+				SECURE_APPL_STR,
 				pending_active_and_waiting_clients_num (bctx),
 				&bctx->https_delta,
 				loading_time);
@@ -218,8 +221,8 @@ void print_intermediate_statistics (int clients,
     }
 
   fprintf(stderr, "\nClients: %d Time %d sec\n", (int) clients, (int) period);
-  dump_stat_to_screen ("HTTP", http, period);
-  dump_stat_to_screen ("HTTPS", https, period);
+  dump_stat_to_screen (UNSECURE_APPL_STR, http, period);
+  dump_stat_to_screen (SECURE_APPL_STR, https, period);
 }
 
 
@@ -256,7 +259,7 @@ void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
     print_statistics_data (
 			bctx->statistics_file,
 			timestamp_sec,
-			"HTTP",
+			UNSECURE_APPL_STR,
 			pending_active_and_waiting_clients_num (bctx),
 			&bctx->http_delta,
 			delta_time ? delta_time : 1);
@@ -264,7 +267,7 @@ void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
     print_statistics_data (
 			bctx->statistics_file, 
 			timestamp_sec,
-			"HTTPS", 
+			SECURE_APPL_STR, 
 			pending_active_and_waiting_clients_num (bctx),
 			&bctx->https_delta,
 			delta_time ? delta_time : 1);
@@ -293,8 +296,8 @@ static void dump_statistics (
     } 
   
   fprintf(stderr, "Test took %d seconds\n", (int) period);
-  dump_stat_to_screen ("HTTP", http, period);
-  dump_stat_to_screen ("HTTPS", https, period);
+  dump_stat_to_screen (UNSECURE_APPL_STR, http, period);
+  dump_stat_to_screen (SECURE_APPL_STR, https, period);
 }
 
 static void dump_stat_to_screen (
