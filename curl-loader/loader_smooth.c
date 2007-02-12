@@ -108,6 +108,7 @@ static int setup_uas (client_context* cctx);
 int user_activity_smooth (client_context* cctx_array)
 {
   batch_context* bctx = cctx_array->bctx;
+  long logfile_timer_id = -1;
 
   if (!bctx)
     {
@@ -144,7 +145,8 @@ int user_activity_smooth (client_context* cctx_array)
   logfile_timer_node.period = logfile_timer_msec;
   logfile_timer_node.func_timer = handle_logfile_rewinding_timer;
 
-  if (tq_schedule_timer (bctx->waiting_queue, &logfile_timer_node) == -1)
+  if ((logfile_timer_id = tq_schedule_timer (bctx->waiting_queue, 
+                                             &logfile_timer_node)) == -1)
     {
       fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
       return -1;
@@ -193,6 +195,12 @@ int user_activity_smooth (client_context* cctx_array)
   */
   if (bctx->waiting_queue)
     {
+        /* Cancel periodic logfile timer */
+      if (logfile_timer_id != -1)
+        {
+          tq_cancel_timer (bctx->waiting_queue, logfile_timer_id);
+        }
+
       tq_release (bctx->waiting_queue);
       free (bctx->waiting_queue);
       bctx->waiting_queue = 0;
