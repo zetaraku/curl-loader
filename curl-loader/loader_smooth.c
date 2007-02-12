@@ -39,6 +39,7 @@
 #include "heap.h"
 
 static timer_node logfile_timer_node; 
+static timer_node clients_num_inc_timer_node;
 
 #define DEFAULT_SMOOTH_URL_COMPLETION_TIME 6.0
 #define TIME_RECALCULATION_MSG_NUM 100
@@ -46,13 +47,16 @@ static timer_node logfile_timer_node;
 #define SMOOTH_MODE_LOGFILE_TEST_TIMER 10 /* once in 10 seconds */
 
 static int add_loading_clients (batch_context* bctx);
-static int add_loading_clients_cont (batch_context* bctx, unsigned long now_time);
 static int client_add_to_load (batch_context* bctx, client_context* cctx);
 static int client_remove_from_load (batch_context* bctx, client_context* cctx);
 static int handle_logfile_rewinding_timer  (
                                             timer_node* timer_node, 
                                             void* pvoid_param, 
                                             unsigned long ulong_param);
+static int handle_gradual_increase_clients_num  (
+                                                 timer_node* timer_node, 
+                                                 void* pvoid_param, 
+                                                 unsigned long ulong_param);
 
 static int mget_url_smooth (batch_context* bctx);
 static int mperform_smooth (batch_context* bctx, int* still_running);
@@ -109,6 +113,7 @@ int user_activity_smooth (client_context* cctx_array)
 {
   batch_context* bctx = cctx_array->bctx;
   long logfile_timer_id = -1;
+  long clients_num_inc_id = -1;
 
   if (!bctx)
     {
@@ -154,7 +159,6 @@ int user_activity_smooth (client_context* cctx_array)
   
 
   bctx->start_time = bctx->last_measure = now_time;
-  bctx->sec_current = 0; /* We use it for gradual loading */
   bctx->active_clients_count = 0;
   
 
@@ -164,23 +168,26 @@ int user_activity_smooth (client_context* cctx_array)
       return -1;
     }
 
-  int act_waiting_clients = 0;
+  if (bctx->do_client_num_gradual_increase)
+    {
+      /* Schedule the gradual loading clients increase timer */
+      
+      clients_num_inc_timer_node.next_timer = now_time + 1000;
+      clients_num_inc_timer_node.period = 1000;
+      clients_num_inc_timer_node.func_timer = handle_gradual_increase_clients_num;
 
-  while ((act_waiting_clients = pending_active_and_waiting_clients_num (bctx)) ||
+      if ((clients_num_inc_id = tq_schedule_timer (
+                                                   bctx->waiting_queue, 
+                                                   &clients_num_inc_timer_node)) == -1)
+        {
+          fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
+          return -1;
+        }
+    }
+
+  while ((pending_active_and_waiting_clients_num (bctx)) ||
          bctx->do_client_num_gradual_increase)
     {
-      if (!act_waiting_clients  && bctx->do_client_num_gradual_increase)
-        {
-          //fprintf (stderr, "%s - from while calling add_loading_clients()\n", __func__);
-
-          if (add_loading_clients (bctx) == -1)
-            {
-              fprintf (stderr, "%s error: add_loading_clients () failed in while.\n", 
-                       __func__) ;
-              return -1;
-            }
-        }
-
       if (mget_url_smooth (bctx) == -1)
         {
           fprintf (stderr, "%s error: mget_url () failed.\n", __func__) ;
@@ -199,6 +206,7 @@ int user_activity_smooth (client_context* cctx_array)
       if (logfile_timer_id != -1)
         {
           tq_cancel_timer (bctx->waiting_queue, logfile_timer_id);
+          tq_cancel_timer (bctx->waiting_queue, clients_num_inc_id);
         }
 
       tq_release (bctx->waiting_queue);
@@ -217,7 +225,7 @@ int user_activity_smooth (client_context* cctx_array)
  *               clients increment for gradual loading.
  *
  * Input -       *bctx - pointer to the batch of contexts
- * Return Code/Output - On Success - 0, on Error -1
+ * Return Code/Output - On Success - 0, on error or request to unreg timer - (-1)
  ****************************************************************************************/
 static int add_loading_clients (batch_context* bctx)
 {
@@ -227,7 +235,7 @@ static int add_loading_clients (batch_context* bctx)
   if (bctx->client_num <= bctx->clients_initial_running_num)
     {
       bctx->do_client_num_gradual_increase = 0;
-      return 0;
+      return -1;
     }
 
   /* Calculate number of the new clients to schedule. */
@@ -236,11 +244,6 @@ static int add_loading_clients (batch_context* bctx)
     bctx->client_num; 
 
   fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_sched);
-  /* 
-     Disable do_client_num_gradual_increase flag to prevent recursive 
-     calls in load_next_step () 
-  */
-  bctx->do_client_num_gradual_increase = 0;
 
   /* 
      Schedule new clients by initializing thier CURL handle with
@@ -260,8 +263,8 @@ static int add_loading_clients (batch_context* bctx)
     }
 
   /* 
-     Re-calculate assisting counters and enable back 
-     do_client_num_gradual_increase flag, if required.
+     Re-calculate assisting counters and enable do_client_num_gradual_increase 
+     flag, if required.
   */
   if (bctx->clients_initial_inc)
     {
@@ -275,36 +278,6 @@ static int add_loading_clients (batch_context* bctx)
   return 0;
 }
 
-/****************************************************************************************
- * Function name - add_loading_clients_cont
- *
- * Description - Continue initialization of our virtual clients (CURL handles)
- *               by adding more clients each new second and scheduling 
- *               them according to client's increment number for initial gradual 
- *               loading. Uses add_loading_clients () function.
- *
- * Input -       *bctx - pointer to the batch of contexts
- *               now_time -  current time in millisecond ticks
- *
- * Return Code/Output - On Success - 0, on Error -1
- ****************************************************************************************/
-static int add_loading_clients_cont (batch_context* bctx, unsigned long now_time)
-{
-  unsigned long sec = (now_time - bctx->start_time)/1000;
-
-   /* At a new second (once at a second) schedule more clients. */
-  if (sec > bctx->sec_current)
-    {
-      bctx->sec_current = sec;
-      
-      //fprintf (stderr, "%s - from add_loading_clients_cont add_loading_clients()\n", __func__);
-
-      /* New second. Calling to schedule more clients. */
-      return add_loading_clients (bctx);
-    }
-
-  return 0;
-}
 
 /****************************************************************************************
  * Function name - mget_url_smooth
@@ -515,15 +488,6 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
   */
   rval_load = load_state_func_table[cctx->client_state+1](cctx, &interleave_waiting_time);
 
-  /* 
-     If there are still not scheduled clients, thus, continue their gradual
-     scheduling.
-  */
-  if (bctx->do_client_num_gradual_increase)
-    {
-      add_loading_clients_cont (bctx, now_time);
-    }
-  
   /* 
      Coming to the error or the finished states, just return without more 
      scheduling the client any more.
@@ -1084,12 +1048,24 @@ static int client_remove_from_load (batch_context* bctx, client_context* cctx)
 int pending_active_and_waiting_clients_num (batch_context* bctx)
 {
   return bctx->waiting_queue ? 
-    (bctx->active_clients_count + tq_size (bctx->waiting_queue) - NON_CLIENT_TIMERS_NUM) :
+    (bctx->active_clients_count + tq_size (bctx->waiting_queue) - 
+     NON_CLIENT_TIMERS_NUM - bctx->do_client_num_gradual_increase) :
     bctx->active_clients_count;
 }
 
-int handle_cctx_timer (
-                       timer_node* timer_node, 
+/****************************************************************************************
+ * Function name - handle_cctx_timer
+ *
+ * Description - Handling of timer for a client waiting in the waiting queue to respect url 
+ *                   interleave timeout. Schedules the client to perform the next loading operation.
+ *
+ * Input -       *timer_node - pointer to timer node structure
+ *              *pvoid_param - pointer to some extra data; here batch context
+ *              *ulong_param - some extra data.
+ *
+ * Return Code/Output - On success -0, on error - (-1)
+ ****************************************************************************************/
+int handle_cctx_timer (timer_node* timer_node, 
                        void* pvoid_param,
                        unsigned long ulong_param)
 {
@@ -1101,8 +1077,18 @@ int handle_cctx_timer (
   return client_add_to_load (bctx, cctx);
 }
 
-static int handle_logfile_rewinding_timer  (
-                                            timer_node* timer_node, 
+/****************************************************************************************
+ * Function name - handle_logfile_rewinding_timer
+ *
+ * Description - Handling of logfile controlling periodic timer
+ *
+ * Input -       *timer_node - pointer to timer node structure
+ *              *pvoid_param - pointer to some extra data; here batch context
+ *              *ulong_param - some extra data.
+ *
+ * Return Code/Output - On success -0, on error - (-1)
+ ****************************************************************************************/
+static int handle_logfile_rewinding_timer  (timer_node* timer_node, 
                                             void* pvoid_param, 
                                             unsigned long ulong_param)
 {
@@ -1116,6 +1102,37 @@ static int handle_logfile_rewinding_timer  (
       return -1;
     }
   
+  //fprintf (stderr, "%s - runs.\n", __func__);
+
+  return 0;
+}
+
+/****************************************************************************************
+ * Function name - handle_gradual_increase_clients_num
+ *
+ * Description - Handling of one second timer to increase gradually number of loading clients.
+ *
+ * Input -       *timer_node - pointer to timer_node structure
+ *              *pvoid_param - pointer to some extra data; here batch context
+ *              *ulong_param - some extra data.
+ *
+ * Return Code/Output - On success -0, on error - (-1)
+ ****************************************************************************************/
+static int handle_gradual_increase_clients_num  (
+                                                 timer_node* timer_node, 
+                                                 void* pvoid_param, 
+                                                 unsigned long ulong_param)
+{
+  batch_context* bctx = (batch_context *) pvoid_param;
+  (void) timer_node;
+  (void) ulong_param;
+
+  if (add_loading_clients (bctx) == -1)
+    {
+      fprintf (stderr, "%s add_loading_clients () returns -1.\n", __func__);
+      return -1;
+    }
+
   fprintf (stderr, "%s - runs.\n", __func__);
 
   return 0;

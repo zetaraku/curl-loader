@@ -191,12 +191,6 @@ typedef struct batch_context
   int do_client_num_gradual_increase;
 
   /* 
-	 Time since loading running in seconds. Used to schedule new
-	 clients in a gradual fashion, when <clients_initial_inc> is positive. 
- */
-  unsigned long sec_current;
-
-  /* 
 	 Number of already scheduled clients. Used to schedule new
 	 clients in a gradual fashion, when <clients_initial_inc> is positive. 
   */
