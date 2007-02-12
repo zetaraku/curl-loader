@@ -24,6 +24,7 @@
 #define LOADER_H
 
 #include <stddef.h>
+#include <stdio.h>
 
 #define BATCHES_MAX_NUM 64
 #define IPADDR_STR_SIZE 16
@@ -115,6 +116,15 @@ int add_secondary_ip_addrs (
 int parse_config_file (char* const filename, 
                        struct batch_context* bctx_array, 
                        size_t bctx_array_size);
+
+/*******************************************************************************
+* Function name - rewind_logfile_above_maxsize
+*
+* Description - Rewinds logfile, when file reaches maximum allowed size
+* Input-              filepointer - pointer to the open logfile
+* Return Code/Output - On success - 0, on errors -1
+********************************************************************************/
+int rewind_logfile_above_maxsize (FILE* filepointer);
 
 
 /* ------------- Hyper-mode loading  function ----------------*/

@@ -38,7 +38,7 @@ extern int connect_timeout;
 /* 
    Flag, whether to perform verbose logging. Very usefull for debugging, but files
    tend to become huge. Thus, they can be kept smaller by using 
-   logfile_rewind_number.
+   logfile_rewind_size.
 */
 extern int verbose_logging;
 
@@ -55,7 +55,7 @@ extern int threads_run;
   overwriting previous logged strings. Effectively, keeps the log history
   limited to below number of cycles.
 */
-extern int logfile_rewind_number;
+extern long logfile_rewind_size;
 
 /* 
    Zero - means reuse connections, any non-zero means 

@@ -241,10 +241,8 @@ static void* batch_function (void * batch_data)
 {
   batch_context* bctx = (batch_context *) batch_data;
   client_context* cctx = NULL;
-  FILE* output_file = 0;
+  FILE* log_file = 0;
   FILE* statistics_file = 0;
-  char output_filename[BATCH_NAME_SIZE+4];
-  char statistics_filename[BATCH_NAME_SIZE+4];
   
   int  i = 0, rval = -1;
 
@@ -261,26 +259,26 @@ static void* batch_function (void * batch_data)
       /*
         Init batch logfile for the batch clients output 
       */
-      sprintf (output_filename, "%s.log", bctx->batch_name);
+      sprintf (bctx-> batch_logfile, "./%s.log", bctx->batch_name);
 
-      if (!(output_file = fopen(output_filename, "w")))
+      if (!(log_file = fopen(bctx-> batch_logfile, "w")))
         {
           fprintf (stderr, 
                    "%s - \"%s\" - failed to open file \"%s\" with errno %d.\n", 
-                   __func__, bctx->batch_name, output_filename, errno);
+                   __func__, bctx->batch_name, bctx-> batch_logfile, errno);
           return NULL;
         }
 
       /*
         Init batch statistics file for loading statistics.
       */
-      sprintf (statistics_filename, "%s.txt", bctx->batch_name);
+      sprintf (bctx->batch_statistics, "./%s.txt", bctx->batch_name);
       
-      if (!(statistics_file = fopen(statistics_filename, "w")))
+      if (!(statistics_file = fopen(bctx->batch_statistics, "w")))
         {
           fprintf (stderr, 
                    "%s - \"%s\" - failed to open file \"%s\" with errno %d.\n", 
-                   __func__, bctx->batch_name, statistics_filename, errno);
+                   __func__, bctx->batch_name, bctx->batch_statistics, errno);
           return NULL;
         }
       else
@@ -293,7 +291,7 @@ static void* batch_function (void * batch_data)
   /* 
      Allocates and inits objects, containing client-context information.
   */
-  if (alloc_init_client_contexts (&cctx, bctx, output_file) == -1)
+  if (alloc_init_client_contexts (&cctx, bctx, log_file) == -1)
     {
       fprintf (stderr, "%s - \"%s\" - failed to allocate or init cctx.\n", 
                __func__, bctx->batch_name);
@@ -342,8 +340,8 @@ static void* batch_function (void * batch_data)
 
   free(cctx);
 
-  if (output_file)
-      fclose (output_file);
+  if (log_file)
+      fclose (log_file);
   if (statistics_file)
       fclose (statistics_file);
 
@@ -975,7 +973,7 @@ static int alloc_init_client_post_buffers (client_context* cctx)
 *
 * Description - Allocate and initialize client contexts
 * Input -       *bctx - back-pointer to batch context to be set to all clients  of the batch
-*               *output_file - output file to be used by all clients of the batch
+*               *log_file - output file to be used by all clients of the batch
 * Output -      **p_cctx - pointer to client contexts array to be allocated and initialized
 *
 * Return Code -  On Success - 0, on Error -1
@@ -983,7 +981,7 @@ static int alloc_init_client_post_buffers (client_context* cctx)
 static int alloc_init_client_contexts (
                                        client_context** p_cctx, 
                                        batch_context* bctx,
-                                       FILE* output_file)
+                                       FILE* log_file)
 {
   int i;
   client_context* cctx = 0;
@@ -1026,7 +1024,7 @@ static int alloc_init_client_contexts (
       cctx[i].uas_url_curr_index = 0; /* Actually zeroed by calloc. */
 
       /* Set output stream for each client to be either batch logfile or stderr. */
-      cctx[i].file_output = stderr_print_client_msg ? stderr : output_file;
+      cctx[i].file_output = stderr_print_client_msg ? stderr : log_file;
 
       /* 
          Set pointer in client to its batch object. The pointer will be used to get 
@@ -1171,4 +1169,27 @@ do_nothing_write_func (void *ptr, size_t size, size_t nmemb, void *stream)
      just skipping the body bytes without any output. 
   */
   return (size*nmemb);
+}
+
+int rewind_logfile_above_maxsize (FILE* filepointer)
+{
+  long position = -1;
+
+  if (!filepointer)
+    return -1;
+
+  if ((position = ftell (filepointer)) == -1)
+    {
+      fprintf (stderr, 
+               "%s - error: ftell () failed with errno = %d\n", __func__, errno);
+      return -1;
+    }
+
+  if (position > (logfile_rewind_size* 1024*1024))
+    {
+      rewind (filepointer);
+      fprintf (stderr, "%s - logfile with size %ld rewinded.\n", __func__, position);
+    }
+
+  return 0;
 }

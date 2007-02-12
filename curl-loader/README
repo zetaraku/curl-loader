@@ -189,9 +189,9 @@ Usage: run as a root user:
 
 Possible options are:
 -c[onnection establishment timeout, seconds]
--e[rror drop client (smooth mode). Client on error doesn't attempt loading any mode.]
+-e[rror drop client (smooth mode). Client on error doesn't attempt loading any mode]
 -f[ilename of configuration to run (batches of clients)]
--l[ogfile rewind after this number of cycles]
+-l[ogfile max size in MB (default 1024). On the size reached, file pointer rewinded]
 -m[ode of loading, 1 - storming, 2 - smooth (default)]
 -o[utput to stdout bodies of downloaded files - attn!- bulky]
 -r[euse connections disabled. Close connections and re-open them. Try with and without]

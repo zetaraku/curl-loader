@@ -332,6 +332,8 @@ int tq_dispatch_nearest_timer (timer_queue*const tq, void* vp_param, unsigned lo
       
       if (heap_push (tq, node, 1) == -1)
         {
+          fprintf (stderr, "%s - error: heap_push () failed.\n", __func__);
+          rval = -1;
           goto node_return;
         }
       return 0;

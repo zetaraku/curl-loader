@@ -131,7 +131,7 @@ int tq_remove_nearest_timer (timer_queue*const tq, struct timer_node** tnode);
 /****************************************************************************************
 * Function name - tq_dispatch_nearest_timer
 *
-* Description - Removes nearest timer from the queue, calls for handle_timer () of the
+* Description - Removes nearest timer from the queue, calls for func_timer () of the
 *               timer node kept as the timer context. Internally performs necessary rearrangements 
 *               of the queue, re-schedules periodic timers and manages memory agaist mpool, if required.
 *

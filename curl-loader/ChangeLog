@@ -1,3 +1,21 @@
+
+* Added timer to test size of logfile periodically in smooth mode. Command-line
+   option -l < logfile maxsize> now brings another semantics and provides size
+   limit for a batch logfile in MB (default 1024 MB). When a logfile size limit is 
+   reached and the logfile size is tested and found to be above the limit, the file
+   is rewinded.
+   This closes the issue of not limiting logfile in the smooth mode.
+
+* Added to the timer-node pointer to timer handling function <func_timer>. 
+  Timer-queue will use another newly added function <tq_dispatch_nearest_timer>
+  to remove nearest timer node from the timer-queue and call for <func_timer>
+  of the node. Further <tq_dispatch_nearest_timer> re-schedules periodic timers,
+  and manages memory issues against internal mpool of hnodes.
+	
+  This makes handling of timer and timer-queue rather Object Oriented.
+
+
+
 version 0.24, 06/02/2007, svn 106
 
 

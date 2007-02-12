@@ -5,12 +5,13 @@ limitations
 
 1. Compile with optimization;
 
-Since you need performance. Edit Makefile by uncommenting OPT_FLAGS
+Since you need performance edit Makefile by uncommenting OPT_FLAGS
 and commenting DEBUG_FLAGS. Edit build_curl.sh and place to CFLAFS
 -O2 (libcurl uses this option) instead of -g. Y may add optimization for your
-particular processor by -match /-mcpu gcc option directives.
+particular processor by -match /-mcpu gcc option directives. Compile with 
+optimization.
 
-2. Load as a su;
+2. Login as a su;
 
 3. Increase the default number of allowed open descriptors (sockets);
  
@@ -71,10 +72,12 @@ If any assistance required, please, don't hesitate to contact us.
 8. Logs and statistics.
 
 After end of a run, or after SIGINT (Cntl-C), the final results are calculated
-and printed to the console as well as to the file $BATCH_NAME.txt.
+and printed to the console as well as to the file <$BATCH_NAME>.txt.
 Current results are presented in each row, and average summary as the last
 raws, separated from the rest by asterisks.
 
-Pay attention, that $BATCH_NAME.log log file may become huge, particularly, 
-when using verbose output (-v -u). Commandline option -l may be useful in 
-storming mode. Otherwise, do not use -v and -u options for rather long loads.
+Pay attention, that <$BATCH_NAME>.log log file may become huge, particularly, 
+when using verbose output (-v -u). Commandline option -l <maxsize in MB> may 
+be useful, whereas the default policy is to rewind the logfile (writing from the 
+file start), when it reaches 1 GB. Otherwise, do not use -v and -u options for 
+rather long loads.

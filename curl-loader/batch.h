@@ -56,6 +56,12 @@ typedef struct batch_context
    /* Some non-empty name of a batch load without empty spaces, tabs, etc */
   char batch_name[BATCH_NAME_SIZE];
 
+  /* Logfile <batch-name>.log */
+  char batch_logfile[BATCH_NAME_SIZE+4];
+
+  /* Statistics file <batch-name>.txt */
+  char batch_statistics[BATCH_NAME_SIZE+4];
+
   /* Number of clients (each client with its own IP-address) in the batch */
   int client_num;
   

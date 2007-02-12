@@ -180,15 +180,16 @@ int user_activity_storm (client_context*const cctx_array)
       usleep (1000 * bctx->logoff_url.url_interleave_time);
  
       /* 
-         After completing a cycle - rewind the file. Thus, we are keeping the current run
-         and a limited history run in the logfile. 
+         If the file reached its max allowed size - rewind the file.
       */
-      if (cycle > 0 && ! (cycle%logfile_rewind_number))
-          rewind (cctx_array->file_output);
+      if (rewind_logfile_above_maxsize (cctx_array->file_output) == -1)
+        {
+           fprintf (stderr, "%s - rewind_logfile_above_maxsize() failed .\n", __func__);
+          return -1;
+        }
       
-      // Bring statistics at the end of each cycle
+      /* Print statistics at the end of each cycle */
       dump_intermediate_and_advance_total_statistics (bctx);
-
     }
 
   /* 

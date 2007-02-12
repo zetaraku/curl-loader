@@ -38,14 +38,21 @@
 #include "conf.h"
 #include "heap.h"
 
+static timer_node logfile_timer_node; 
+
 #define DEFAULT_SMOOTH_URL_COMPLETION_TIME 6.0
 #define TIME_RECALCULATION_MSG_NUM 100
+#define NON_CLIENT_TIMERS_NUM 1
+#define SMOOTH_MODE_LOGFILE_TEST_TIMER 10 /* once in 10 seconds */
 
 static int add_loading_clients (batch_context* bctx);
 static int add_loading_clients_cont (batch_context* bctx, unsigned long now_time);
 static int client_add_to_load (batch_context* bctx, client_context* cctx);
 static int client_remove_from_load (batch_context* bctx, client_context* cctx);
-
+static int handle_logfile_rewinding_timer  (
+                                            timer_node* timer_node, 
+                                            void* pvoid_param, 
+                                            unsigned long ulong_param);
 
 static int mget_url_smooth (batch_context* bctx);
 static int mperform_smooth (batch_context* bctx, int* still_running);
@@ -125,10 +132,29 @@ int user_activity_smooth (client_context* cctx_array)
       fprintf (stderr, "%s - error: failed to initialize waiting queue.\n", __func__);
       return -1;
     }
+
+  const unsigned long now_time = get_tick_count ();
   
-  bctx->start_time = bctx->last_measure = get_tick_count ();
-  bctx->sec_current = 0;
+  /* 
+     Init logfile rewinding timer and schedule it.
+  */
+  const unsigned long logfile_timer_msec  = 1000*SMOOTH_MODE_LOGFILE_TEST_TIMER;
+
+  logfile_timer_node.next_timer = now_time + logfile_timer_msec;
+  logfile_timer_node.period = logfile_timer_msec;
+  logfile_timer_node.func_timer = handle_logfile_rewinding_timer;
+
+  if (tq_schedule_timer (bctx->waiting_queue, &logfile_timer_node) == -1)
+    {
+      fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
+      return -1;
+    }
+  
+
+  bctx->start_time = bctx->last_measure = now_time;
+  bctx->sec_current = 0; /* We use it for gradual loading */
   bctx->active_clients_count = 0;
+  
 
   if (add_loading_clients (bctx) == -1)
     {
@@ -1050,7 +1076,7 @@ static int client_remove_from_load (batch_context* bctx, client_context* cctx)
 int pending_active_and_waiting_clients_num (batch_context* bctx)
 {
   return bctx->waiting_queue ? 
-    (bctx->active_clients_count + tq_size (bctx->waiting_queue)) :
+    (bctx->active_clients_count + tq_size (bctx->waiting_queue) - NON_CLIENT_TIMERS_NUM) :
     bctx->active_clients_count;
 }
 
@@ -1067,16 +1093,22 @@ int handle_cctx_timer (
   return client_add_to_load (bctx, cctx);
 }
 
-int handle_logfile_rewinding_timer  (
-                                     timer_node* timer_node, 
-                                     void* pvoid_param, 
-                                     unsigned long ulong_param)
+static int handle_logfile_rewinding_timer  (
+                                            timer_node* timer_node, 
+                                            void* pvoid_param, 
+                                            unsigned long ulong_param)
 {
   batch_context* bctx = (batch_context *) pvoid_param;
   (void) timer_node;
   (void) ulong_param;
 
-  rewind (bctx->cctx_array->file_output);
+  if (rewind_logfile_above_maxsize (bctx->cctx_array->file_output) == -1)
+    {
+      fprintf (stderr, "%s - rewind_logfile_above_maxsize() failed .\n", __func__);
+      return -1;
+    }
+  
+  fprintf (stderr, "%s - runs.\n", __func__);
 
   return 0;
 }
