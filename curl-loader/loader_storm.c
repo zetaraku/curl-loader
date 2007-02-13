@@ -54,6 +54,7 @@ int user_activity_storm (client_context*const cctx_array)
   batch_context* bctx = cctx_array->bctx;
   long cycle, i, k;
   long u_index = 0;
+  unsigned long now_time;
 
     if (!bctx)
     {
@@ -63,22 +64,22 @@ int user_activity_storm (client_context*const cctx_array)
     }
 
   /* Add handles to multi_handle */
-  int m_error = -1;
-  for (i = 0 ; i < bctx->client_num ; i++)
-	{
-		if ((m_error = curl_multi_add_handle(
-					 bctx->multiple_handle,
-					 bctx->cctx_array[i].handle)) != CURLM_OK)
-		{
-			fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
-							 __func__, m_error);
-			return -1;
-		}
-	}
+    int m_error = -1;
+    for (i = 0 ; i < bctx->client_num ; i++)
+      {
+        if ((m_error = curl_multi_add_handle (
+                                             bctx->multiple_handle,
+                                             bctx->cctx_array[i].handle)) != CURLM_OK)
+          {
+            fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
+                     __func__, m_error);
+            return -1;
+          }
+      }
 
   bctx->active_clients_count = bctx->client_num;
-
-  bctx->start_time = bctx->last_measure = get_tick_count();
+  now_time = get_tick_count();
+  bctx->start_time = bctx->last_measure = now_time;
 
   /* 
      Make authentication login. If login operation should not be cycled.
@@ -93,8 +94,9 @@ int user_activity_storm (client_context*const cctx_array)
           return -1;
         }
 
-      // First string to contain statistics for non-cycling logins 
-      dump_intermediate_and_advance_total_statistics (bctx);
+      // First string to contain statistics for non-cycling logins
+      now_time = get_tick_count();
+      dump_intermediate_and_advance_total_statistics (bctx, now_time);
     }
   
   for (cycle = 0; cycle < bctx->cycles_num ; cycle++)
@@ -189,7 +191,8 @@ int user_activity_storm (client_context*const cctx_array)
         }
       
       /* Print statistics at the end of each cycle */
-      dump_intermediate_and_advance_total_statistics (bctx);
+      now_time = get_tick_count();
+      dump_intermediate_and_advance_total_statistics (bctx, now_time);
     }
 
   /* 
@@ -203,8 +206,9 @@ int user_activity_storm (client_context*const cctx_array)
           return -1;
         }
 
-      // Last string to contain statistics for non-cycling logoffs 
-      dump_intermediate_and_advance_total_statistics (bctx);
+      // Last string to contain statistics for non-cycling logoffs
+      now_time = get_tick_count();
+      dump_intermediate_and_advance_total_statistics (bctx, now_time);
     }
 
   for (k = 0 ; k < bctx->client_num ; k++)

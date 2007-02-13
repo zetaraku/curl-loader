@@ -93,15 +93,18 @@ struct batch_context;
 void dump_final_statistics (struct client_context* cctx);
 
 /****************************************************************************************
-* Function name - dump_final_statistics
+* Function name - dump_intermediate_and_advance_total_statistics
 *
 * Description - Dumps intermediate statistics for the latest loading time period and adds
 *                     this statistics to the total loading counters 
 * Input -       *bctx - pointer to batch context
+*                   now_time - current time in msec since the epoch
 *
 * Return Code/Output - None
 ****************************************************************************************/
-void dump_intermediate_and_advance_total_statistics(struct batch_context* bctx);
+void dump_intermediate_and_advance_total_statistics (
+                                                    struct batch_context* bctx,
+                                                    unsigned long now_time);
 
 
 /****************************************************************************************
@@ -121,7 +124,6 @@ void print_intermediate_statistics (
                                    unsigned long period,  
                                    stat_point *http, 
                                    stat_point *https);
-
 
 /****************************************************************************************
 * Function name - print_statistics_header

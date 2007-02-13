@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 #include "timer_queue.h"
 #include "heap.h"
@@ -259,14 +260,15 @@ int tq_cancel_timers (timer_queue*const tq, struct timer_node* const tnode)
 *
 * Input -       *tq - pointer to a timer queue, e.g. heap
 *
-* Return Code/Output - On success - time in msec , on error -1
+* Return Code/Output - Time in msec till the nearest timer or  ULONG_MAX, when there are 
+*                                no timers
 ****************************************************************************************/
-long tq_time_to_nearest_timer (timer_queue*const tq)
+unsigned long tq_time_to_nearest_timer (timer_queue*const tq)
 {
     heap* h = (heap *) tq;
 
     if (! h->curr_heap_size)
-        return -1;
+        return ULONG_MAX;
 
     return ((timer_node *) h->heap[0]->ctx)->next_timer;
 }

@@ -227,17 +227,20 @@ void print_intermediate_statistics (int clients,
 
 
 /****************************************************************************************
-* Function name - dump_final_statistics
+* Function name - dump_intermediate_and_advance_total_statistics
 *
 * Description - Dumps intermediate statistics for the latest loading time period and adds
 *                     this statistics to the total loading counters 
 * Input -       *bctx - pointer to batch context
+*                   now_time - current time in msec since the epoch
 *
 * Return Code/Output - None
 ****************************************************************************************/
-void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
+void dump_intermediate_and_advance_total_statistics(
+                                                    batch_context* bctx,
+                                                    unsigned long now_time)
 {
-  const unsigned long now_time = get_tick_count ();
+  //const unsigned long now_time = get_tick_count ();
   const unsigned long delta_time = now_time - bctx->last_measure;
 
     if (stop_loading)
@@ -279,7 +282,8 @@ void dump_intermediate_and_advance_total_statistics(batch_context* bctx)
   stat_point_reset (&bctx->http_delta); 
   stat_point_reset (&bctx->https_delta);
         
-  bctx->last_measure = get_tick_count(); 
+  //bctx->last_measure = get_tick_count(); 
+  bctx->last_measure = now_time;
 }
 
 static void dump_statistics (
@@ -305,7 +309,9 @@ static void dump_stat_to_screen (
                                  stat_point* sd, 
                                  unsigned long period)
 {
-  fprintf(stderr, "%s - Req: %ld, Redirs: %ld, Rsp-Ok: %ld, Rsp-Cl-Err:%ld, Rsp-Serv-Err:%ld, Err: %ld,  Delay: %ld (msec), Delay-2xx: %ld (msec), Thr-In: %lld (b/sec), Thr-Out: %lld (b/sec)\n",
+  fprintf(stderr, "%s - Req: %ld, Redirs: %ld, Rsp-Ok: %ld, Rsp-Cl-Err:%ld, "
+          "Rsp-Serv-Err:%ld, Err: %ld,  Delay: %ld (msec), Delay-2xx: %ld (msec), "
+          "Thr-In: %lld (b/sec), Thr-Out: %lld (b/sec)\n",
           protocol, sd->requests, sd->resp_redirs, sd->resp_oks, 
           sd->resp_cl_errs, sd->resp_serv_errs, 
           sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, 
@@ -325,7 +331,8 @@ static void dump_stat_to_screen (
 void print_statistics_header (FILE* file)
 {
     fprintf (file, 
-             "Time,Appl,Clients,Req,Redirs,Rsp-OK,Rsp-Cl-Err,Rsp-Serv-Err,Err,Delay,Delay-2xx,Thr-In,Thr-Out\n");
+             "Time,Appl,Clients,Req,Redirs,Rsp-OK,Rsp-Cl-Err,Rsp-Serv-Err,"
+             "Err,Delay,Delay-2xx,Thr-In,Thr-Out\n");
     fflush (file);
 }
 

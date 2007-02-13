@@ -43,7 +43,7 @@ static timer_node clients_num_inc_timer_node;
 
 #define DEFAULT_SMOOTH_URL_COMPLETION_TIME 6.0
 #define TIME_RECALCULATION_MSG_NUM 100
-#define NON_CLIENT_TIMERS_NUM 1
+#define PERIODIC_TIMERS_NUMBER 1
 #define SMOOTH_MODE_LOGFILE_TEST_TIMER 10 /* once in 10 seconds */
 
 static int add_loading_clients (batch_context* bctx);
@@ -53,14 +53,14 @@ static int handle_logfile_rewinding_timer  (
                                             timer_node* timer_node, 
                                             void* pvoid_param, 
                                             unsigned long ulong_param);
-static int handle_gradual_increase_clients_num  (
+static int handle_gradual_increase_clients_num_timer  (
                                                  timer_node* timer_node, 
                                                  void* pvoid_param, 
                                                  unsigned long ulong_param);
 
 static int mget_url_smooth (batch_context* bctx);
 static int mperform_smooth (batch_context* bctx, int* still_running);
-static int schedule_clients_from_waiting_queue (
+static int dispatch_expired_timers (
                                                 batch_context* bctx, 
                                                 unsigned long now_time);
 
@@ -121,7 +121,7 @@ int user_activity_smooth (client_context* cctx_array)
       return -1;
     }
 
-  /* Make smooth-mode specific allocations and initializations */
+  /* ======== Make the smooth-mode specific allocations and initializations =======*/
 
   if (! (bctx->waiting_queue = calloc (1, sizeof (heap))))
     {
@@ -170,11 +170,14 @@ int user_activity_smooth (client_context* cctx_array)
 
   if (bctx->do_client_num_gradual_increase)
     {
-      /* Schedule the gradual loading clients increase timer */
+      /* 
+         Schedule the gradual loading clients increase timer 
+      */
       
       clients_num_inc_timer_node.next_timer = now_time + 1000;
       clients_num_inc_timer_node.period = 1000;
-      clients_num_inc_timer_node.func_timer = handle_gradual_increase_clients_num;
+      clients_num_inc_timer_node.func_timer = 
+        handle_gradual_increase_clients_num_timer;
 
       if ((clients_num_inc_id = tq_schedule_timer (
                                                    bctx->waiting_queue, 
@@ -185,6 +188,9 @@ int user_activity_smooth (client_context* cctx_array)
         }
     }
 
+  /* 
+     ========= Run the loading machinery ================
+  */
   while ((pending_active_and_waiting_clients_num (bctx)) ||
          bctx->do_client_num_gradual_increase)
     {
@@ -198,7 +204,7 @@ int user_activity_smooth (client_context* cctx_array)
   dump_final_statistics (cctx_array);
 
   /* 
-     Release resources 
+     ======= Release resources =========================
   */
   if (bctx->waiting_queue)
     {
@@ -314,6 +320,7 @@ static int mget_url_smooth (batch_context* bctx)
 
       max_timeout -= ((float)timeout.tv_sec + (float)timeout.tv_usec/1000000.0) ; 
       curl_multi_fdset(bctx->multiple_handle, &fdread, &fdwrite, &fdexcep, &maxfd);
+
       //fprintf (stderr, "%s - Waiting for %d clients with seconds %f.\n", 
       //name, still_running, max_timeout);
 
@@ -352,19 +359,19 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
   int msg_num = 0;
   CURLMsg *msg;
     
-  while(CURLM_CALL_MULTI_PERFORM == 
+  while (CURLM_CALL_MULTI_PERFORM == 
         curl_multi_perform(mhandle, still_running))
     ;
 
   now_time = get_tick_count ();
 
   if ((now_time - bctx->last_measure) > snapshot_timeout) 
-  {
-      dump_intermediate_and_advance_total_statistics (bctx);
-   }
+    {
+      dump_intermediate_and_advance_total_statistics (bctx, now_time);
+    }
 
   while( (msg = curl_multi_info_read (mhandle, &msg_num)) != 0)
-   {
+    {
       if (msg->msg == CURLMSG_DONE)
         {
           /* TODO: CURLMsg returns 'result' field as curl return code. We may wish to use it. */
@@ -396,6 +403,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
           /*cstate client_state =  */
           load_next_step (cctx, now_time);
+
           //fprintf (stderr, "%s - after load_next_step client state %d.\n", __func__, client_state);
 
           if (msg_num <= 0)
@@ -405,18 +413,20 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
           cycle_counter++;
         }
-   }
+    }
 
-  schedule_clients_from_waiting_queue (bctx, now_time);
+  dispatch_expired_timers (bctx, now_time);
 
   return 0;
 }
 
 /****************************************************************************************
- * Function name - schedule_clients_from_waiting_queue
+ * Function name - dispatch_expired_timers
  *
  * Description - Fetches from the waiting timer queue timers and dispatches them
- *               by calling timer-node specific handle_timeout () method.
+ *               by calling timer-node specific handle_timeout () method. Among other expired timers
+ *               dispatches waiting clients (kept in timer-queue to respect url interleave timeouts),
+ *               where func_timer () function of client timer-node adds the clients to loading machinery.
  *
  * Input -       *bctx - pointer to the batch of contexts;
  *               now_time -  current time passed in msec
@@ -424,7 +434,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
  * Return Code/Output - On Success - 0, on Error -1
  ****************************************************************************************/
 static int
-schedule_clients_from_waiting_queue (batch_context* bctx, unsigned long now_time)
+dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
 {
   timer_queue* tq = bctx->waiting_queue;
 
@@ -436,9 +446,9 @@ schedule_clients_from_waiting_queue (batch_context* bctx, unsigned long now_time
 
   while (! tq_empty (tq))
     {
-      long time_nearest = tq_time_to_nearest_timer (tq);
+      unsigned long time_nearest = tq_time_to_nearest_timer (tq);
 
-      if (time_nearest <= (long)now_time)
+      if (time_nearest <= now_time)
         {
           if (tq_dispatch_nearest_timer (tq, bctx, now_time) == -1)
             {
@@ -484,7 +494,7 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 
   /* 
      Initialize virtual client's CURL handle for the next step of loading by calling
-     load_* function relevant for the client state.
+     load_<state-name>_state() function relevant for a particular client state.
   */
   rval_load = load_state_func_table[cctx->client_state+1](cctx, &interleave_waiting_time);
 
@@ -643,7 +653,7 @@ static int setup_login_logoff (client_context* cctx, const int login)
       if (setup_curl_handle_init (
                                   cctx,
                                   login ? &bctx->login_url : &bctx->logoff_url,
-                                  0, /* Not applicable for the smooth mode */
+                                  0, /* Not applicable for smooth mode */
                                   post_standalone /* If 'true' -POST, else GET */
                                   ) == -1)
         {
@@ -656,8 +666,8 @@ static int setup_login_logoff (client_context* cctx, const int login)
       /* 
          The only case here, is when doing POST after GET. 
          We should preserve the url kept in CURL handle after GET,
-         which may be the result of redirection/s,  but use HTTP POST 
-         request method with post login/logoff fields. 
+         which may be the result of redirection/s,  but switch to POST 
+         request method using client-specific POST login/logoff fields. 
       */
       CURL* handle = cctx->handle;
 
@@ -716,15 +726,15 @@ static int load_init_state (client_context* cctx, unsigned long *wait_msec)
 
   if (bctx->do_login) /* Normally, the very first operation is login, but who is normal? */
     {
-	  return load_login_state (cctx, wait_msec);
+      return load_login_state (cctx, wait_msec);
     }
   else if (bctx->do_uas) /* Sometimes, no login is defined. Just a traffic-gen */
     {
-	  return load_uas_state (cctx, wait_msec);
+      return load_uas_state (cctx, wait_msec);
     }
   else if (bctx->do_logoff) /* Logoff only?  If this is what a user wishing ...  */
     {
-	  return load_logoff_state (cctx, wait_msec);
+      return load_logoff_state (cctx, wait_msec);
     }
 
   return (cctx->client_state = CSTATE_ERROR);
@@ -1049,7 +1059,7 @@ int pending_active_and_waiting_clients_num (batch_context* bctx)
 {
   return bctx->waiting_queue ? 
     (bctx->active_clients_count + tq_size (bctx->waiting_queue) - 
-     NON_CLIENT_TIMERS_NUM - bctx->do_client_num_gradual_increase) :
+     PERIODIC_TIMERS_NUMBER - bctx->do_client_num_gradual_increase) :
     bctx->active_clients_count;
 }
 
@@ -1108,7 +1118,7 @@ static int handle_logfile_rewinding_timer  (timer_node* timer_node,
 }
 
 /****************************************************************************************
- * Function name - handle_gradual_increase_clients_num
+ * Function name - handle_gradual_increase_clients_num_timer
  *
  * Description - Handling of one second timer to increase gradually number of loading clients.
  *
@@ -1118,7 +1128,7 @@ static int handle_logfile_rewinding_timer  (timer_node* timer_node,
  *
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/
-static int handle_gradual_increase_clients_num  (
+static int handle_gradual_increase_clients_num_timer  (
                                                  timer_node* timer_node, 
                                                  void* pvoid_param, 
                                                  unsigned long ulong_param)
