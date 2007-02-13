@@ -42,6 +42,11 @@ int verbose_logging = 0;
 /* Flag, whether to run batches as batch per thread. */
 int threads_run = 0;
 
+/* 
+   Time in seconds between intermediate statistics printouts to
+   screen as well as to the statistics file
+*/
+long intermediate_statistics_timeout = 2; /* Seconds */
 /*  
     Rewind logfile, if above the size above MB 
 */
@@ -65,16 +70,11 @@ int url_logging = 0;
 /* Name of the configuration file */
 char config_file[PATH_MAX + 1];
 
-/* TODO: make it configurable vis command-line.
-   Milli-seconds between intermidiate statistics printouts in smooth-mode. 
-*/
-unsigned long snapshot_timeout = 2000;
-
 /* 
    On errors, whether to continue loading for this client 
    from the next cycle, or to give it up.
  */
-unsigned long error_recovery_client = 1;
+unsigned long error_recovery_client = 1; /* Default: error recovery and continue */
 
 
 
@@ -82,7 +82,7 @@ int parse_command_line (int argc, char *argv [])
 {
   int rget_opt = 0;
 
-    while ((rget_opt = getopt (argc, argv, "c:ehf:l:m:op:rstvu")) != EOF) 
+    while ((rget_opt = getopt (argc, argv, "c:ehf:i:l:m:op:rstvu")) != EOF) 
     {
       switch (rget_opt) 
         {
@@ -115,13 +115,24 @@ int parse_command_line (int argc, char *argv [])
               return -1;
             }
           break;
+
+          case 'i': /* Intermediate Statistics timeout */
+          if (!optarg ||
+              (intermediate_statistics_timeout = atoi (optarg)) < 2)
+            {
+              fprintf (stderr, 
+                       "%s error: -i option should be followed by a number >= 2.\n", 
+                       __func__);
+              return -1;
+            }
+          break;
             
         case 'l': /* Number of cycles before a logfile rewinds. */
           if (!optarg || 
               (logfile_rewind_size = atol (optarg)) < 2)
             {
               fprintf (stderr, 
-                       "%s: error: -l option should be followed by a number above 2.\n",
+                       "%s: error: -l option should be followed by a number >= 2.\n",
                   __func__);
               return -1;
             }
@@ -191,6 +202,7 @@ void print_help ()
   fprintf (stderr, "#./curl-loader -f <configuration file name> with [other options below]:\n");
   fprintf (stderr, " -c[onnection establishment timeout, seconds]\n");
   fprintf (stderr, " -e[rror drop client (smooth mode). Client on error doesn't attempt next cycle]\n");
+  fprintf (stderr, " -i[ntermediate statistics time interval (default 2 seconds)]\n");
   fprintf (stderr, " -l[ogfile max size in MB (default 1024). On the size reached, file pointer rewinded]\n");
   fprintf (stderr, " -m[ode of loading, 1 - storming, 2 - smooth (default)]\n");
   fprintf (stderr, " -o[utput to stdout bodies of downloaded files - attn!- bulky]\n");
@@ -201,10 +213,6 @@ void print_help ()
   fprintf (stderr, " -u[rl logging - logs url names to logfile, when -v verbose option is used]\n");
   fprintf (stderr, "\n");
 
-  fprintf (stderr, "Note, that threads (-t) option is sometimes more buggy,\n");
-  fprintf (stderr, "whereas without this option runs only the first batch of clients specified.\n");
-  fprintf (stderr, "Thus, running several client batches without threads requires some script with \n");
-  fprintf (stderr, "several curl-loader processes, each with its own batch config file.\n\n");
   fprintf (stderr, "Here is an example of the file with a single batch and a single url:\n\n");
 
   fprintf (stderr, " ----------------------------------------------------------------------------\n");
@@ -277,7 +285,7 @@ void print_help ()
   fprintf (stderr, "For more examples, please, look at configs directory.\n");
   fprintf (stderr, "\n");
   fprintf (stderr, "Note, that there is no any more limit of 1000 sockets per batch of clients.\n");
-  fprintf (stderr, "Running thousands and more clients, please do not forget the options:\n");
+  fprintf (stderr, "Running thousands and more clients, please do not forget to consider the options:\n");
   fprintf (stderr, "- to increase limit of open descriptors in shell by running e.g. #ulimit -n 20000:\n");
   fprintf (stderr, "- to increase total limit of  open descriptors in systeme somewhere in /proc\n");
   fprintf (stderr, "- to consider reusing sockets in time-wait state: by #echo 1 > \n");

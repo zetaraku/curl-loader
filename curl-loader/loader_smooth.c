@@ -354,9 +354,10 @@ static int mget_url_smooth (batch_context* bctx)
 static int mperform_smooth (batch_context* bctx, int* still_running)
 {
   CURLM *mhandle =  bctx->multiple_handle;
-  unsigned long now_time;
   int cycle_counter = 0;	
   int msg_num = 0;
+  const int snapshot_timeout = intermediate_statistics_timeout*1000;
+  unsigned long now_time;
   CURLMsg *msg;
     
   while (CURLM_CALL_MULTI_PERFORM == 
@@ -365,7 +366,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
   now_time = get_tick_count ();
 
-  if ((now_time - bctx->last_measure) > snapshot_timeout) 
+  if ((long)(now_time - bctx->last_measure) > snapshot_timeout) 
     {
       dump_intermediate_and_advance_total_statistics (bctx, now_time);
     }

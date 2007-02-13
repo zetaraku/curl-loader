@@ -190,6 +190,7 @@ Usage: run as a root user:
 Possible options are:
 -c[onnection establishment timeout, seconds]
 -e[rror drop client (smooth mode). Client on error doesn't attempt loading any mode]
+-i[ntermediate statistics time interval (default 2 seconds)]
 -f[ilename of configuration to run (batches of clients)]
 -l[ogfile max size in MB (default 1024). On the size reached, file pointer rewinded]
 -m[ode of loading, 1 - storming, 2 - smooth (default)]
@@ -200,8 +201,9 @@ Possible options are:
 -v[erbose output to the logfiles; includes info about headers sent/received]
 -u[rl logging - logs url names to logfile, when -v verbose option is used]
 
-Note, that curl-loader with threads (-t) may be less stable,
-whereas without this option runs only the first batch of clients specified.
+For the rare cases, when several batches are specified in the same config file,
+note, please, that curl-loader without -t this option runs only the first batch of 
+clients specified.
 Thus, running several client batches without threads requires some script with
 several curl-loader processes.
 

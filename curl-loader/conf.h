@@ -50,6 +50,12 @@ extern int verbose_logging;
 */
 extern int threads_run;
 
+/* 
+   Time in seconds between intermediate statistics printouts to
+   screen as well as to the statistics file
+*/
+extern long intermediate_statistics_timeout;
+
 /*
   Output to the logfile will be re-directed to the file's start, thus 
   overwriting previous logged strings. Effectively, keeps the log history
@@ -73,12 +79,6 @@ extern int output_to_stdout;
    If to output all client messages to stderr, otherwise to the batch logfile/s. 
 */
 extern int stderr_print_client_msg;
-
-/* 
-   Used by the smooth loading mode to output statistics to the
-   screen at certain snapshot timeout intervals. 
-*/
-extern unsigned long snapshot_timeout;
 
 /* 
    Used by the smooth loading mode decide, either to continue loading
