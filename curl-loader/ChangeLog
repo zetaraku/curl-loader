@@ -1,3 +1,5 @@
+* Gradual increase of clients number at startup re-worked to use timer and
+    timer-queue.
 
 * Added timer to test size of logfile periodically in smooth mode. Command-line
    option -l < logfile maxsize> now brings another semantics and provides size

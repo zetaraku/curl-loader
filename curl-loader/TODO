@@ -48,5 +48,3 @@ from a single process can become a reality.
 7. CAPS (calls per second number) to be managed by the tag 
 CAPS_MODE_STEADY_NUM. Thus, number of clients will be a derivative
 number, that will vary according to CAPS number achived.
-
-8. Investigate and fix a bug with ftp, which probably is due to libcurl.
