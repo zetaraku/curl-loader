@@ -157,6 +157,7 @@ static char* skip_non_ws (char*ptr, size_t*const len);
 static char* eat_ws (char*ptr, size_t*const len);
 static int is_ws (char*const ptr);
 static int is_non_ws (char*const ptr);
+static int netmask_to_cidr (char *dotted_ipv4);
 
 
 static fparser find_tag_parser (const char* tag)
@@ -313,16 +314,27 @@ static int interface_parser (batch_context*const bctx, char*const value)
 static int netmask_parser (batch_context*const bctx, char*const value)
 {
     /* CIDR number of non-masked first bits -16, 24, etc */
-    bctx->cidr_netmask = atoi (value);
-    if (bctx->cidr_netmask < 1 || bctx->cidr_netmask > 32)
+
+  if (! strchr (value, '.'))
     {
-        fprintf (stderr, 
-                 "%s - error: network mask (%d) is out of the range\n", 
-                 __func__, bctx->cidr_netmask);
-        return -1;
+      /* CIDR number of non-masked first bits -16, 24, etc */
+      bctx->cidr_netmask = atoi (value);
     }
-    return 0;
+  else
+    {
+      bctx->cidr_netmask = netmask_to_cidr (value);
+    }
+  
+  if (bctx->cidr_netmask < 1 || bctx->cidr_netmask > 32)
+    {
+      fprintf (stderr, 
+               "%s - error: network mask (%d) is out of the range\n", 
+               __func__, bctx->cidr_netmask);
+      return -1;
+    }
+  return 0;
 }
+
 static int ip_addr_min_parser (batch_context*const bctx, char*const value)
 {
     struct in_addr in_address;
@@ -1014,3 +1026,23 @@ int parse_config_file (char* const filename,
 
     return (batch_index + 1);
 }
+
+static int netmask_to_cidr (char *dotted_ipv4)
+{
+  int network = 0;
+  int host = 0;
+ 
+  if (inet_pton (AF_INET, dotted_ipv4, &network) < 1) 
+    {
+      return -1;
+    }
+
+  host = ntohl (network);
+
+  int tmp = 0;
+  
+  while (!(host & (1 << tmp)) && tmp < 32)
+    tmp++;
+
+  return (32 - tmp); 
+ }

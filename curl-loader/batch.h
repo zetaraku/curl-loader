@@ -68,7 +68,10 @@ typedef struct batch_context
    /* Name of the network interface to be used for loading, e.g. "eth0", "eth1:16" */
   char net_interface[16];
 
-  /* CIDR netmask number from 0 to 32, like 16 or 24, etc. */
+  /* 
+     CIDR netmask number from 0 to 32, like 16 or 24, etc. If the input netmask is
+     a dotted IPv4 address, we convert it to CIDR by calculating number of 1 bits.
+   */
   int cidr_netmask;
   
   /* Minimal ip-address of a client in the batch (host order). */

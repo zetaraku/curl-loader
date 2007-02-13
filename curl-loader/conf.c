@@ -221,7 +221,7 @@ void print_help ()
   fprintf (stderr, "CLIENTS_NUM=300            # Number of clients in the batch\n");
   fprintf (stderr, "CLIENTS_INITIAL_INC=30 # Startup increase num per second till CLIENTS_NUM reached\n");
   fprintf (stderr, "INTERFACE = eth0           # Name of interface from which to load \n");
-  fprintf (stderr, "NETMASK=20                 # Netmask in CIDR-notation (number of bits with 1)\n");
+  fprintf (stderr, "NETMASK=255.255.240.0        # Netmask as IPv4 dotted string or CIDR number\n");
   fprintf (stderr, "IP_ADDR_MIN= 192.168.1.1   # The client addresses starting address\n");
   fprintf (stderr, "IP_ADDR_MAX= 192.168.5.255 # Redundant, for self-control\n");
   fprintf (stderr, "CYCLES_NUM= 100            # Number of loading cycles to run, 0 -forever\n");
