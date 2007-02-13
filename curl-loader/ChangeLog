@@ -1,3 +1,9 @@
+* Configuration file tag NETMASK now accepts also netmask as an IPv4
+   quad-dotted string, not only as a CIDR number.
+	
+* Command line option -i <seconds> added to make intermediate statistics
+   snapshoting configurable with regards to its time period.
+
 * Gradual increase of clients number at startup re-worked to use timer and
     timer-queue.
 
@@ -14,7 +20,7 @@
   of the node. Further <tq_dispatch_nearest_timer> re-schedules periodic timers,
   and manages memory issues against internal mpool of hnodes.
 	
-  This makes handling of timer and timer-queue rather Object Oriented.
+  This makes handling of timers used in smooth mode rather Object Oriented.
 
 
 
