@@ -84,7 +84,7 @@ struct batch_context;
 * Function name - dump_final_statistics
 *
 * Description - Dumps final statistics counters to stderr and statistics file using 
-*                     print_intermediate_statistics and print_statistics_* functions as well as calls
+*                     print_snapshot_interval_statistics and print_statistics_* functions as well as calls
 *                     dump_clients () to dump the clients table.
 * Input -       *cctx - pointer to client context, where the decision to complete loading 
 *                     (and dump) has been made. 
@@ -93,25 +93,22 @@ struct batch_context;
 void dump_final_statistics (struct client_context* cctx);
 
 /****************************************************************************************
-* Function name - dump_intermediate_and_advance_total_statistics
+* Function name - dump_snapshot_interval and up to the interval time summary statistics
 *
-* Description - Dumps intermediate statistics for the latest loading time period and adds
-*                     this statistics to the total loading counters 
-* Input -       *bctx - pointer to batch context
-*                   now_time - current time in msec since the epoch
+* Description - Dumps summary statistics since the start of load
+* Input -       *bctx - pointer to batch structure
+*                   now -  current time in msec since epoch
 *
 * Return Code/Output - None
 ****************************************************************************************/
-void dump_intermediate_and_advance_total_statistics (
-                                                    struct batch_context* bctx,
-                                                    unsigned long now_time);
+void dump_snapshot_interval (struct batch_context* bctx, unsigned long now);
 
 
 /****************************************************************************************
-* Function name - print_intermediate_statistics
+* Function name - print_snapshot_interval_statistics
 *
 * Description - Dumps final statistics counters to stderr and statistics file using 
-*                     print_intermediate_statistics and print_statistics_* functions as well as calls
+*                     print_snapshot_interval_statistics and print_statistics_* functions as well as calls
 *                     dump_clients () to dump the clients table.
 * Input -       clients - number of active clients
 *                     period - latest time period in milliseconds
@@ -119,7 +116,7 @@ void dump_intermediate_and_advance_total_statistics (
 *                     *https - pointer to the HTTPS collected statistics to output
 * Return Code/Output - None
 ****************************************************************************************/
-void print_intermediate_statistics (
+void print_snapshot_interval_statistics (
                                    int clients, 
                                    unsigned long period,  
                                    stat_point *http, 

@@ -249,7 +249,7 @@ static int add_loading_clients (batch_context* bctx)
     min (bctx->clients_initial_inc, bctx->client_num - bctx->clients_initial_running_num) : 
     bctx->client_num; 
 
-  fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_sched);
+  //fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_sched);
 
   /* 
      Schedule new clients by initializing thier CURL handle with
@@ -368,7 +368,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
   if ((long)(now_time - bctx->last_measure) > snapshot_timeout) 
     {
-      dump_intermediate_and_advance_total_statistics (bctx, now_time);
+      dump_snapshot_interval (bctx, now_time);
     }
 
   while( (msg = curl_multi_info_read (mhandle, &msg_num)) != 0)
@@ -453,8 +453,9 @@ dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
         {
           if (tq_dispatch_nearest_timer (tq, bctx, now_time) == -1)
             {
-              fprintf (stderr, "%s - error: tq_dispatch_nearest_timer () failed or handle_timer () returns (-1).\n", 
-                       __func__);
+              //fprintf (stderr, 
+              //         "%s - error: tq_dispatch_nearest_timer () failed or handle_timer () returns (-1).\n", 
+              //         __func__);
               return -1;
             }
         }
@@ -1140,11 +1141,11 @@ static int handle_gradual_increase_clients_num_timer  (
 
   if (add_loading_clients (bctx) == -1)
     {
-      fprintf (stderr, "%s add_loading_clients () returns -1.\n", __func__);
+      //fprintf (stderr, "%s add_loading_clients () returns -1.\n", __func__);
       return -1;
     }
 
-  fprintf (stderr, "%s - runs.\n", __func__);
+  //fprintf (stderr, "%s - runs.\n", __func__);
 
   return 0;
 }

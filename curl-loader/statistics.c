@@ -35,6 +35,11 @@
 #define SECURE_APPL_STR "HTTPS/FTPS"
 #define UNSECURE_APPL_STR "HTTP/FTP"
 
+static void 
+dump_snapshot_interval_and_advance_total_statistics (
+                                                    struct batch_context* bctx,
+                                                    unsigned long now_time);
+
 static void dump_statistics (
                              unsigned long period, 
                              stat_point *http, 
@@ -138,7 +143,7 @@ unsigned long get_tick_count ()
 * Function name - dump_final_statistics
 *
 * Description - Dumps final statistics counters to stderr and statistics file using 
-*                     print_intermediate_statistics and print_statistics_* functions as well as calls
+*                     print_snapshot_interval_statistics and print_statistics_* functions as well as calls
 *                     dump_clients () to dump the clients table.
 * Input -       *cctx - pointer to client context, where the decision to complete loading 
 *                     (and dump) has been made. 
@@ -149,7 +154,7 @@ void dump_final_statistics (client_context* cctx)
   batch_context* bctx = cctx->bctx;
   unsigned long now = get_tick_count();
 
-  print_intermediate_statistics (
+  print_snapshot_interval_statistics (
 		pending_active_and_waiting_clients_num (bctx),
 		now - bctx->last_measure,
 		&bctx->http_delta,  
@@ -198,10 +203,36 @@ void dump_final_statistics (client_context* cctx)
 }
 
 /****************************************************************************************
-* Function name - print_intermediate_statistics
+* Function name - dump_snapshot_interval and up to the interval time summary statistics
+*
+* Description - Dumps summary statistics since the start of load
+* Input -       *bctx - pointer to batch structure
+*                   now -  current time in msec since epoch
+*
+* Return Code/Output - None
+****************************************************************************************/
+void dump_snapshot_interval (batch_context* bctx, unsigned long now)
+{
+  dump_snapshot_interval_and_advance_total_statistics(bctx, now);
+
+  fprintf(stderr,"------------------------------------------------------\n");
+  fprintf(stderr,"Summary statistics of the test since loading started:\n"); 
+  //fprintf(stderr,"===========================================\n");
+  
+  dump_statistics ((now - bctx->start_time)/ 1000, 
+                   &bctx->http_total,  
+                   &bctx->https_total);
+
+  //fprintf(stderr,"\n\n");
+  fprintf(stderr,"===========================================\n\n");
+
+}
+
+/****************************************************************************************
+* Function name - print_snapshot_interval_statistics
 *
 * Description - Dumps final statistics counters to stderr and statistics file using 
-*                     print_intermediate_statistics and print_statistics_* functions as well as calls
+*                     print_snapshot_interval_statistics and print_statistics_* functions as well as calls
 *                     dump_clients () to dump the clients table.
 * Input -       clients - number of active clients
 *                     period - latest time period in milliseconds
@@ -209,7 +240,7 @@ void dump_final_statistics (client_context* cctx)
 *                     *https - pointer to the HTTPS collected statistics to output
 * Return Code/Output - None
 ****************************************************************************************/
-void print_intermediate_statistics (int clients, 
+void print_snapshot_interval_statistics (int clients, 
                                    unsigned long period,  
                                    stat_point *http, 
                                    stat_point *https)
@@ -220,61 +251,65 @@ void print_intermediate_statistics (int clients,
       period = 1;
     }
 
-  fprintf(stderr, "\nClients: %d Time %d sec\n", (int) clients, (int) period);
+  fprintf(stderr, "Loading clients: %d, Snapshot Interval %d (sec)\n", (int) clients, (int) period);
   dump_stat_to_screen (UNSECURE_APPL_STR, http, period);
   dump_stat_to_screen (SECURE_APPL_STR, https, period);
 }
 
 
 /****************************************************************************************
-* Function name - dump_intermediate_and_advance_total_statistics
+* Function name - dump_snapshot_interval_and_advance_total_statistics
 *
-* Description - Dumps intermediate statistics for the latest loading time period and adds
+* Description - Dumps snapshot_interval statistics for the latest loading time period and adds
 *                     this statistics to the total loading counters 
 * Input -       *bctx - pointer to batch context
 *                   now_time - current time in msec since the epoch
 *
 * Return Code/Output - None
 ****************************************************************************************/
-void dump_intermediate_and_advance_total_statistics(
+void dump_snapshot_interval_and_advance_total_statistics(
                                                     batch_context* bctx,
                                                     unsigned long now_time)
 {
   //const unsigned long now_time = get_tick_count ();
   const unsigned long delta_time = now_time - bctx->last_measure;
 
-    if (stop_loading)
+  if (stop_loading)
     {
       dump_final_statistics (bctx->cctx_array);
       exit (1); 
     }
 
-  print_intermediate_statistics(
-		pending_active_and_waiting_clients_num (bctx),
-		delta_time, 
-		&bctx->http_delta,  
-		&bctx->https_delta);
+  fprintf(stderr,"===========================================\n");
+  fprintf(stderr,"The latest time interval statistics:\n"); 
+  //  fprintf(stderr,"===========================================\n");
+
+  print_snapshot_interval_statistics(
+                                     pending_active_and_waiting_clients_num (bctx),
+                                     delta_time, 
+                                     &bctx->http_delta,  
+                                     &bctx->https_delta);
 
   if (bctx->statistics_file)
-  {
-    const unsigned long timestamp_sec =  (now_time - bctx->start_time) / 1000;
+    {
+      const unsigned long timestamp_sec =  (now_time - bctx->start_time) / 1000;
 
-    print_statistics_data (
-			bctx->statistics_file,
-			timestamp_sec,
-			UNSECURE_APPL_STR,
-			pending_active_and_waiting_clients_num (bctx),
-			&bctx->http_delta,
-			delta_time ? delta_time : 1);
+      print_statistics_data (
+                             bctx->statistics_file,
+                             timestamp_sec,
+                             UNSECURE_APPL_STR,
+                             pending_active_and_waiting_clients_num (bctx),
+                             &bctx->http_delta,
+                             delta_time ? delta_time : 1);
     
-    print_statistics_data (
-			bctx->statistics_file, 
-			timestamp_sec,
-			SECURE_APPL_STR, 
-			pending_active_and_waiting_clients_num (bctx),
-			&bctx->https_delta,
-			delta_time ? delta_time : 1);
-  }
+      print_statistics_data (
+                             bctx->statistics_file, 
+                             timestamp_sec,
+                             SECURE_APPL_STR, 
+                             pending_active_and_waiting_clients_num (bctx),
+                             &bctx->https_delta,
+                             delta_time ? delta_time : 1);
+    }
 
   stat_point_add (&bctx->http_total, &bctx->http_delta);
   stat_point_add (&bctx->https_total, &bctx->https_delta);
@@ -282,7 +317,6 @@ void dump_intermediate_and_advance_total_statistics(
   stat_point_reset (&bctx->http_delta); 
   stat_point_reset (&bctx->https_delta);
         
-  //bctx->last_measure = get_tick_count(); 
   bctx->last_measure = now_time;
 }
 
@@ -309,9 +343,8 @@ static void dump_stat_to_screen (
                                  stat_point* sd, 
                                  unsigned long period)
 {
-  fprintf(stderr, "%s - Req: %ld, Redirs: %ld, Rsp-Ok: %ld, Rsp-Cl-Err:%ld, "
-          "Rsp-Serv-Err:%ld, Err: %ld,  Delay: %ld (msec), Delay-2xx: %ld (msec), "
-          "Thr-In: %lld (b/sec), Thr-Out: %lld (b/sec)\n",
+  fprintf(stderr, "%s-Req:%ld,3xx:%ld,2xx:%ld,4xx:%ld,5xx:%ld,Err:%ld,"
+          "Delay:%ld,Delay-2xx:%ld,Thr-in:%lld(b/s),Thr-out:%lld(b/s)\n",
           protocol, sd->requests, sd->resp_redirs, sd->resp_oks, 
           sd->resp_cl_errs, sd->resp_serv_errs, 
           sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, 
@@ -339,7 +372,7 @@ void print_statistics_header (FILE* file)
 /****************************************************************************************
 * Function name - print_statistics_footer
 *
-* Description - Prints to a file separation string between the intermediate statistics and 
+* Description - Prints to a file separation string between the snapshot_interval statistics and 
 *                     the final statistics number for the total loading process
 * Input -       *file - open file pointer
 * Return Code/Output - None

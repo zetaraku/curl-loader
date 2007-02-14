@@ -51,31 +51,33 @@ static int mget_url_storm (batch_context* bctx, float m_time);
 ****************************************************************************************/
 int user_activity_storm (client_context*const cctx_array)
 {
-  batch_context* bctx = cctx_array->bctx;
-  long cycle, i, k;
-  long u_index = 0;
-  unsigned long now_time;
 
-    if (!bctx)
+  long cycle, i, k;
+  unsigned long now_time;
+  long u_index = 0;
+  batch_context* bctx = cctx_array->bctx;
+  const int snapshot_timeout = intermediate_statistics_timeout*1000;
+
+  if (!bctx)
     {
       fprintf (stderr, 
                "%s - error: bctx is zero.\n", __func__);
       return -1;
     }
-
+  
   /* Add handles to multi_handle */
-    int m_error = -1;
-    for (i = 0 ; i < bctx->client_num ; i++)
-      {
-        if ((m_error = curl_multi_add_handle (
-                                             bctx->multiple_handle,
-                                             bctx->cctx_array[i].handle)) != CURLM_OK)
-          {
-            fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
-                     __func__, m_error);
-            return -1;
-          }
-      }
+  int m_error = -1;
+  for (i = 0 ; i < bctx->client_num ; i++)
+    {
+      if ((m_error = curl_multi_add_handle (
+                                            bctx->multiple_handle,
+                                            bctx->cctx_array[i].handle)) != CURLM_OK)
+        {
+          fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
+                   __func__, m_error);
+          return -1;
+        }
+    }
 
   bctx->active_clients_count = bctx->client_num;
   now_time = get_tick_count();
@@ -96,16 +98,16 @@ int user_activity_storm (client_context*const cctx_array)
 
       // First string to contain statistics for non-cycling logins
       now_time = get_tick_count();
-      dump_intermediate_and_advance_total_statistics (bctx, now_time);
+      dump_snapshot_interval (bctx, now_time);
     }
   
   for (cycle = 0; cycle < bctx->cycles_num ; cycle++)
     {
       
-      bctx->last_measure = get_tick_count();
+      //      bctx->last_measure = get_tick_count();
       /* 
          Login, when the login operation to be done in cycles. 
-       */
+      */
       if (bctx->do_login && bctx->login_cycling)
         {
           if (login_clients_storm (cctx_array, cycle) == -1)
@@ -119,7 +121,7 @@ int user_activity_storm (client_context*const cctx_array)
       usleep (1000* bctx->login_url.url_interleave_time);
 
       /*
-         UAS - user activity simulation, fetching urls from the UAS-array.
+        UAS - user activity simulation, fetching urls from the UAS-array.
       */
       for (u_index = 0; u_index < bctx->uas_urls_num; u_index++)
         {
@@ -133,19 +135,19 @@ int user_activity_storm (client_context*const cctx_array)
           */ 
           for (k = 0 ; k < bctx->client_num ; k++)
             {
-               cctx_array[k].client_state = CSTATE_UAS_CYCLING;
+              cctx_array[k].client_state = CSTATE_UAS_CYCLING;
               //fprintf (stderr, "%s - cn %ld, state %d", 
               //        __func__, k, cctx_array[k].client_state);
 
 
-               if (setup_curl_handle (&cctx_array[k],
-                                   &bctx->uas_url_ctx_array[u_index], /* index of url string in array */
-                                   cycle,
-                                      0) == -1)
-                 {
-                   fprintf(stderr,"%s error: setup_curl_handle - failed\n", __func__);
-                   return -1;
-                 }
+              if (setup_curl_handle (&cctx_array[k],
+                                     &bctx->uas_url_ctx_array[u_index], /* index of url string in array */
+                                     cycle,
+                                     0) == -1)
+                {
+                  fprintf(stderr,"%s error: setup_curl_handle - failed\n", __func__);
+                  return -1;
+                }
             }
             
           /* Fetch the new url by each client of the batch.*/
@@ -186,13 +188,17 @@ int user_activity_storm (client_context*const cctx_array)
       */
       if (rewind_logfile_above_maxsize (cctx_array->file_output) == -1)
         {
-           fprintf (stderr, "%s - rewind_logfile_above_maxsize() failed .\n", __func__);
+          fprintf (stderr, "%s - rewind_logfile_above_maxsize() failed .\n", __func__);
           return -1;
         }
       
-      /* Print statistics at the end of each cycle */
+      /* Print statistics at the end of a cycle, if snapshot timeout passed */
       now_time = get_tick_count();
-      dump_intermediate_and_advance_total_statistics (bctx, now_time);
+
+      if ((long)(now_time - bctx->last_measure) > snapshot_timeout)
+        {
+          dump_snapshot_interval (bctx, now_time);
+        }
     }
 
   /* 
@@ -208,15 +214,15 @@ int user_activity_storm (client_context*const cctx_array)
 
       // Last string to contain statistics for non-cycling logoffs
       now_time = get_tick_count();
-      dump_intermediate_and_advance_total_statistics (bctx, now_time);
+      dump_snapshot_interval (bctx, now_time);
     }
 
   for (k = 0 ; k < bctx->client_num ; k++)
     {
       if (cctx_array[k].client_state != CSTATE_ERROR)
-      {
-        cctx_array[k].client_state = CSTATE_FINISHED_OK;
-      }
+        {
+          cctx_array[k].client_state = CSTATE_FINISHED_OK;
+        }
       //fprintf (stderr, "%s - client_num %ld, state %d\n", 
       //         __func__, k, cctx_array[k].client_state);
     }
