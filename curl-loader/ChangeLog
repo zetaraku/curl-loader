@@ -1,4 +1,15 @@
-* Configuration file tag NETMASK now accepts also netmask as an IPv4
+version 0.25, 14/02/2007, svn 121
+	
+* "Standing" statistics screen added to present running counters.
+    Looks for me as a very convenient way of looking at the loading 
+    in-progress. TODO: may be to separate it to 3 sections: login, uas
+    and logoff.
+	
+* Added summary statistics of load to be outputted at statistics
+   snapshot intervals together with an interval statistics. Very useful
+   feature.
+	
+* Configuration file tag NETMASK now accepts also netmask as IPv4
    quad-dotted string, not only as a CIDR number.
 	
 * Command line option -i <seconds> added to make intermediate statistics

@@ -46,7 +46,7 @@ int threads_run = 0;
    Time in seconds between intermediate statistics printouts to
    screen as well as to the statistics file
 */
-long intermediate_statistics_timeout = 1; /* Seconds */
+long intermediate_statistics_timeout = 3; /* Seconds */
 /*  
     Rewind logfile, if above the size above MB 
 */

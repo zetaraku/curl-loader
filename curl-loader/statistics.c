@@ -163,9 +163,9 @@ void dump_final_statistics (client_context* cctx)
   stat_point_add (&bctx->http_total, &bctx->http_delta);
   stat_point_add (&bctx->https_total, &bctx->https_delta);  
     
-  fprintf(stderr,"===========================================\n");
-  fprintf(stderr,"End of test:\n"); 
-  fprintf(stderr,"===========================================\n");
+  fprintf(stdout,"===========================================\n");
+  fprintf(stdout,"End of test:\n"); 
+  fprintf(stdout,"===========================================\n");
   
   now = get_tick_count();
   
@@ -213,17 +213,17 @@ void dump_final_statistics (client_context* cctx)
 ****************************************************************************************/
 void dump_snapshot_interval (batch_context* bctx, unsigned long now)
 {
-  fprintf(stderr, "\033[2J");
+  fprintf(stdout, "\033[2J");
   dump_snapshot_interval_and_advance_total_statistics(bctx, now);
 
-  fprintf(stderr,"-------------------------------------------\n");
-  fprintf(stderr,"Summary statistics of the test since loading started:\n"); 
+  fprintf(stdout,"-------------------------------------------\n");
+  fprintf(stdout,"Summary statistics of the test since loading started:\n"); 
   
   dump_statistics ((now - bctx->start_time)/ 1000, 
                    &bctx->http_total,  
                    &bctx->https_total);
 
-  fprintf(stderr,"===========================================\n\n");
+  fprintf(stdout,"===========================================\n\n");
 }
 
 /****************************************************************************************
@@ -249,7 +249,7 @@ void print_snapshot_interval_statistics (int clients,
       period = 1;
     }
 
-  fprintf(stderr, "Loading clients: %d, Snapshot Interval %d (sec)\n", (int) clients, (int) period);
+  fprintf(stdout, "Loading clients: %d, Snapshot Interval %d (sec)\n", (int) clients, (int) period);
   dump_stat_to_screen (UNSECURE_APPL_STR, http, period);
   dump_stat_to_screen (SECURE_APPL_STR, https, period);
 }
@@ -278,9 +278,8 @@ void dump_snapshot_interval_and_advance_total_statistics(
       exit (1); 
     }
 
-  fprintf(stderr,"===========================================\n");
-  fprintf(stderr,"The latest time interval statistics:\n"); 
-  //  fprintf(stderr,"===========================================\n");
+  fprintf(stdout,"===========================================\n");
+  fprintf(stdout,"The latest time interval statistics:\n"); 
 
   print_snapshot_interval_statistics(
                                      pending_active_and_waiting_clients_num (bctx),
@@ -331,7 +330,7 @@ static void dump_statistics (
       return;
     } 
   
-  fprintf(stderr, "Test took %d seconds\n", (int) period);
+  fprintf(stdout, "Test took %d seconds\n", (int) period);
   dump_stat_to_screen (UNSECURE_APPL_STR, http, period);
   dump_stat_to_screen (SECURE_APPL_STR, https, period);
 }
@@ -341,13 +340,13 @@ static void dump_stat_to_screen (
                                  stat_point* sd, 
                                  unsigned long period)
 {
-  fprintf(stderr, "%s-Req:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,Err:%ld,"
+  fprintf(stdout, "%s-Req:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,Err:%ld,"
           "Delay:%ld,Delay-2xx:%ld,Thr-in:%lld(b/s),Thr-out:%lld(b/s)\n",
           protocol, sd->requests, sd->resp_oks, sd->resp_redirs, sd->resp_cl_errs,
           sd->resp_serv_errs, sd->other_errs, sd->appl_delay, sd->appl_delay_2xx,
           sd->data_in/period, sd->data_out/period);
 
-    //fprintf (stderr, "Appl-Delay-Points %d, Appl-Delay-2xx-Points %d \n", 
+    //fprintf (stdout, "Appl-Delay-Points %d, Appl-Delay-2xx-Points %d \n", 
   //         sd->appl_delay_points, sd->appl_delay_2xx_points);
 }
 

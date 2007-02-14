@@ -7,7 +7,7 @@ ABOUT:
 of thousands and tens of thousands clients, each with its own source IP-address.
     This version simulates HTTP/HTTPS and FTP/FTPS (experimental) clients. 
 Activities of each virtual client are logged to file: resolving, connection
- establishment, sending of requests, receiving responses, headers and data 
+establishment, sending of requests, receiving responses, headers and data 
 received/sent, errors from network, SSL and application (HTTP, FTP) levels. 
 The tool can be easily extended to generate telnet, tftp, ldap, etc other 
 application load, supported by the great libcurl library.
@@ -45,16 +45,16 @@ SUCCESSFULLY USED:
     an external AAA (RADIUS) server. If the authentication was OK, user (a libcurl
     virtual client object) was allowed to enter the Internet and to perform some
     sort of simulated by curl-loader network activity, namely, fetching urls and 
-    sleeping in between them.   
+    sleeping in between them. After enjoying Internet, user was coming to logoff.
     
 2. To test web-server pages, authenticating tens and hundred thousand of
     clients, where each client comes to a HTTPS url using GET method and is
     redirected by the web-server to another url, providing authentication POST 
     form with username and password. After successful authentication of a client
-    the web-server sets to the client cookies. Client activities are further 
-    simulated by fetching urls and sleeping in between. Clients are doing logoff 
-    using GET-method to the web-server logoff-url, where the set cookies are used
-    by the web-server as the client identity.
+    the web-server was setting to the client server-cookies. Client activities were 
+    further simulated by fetching urls and sleeping in between. Clients were 
+    doing logoff using GET-method to the web-server logoff-url, where the cookies
+    were used by the web-server to verify clients identity.
 
 3. To generate Gbps traffic from thousands of TCP/HTTP clients and to test the 
     impact of thousands of firewalling and NAT iptables/ipset rules and 
@@ -63,7 +63,7 @@ SUCCESSFULLY USED:
 
     curl-loader provided client load against Apache web-server fetching a 
     url with a gigabyte file, thus, creating a permanent heavy-load 
-    traffic, containing thousand of tcp-streams at the gateway in the middle.
+    traffic, containing thousands of tcp-streams at the gateway in the middle.
 
 MAY BE USED:
 1. To create testing load for various HTTP/HTTPS/FTP/FTPS/LDAP, etc devices, 
@@ -78,11 +78,11 @@ BUILDING:
 In most cases just run make and relax. For some linux distributions, however, 
 matters should be fine tuned in build_curl.sh and Makefile (libidn issues, etc). 
 
-Building requirements include openssl libraries as well as development package
-with include files. Adjust the build_curl.sh and Makefile variables to point
+Building requirements include openssl libraries as well as openssl development 
+package with include files. Adjust the build_curl.sh and Makefile variables to point
 to the openssl headers and libraries. If you want to specify an openssl development
-directory, export environment variable OPENSSLDIR with the value of
-that directory.
+directory with include files, export environment variable OPENSSLDIR with 
+the value of that directory.
 
 Another known issue is linidn.so, which means, that some linux distributions 
 do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink.
@@ -215,8 +215,8 @@ Whether it is appropriate for you to work with -r option or without, it  depends
  on your server support of Keep-Alive and the purpose of your testing.
 Try with and without -r and see, what you get.
 
-Connection reuse (without -r option) has advantages by decreasing
-consumption of opened descriptors (sockets) and ports.
+Connection reuse (just the default, without -r option) has advantages due to the 
+decreased consumption of opened descriptors (sockets) and ports.
 
 
 CONFIGURATION FILE
@@ -302,11 +302,12 @@ is not applicable). In the case, that LOGIN, UAS or LOGOFF section tag is
 disabled by setting 'n' (no) value, thus, all the tags of the disabled section 
 should not appear or just to be simply commented out by '#'.
 
-For more examples, please, look at configs directory.
+For more examples, please, look at the files in "configs" directory.
 
 
 LOGIN/LOGOFF HTTP METHODS:
-There are two login modes supported. GET+POST and POST-only. 
+There are two login modes supported. GET+POST (response to GET provides
+a post-form to be filled and posted by the next POST) and POST-only. 
 There are three logoff modes supported as GET-only, GET+POST and POST-only.
 HTTP cookies are enabled in curl-loader by default.
 
@@ -315,7 +316,7 @@ FTP/FTPS LOAD (experimental):
 To generate FTP/FTPS load, please, use UAS section and pass user credentials
 via ftp-url according to the RFC 1738), like:
 ftp://username:password@hostname:port/etc-str
-See at configs/ftp.conf
+Look at configs/ftp.conf
 
 
 LOGFILE:
@@ -333,7 +334,7 @@ Effective url may be a result of redirection and, thus, "url:"
 (target url, specified in batch configuration file) will be printed as well.
 
 
-STATISTICS (recently added feature):
+STATISTICS:
 Currently HTTP/HTTPS statistics includes the following counters:
    - requests num;
    - responses success num;
@@ -352,27 +353,28 @@ Currently HTTP/HTTPS statistics includes the following counters:
    - throughput out (batch average);
    - throughput in (batch average);
 
-The statistics goes to the screen as well as to the file with name $batch_name.txt
+The statistics goes to the screen (both the interval and the current summary 
+statistics for the load) as well as to the file with name $batch_name.txt
 When the load completes or when the user presses CTRL-C (sometimes some clients
 may stall), the final load report is printed at the console as well as to the statistics
 file. 
 Some strings from the file:
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Time, Protocol, Clients, Req, Redirs, Rsp-OK, Rsp-Serv-Err, Err, Delay, Delay-2xx, Thr-In, Thr-Out
-2, HTTP, 100, 155, 0, 96, 0, 0, 1154, 1154, 2108414, 15538
-2, HTTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
-4, HTTP, 100, 75, 32, 69, 0, 0, 1267, 1559, 1634656, 8181
-4, HTTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
+Time, Protocol, Clients, Req, Rsp-OK, Redirs, Rsp-Serv-Err, Err, Delay, Delay-2xx, Thr-In, Thr-Out
+2, HTTP/FTP, 100, 155, 0, 96, 0, 0, 1154, 1154, 2108414, 15538
+2, HTTPS/FTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
+4, HTTP/FTP, 100, 75, 32, 69, 0, 0, 1267, 1559, 1634656, 8181
+4, HTTPS/FTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 Cutted here
 
-36, HTTP, 39, 98, 35, 58, 0, 0, 869, 851, 1339168, 11392
-36, HTTPS, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0
-38, HTTP, 3, 91, 44, 62, 0, 0, 530, 587, 1353899, 10136
-38, HTTPS, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0
+36, HTTP/FTP, 39, 98, 35, 58, 0, 0, 869, 851, 1339168, 11392
+36, HTTPS/FTPS, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0
+38, HTTP/FTP, 3, 91, 44, 62, 0, 0, 530, 587, 1353899, 10136
+38, HTTPS/FTPS, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0
 *, *, *, *, *, *, *, *, *, *, *, *
-38, HTTP, 0, 2050, 643, 1407, 0, 213, 725, 812, 1610688, 11706
-38, HTTPS, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+38, HTTP/FTP, 0, 2050, 643, 1407, 0, 213, 725, 812, 1610688, 11706
+38, HTTPS/FTPS, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 The bottom strings after asterisks are for final averages.
 

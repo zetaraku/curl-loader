@@ -1178,11 +1178,14 @@ int rewind_logfile_above_maxsize (FILE* filepointer)
   if (!filepointer)
     return -1;
 
+  if (filepointer == stderr)
+    return 0;
+
   if ((position = ftell (filepointer)) == -1)
     {
       fprintf (stderr, 
                "%s - error: ftell () failed with errno = %d\n", __func__, errno);
-      return -1;
+      return 0;
     }
 
   if (position > (logfile_rewind_size* 1024*1024))
