@@ -213,19 +213,17 @@ void dump_final_statistics (client_context* cctx)
 ****************************************************************************************/
 void dump_snapshot_interval (batch_context* bctx, unsigned long now)
 {
+  fprintf(stderr, "\033[2J");
   dump_snapshot_interval_and_advance_total_statistics(bctx, now);
 
-  fprintf(stderr,"------------------------------------------------------\n");
+  fprintf(stderr,"-------------------------------------------\n");
   fprintf(stderr,"Summary statistics of the test since loading started:\n"); 
-  //fprintf(stderr,"===========================================\n");
   
   dump_statistics ((now - bctx->start_time)/ 1000, 
                    &bctx->http_total,  
                    &bctx->https_total);
 
-  //fprintf(stderr,"\n\n");
   fprintf(stderr,"===========================================\n\n");
-
 }
 
 /****************************************************************************************
@@ -343,11 +341,10 @@ static void dump_stat_to_screen (
                                  stat_point* sd, 
                                  unsigned long period)
 {
-  fprintf(stderr, "%s-Req:%ld,3xx:%ld,2xx:%ld,4xx:%ld,5xx:%ld,Err:%ld,"
+  fprintf(stderr, "%s-Req:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,Err:%ld,"
           "Delay:%ld,Delay-2xx:%ld,Thr-in:%lld(b/s),Thr-out:%lld(b/s)\n",
-          protocol, sd->requests, sd->resp_redirs, sd->resp_oks, 
-          sd->resp_cl_errs, sd->resp_serv_errs, 
-          sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, 
+          protocol, sd->requests, sd->resp_oks, sd->resp_redirs, sd->resp_cl_errs,
+          sd->resp_serv_errs, sd->other_errs, sd->appl_delay, sd->appl_delay_2xx,
           sd->data_in/period, sd->data_out/period);
 
     //fprintf (stderr, "Appl-Delay-Points %d, Appl-Delay-2xx-Points %d \n", 
@@ -364,7 +361,7 @@ static void dump_stat_to_screen (
 void print_statistics_header (FILE* file)
 {
     fprintf (file, 
-             "Time,Appl,Clients,Req,Redirs,Rsp-OK,Rsp-Cl-Err,Rsp-Serv-Err,"
+             "Time,Appl,Clients,Req,Rsp-OK,Redirs,Rsp-Cl-Err,Rsp-Serv-Err,"
              "Err,Delay,Delay-2xx,Thr-In,Thr-Out\n");
     fflush (file);
 }
@@ -397,8 +394,8 @@ static void print_statistics_data (FILE* file,
       }
 
     fprintf (file, "%ld, %s, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %lld, %lld\n",
-             timestamp, prot, clients_num, sd->requests, sd->resp_redirs, 
-             sd->resp_oks, sd->resp_cl_errs, sd->resp_serv_errs, 
+             timestamp, prot, clients_num, sd->requests, sd->resp_oks,
+             sd->resp_redirs, sd->resp_cl_errs, sd->resp_serv_errs, 
              sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, 
              sd->data_in/period, sd->data_out/period);
     fflush (file);

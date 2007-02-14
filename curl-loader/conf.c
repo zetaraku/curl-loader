@@ -46,7 +46,7 @@ int threads_run = 0;
    Time in seconds between intermediate statistics printouts to
    screen as well as to the statistics file
 */
-long intermediate_statistics_timeout = 2; /* Seconds */
+long intermediate_statistics_timeout = 1; /* Seconds */
 /*  
     Rewind logfile, if above the size above MB 
 */
@@ -118,10 +118,10 @@ int parse_command_line (int argc, char *argv [])
 
           case 'i': /* Intermediate Statistics timeout */
           if (!optarg ||
-              (intermediate_statistics_timeout = atoi (optarg)) < 2)
+              (intermediate_statistics_timeout = atoi (optarg)) < 1)
             {
               fprintf (stderr, 
-                       "%s error: -i option should be followed by a number >= 2.\n", 
+                       "%s error: -i option should be followed by a number >= 1.\n", 
                        __func__);
               return -1;
             }
