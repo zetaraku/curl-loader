@@ -26,6 +26,7 @@
 
 #include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "batch.h"
 #include "client.h"
@@ -117,6 +118,167 @@ void stat_point_reset (stat_point* p)
   p->appl_delay_2xx = 0;
 }
 
+
+void op_stat_point_add (op_stat_point* left, op_stat_point* right)
+{
+  size_t i;
+  
+  if (!left || !right)
+    return;
+
+  if (left->uas_url_num != right->uas_url_num)
+    return;
+  
+  *left->login_ok += *right->login_ok;
+  *left->login_failed += *right->login_failed;
+
+  for ( i = 0; i < left->uas_url_num; i++)
+    {
+      *left->uas_url_ok += *right->uas_url_ok;
+      *left->uas_url_failed += *right->uas_url_failed;
+    }
+
+  *left->logoff_ok += *right->logoff_ok;
+  *left->logoff_failed += *right->logoff_failed;
+}
+
+void op_stat_point_reset (op_stat_point* point)
+{
+  if (!point)
+    return;
+
+  point->login_ok = point->login_failed = point->logoff_ok = point->logoff_failed = 0;
+ 
+  size_t i;
+  for ( i = 0; i < point->uas_url_num; i++)
+    {
+      point->uas_url_ok = point->uas_url_failed = 0;
+    }
+
+  /* Don't null point->uas_url_num ! */
+}
+
+void op_stat_point_release (op_stat_point* point)
+{
+  if (point->login_ok)
+    free (point->login_ok);
+  if (point->login_failed)
+    free (point->login_failed);
+  if (point->uas_url_ok)
+    free (point->uas_url_ok);
+  if (point->uas_url_failed)
+    free (point->uas_url_failed);
+  if (point->logoff_ok)
+    free (point->logoff_ok);
+  if (point->logoff_failed)
+    free (point->logoff_failed);
+  memset (point, 0, sizeof (op_stat_point));
+}
+
+int op_stat_point_init (
+                        op_stat_point* point, 
+                        size_t login, 
+                        size_t uas_url_num, 
+                        size_t logoff)
+{
+  if (! point)
+    return -1;
+
+  if (login)
+    { 
+      if (!(point->login_ok = calloc (1, sizeof (unsigned long))) ||
+          !(point->login_failed = calloc (1, sizeof (unsigned long))))
+        {
+          goto allocation_failed;
+        }
+    }
+
+   if (uas_url_num)
+    { 
+      if (!(point->uas_url_ok = calloc (uas_url_num, sizeof (unsigned long))) ||
+          !(point->uas_url_failed = calloc (uas_url_num, sizeof (unsigned long))))
+        {
+          goto allocation_failed;
+        }
+      point->uas_url_num = uas_url_num;
+    }
+
+  if (logoff)
+    { 
+      if (!(point->logoff_ok = calloc (1, sizeof (unsigned long))) ||
+          !(point->logoff_failed = calloc (1, sizeof (unsigned long))))
+        {
+          goto allocation_failed;
+        }
+    }
+
+  return 0;
+
+ allocation_failed:
+  fprintf(stderr, "%s - calloc () failed with errno %d.\n", 
+              __func__, errno);
+  return -1;
+}
+
+  /* Update operational statistics */
+void update_op_stat (
+                     op_stat_point* op_stat, 
+                     int current_state, 
+                     int prev_state,
+                     size_t current_uas_url_index,
+                     size_t prev_uas_url_index)
+{
+  if (!op_stat)
+    return;
+
+  switch (prev_state)
+    {
+    case CSTATE_LOGIN:
+      if (current_state != CSTATE_LOGIN)
+        {
+          (current_state == CSTATE_ERROR) ? op_stat->login_failed++ : 
+            op_stat->login_ok++;
+        }
+      break;
+      
+    case CSTATE_UAS_CYCLING:
+      if (current_state != CSTATE_UAS_CYCLING)
+        {
+          /* 
+             If loading has advanced to the next state, update operational 
+             statistics counters of the last UAS URL (sometimes, the last is also
+             the first and the only)
+          */
+          (current_state == CSTATE_ERROR) ? 
+            op_stat->uas_url_failed[op_stat->uas_url_num]++ : 
+            op_stat->uas_url_ok[op_stat->uas_url_num]++;
+        }
+      else
+        {
+           if (current_uas_url_index == (prev_uas_url_index + 1))
+            {
+              /* 
+                 If loading has advanced to the next UAS url, update
+                 previous url operational statistics counters.
+               */
+              (current_state == CSTATE_ERROR) ? 
+                op_stat-> uas_url_failed[prev_uas_url_index]++ : 
+                op_stat->uas_url_ok[prev_uas_url_index]++;
+            }
+        }
+      break;
+
+    case CSTATE_LOGOFF:
+      if (current_state != CSTATE_LOGOFF)
+        {
+          (current_state == CSTATE_ERROR) ? op_stat->logoff_failed++ : 
+            op_stat->logoff_ok++;
+        }
+      break;
+    }
+  
+  return;
+}
 
 /****************************************************************************************
 * Function name - get_tick_count

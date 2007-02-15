@@ -495,10 +495,30 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
     }
 
   /* 
+     When load_error_state () gets client (in CSTATE_ERROR) and 
+     <recoverable_error_state> is true (the default), it recovers the 
+     client and sets the first cycling state to it. However, operational
+     statistics should record it as a failed operation in update_op_stat.
+     Therefore, remembering here possible error state.
+  */
+  int recoverable_error_state = cctx->client_state;
+
+  /* 
      Initialize virtual client's CURL handle for the next step of loading by calling
      load_<state-name>_state() function relevant for a particular client state.
   */
   rval_load = load_state_func_table[cctx->client_state+1](cctx, &interleave_waiting_time);
+
+
+  /* Update operational statistics */
+  /*
+  update_op_stat (
+                  &bctx->op_delta, 
+                  (recoverable_error_state == CSTATE_ERROR) ? recoverable_error_state : rval_load, 
+                  cctx->preload_state,
+                  cctx->uas_url_curr_index,
+                  cctx->preload_uas_url_curr_index);
+  */
 
   /* 
      Coming to the error or the finished states, just return without more 
@@ -542,6 +562,7 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 
   return rval_load;
 }
+
 
 
 /****************************************************************************************
@@ -1003,6 +1024,10 @@ static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec)
  ****************************************************************************************/
 static int client_add_to_load (batch_context* bctx, client_context* cctx)
 {
+  /* Remember the previous state and UAS index: fur operational statistics */
+  cctx->preload_state = cctx->client_state;
+  cctx->preload_uas_url_curr_index = cctx->uas_url_curr_index;
+
   /* Schedule the client immediately */
   if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
     {

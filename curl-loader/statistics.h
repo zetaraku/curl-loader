@@ -73,9 +73,42 @@ typedef struct stat_point
 
 } stat_point;
 
+/*
+  Operation statistics point
+*/
+typedef struct op_stat_point
+{
+  unsigned long* login_ok;
+  unsigned long* login_failed;
+
+  unsigned long* uas_url_ok;
+  unsigned long* uas_url_failed;
+
+  unsigned long uas_url_num;
+
+  unsigned long* logoff_ok;
+  unsigned long* logoff_failed;
+} op_stat_point;
+
 void stat_point_add (stat_point* left, stat_point* right);
 void stat_point_reset (stat_point* point);
 
+
+
+void op_stat_point_add (op_stat_point* left, op_stat_point* right);
+void op_stat_point_reset (op_stat_point* point);
+int op_stat_point_init (
+                        op_stat_point* point, 
+                        size_t login, 
+                        size_t uas_url_num, 
+                        size_t logoff);
+void op_stat_point_release (op_stat_point* point);
+void update_op_stat (
+                     op_stat_point* op_stat, 
+                     int current_state, 
+                     int prev_state,
+                     size_t current_uas_url_index,
+                     size_t prev_uas_url_index);
 
 struct client_context;
 struct batch_context;

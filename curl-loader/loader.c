@@ -299,7 +299,7 @@ static void* batch_function (void * batch_data)
     }
  
   /* 
-     Init MCURL and CURL handles. Setup of the handles is delayed to
+     Init libcurl MCURL and CURL handles. Setup of the handles is delayed to
      the later step, depending on whether login, UAS or logoff is required.
   */
   if (initial_handles_init (cctx) == -1)
@@ -312,6 +312,7 @@ static void* batch_function (void * batch_data)
   /* 
      Now run login, user-defined actions, like fetching various urls and and 
      sleeping in between, and logoff.
+     Calls 
   */ 
   rval = ua_array[loading_mode] (cctx);
 
@@ -814,6 +815,12 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                       cctx->cycle_num, cctx->client_name, response_status, data,
                       url_print ? url : "", url_diff ? url_target : "");
 
+                /*
+                  We are not marking client on 4xx errors as CSTATE_ERROR
+                   state, because there are authorization errors, that client still can
+                   overcome.
+                */
+
                 /* First header of 4xx response */
                 first_hdr_4xx_inc (cctx);
                 stat_4xx_inc (cctx);  /* Increment number of 4xx responses */
@@ -831,6 +838,8 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                 fprintf(cctx->file_output, "%ld %s :!! %ld SERVER_ERROR : %s: eff-url: %s, url: %s\n", 
                     cctx->cycle_num, cctx->client_name, response_status, data,
                     url_print ? url : "", url_diff ? url_target : "");
+
+                cctx->client_state = CSTATE_ERROR;
 
                 /* First header of 5xx response */
                 first_hdr_5xx_inc (cctx);

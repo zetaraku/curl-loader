@@ -224,6 +224,10 @@ typedef struct batch_context
   /* HTTPS counters since the loading started */
   stat_point https_total;
 
+  /* Operations statistics */
+  op_stat_point op_delta;
+  op_stat_point op_total;
+
 } batch_context;
 
 

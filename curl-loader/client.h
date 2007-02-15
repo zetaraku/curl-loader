@@ -123,8 +123,14 @@ typedef struct client_context
   /* Index of the currently used UAS url. */
   size_t uas_url_curr_index;
 
+  /* Remember here preload UAS url. */
+  size_t preload_uas_url_curr_index;
+
    /* Current state of the client. */
   cstate client_state;
+
+  /* Remember here pre-load state of a client. */
+  cstate preload_state;
 
    /* Number of errors */ 
   int errors_num;
