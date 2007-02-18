@@ -130,9 +130,9 @@ int user_activity_smooth (client_context* cctx_array)
     }
   
   if (tq_init (bctx->waiting_queue,
-               bctx->client_num, /* tq size */
-               0, /* tq increase step; 0 - means don't increase */
-               bctx->client_num /* number of nodes to prealloc */
+               bctx->client_num,                                                                           /* tq size */
+               0,                                                                                                         /* tq increase step; 0 - means don't increase */
+               bctx->client_num + PERIODIC_TIMERS_NUMBER + 1 /* number of nodes to prealloc */
                ) == -1)
     {
       fprintf (stderr, "%s - error: failed to initialize waiting queue.\n", __func__);
@@ -511,14 +511,12 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 
 
   /* Update operational statistics */
-  /*
   update_op_stat (
                   &bctx->op_delta, 
                   (recoverable_error_state == CSTATE_ERROR) ? recoverable_error_state : rval_load, 
                   cctx->preload_state,
                   cctx->uas_url_curr_index,
                   cctx->preload_uas_url_curr_index);
-  */
 
   /* 
      Coming to the error or the finished states, just return without more 
@@ -1155,10 +1153,9 @@ static int handle_logfile_rewinding_timer  (timer_node* timer_node,
  *
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/
-static int handle_gradual_increase_clients_num_timer  (
-                                                 timer_node* timer_node, 
-                                                 void* pvoid_param, 
-                                                 unsigned long ulong_param)
+static int handle_gradual_increase_clients_num_timer  (timer_node* timer_node, 
+                                                       void* pvoid_param, 
+                                                       unsigned long ulong_param)
 {
   batch_context* bctx = (batch_context *) pvoid_param;
   (void) timer_node;

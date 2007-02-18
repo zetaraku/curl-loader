@@ -1021,6 +1021,25 @@ int parse_config_file (char* const filename,
                      "%s - error: validation of batch %d failed.\n",__func__, k);
             return -1;
         }
+
+        /* Init operational statistics structures */
+        if (op_stat_point_init(&bctx_array[k].op_delta, 
+                               (size_t)bctx_array[k].do_login, 
+                               bctx_array[k].uas_urls_num, 
+                               (size_t)bctx_array[k].do_logoff) == -1)
+          {
+            fprintf (stderr, "%s - error: init of op_delta failed for batch %d.\n",__func__, k);
+            return -1;
+          }
+
+        if (op_stat_point_init(&bctx_array[k].op_total, 
+                               (size_t)bctx_array[k].do_login, 
+                               bctx_array[k].uas_urls_num, 
+                               (size_t)bctx_array[k].do_logoff) == -1)
+          {
+            fprintf (stderr, "%s - error: init of op_total failed for batch %d.\n",__func__, k);
+            return -1;
+          }
     }
 
     return (batch_index + 1);

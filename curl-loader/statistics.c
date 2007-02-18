@@ -56,6 +56,8 @@ static void print_statistics_data (
                                    stat_point *sd,
                                    unsigned long period);
 
+static void print_operational_statistics (op_stat_point*const osp);
+
 static void dump_stat_to_screen (
                                  char* protocol, 
                                  stat_point* sd, 
@@ -129,17 +131,23 @@ void op_stat_point_add (op_stat_point* left, op_stat_point* right)
   if (left->uas_url_num != right->uas_url_num)
     return;
   
-  *left->login_ok += *right->login_ok;
-  *left->login_failed += *right->login_failed;
+  if (left->login_ok)
+    {
+      *left->login_ok += *right->login_ok;
+      *left->login_failed += *right->login_failed;
+    }
 
   for ( i = 0; i < left->uas_url_num; i++)
     {
-      *left->uas_url_ok += *right->uas_url_ok;
-      *left->uas_url_failed += *right->uas_url_failed;
+      left->uas_url_ok[i] += right->uas_url_ok[i];
+      left->uas_url_failed[i] += right->uas_url_failed[i];
     }
 
-  *left->logoff_ok += *right->logoff_ok;
-  *left->logoff_failed += *right->logoff_failed;
+  if (left->logoff_ok)
+    {
+      *left->logoff_ok += *right->logoff_ok;
+      *left->logoff_failed += *right->logoff_failed;
+    }
 }
 
 void op_stat_point_reset (op_stat_point* point)
@@ -147,15 +155,25 @@ void op_stat_point_reset (op_stat_point* point)
   if (!point)
     return;
 
-  point->login_ok = point->login_failed = point->logoff_ok = point->logoff_failed = 0;
- 
-  size_t i;
-  for ( i = 0; i < point->uas_url_num; i++)
+  if (point->login_ok)
     {
-      point->uas_url_ok = point->uas_url_failed = 0;
+      point->login_ok = point->login_failed = 0;
     }
 
-  /* Don't null point->uas_url_num ! */
+  if (point->uas_url_num)
+    {
+      size_t i;
+      for ( i = 0; i < point->uas_url_num; i++)
+        {
+          point->uas_url_ok[i] = point->uas_url_failed[i] = 0;
+        }
+    }
+    /* Don't null point->uas_url_num ! */
+
+   if (point->logoff_ok)
+    {
+      point->logoff_ok = point->logoff_failed = 0;
+    }
 }
 
 void op_stat_point_release (op_stat_point* point)
@@ -200,7 +218,8 @@ int op_stat_point_init (
         {
           goto allocation_failed;
         }
-      point->uas_url_num = uas_url_num;
+      else
+        point->uas_url_num = uas_url_num;
     }
 
   if (logoff)
@@ -250,21 +269,21 @@ void update_op_stat (
              the first and the only)
           */
           (current_state == CSTATE_ERROR) ? 
-            op_stat->uas_url_failed[op_stat->uas_url_num]++ : 
-            op_stat->uas_url_ok[op_stat->uas_url_num]++;
+            op_stat->uas_url_failed[op_stat->uas_url_num-1]++ : 
+            op_stat->uas_url_ok[op_stat->uas_url_num-1]++;
         }
       else
         {
-           if (current_uas_url_index == (prev_uas_url_index + 1))
-            {
+          //         if (current_uas_url_index == (prev_uas_url_index + 1))
+          // {
               /* 
                  If loading has advanced to the next UAS url, update
                  previous url operational statistics counters.
-               */
+              */
               (current_state == CSTATE_ERROR) ? 
                 op_stat-> uas_url_failed[prev_uas_url_index]++ : 
                 op_stat->uas_url_ok[prev_uas_url_index]++;
-            }
+              //   }
         }
       break;
 
@@ -323,7 +342,8 @@ void dump_final_statistics (client_context* cctx)
 		&bctx->https_delta);
 
   stat_point_add (&bctx->http_total, &bctx->http_delta);
-  stat_point_add (&bctx->https_total, &bctx->https_delta);  
+  stat_point_add (&bctx->https_total, &bctx->https_delta); 
+  op_stat_point_add (&bctx->op_delta, &bctx->op_total);
     
   fprintf(stdout,"===========================================\n");
   fprintf(stdout,"End of test:\n"); 
@@ -334,6 +354,9 @@ void dump_final_statistics (client_context* cctx)
   dump_statistics ((now - bctx->start_time)/ 1000, 
                    &bctx->http_total,  
                    &bctx->https_total);
+
+  print_operational_statistics (&bctx->op_total);
+
 
   if (bctx->statistics_file)
     {
@@ -384,6 +407,8 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
   dump_statistics ((now - bctx->start_time)/ 1000, 
                    &bctx->http_total,  
                    &bctx->https_total);
+
+  print_operational_statistics (&bctx->op_total);
 
   fprintf(stdout,"===========================================\n\n");
 }
@@ -441,7 +466,9 @@ void dump_snapshot_interval_and_advance_total_statistics(
     }
 
   fprintf(stdout,"===========================================\n");
-  fprintf(stdout,"The latest time interval statistics:\n"); 
+  fprintf(stdout,"The latest time interval statistics:\n");
+
+  print_operational_statistics (&bctx->op_delta);
 
   print_snapshot_interval_statistics(
                                      pending_active_and_waiting_clients_num (bctx),
@@ -475,6 +502,9 @@ void dump_snapshot_interval_and_advance_total_statistics(
 
   stat_point_reset (&bctx->http_delta); 
   stat_point_reset (&bctx->https_delta);
+
+  op_stat_point_add (&bctx->op_total, &bctx->op_delta );
+  op_stat_point_reset (&bctx->op_delta);
         
   bctx->last_measure = now_time;
 }
@@ -590,3 +620,30 @@ static void dump_clients (client_context* cctx_array)
   fclose (ct_file);
 }
 
+static void print_operational_statistics (op_stat_point*const osp)
+{
+  if (!osp)
+    return;
+
+  fprintf (stdout, " Operations:\tSuccess\t\tFailed\n");
+
+  if (osp->login_ok && osp->login_failed)
+    {
+      fprintf (stdout, " LOGIN:\t\t%ld\t\t%ld\n", *osp->login_ok, *osp->login_failed);
+    }
+
+  if (osp->uas_url_num && osp->uas_url_ok && osp->uas_url_failed)
+    {
+      unsigned long i;
+      for (i = 0; i < osp->uas_url_num; i++)
+        {
+          fprintf (stdout, " UAS-%ld:\t\t%ld\t\t%ld\n",
+                   i, osp->uas_url_ok[i], osp->uas_url_failed[i]);
+        }
+    }
+
+  if (osp->login_ok && osp->login_failed)
+    {
+      fprintf (stdout, " LOGOFF:\t\t%ld\t\t%ld\n", *osp->logoff_ok, *osp->logoff_failed);
+    }
+}

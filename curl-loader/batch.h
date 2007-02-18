@@ -136,8 +136,10 @@ typedef struct batch_context
   /* Array of all UAS url contexts */
   url_context* uas_url_ctx_array;
 
-  /* Index of the parsed url in uas_url_ctx_array below.
-     Further used by the storm-mode as the current url index. */
+  /* 
+     Index of the parsed url in uas_url_ctx_array below.
+     Further used by the storm-mode as the current url index. 
+  */
   int url_index;
 
 
