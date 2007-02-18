@@ -35,9 +35,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "parse_conf.h"
-#include "batch.h"
 #include "conf.h"
+#include "batch.h"
 
 #define BATCH_MAX_CLIENTS_NUM 4096
 

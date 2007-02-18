@@ -23,6 +23,7 @@
 #ifndef CONF_H
 #define CONF_H
 
+#include <stddef.h>
 #include <linux/limits.h> /* NAME_MAX, PATH_MAX */
 
 /* ----------------------------------------------------------------------------------------------------
@@ -145,6 +146,12 @@ enum logoff_req_type
    Parses command line and fills configuration params.
 */
 int parse_command_line (int argc, char *argv []);
+
+
+struct batch_context;
+int parse_config_file (char* const filename, 
+                       struct batch_context* bctx_array, 
+                       size_t bctx_array_size);
 
 /*
   Prints out usage of the program.
