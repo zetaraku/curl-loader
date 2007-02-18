@@ -157,7 +157,7 @@ void op_stat_point_reset (op_stat_point* point)
 
   if (point->login_ok)
     {
-      point->login_ok = point->login_failed = 0;
+      *point->login_ok = *point->login_failed = 0;
     }
 
   if (point->uas_url_num)
@@ -172,7 +172,7 @@ void op_stat_point_reset (op_stat_point* point)
 
    if (point->logoff_ok)
     {
-      point->logoff_ok = point->logoff_failed = 0;
+      *point->logoff_ok = *point->logoff_failed = 0;
     }
 }
 
@@ -255,8 +255,8 @@ void update_op_stat (
     case CSTATE_LOGIN:
       if (current_state != CSTATE_LOGIN)
         {
-          (current_state == CSTATE_ERROR) ? op_stat->login_failed++ : 
-            op_stat->login_ok++;
+          (current_state == CSTATE_ERROR) ? ++*op_stat->login_failed : 
+            ++*op_stat->login_ok;
         }
       break;
       
@@ -290,8 +290,8 @@ void update_op_stat (
     case CSTATE_LOGOFF:
       if (current_state != CSTATE_LOGOFF)
         {
-          (current_state == CSTATE_ERROR) ? op_stat->logoff_failed++ : 
-            op_stat->logoff_ok++;
+          (current_state == CSTATE_ERROR) ? ++*op_stat->logoff_failed : 
+            ++*op_stat->logoff_ok;
         }
       break;
     }
@@ -644,6 +644,6 @@ static void print_operational_statistics (op_stat_point*const osp)
 
   if (osp->login_ok && osp->login_failed)
     {
-      fprintf (stdout, " LOGOFF:\t\t%ld\t\t%ld\n", *osp->logoff_ok, *osp->logoff_failed);
+      fprintf (stdout, " LOGOFF:\t%ld\t\t%ld\n", *osp->logoff_ok, *osp->logoff_failed);
     }
 }
