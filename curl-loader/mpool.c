@@ -76,7 +76,7 @@ allocatable* mpool_remove (mpool* mpool)
 /****************************************************************************************
 * Function name - mpool_take_obj
 *
-* Description - Takes object from a memory pool
+* Description - Takes an object from a memory pool
 *
 * Input -       *mpool - pointer to an initialized mpool
 *
@@ -119,7 +119,7 @@ allocatable* mpool_take_obj (mpool* mpool)
 /****************************************************************************************
 * Function name - mpool_take_obj
 *
-* Description - Returns object to a memory pool
+* Description - Returns an object to a memory pool
 *
 * Input -       *mpool - pointer to an initialized mpool
 *               *item - pointer to an object
@@ -148,9 +148,9 @@ int mpool_return_obj (mpool* mpool, allocatable* item)
 *
 * Return Code/Output - On success - 0, on error - (-1)
 ****************************************************************************************/
-int mpool_init (mpool* mpool, size_t object_size, int number_objects)
+int mpool_init (mpool* mpool, size_t object_size, int num_obj)
 {
-  if (! mpool || ! object_size || number_objects < 0)
+  if (! mpool || ! object_size || num_obj < 0)
    {
      fprintf (stderr, "%s - wrong input\n", __func__);
      return -1;
@@ -168,7 +168,7 @@ int mpool_init (mpool* mpool, size_t object_size, int number_objects)
   /* Preventing fragmentation */
   mpool->increase_step = OS_FREE_LIST_CHUNK_SIZE / mpool->obj_size;
 	
-  if (mpool_allocate (mpool, number_objects) == -1)
+  if (mpool_allocate (mpool, num_obj) == -1)
     {
       fprintf (stderr, "%s - mpool_allocate () failed\n", __func__);
       return -1;
@@ -180,7 +180,7 @@ int mpool_init (mpool* mpool, size_t object_size, int number_objects)
 /****************************************************************************************
 * Function name - mpool_free
 *
-* Description - Releases memory all allocated memory from a pool. Pool itself remains allocated.
+* Description - Releases all allocated memory from a pool. The pool itself remains allocated.
 *
 * Input -       *mpool - pointer to an allocated mpool
 *
@@ -236,7 +236,7 @@ void mpool_free (mpool* mpool)
 /****************************************************************************************
 * Function name - mpool_size
 *
-* Description - Returns number of allocated objects
+* Description - Returns the number of the allocated objects
 *
 * Input -       *mpool - pointer to an allocated mpool
 *
@@ -250,7 +250,7 @@ int mpool_size (mpool* mpool)
 /****************************************************************************************
 * Function name - mpool_allocate
 *
-* Description - Allocates for an initialized pool additionally some more objects 
+* Description - Allocates for an initialized pool some additional number of objects 
 *
 * Input -       *mpool - pointer to an initialized mpool
 *               num_obj -  number of objects to be added for a memory pool
@@ -330,7 +330,7 @@ int mpool_allocate (mpool* mpool, size_t num_obj)
 /****************************************************************************************
 * Function name - mpool_mem_release
 *
-* Description - Releases from mpool to OS a specified number of objects 
+* Description - Releases from mpool to OS a specified number of objects.
 *
 * Input -       *mpool - pointer to an initialized mpool
 *               num_obj -  number of objects to be released from a memory pool
