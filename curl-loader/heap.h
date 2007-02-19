@@ -27,7 +27,7 @@
 
 
 /*
-	hnode - is the housekeeping object of heap, its building block.
+	hnode - is the housekeeping node of heap, its building block.
 */
 typedef struct hnode
 {
@@ -40,14 +40,18 @@ typedef struct hnode
   */
   long node_id;
 
-  /* Pointer to the user-data context to keep with the node. */
+  /* 
+     Pointer to the user-data context to keep with the node. 
+     When used in timer-queue, we place here pointer to
+     timer-node.
+  */
   void* ctx;
 
 } hnode;
 
 /* 	
    Prototype of the function to be used to compare heap-kept objects
-   for the sake of sorting in the heap. Sorting is necessary to implement 
+   for the sake of sorting in a heap. Sorting is necessary to implement 
    sorted queue container.
 */
 typedef int (*heap_cmp_func) (hnode* const, hnode* const);
@@ -97,13 +101,13 @@ typedef struct heap
   */
   size_t ids_min_free_restore;
 
-  /* Comparator for nodes. */
+  /* Comparator function for nodes. */
   heap_cmp_func fcomp;
 
-  /* Dumper for nodes. */
+  /* Dumper function for nodes. */
   node_dump_func fndump;
 
-  /* Mpool of nodes */
+  /* Memory pool of hnodes */
   struct mpool* nodes_mpool;
 	
 } heap;
@@ -112,8 +116,8 @@ typedef struct heap
 /****************************************************************************************
 * Function name - node_reset
 *
-* Description - Set to zero the fields, that allowed to be zeroed. Use this function 
-*               and not memset.
+* Description - Zeros the fields of hnode, that are allowed to be zeroed. 
+*            Attention!!! Use this function and not memset.
 *
 * Input -       *node - pointer to an hnode object
 *
@@ -128,7 +132,7 @@ void node_reset (hnode*const node);
 *
 * Input -       *h - pointer to an allocated heap
 *               initial_heap_size -  initial size to start
-*               increase_step -  size to increase heap, when deciding to do so
+*               increase_step -  number of hnodes used to increase heap, when doing it
 *               comparator -  user-function, that compares user-objects, kept by the heap
 *               dumper -  user-function, that dumps user-objects, kept by the heap
 *               nodes_prealloc -  number of hnodes to be pre-allocated at initialization
@@ -146,8 +150,8 @@ int heap_init (heap*const h,
 /****************************************************************************************
 * Function name - heap_reset
 *
-* Description - De-allocates memory and inits to the initial values heap, but does not deallocate
-*               the heap itself.
+* Description - De-allocates memory and inits to the initial values heap, 
+*               but does not deallocate the heap itself.
 *
 * Input -       *h - pointer to an initialized heap
 *
@@ -241,7 +245,7 @@ int heap_empty (heap*const h);
 /****************************************************************************************
 * Function name - heap_size
 *
-* Description -  Returns current size of heap
+* Description -  Returns current size of a heap
 *
 * Input -        *h - pointer to an initialized heap
 *

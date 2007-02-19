@@ -65,6 +65,14 @@ static void dump_stat_to_screen (
 
 static void dump_clients (client_context* cctx_array);
 
+/****************************************************************************************
+* Function name - stat_point_add
+*
+* Description - Adds counters of one stat_point structure to anther
+* Input -       *left -  pointer to the stat_point, where counter will be added
+*               *right -  pointer to the stat_point, which counter will be added to the <left>
+* Return Code/Output - None
+****************************************************************************************/
 void stat_point_add (stat_point* left, stat_point* right)
 {
   if (!left || !right)
@@ -104,6 +112,14 @@ void stat_point_add (stat_point* left, stat_point* right)
       left->appl_delay_2xx = 0;
 }
 
+/****************************************************************************************
+* Function name - stat_point_reset
+*
+* Description - Nulls counters of a stat_point structure
+* Input -       *point -  pointer to the stat_point
+* 
+* Return Code/Output - None
+****************************************************************************************/
 void stat_point_reset (stat_point* p)
 {
   if (!p)
@@ -120,7 +136,14 @@ void stat_point_reset (stat_point* p)
   p->appl_delay_2xx = 0;
 }
 
-
+/****************************************************************************************
+* Function name - op_stat_point_add
+*
+* Description - Adds counters of one op_stat_point structure to anther
+* Input -       *left -  pointer to the op_stat_point, where counter will be added
+*               *right -  pointer to the op_stat_point, which counter will be added to the <left>
+* Return Code/Output - None
+****************************************************************************************/
 void op_stat_point_add (op_stat_point* left, op_stat_point* right)
 {
   size_t i;
@@ -150,6 +173,14 @@ void op_stat_point_add (op_stat_point* left, op_stat_point* right)
     }
 }
 
+/****************************************************************************************
+* Function name - op_stat_point_reset
+*
+* Description - Nulls counters of an op_stat_point structure
+* Input -       *point -  pointer to the op_stat_point
+* 
+* Return Code/Output - None
+****************************************************************************************/
 void op_stat_point_reset (op_stat_point* point)
 {
   if (!point)
@@ -176,6 +207,14 @@ void op_stat_point_reset (op_stat_point* point)
     }
 }
 
+/****************************************************************************************
+* Function name -  op_stat_point_release
+*
+* Description - Releases memory allocated by op_stat_point_init ()
+* Input -       *point -  pointer to the op_stat_point, where counter will be added
+*
+* Return Code/Output - None
+****************************************************************************************/
 void op_stat_point_release (op_stat_point* point)
 {
   if (point->login_ok)
@@ -193,6 +232,16 @@ void op_stat_point_release (op_stat_point* point)
   memset (point, 0, sizeof (op_stat_point));
 }
 
+/****************************************************************************************
+* Function name - op_stat_point_init
+*
+* Description - Initializes an allocated op_stat_point by allocating relevant fields for counters
+* Input -       *point -  pointer to the op_stat_point, where counter will be added
+*               login -  boolean flag, whether login is relevant (1) or not (0)
+*               uas_url_num -  number of UAS urls, which can be 0, if UAS is not relevant
+*               logoff -  boolean flag, whether login is relevant (1) or not (0)
+* Return Code/Output - None
+****************************************************************************************/
 int op_stat_point_init (
                         op_stat_point* point, 
                         size_t login, 
@@ -239,14 +288,27 @@ int op_stat_point_init (
   return -1;
 }
 
-  /* Update operational statistics */
-void update_op_stat (
+/****************************************************************************************
+* Function name -  op_stat_update
+*
+* Description - Updates operation statistics using information from client context
+* Input -       *point -  pointer to the op_stat_point, where counters to be updated
+*               current_state - current state of a client
+*               prev_state -  previous state of a client
+*               current_uas_url_index -  current uas url index of a the client
+*               prev_uas_url_index -  previous uas url index of a the client
+*
+* Return Code/Output - None
+****************************************************************************************/
+void op_stat_update (
                      op_stat_point* op_stat, 
                      int current_state, 
                      int prev_state,
                      size_t current_uas_url_index,
                      size_t prev_uas_url_index)
 {
+  (void) current_uas_url_index;
+
   if (!op_stat)
     return;
 
@@ -274,7 +336,7 @@ void update_op_stat (
         }
       else
         {
-          //         if (current_uas_url_index == (prev_uas_url_index + 1))
+          //  if (current_uas_url_index == (prev_uas_url_index + 1))
           // {
               /* 
                  If loading has advanced to the next UAS url, update

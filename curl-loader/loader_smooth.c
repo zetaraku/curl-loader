@@ -498,7 +498,7 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
      When load_error_state () gets client (in CSTATE_ERROR) and 
      <recoverable_error_state> is true (the default), it recovers the 
      client and sets the first cycling state to it. However, operational
-     statistics should record it as a failed operation in update_op_stat.
+     statistics should record it as a failed operation in op_stat_update.
      Therefore, remembering here possible error state.
   */
   int recoverable_error_state = cctx->client_state;
@@ -511,7 +511,7 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
 
 
   /* Update operational statistics */
-  update_op_stat (
+  op_stat_update (
                   &bctx->op_delta, 
                   (recoverable_error_state == CSTATE_ERROR) ? recoverable_error_state : rval_load, 
                   cctx->preload_state,

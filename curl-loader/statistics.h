@@ -30,8 +30,11 @@
 #include "timer_tick.h"
 
 /*
-  stat_point - is the object used to keep all statistics
-  counters together and collect statistics.
+  stat_point -
+  The structure is used to collect loading statistics.
+  The two instances are kept by each batch context - 
+  one is for the latest snapshot interval and another 
+  for the total summary values.
 */
 typedef struct stat_point
 {
@@ -74,36 +77,113 @@ typedef struct stat_point
 } stat_point;
 
 /*
-  Operation statistics point
+  op_stat_point
+  Operation statistics point: two instances are residing in each batch
+  context - one for the latest snapshot interval and another for the total
+  summary values.
 */
 typedef struct op_stat_point
 {
+  /* Number of successful logins */
   unsigned long* login_ok;
+  /* Number of failed logins */
   unsigned long* login_failed;
 
+  /* Number of url-counters in the below arrays */
+  unsigned long uas_url_num;
+  /* Array of UAS-url counters for successful fetches */
   unsigned long* uas_url_ok;
+  /* Array of UAS-url counters for failed fetches */
   unsigned long* uas_url_failed;
 
-  unsigned long uas_url_num;
-
+  /* Number of successful logoffs */
   unsigned long* logoff_ok;
+  /* Number of failed logoffs */
   unsigned long* logoff_failed;
 } op_stat_point;
 
+/****************************************************************************************
+* Function name - stat_point_add
+*
+* Description - Adds counters of one stat_point structure to anther
+* Input -       *left -  pointer to the stat_point, where counter will be added
+*               *right -  pointer to the stat_point, which counter will be added to the <left>
+* Return Code/Output - None
+****************************************************************************************/
 void stat_point_add (stat_point* left, stat_point* right);
+
+/****************************************************************************************
+* Function name - stat_point_reset
+*
+* Description - Nulls counters of a stat_point structure
+* Input -       *point -  pointer to the stat_point
+* 
+* Return Code/Output - None
+****************************************************************************************/
 void stat_point_reset (stat_point* point);
 
 
 
+
+/****************************************************************************************
+* Function name - op_stat_point_add
+*
+* Description - Adds counters of one op_stat_point structure to anther
+* Input -       *left -  pointer to the op_stat_point, where counter will be added
+*               *right -  pointer to the op_stat_point, which counter will be added to the <left>
+* Return Code/Output - None
+****************************************************************************************/
 void op_stat_point_add (op_stat_point* left, op_stat_point* right);
+
+/****************************************************************************************
+* Function name - op_stat_point_reset
+*
+* Description - Nulls counters of an op_stat_point structure
+* Input -       *point -  pointer to the op_stat_point
+* 
+* Return Code/Output - None
+****************************************************************************************/
 void op_stat_point_reset (op_stat_point* point);
+
+/****************************************************************************************
+* Function name - op_stat_point_init
+*
+* Description - Initializes an allocated op_stat_point by allocating relevant fields for counters
+* Input -       *point -  pointer to the op_stat_point, where counter will be added
+*               login -  boolean flag, whether login is relevant (1) or not (0)
+*               uas_url_num -  number of UAS urls, which can be 0, if UAS is not relevant
+*               logoff -  boolean flag, whether login is relevant (1) or not (0)
+* Return Code/Output - None
+****************************************************************************************/
 int op_stat_point_init (
                         op_stat_point* point, 
                         size_t login, 
                         size_t uas_url_num, 
                         size_t logoff);
+
+/****************************************************************************************
+* Function name -  op_stat_point_release
+*
+* Description - Releases memory allocated by op_stat_point_init ()
+* Input -       *point -  pointer to the op_stat_point, where counter will be added
+*
+* Return Code/Output - None
+****************************************************************************************/
 void op_stat_point_release (op_stat_point* point);
-void update_op_stat (
+
+/****************************************************************************************
+* Function name -  op_stat_update
+*
+* Description - Updates operation statistics using information from client context
+* Input -       *point -  pointer to the op_stat_point, where counters to be updated
+*               current_state - current state of a client
+*               prev_state -  previous state of a client
+*               current_uas_url_index -  current uas url index of a the client
+*               prev_uas_url_index -  previous uas url index of a the client
+*
+* Return Code/Output - None
+****************************************************************************************/
+void op_stat_update (
                      op_stat_point* op_stat, 
                      int current_state, 
                      int prev_state,
@@ -130,7 +210,7 @@ void dump_final_statistics (struct client_context* cctx);
 *
 * Description - Dumps summary statistics since the start of load
 * Input -       *bctx - pointer to batch structure
-*                   now -  current time in msec since epoch
+*               now -  current time in msec since epoch
 *
 * Return Code/Output - None
 ****************************************************************************************/
@@ -141,12 +221,13 @@ void dump_snapshot_interval (struct batch_context* bctx, unsigned long now);
 * Function name - print_snapshot_interval_statistics
 *
 * Description - Dumps final statistics counters to stderr and statistics file using 
-*                     print_snapshot_interval_statistics and print_statistics_* functions as well as calls
-*                     dump_clients () to dump the clients table.
+*                     print_snapshot_interval_statistics and print_statistics_* functions 
+*                     as well as calls dump_clients () to dump the clients table.
+*                     
 * Input -       clients - number of active clients
-*                     period - latest time period in milliseconds
-*                     *http - pointer to the HTTP collected statistics to output
-*                     *https - pointer to the HTTPS collected statistics to output
+*               period - latest time period in milliseconds
+*               *http - pointer to the HTTP collected statistics to output
+*               *https - pointer to the HTTPS collected statistics to output
 * Return Code/Output - None
 ****************************************************************************************/
 void print_snapshot_interval_statistics (
