@@ -1,9 +1,25 @@
+version 0.26 - future
+
+* CAPS number added to the "standing" output statistics. It is
+   calculated as the number of the first cycled state, entered by clients 
+   per second.
+
+* 4xx HTTP client error, which are not 401 or 407 (authentication required)
+   are considered now as errors. TODO: support for 401 and 407 authentication.
+
+* Operation statistics added to the "standing" output, namely,
+   number of url successful or failed for LOGIN, for each UAS url
+  and for LOGOFF operations;
+
+* "Standing" statistics improved with regards to its layout.
+
+
+
 version 0.25, 14/02/2007, svn 121
 	
 * "Standing" statistics screen added to present running counters.
     Looks for me as a very convenient way of looking at the loading 
-    in-progress. TODO: may be to separate it to 3 sections: login, uas
-    and logoff.
+    in-progress.
 	
 * Added summary statistics of load to be outputted at statistics
    snapshot intervals together with an interval statistics. Very useful

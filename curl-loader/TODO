@@ -14,7 +14,6 @@ debug=1, 0, default is 0 - no debugging symbols;
 opt=1, 0, default is 1 - build with optimization;
 profile=1,0, default is 0 - build without profiling -pg option
 
-
 3. Support for CAPS (calls per second) defined mode. Currently, we
 are supporting only a certain number of virtual clients and CAPS is the derived
 parameter. CAPS-MODE should support a certain number of CAPS, 
@@ -24,3 +23,5 @@ and virtual clients number to be the derived parameter.
 curl_multi_socket() approach and epoll support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
 from a single process can become a reality.
+
+5. Support for 401 and 407 authentication responses.
