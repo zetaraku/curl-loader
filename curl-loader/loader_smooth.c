@@ -131,7 +131,7 @@ int user_activity_smooth (client_context* cctx_array)
   
   if (tq_init (bctx->waiting_queue,
                bctx->client_num,                                                                           /* tq size */
-               0,                                                                                                         /* tq increase step; 0 - means don't increase */
+               10,                                                                                                         /* tq increase step; 0 - means don't increase */
                bctx->client_num + PERIODIC_TIMERS_NUMBER + 1 /* number of nodes to prealloc */
                ) == -1)
     {
