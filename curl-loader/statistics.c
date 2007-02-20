@@ -37,29 +37,25 @@
 #define UNSECURE_APPL_STR "HTTP/FTP"
 
 static void 
-dump_snapshot_interval_and_advance_total_statistics (
-                                                    struct batch_context* bctx,
-                                                    unsigned long now_time);
+dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
+                                                     unsigned long now_time);
 
-static void dump_statistics (
-                             unsigned long period, 
+static void dump_statistics (unsigned long period, 
                              stat_point *http, 
                              stat_point *https);
 
 static void print_statistics_footer (FILE* file);
 
-static void print_statistics_data (
-                                   FILE* file, 
+static void print_statistics_data (FILE* file, 
                                    unsigned long timestamp,
                                    char* prot,
-                                   long clients_num, 
+                                   long clients_num,
                                    stat_point *sd,
                                    unsigned long period);
 
 static void print_operational_statistics (op_stat_point*const osp);
 
-static void dump_stat_to_screen (
-                                 char* protocol, 
+static void dump_stat_to_screen (char* protocol, 
                                  stat_point* sd, 
                                  unsigned long period);
 
@@ -171,6 +167,8 @@ void op_stat_point_add (op_stat_point* left, op_stat_point* right)
       *left->logoff_ok += *right->logoff_ok;
       *left->logoff_failed += *right->logoff_failed;
     }
+
+  left->call_init_count += right->call_init_count;
 }
 
 /****************************************************************************************
@@ -205,6 +203,8 @@ void op_stat_point_reset (op_stat_point* point)
     {
       *point->logoff_ok = *point->logoff_failed = 0;
     }
+
+   point->call_init_count = 0;
 }
 
 /****************************************************************************************
@@ -242,8 +242,7 @@ void op_stat_point_release (op_stat_point* point)
 *               logoff -  boolean flag, whether login is relevant (1) or not (0)
 * Return Code/Output - None
 ****************************************************************************************/
-int op_stat_point_init (
-                        op_stat_point* point, 
+int op_stat_point_init (op_stat_point* point, 
                         size_t login, 
                         size_t uas_url_num, 
                         size_t logoff)
@@ -280,6 +279,8 @@ int op_stat_point_init (
         }
     }
 
+  point->call_init_count = 0;
+
   return 0;
 
  allocation_failed:
@@ -300,8 +301,7 @@ int op_stat_point_init (
 *
 * Return Code/Output - None
 ****************************************************************************************/
-void op_stat_update (
-                     op_stat_point* op_stat, 
+void op_stat_update (op_stat_point* op_stat, 
                      int current_state, 
                      int prev_state,
                      size_t current_uas_url_index,
@@ -345,7 +345,7 @@ void op_stat_update (
               (current_state == CSTATE_ERROR) ? 
                 op_stat-> uas_url_failed[prev_uas_url_index]++ : 
                 op_stat->uas_url_ok[prev_uas_url_index]++;
-              //   }
+          //}
         }
       break;
 
@@ -359,6 +359,11 @@ void op_stat_update (
     }
   
   return;
+}
+
+void op_stat_call_init_count_inc (op_stat_point* op_stat)
+{
+  op_stat->call_init_count++;
 }
 
 /****************************************************************************************
@@ -408,7 +413,7 @@ void dump_final_statistics (client_context* cctx)
   op_stat_point_add (&bctx->op_delta, &bctx->op_total);
     
   fprintf(stdout,"===========================================\n");
-  fprintf(stdout,"End of test:\n"); 
+  fprintf(stdout,"End of the test:\n"); 
   fprintf(stdout,"===========================================\n");
   
   now = get_tick_count();
@@ -463,16 +468,22 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
   fprintf(stdout, "\033[2J");
   dump_snapshot_interval_and_advance_total_statistics(bctx, now);
 
-  fprintf(stdout,"-------------------------------------------\n");
-  fprintf(stdout,"Summary statistics of the test since loading started:\n"); 
+  const int seconds_run = (int)(now - bctx->start_time)/ 1000;
+
+  if (!seconds_run)
+    return;
+
+  fprintf(stdout,"-----------------------------------------------------\n");
+  fprintf(stdout,"Summary stats since load start (load runs: %d (secs), CAPS: %ld):\n", 
+          seconds_run, bctx->op_total.call_init_count / seconds_run); 
+
+  print_operational_statistics (&bctx->op_total);
   
-  dump_statistics ((now - bctx->start_time)/ 1000, 
+  dump_statistics (seconds_run, 
                    &bctx->http_total,  
                    &bctx->https_total);
 
-  print_operational_statistics (&bctx->op_total);
-
-  fprintf(stdout,"===========================================\n\n");
+  fprintf(stdout,"=====================================================\n\n");
 }
 
 /****************************************************************************************
@@ -498,7 +509,6 @@ void print_snapshot_interval_statistics (int clients,
       period = 1;
     }
 
-  fprintf(stdout, "Loading clients: %d, Snapshot Interval %d (sec)\n", (int) clients, (int) period);
   dump_stat_to_screen (UNSECURE_APPL_STR, http, period);
   dump_stat_to_screen (SECURE_APPL_STR, https, period);
 }
@@ -514,11 +524,9 @@ void print_snapshot_interval_statistics (int clients,
 *
 * Return Code/Output - None
 ****************************************************************************************/
-void dump_snapshot_interval_and_advance_total_statistics(
-                                                    batch_context* bctx,
+void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
                                                     unsigned long now_time)
 {
-  //const unsigned long now_time = get_tick_count ();
   const unsigned long delta_time = now_time - bctx->last_measure;
 
   if (stop_loading)
@@ -527,8 +535,10 @@ void dump_snapshot_interval_and_advance_total_statistics(
       exit (1); 
     }
 
-  fprintf(stdout,"===========================================\n");
-  fprintf(stdout,"The latest time interval statistics:\n");
+  fprintf(stdout,"=====================================================\n");
+  fprintf(stdout,"Last interval stats (interval: %d sec, clients: %d, CAPS: %ld):\n",
+          (int) delta_time/1000, pending_active_and_waiting_clients_num (bctx),
+          bctx->op_delta.call_init_count* 1000/delta_time);
 
   print_operational_statistics (&bctx->op_delta);
 
@@ -571,8 +581,7 @@ void dump_snapshot_interval_and_advance_total_statistics(
   bctx->last_measure = now_time;
 }
 
-static void dump_statistics (
-                             unsigned long period,  
+static void dump_statistics (unsigned long period,  
                              stat_point *http, 
                              stat_point *https)
 {
@@ -582,15 +591,13 @@ static void dump_statistics (
               "%s - less than 1 second duration test without statistics.\n",
               __func__);
       return;
-    } 
+    }
   
-  fprintf(stdout, "Test took %d seconds\n", (int) period);
   dump_stat_to_screen (UNSECURE_APPL_STR, http, period);
   dump_stat_to_screen (SECURE_APPL_STR, https, period);
 }
 
-static void dump_stat_to_screen (
-                                 char* protocol, 
+static void dump_stat_to_screen (char* protocol, 
                                  stat_point* sd, 
                                  unsigned long period)
 {

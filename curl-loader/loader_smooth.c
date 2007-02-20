@@ -65,6 +65,8 @@ static int dispatch_expired_timers (
                                                 unsigned long now_time);
 
 static int load_next_step (client_context* cctx, unsigned long now_time);
+static int last_cycling_state (batch_context* bctx);
+static int first_cycling_state (batch_context* bctx);
 
 /*
   Next step initialization functions relevant the client state.
@@ -96,6 +98,7 @@ static const load_state_func load_state_func_table [] =
   };
 
 static int is_last_cycling_state (client_context* cctx);
+static int is_first_cycling_state (client_context* cctx);
 static void advance_cycle_num (client_context* cctx);
 static int on_cycling_completed (client_context* cctx, unsigned long *wait_msec);
 
@@ -518,6 +521,11 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
                   cctx->uas_url_curr_index,
                   cctx->preload_uas_url_curr_index);
 
+  if (is_first_cycling_state (cctx))
+    {
+      op_stat_call_init_count_inc (&bctx->op_delta);
+    }
+
   /* 
      Coming to the error or the finished states, just return without more 
      scheduling the client any more.
@@ -577,6 +585,14 @@ static int is_last_cycling_state (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
 
+  int last_cstate = last_cycling_state (bctx);
+
+  if (last_cstate == CSTATE_ERROR || last_cstate == CSTATE_INIT)
+    return 0;
+
+  return (cctx->client_state == last_cstate);
+  
+/*
   switch (cctx->client_state)
     {
     case CSTATE_LOGIN:
@@ -584,14 +600,61 @@ static int is_last_cycling_state (client_context* cctx)
               !(bctx->do_logoff && bctx->logoff_cycling)) ? 1 : 0;
     case CSTATE_UAS_CYCLING:
       return (!(bctx->do_logoff && bctx->logoff_cycling)) ? 1 : 0;
-    case CSTATE_LOGOFF: /* Logoff cycling, if exists, 
-                           supposed to be the last state of a cycle. */
+    case CSTATE_LOGOFF: 
       return bctx->logoff_cycling ? 1 : 0;
-
     default:
       return 0;
     }
+
   return 0;
+*/
+}
+
+static int is_first_cycling_state (client_context* cctx)
+{
+  batch_context* bctx = cctx->bctx;
+  int first_cstate = first_cycling_state (bctx);
+
+  if (first_cstate == CSTATE_ERROR || first_cstate == CSTATE_INIT)
+    return 0;
+
+  return (cctx->client_state == first_cstate);
+}
+
+static int last_cycling_state (batch_context* bctx)
+{
+  if (bctx->do_logoff && bctx->logoff_cycling)
+    {
+      return CSTATE_LOGOFF;
+    }
+  else if (bctx->do_uas)
+    {
+      return CSTATE_UAS_CYCLING;
+    }
+  else if (bctx->do_login && bctx->login_cycling)
+    {
+      return CSTATE_LOGIN;
+    }
+
+  return CSTATE_ERROR;
+}
+
+static int first_cycling_state (batch_context* bctx)
+{
+  if (bctx->do_login && bctx->login_cycling)
+    {
+      return CSTATE_LOGIN;
+    }
+  else if (bctx->do_uas)
+    {
+      return CSTATE_UAS_CYCLING;
+    }
+  else if (bctx->do_logoff && bctx->logoff_cycling)
+    {
+      return CSTATE_LOGOFF;
+    }
+
+  return CSTATE_ERROR;
 }
 
 /****************************************************************************************
@@ -787,18 +850,14 @@ static int load_error_state (client_context* cctx, unsigned long *wait_msec)
         }
       else
         {
-          if (bctx->do_login && bctx->login_cycling)
-            {
-              return load_login_state (cctx, wait_msec);
-            }
-          else if (bctx->do_uas)
-            {
-              return load_uas_state (cctx, wait_msec);
-            }
-          else if (bctx->do_logoff && bctx->logoff_cycling)
-            {
-              return load_logoff_state (cctx, wait_msec);
-            }
+          /* first cycling state */
+          int first_cstate = first_cycling_state (bctx);
+
+          if (first_cstate <= 0) /* if CSTATE_ERROR or CSTATE_INIT */
+            return (cctx->client_state = CSTATE_ERROR);
+
+          /* Load the first cycling state url */
+          return load_state_func_table[first_cstate + 1](cctx, wait_msec);
         }
     }
  

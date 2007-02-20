@@ -100,6 +100,10 @@ typedef struct op_stat_point
   unsigned long* logoff_ok;
   /* Number of failed logoffs */
   unsigned long* logoff_failed;
+
+  /* Used for CAPS calculation */
+  unsigned long call_init_count;
+
 } op_stat_point;
 
 /****************************************************************************************
@@ -135,6 +139,7 @@ void stat_point_reset (stat_point* point);
 ****************************************************************************************/
 void op_stat_point_add (op_stat_point* left, op_stat_point* right);
 
+
 /****************************************************************************************
 * Function name - op_stat_point_reset
 *
@@ -144,6 +149,7 @@ void op_stat_point_add (op_stat_point* left, op_stat_point* right);
 * Return Code/Output - None
 ****************************************************************************************/
 void op_stat_point_reset (op_stat_point* point);
+
 
 /****************************************************************************************
 * Function name - op_stat_point_init
@@ -160,6 +166,7 @@ int op_stat_point_init (
                         size_t login, 
                         size_t uas_url_num, 
                         size_t logoff);
+
 
 /****************************************************************************************
 * Function name -  op_stat_point_release
@@ -183,12 +190,13 @@ void op_stat_point_release (op_stat_point* point);
 *
 * Return Code/Output - None
 ****************************************************************************************/
-void op_stat_update (
-                     op_stat_point* op_stat, 
+void op_stat_update (op_stat_point* op_stat, 
                      int current_state, 
                      int prev_state,
                      size_t current_uas_url_index,
                      size_t prev_uas_url_index);
+
+void op_stat_call_init_count_inc (op_stat_point* op_stat);
 
 struct client_context;
 struct batch_context;
