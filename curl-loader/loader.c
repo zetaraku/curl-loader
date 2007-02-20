@@ -816,10 +816,14 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                       url_print ? url : "", url_diff ? url_target : "");
 
                 /*
-                  We are not marking client on 4xx errors as CSTATE_ERROR
-                   state, because there are authorization errors, that client still can
-                   overcome.
+                  We are not marking client on 401 and 407 errors as 
+                  CSTATE_ERROR state, because there are authenticatio errors, 
+                  that client still can overcome.
                 */
+                if (response_status != 401 || response_status != 407)
+                  {
+                    cctx->client_state = CSTATE_ERROR;
+                  }
 
                 /* First header of 4xx response */
                 first_hdr_4xx_inc (cctx);

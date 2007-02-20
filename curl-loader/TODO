@@ -20,16 +20,7 @@ are supporting only a certain number of virtual clients and CAPS is the derived
 parameter. CAPS-MODE should support a certain number of CAPS, 
 and virtual clients number to be the derived parameter. 
 
-4. When login failed due to server-error, we should not proceeed with UAS
-and logoff, instead re-attempt the login. This is the behavior of the 
-smooth mode on libcurl error, and should be extended to 5xx server 
-errors, etc
-
-5. Future releases will hopefully incorporate libcurl HYPER API, using 
+4. Future releases will hopefully incorporate libcurl HYPER API, using 
 curl_multi_socket() approach and epoll support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
 from a single process can become a reality.
-
-6. CAPS (calls per second number) to be managed by the tag 
-CAPS_MODE_STEADY_NUM. Thus, number of clients will be a derivative
-number, that will vary according to CAPS number achived.

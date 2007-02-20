@@ -169,8 +169,8 @@ till the total clients number reaches the number, specified by CLIENTS_NUM tag.
 
 CAPS CONSIDERATIONS
 When number of clients is defined by CLIENTS_NUM tag, the number of
-CAPS (call per seconds) is derived from the clients number and a duration of
-load for each cycle comprising from:
+CAPS (call attempts per seconds) is derived from the clients number and 
+load duration for each cycle comprising from:
 - login time with possible redirections and sleeping after login interval;
 - uas time for each url with possible redirections, intervals betwee urls and 
   after uas interval;
@@ -383,6 +383,21 @@ to provide detailed statistics about each client state and statistics counters.
 
 One string from the file
 18 (192.168.1.18) ,cycles:5,state:4,b_in:549508,b_out:3940,req:17,rsp_3xx:5,rsp_oks:12,rsp_4xx:0,rsp_5xx:0,err:3
+
+
+ERROR CONDITIONS
+The following conditions are considered as loading errors:
+- error at the level of libcurl, which includes resolving, TCP and, when applicable,
+  TLS/SSL errors;
+- all HTTP 5xx server errors;
+- most of HTTP 4xx client errors, where the exceptions are 401 and 407 responses,
+  which are not considered as errors (in future we will support authentication);
+When the above error conditions occur, the virtual client is marked in error state.
+By default we "recover" the client by scheduling to the next loading cycle, 
+starting from the first operation of the cycle. You may use command line option
+-e to change the behavior to another, that client once coming to the error state 
+will not be scheduled for load any more. 
+
 
 HOWTOS-BIG-LOAD
 The file contains some useful tips.
