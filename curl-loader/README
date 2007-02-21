@@ -78,10 +78,11 @@ BUILDING:
 In most cases just run make and relax. For some linux distributions, however, 
 matters should be fine tuned in build_curl.sh and Makefile (libidn issues, etc). 
 
-Building requirements include openssl libraries as well as openssl development 
-package with include files. Adjust the build_curl.sh and Makefile variables to point
-to the openssl headers and libraries. If you want to specify an openssl development
-directory with include files, export environment variable OPENSSLDIR with 
+Building requirements include openssl binaries as well as openssl development 
+package with include files. Install on debian package libssl-dev. Adjust the 
+build_curl.sh and Makefile variables to point to the openssl headers and 
+libraries. If you want to specify an openssl development directory with 
+include files (e.g. crypto.h), export environment variable OPENSSLDIR with 
 the value of that directory.
 
 Another known issue is linidn.so, which means, that some linux distributions 
@@ -360,7 +361,7 @@ may stall), the final load report is printed at the console as well as to the st
 file. 
 Some strings from the file:
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Time, Protocol, Clients, Req, Rsp-OK, Redirs, Rsp-Serv-Err, Err, Delay, Delay-2xx, Thr-In, Thr-Out
+Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out
 2, HTTP/FTP, 100, 155, 0, 96, 0, 0, 1154, 1154, 2108414, 15538
 2, HTTPS/FTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
 4, HTTP/FTP, 100, 75, 32, 69, 0, 0, 1267, 1559, 1634656, 8181
@@ -373,6 +374,7 @@ Cutted here
 38, HTTP/FTP, 3, 91, 44, 62, 0, 0, 530, 587, 1353899, 10136
 38, HTTPS/FTPS, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0
 *, *, *, *, *, *, *, *, *, *, *, *
+Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out
 38, HTTP/FTP, 0, 2050, 643, 1407, 0, 213, 725, 812, 1610688, 11706
 38, HTTPS/FTPS, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -382,21 +384,31 @@ At the same time a clients dump file with name $batch_name.ctx is generated
 to provide detailed statistics about each client state and statistics counters.
 
 One string from the file
-18 (192.168.1.18) ,cycles:5,state:4,b_in:549508,b_out:3940,req:17,rsp_3xx:5,rsp_oks:12,rsp_4xx:0,rsp_5xx:0,err:3
+1 (192.168.0.1) ,cycles:124,cstate:1,b-in:22722029,b-out:174605,req:745,2xx:497,3xx:248,4xx:0,5xx:0,err:0
+where
+1 (192.168.0.1)- is the index of the client and its ip-address;
+cycles- number of loading cycles done;
+cstate - is the number of the client state (-1 - error, 0 - init, 1- login, 2- uas, 3-logoff, 4-final-ok);
+b-in - bytes passed in;
+b-out - bytes passed out;
+req- number of requests done;
+2xx, 3xx, 4xx, 5xx - number of responses Nxx received;
+err - number of libcurl errors at the resolving, TCP/IP and TLS/SSL levels;
 
 
-ERROR CONDITIONS
+ERROR CONDITIONS OF A VIRTUAL CLIENT:
 The following conditions are considered as loading errors:
-- error at the level of libcurl, which includes resolving, TCP and, when applicable,
+- error at the level of libcurl, which includes resolving, TCP/IP and, when applicable,
   TLS/SSL errors;
 - all HTTP 5xx server errors;
-- most of HTTP 4xx client errors, where the exceptions are 401 and 407 responses,
-  which are not considered as errors (in future we will support authentication);
-When the above error conditions occur, the virtual client is marked in error state.
-By default we "recover" the client by scheduling to the next loading cycle, 
+- most of the HTTP 4xx client errors, where the exceptions are 401 and 407 responses
+  not considered as errors (in future we will support authentication);
+When the above error conditions occur, a virtual client is marked as being 
+in the error state.
+By default we "recover" such client by scheduling it to the next loading cycle, 
 starting from the first operation of the cycle. You may use command line option
--e to change the behavior to another, that client once coming to the error state 
-will not be scheduled for load any more. 
+-e to change the default behavior to another, so that clients once arriving at 
+error state will not be scheduled for load any more. 
 
 
 HOWTOS-BIG-LOAD

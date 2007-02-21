@@ -49,20 +49,16 @@ static timer_node clients_num_inc_timer_node;
 static int add_loading_clients (batch_context* bctx);
 static int client_add_to_load (batch_context* bctx, client_context* cctx);
 static int client_remove_from_load (batch_context* bctx, client_context* cctx);
-static int handle_logfile_rewinding_timer  (
-                                            timer_node* timer_node, 
-                                            void* pvoid_param, 
-                                            unsigned long ulong_param);
-static int handle_gradual_increase_clients_num_timer  (
-                                                 timer_node* timer_node, 
-                                                 void* pvoid_param, 
-                                                 unsigned long ulong_param);
+static int handle_logfile_rewinding_timer (timer_node* timer_node, 
+                                           void* pvoid_param, 
+                                           unsigned long ulong_param);
+static int handle_gradual_increase_clients_num_timer (timer_node* timer_node, 
+                                                      void* pvoid_param, 
+                                                      unsigned long ulong_param);
 
 static int mget_url_smooth (batch_context* bctx);
 static int mperform_smooth (batch_context* bctx, int* still_running);
-static int dispatch_expired_timers (
-                                                batch_context* bctx, 
-                                                unsigned long now_time);
+static int dispatch_expired_timers (batch_context* bctx, unsigned long now_time);
 
 static int load_next_step (client_context* cctx, unsigned long now_time);
 static int last_cycling_state (batch_context* bctx);
@@ -133,8 +129,8 @@ int user_activity_smooth (client_context* cctx_array)
     }
   
   if (tq_init (bctx->waiting_queue,
-               bctx->client_num,                                                                           /* tq size */
-               10,                                                                                                         /* tq increase step; 0 - means don't increase */
+               bctx->client_num,               /* tq size */
+               10,                             /* tq increase step; 0 - means don't increase */
                bctx->client_num + PERIODIC_TIMERS_NUMBER + 1 /* number of nodes to prealloc */
                ) == -1)
     {
@@ -828,8 +824,8 @@ static int load_init_state (client_context* cctx, unsigned long *wait_msec)
  * Function name - load_error_state
  *
  * Description - Called by load_next_step () for the client in CSTATE_ERROR. If the global
- *               flag <error_recovery_client> is not false, re-schedules the client for next cycle 
- *               of loading.
+ *               flag <error_recovery_client> is not false, re-schedules the client for 
+ *               next cycle of loading.
  *
  * Input -       *cctx - pointer to the client context
  *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
@@ -935,8 +931,8 @@ static int load_login_state (client_context* cctx, unsigned long *wait_msec)
 /****************************************************************************************
  * Function name - load_uas_state
  *
- * Description - Called by load_next_step () for the client in CSTATE_UAS state to schedule the
- *               next loading url.
+ * Description - Called by load_next_step () for the client in CSTATE_UAS state to 
+ * 		 schedule the next loading url.
  *
  * Input -       *cctx - pointer to the client context
  *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
@@ -1150,12 +1146,13 @@ int pending_active_and_waiting_clients_num (batch_context* bctx)
 /****************************************************************************************
  * Function name - handle_cctx_timer
  *
- * Description - Handling of timer for a client waiting in the waiting queue to respect url 
- *                   interleave timeout. Schedules the client to perform the next loading operation.
+ * Description - Handling of timer for a client waiting in the waiting queue to 
+ *               respect url interleave timeout. Schedules the client to perform 
+ *               the next loading operation.
  *
  * Input -       *timer_node - pointer to timer node structure
- *              *pvoid_param - pointer to some extra data; here batch context
- *              *ulong_param - some extra data.
+ *               *pvoid_param - pointer to some extra data; here batch context
+ *               *ulong_param - some extra data.
  *
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/
@@ -1174,11 +1171,11 @@ int handle_cctx_timer (timer_node* timer_node,
 /****************************************************************************************
  * Function name - handle_logfile_rewinding_timer
  *
- * Description - Handling of logfile controlling periodic timer
+ * Description -   Handling of logfile controlling periodic timer
  *
- * Input -       *timer_node - pointer to timer node structure
- *              *pvoid_param - pointer to some extra data; here batch context
- *              *ulong_param - some extra data.
+ * Input -        *timer_node - pointer to timer node structure
+ *                *pvoid_param - pointer to some extra data; here batch context
+ *                *ulong_param - some extra data.
  *
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/
@@ -1204,11 +1201,12 @@ static int handle_logfile_rewinding_timer  (timer_node* timer_node,
 /****************************************************************************************
  * Function name - handle_gradual_increase_clients_num_timer
  *
- * Description - Handling of one second timer to increase gradually number of loading clients.
+ * Description - Handling of one second timer to increase gradually number of 
+ *               loading clients.
  *
  * Input -       *timer_node - pointer to timer_node structure
- *              *pvoid_param - pointer to some extra data; here batch context
- *              *ulong_param - some extra data.
+ *               *pvoid_param - pointer to some extra data; here batch context
+ *               *ulong_param - some extra data.
  *
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/

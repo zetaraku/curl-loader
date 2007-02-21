@@ -116,7 +116,7 @@ extern char config_file[PATH_MAX + 1];
   Authentication login types for clients: 
   1) via GET and following POST or
   2) via POST only.
-  3xx redirections are valid options for each case.
+  3xx redirections are supported valid options for each above case.
 */
 enum login_req_type
   {

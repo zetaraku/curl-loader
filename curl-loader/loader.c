@@ -73,13 +73,11 @@ static size_t do_nothing_write_func (void *ptr,
                                      void *stream);
 static void* batch_function (void *batch_data);
 static int initial_handles_init (struct client_context*const cdata);
-static int setup_curl_handle_appl (
-                                   struct client_context*const cctx,  
+static int setup_curl_handle_appl (struct client_context*const cctx,  
                                    url_context* url_ctx,
                                    int post_method);
 static int alloc_init_client_post_buffers (struct client_context* cctx);
-static int alloc_init_client_contexts (
-                                       client_context** p_cctx, 
+static int alloc_init_client_contexts (client_context** p_cctx, 
                                        batch_context* bctx, 
                                        FILE* output_file);
 static void free_batch_data_allocations (struct batch_context* bctx);
@@ -406,10 +404,12 @@ static int initial_handles_init (client_context*const ctx_array)
 * Description - Setup for a single curl handle (client): removes a handle from multi-handle, 
 *               and inits it, using setup_curl_handle_init () function, and, finally, 
 *               adds the handle back to the multi-handle.
+*
 * Input -       *cctx - pointer to client context, which contains CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
 *               cycle_number - current number of loading cycle, passing here for storming mode;
 *               post_method - when 'true', POST method is used instead of the default GET
+*
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int setup_curl_handle (client_context*const cctx,
@@ -459,13 +459,14 @@ int setup_curl_handle (client_context*const cctx,
 * Function name - setup_curl_handle_init
 *
 * Description - Resets client context kept CURL handle and inits it locally and using 
-*                       setup_curl_handle_appl () function for the application-specific 
-*                       (HTTP/FTP) initialization.
+*               setup_curl_handle_appl () function for the application-specific 
+*               (HTTP/FTP) initialization.
 *
 * Input -       *cctx - pointer to client context, which contains CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
 *               cycle_number - current number of loading cycle, passing here for storming mode;
 *               post_method - when 'true', POST method is used instead of the default GET
+*
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int setup_curl_handle_init (client_context*const cctx,
@@ -573,13 +574,14 @@ int setup_curl_handle_init (client_context*const cctx,
 * Function name - setup_curl_handle_appl
 *
 * Description - Application/url-type specific setup for a single curl handle (client)
+*
 * Input -       *cctx - pointer to client context, which contains CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
 *               post_method - when 'true', POST method is used instead of the default GET
+*
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-static int setup_curl_handle_appl (
-                                   client_context*const cctx,  
+static int setup_curl_handle_appl (client_context*const cctx,  
                                    url_context* url_ctx,
                                    int post_method)
 {

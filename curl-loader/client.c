@@ -131,7 +131,7 @@ void stat_err_inc (client_context* cctx)
 void stat_req_inc (client_context* cctx)
 {
   cctx->st.requests++;
-    cctx->is_https ? cctx->bctx->https_delta.requests++ :
+  cctx->is_https ? cctx->bctx->https_delta.requests++ :
     cctx->bctx->http_delta.requests++;
 }
 void stat_2xx_inc (client_context* cctx)

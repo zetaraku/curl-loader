@@ -173,7 +173,7 @@ typedef struct client_context
 
   /*
     Client-based statistics. Parallel to updating batch statistics, 
-    the client-based statistics is updated.
+    client-based statistics is also updated.
   */
   stat_point st;
 

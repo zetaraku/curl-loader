@@ -64,7 +64,7 @@ static void filter_down (heap*const h, size_t index);
 void node_reset (hnode*const node)
 {
 	if (!node)
-		return;
+	  return;
 
 	node->node_id = 0;
 	node->ctx = 0;
@@ -155,8 +155,8 @@ int heap_init (heap*const h,
 /****************************************************************************************
 * Function name - heap_reset
 *
-* Description - De-allocates memory and inits to the initial values heap, but does not deallocate
-*               the heap itself.
+* Description - De-allocates memory and inits to the initial values heap, but does 
+*               not deallocate the heap itself.
 *
 * Input -       *h - pointer to an initialized heap
 *
@@ -271,7 +271,7 @@ hnode* heap_pop (heap*const h)
 *
 * Description -  Provides access to the topest node
 *
-* Input -       *h - pointer to an initialized heap
+* Input -        *h - pointer to an initialized heap
 *
 * Return Code/Output - On success -  pointer to the topest node, on error - NULL
 ****************************************************************************************/
@@ -290,7 +290,7 @@ hnode*  heap_top_node (heap*const h)
 *
 * Description -  Tests, whether a heap is empty
 *
-* Input -       *h - pointer to an initialized heap
+* Input -        *h - pointer to an initialized heap
 *
 * Return Code/Output - Positive number, if empty, zero- if non-empty
 ****************************************************************************************/
@@ -363,7 +363,7 @@ int heap_increase (heap*const h)
 /****************************************************************************************
 * Function name - heap_push
 *
-* Description -  Pushes a new hnode to the heap
+* Description - Pushes a new hnode to the heap
 *
 * Input -       *h - pointer to an initialized heap
 *               *nd - pointer to node
@@ -426,7 +426,7 @@ long heap_push (heap* const h, hnode* const nd, int keep_node_id)
 *
 * Description -  Provides a "free" id
 *
-* Input -       *h - pointer to an initialized heap
+* Input -        *h - pointer to an initialized heap
 *
 * Return Code/Output - node-id
 ****************************************************************************************/
@@ -449,9 +449,9 @@ long heap_get_node_id (heap*const h)
 *
 * Description -  Puts hnode to a certain slot position and updates the node id
 *
-* Input -       *h - pointer to an initialized heap
-*               slot - index of the heap-array (slot) to be used for hnode
-*               *nd - pointer to hnode
+* Input -        *h - pointer to an initialized heap
+*                slot - index of the heap-array (slot) to be used for hnode
+*                *nd - pointer to hnode
 *
 * Return Code/Output - none
 ****************************************************************************************/
@@ -467,8 +467,8 @@ void heap_put_node_to_slot (heap*const h, size_t slot, hnode*const nd)
 /****************************************************************************************
 * Function name - heap_remove_node
 *
-* Description -  Removes hnode from a certain slot position, reheapefies the heap and marks
-*                              the slot in the ids array as available (-1)
+* Description -  Removes hnode from a certain slot position, reheapefies the heap 
+* 		 and marks the slot in the ids array as available (-1)
 *
 * Input -       *h - pointer to an initialized heap
 *               slot - index of the heap-array (slot), where to remove hnode

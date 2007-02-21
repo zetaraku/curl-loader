@@ -116,7 +116,7 @@ int parse_command_line (int argc, char *argv [])
             }
           break;
 
-          case 'i': /* Intermediate Statistics timeout */
+          case 'i': /* Statistics snapshot timeout */
           if (!optarg ||
               (intermediate_statistics_timeout = atoi (optarg)) < 1)
             {
@@ -221,7 +221,7 @@ void print_help ()
   fprintf (stderr, "CLIENTS_NUM=300            # Number of clients in the batch\n");
   fprintf (stderr, "CLIENTS_INITIAL_INC=30 # Startup increase num per second till CLIENTS_NUM reached\n");
   fprintf (stderr, "INTERFACE = eth0           # Name of interface from which to load \n");
-  fprintf (stderr, "NETMASK=255.255.240.0        # Netmask as IPv4 dotted string or CIDR number\n");
+  fprintf (stderr, "NETMASK=255.255.240.0      # Netmask as IPv4 dotted string or CIDR number\n");
   fprintf (stderr, "IP_ADDR_MIN= 192.168.1.1   # The client addresses starting address\n");
   fprintf (stderr, "IP_ADDR_MAX= 192.168.5.255 # Redundant, for self-control\n");
   fprintf (stderr, "CYCLES_NUM= 100            # Number of loading cycles to run, 0 -forever\n");
@@ -260,7 +260,7 @@ void print_help ()
   fprintf (stderr, "\n");
   fprintf (stderr, "########### UAS SECTION ####################################\n");
   fprintf (stderr, "UAS=y            # If 'y' or 'Y', login enabled, and other lines of the section \n");
-   fprintf (stderr, "                # to be filled\n");
+  fprintf (stderr, "                 # to be filled\n");
   fprintf (stderr, "UAS_URLS_NUM = 2 # Number of urls will be taken as in the format below\n");
   fprintf (stderr, "\n");
   fprintf (stderr, "UAS_URL=http://localhost/apache2-default/ACE-INSTALL.html\n");
@@ -273,14 +273,14 @@ void print_help ()
   fprintf (stderr, "\n");
   fprintf (stderr, "########### LOGOFF SECTION #################################\n");
   fprintf (stderr, "LOGOFF=n                 # If 'y' or 'Y', login enabled, and other lines \n");
-   fprintf (stderr, "                        # of the section to be filled\n");
+  fprintf (stderr, "                         # of the section to be filled\n");
   fprintf (stderr, "#LOGOFF_REQ_TYPE=        # Use GET , GET+POST , or POST strings\n");
   fprintf (stderr, "#LOGOFF_POST_STR=        # String to be used for logoff, like \"op=logoff\" \n");
   fprintf (stderr, "#LOGOFF_URL=             # A valid http or https url to be used for logoff\n");
   fprintf (stderr, "#LOGOFF_URL_MAX_TIME=    # Maximum batch time in seconds to logoff\n");
   fprintf (stderr, "#LOGOFF_URL_INTERLEAVE_TIME= # Time in msec to sleep after logoff\n");
   fprintf (stderr, "#LOGOFF_CYCLING=         # If 'y' login should be run in cycles, and not just \n");
-   fprintf (stderr, "                        # done only once\n");
+  fprintf (stderr, "                         # done only once\n");
   fprintf (stderr, "--------------------------------------------------------------------------------\n");
   fprintf (stderr, "For more examples, please, look at configs directory.\n");
   fprintf (stderr, "\n");

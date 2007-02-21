@@ -46,29 +46,31 @@ struct stat_point;
 * Description - Setup for a single curl handle (client): removes a handle from multi-handle, 
 *               and inits it, using setup_curl_handle_init () function, and, finally, 
 *               adds the handle back to the multi-handle.
+*
 * Input -       *cctx - pointer to client context, which contains CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
 *               cycle_number - current number of loading cycle, passing here for storming mode;
 *               post_method - when 'true', POST method is used instead of the default GET
+*
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-int setup_curl_handle (
-                         struct client_context*const cctx, 
-                         struct url_context* url_ctx, 
-                         long cycle_number,
-                         int post_method);
+int setup_curl_handle (struct client_context*const cctx, 
+                       struct url_context* url_ctx, 
+                       long cycle_number,
+                       int post_method);
 
 /****************************************************************************************
 * Function name - setup_curl_handle_init
 *
 * Description - Resets client context kept CURL handle and inits it locally and using 
-*                       setup_curl_handle_appl () function for the application-specific 
-*                       (HTTP/FTP) initialization.
+*               setup_curl_handle_appl () function for the application-specific 
+*               (HTTP/FTP) initialization.
 *
 * Input -       *cctx - pointer to client context, which contains CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
 *               cycle_number - current number of loading cycle, passing here for storming mode;
 *               post_method - when 'true', POST method is used instead of the default GET
+*
 * Return Code/Output - On Success - 0, on Error -1
 ***************************************************************************************
 */
@@ -83,11 +85,13 @@ int setup_curl_handle_init (
 *
 * Description - Adds a secondary IPv4 address to a valid networking device.
 * Input -       *device - network device name as linux sees it, like "eth0"
-*               *ip_slash_mask - string in the form of ipv4/mask, e.g. "192.168.0.1/24"
+*               *ip_slash_mask - string in the form of ipv4/mask, 
+*                                e.g. "192.168.0.1/24"
+*
 * Return Code/Output - On Success - 0, on Error -1
 ********************************************************************************/
 int add_secondary_ip_to_device (const char*const device,
-                            const char*const ip_slash_mask);
+                                const char*const ip_slash_mask);
 
 /*******************************************************************************
 * Function name - add_secondary_ip_addrs
@@ -99,8 +103,7 @@ int add_secondary_ip_to_device (const char*const device,
 *               netmask - CIDR notation netmask
 * Return Code/Output - On Success - 0, on Error -1
 ********************************************************************************/
-int add_secondary_ip_addrs (
-                            const char*const interface, 
+int add_secondary_ip_addrs (const char*const interface, 
                             int addr_number, 
                             const char**const addresses,
                             int netmask);
@@ -109,8 +112,10 @@ int add_secondary_ip_addrs (
 * Function name - parse_config_file
 *
 * Description - Parses configuration file and fills batch contexts in array
+*
 * Output -       *bctx_array - array of batch contexts to be filled on parsing
-* Input-              bctx_array_size - number of bctx contexts in <bctx_array>.
+* Input-         bctx_array_size - number of bctx contexts in <bctx_array>.
+*
 * Return Code/Output - On Success - number of batches >=1, on Error -1
 ********************************************************************************/
 int parse_config_file (char* const filename, 
@@ -121,7 +126,7 @@ int parse_config_file (char* const filename,
 * Function name - rewind_logfile_above_maxsize
 *
 * Description - Rewinds logfile, when file reaches maximum allowed size
-* Input-              filepointer - pointer to the open logfile
+* Input-        filepointer - pointer to the open logfile
 * Return Code/Output - On success - 0, on errors -1
 ********************************************************************************/
 int rewind_logfile_above_maxsize (FILE* filepointer);

@@ -27,7 +27,7 @@
 
 
 /*
-	hnode - is the housekeeping node of heap, its building block.
+  hnode - is the housekeeping node of heap, its building block.
 */
 typedef struct hnode
 {
@@ -117,7 +117,7 @@ typedef struct heap
 * Function name - node_reset
 *
 * Description - Zeros the fields of hnode, that are allowed to be zeroed. 
-*            Attention!!! Use this function and not memset.
+*               Attention!!! Use this function and not memset.
 *
 * Input -       *node - pointer to an hnode object
 *
@@ -163,9 +163,9 @@ void heap_reset (heap*const h);
 /****************************************************************************************
 * Function name - heap_dump
 *
-* Description - Dumps heap fields. Uses user-provided function to dump user objects
+* Description -  Dumps heap fields. Uses user-provided function to dump user objects
 *
-* Input -       *h - pointer to an initialized heap
+* Input -        *h - pointer to an initialized heap
 *
 * Return Code/Output - none
 ****************************************************************************************/
