@@ -203,10 +203,10 @@ void dump_client (FILE* file, client_context* cctx)
 	 return;
 
   fprintf (file, 
-           "%s,cycles:%ld,state:%d,b_in:%lld,b_out:%lld,req:%ld,rsp_3xx:%ld,rsp_oks:%ld,rsp_4xx:%ld,rsp_5xx:%ld,err:%ld\n", 
+           "%s,cycles:%ld,cstate:%d,b-in:%lld,b-out:%lld,req:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,err:%ld\n", 
            cctx->client_name, cctx->cycle_num, cctx->client_state, 
-           cctx->st.data_in,  cctx->st.data_out, cctx->st.requests, cctx->st.resp_redirs, 
-           cctx->st.resp_oks, cctx->st.resp_cl_errs, cctx->st.resp_serv_errs, 
+           cctx->st.data_in,  cctx->st.data_out, cctx->st.requests, cctx->st.resp_oks,
+           cctx->st.resp_redirs, cctx->st.resp_cl_errs, cctx->st.resp_serv_errs, 
            cctx->st.other_errs);
   fflush (file);
 }

@@ -402,9 +402,7 @@ void dump_final_statistics (client_context* cctx)
   batch_context* bctx = cctx->bctx;
   unsigned long now = get_tick_count();
 
-  print_snapshot_interval_statistics (
-		pending_active_and_waiting_clients_num (bctx),
-		now - bctx->last_measure,
+  print_snapshot_interval_statistics (now - bctx->last_measure,
 		&bctx->http_delta,  
 		&bctx->https_delta);
 
@@ -417,8 +415,15 @@ void dump_final_statistics (client_context* cctx)
   fprintf(stdout,"===========================================\n");
   
   now = get_tick_count();
+
+  const int seconds_run = (int)(now - bctx->start_time)/ 1000;
+  if (!seconds_run)
+    return;
   
-  dump_statistics ((now - bctx->start_time)/ 1000, 
+  fprintf(stdout,"Test total duration was %d seconds and CAPS average %ld:\n", 
+          seconds_run, bctx->op_total.call_init_count / seconds_run);
+
+  dump_statistics (seconds_run, 
                    &bctx->http_total,  
                    &bctx->https_total);
 
@@ -469,12 +474,11 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
   dump_snapshot_interval_and_advance_total_statistics(bctx, now);
 
   const int seconds_run = (int)(now - bctx->start_time)/ 1000;
-
   if (!seconds_run)
     return;
 
   fprintf(stdout,"-----------------------------------------------------\n");
-  fprintf(stdout,"Summary stats since load start (load runs: %d (secs), CAPS: %ld):\n", 
+  fprintf(stdout,"Summary stats since load start (load runs:%d secs, CAPS-average:%ld):\n", 
           seconds_run, bctx->op_total.call_init_count / seconds_run); 
 
   print_operational_statistics (&bctx->op_total);
@@ -492,14 +496,13 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
 * Description - Dumps final statistics counters to stderr and statistics file using 
 *                     print_snapshot_interval_statistics and print_statistics_* functions as well as calls
 *                     dump_clients () to dump the clients table.
-* Input -       clients - number of active clients
-*                     period - latest time period in milliseconds
+*
+* Input -       period - latest time period in milliseconds
 *                     *http - pointer to the HTTP collected statistics to output
 *                     *https - pointer to the HTTPS collected statistics to output
 * Return Code/Output - None
 ****************************************************************************************/
-void print_snapshot_interval_statistics (int clients, 
-                                   unsigned long period,  
+void print_snapshot_interval_statistics (unsigned long period,  
                                    stat_point *http, 
                                    stat_point *https)
 {
@@ -536,15 +539,13 @@ void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
     }
 
   fprintf(stdout,"=====================================================\n");
-  fprintf(stdout,"Last interval stats (interval: %d sec, clients: %d, CAPS: %ld):\n",
+  fprintf(stdout,"Last interval stats (interval:%d sec, clients:%d, CAPS:%ld):\n",
           (int) delta_time/1000, pending_active_and_waiting_clients_num (bctx),
           bctx->op_delta.call_init_count* 1000/delta_time);
 
   print_operational_statistics (&bctx->op_delta);
 
-  print_snapshot_interval_statistics(
-                                     pending_active_and_waiting_clients_num (bctx),
-                                     delta_time, 
+  print_snapshot_interval_statistics(delta_time, 
                                      &bctx->http_delta,  
                                      &bctx->https_delta);
 
@@ -621,8 +622,7 @@ static void dump_stat_to_screen (char* protocol,
 void print_statistics_header (FILE* file)
 {
     fprintf (file, 
-             "Time,Appl,Clients,Req,Rsp-OK,Redirs,Rsp-Cl-Err,Rsp-Serv-Err,"
-             "Err,Delay,Delay-2xx,Thr-In,Thr-Out\n");
+             "Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out\n");
     fflush (file);
 }
 

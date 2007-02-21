@@ -238,10 +238,7 @@ void dump_snapshot_interval (struct batch_context* bctx, unsigned long now);
 *               *https - pointer to the HTTPS collected statistics to output
 * Return Code/Output - None
 ****************************************************************************************/
-void print_snapshot_interval_statistics (
-                                   int clients, 
-                                   unsigned long period,  
-                                   stat_point *http, 
+void print_snapshot_interval_statistics (unsigned long period,  stat_point *http,
                                    stat_point *https);
 
 /****************************************************************************************
