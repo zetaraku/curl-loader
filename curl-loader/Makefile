@@ -58,7 +58,7 @@ tags:
 	etags --members -o $(TAGFILE) *.h *.c
 
 menuconfig:
-	cd ./build; tar zxfv ../packages/dialog.tar.gz
+	mkdir -p build; cd ./build; tar zxfv ../packages/dialog.tar.gz
 	make -C ./build/dialog/scripts/config
 	./build/dialog/scripts/config/mconf ./build/dialog/Config.in
 
