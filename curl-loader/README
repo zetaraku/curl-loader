@@ -97,7 +97,7 @@ If still any building issues, please, fill you free to contact us for assistance
 
 CONFIGURATION:
 ./curl_loader -h output is your friend. Some examples of configuration are 
-suggested in the files, located in "configs" directory.
+suggested in the files, located in "conf-examples" directory.
 
 
 ENVIRONMENT: ATTENTION !!! IMPORTANT !!!
@@ -303,7 +303,7 @@ is not applicable). In the case, that LOGIN, UAS or LOGOFF section tag is
 disabled by setting 'n' (no) value, thus, all the tags of the disabled section 
 should not appear or just to be simply commented out by '#'.
 
-For more examples, please, look at the files in "configs" directory.
+For more examples, please, look at the files in "conf-examples" directory.
 
 
 LOGIN/LOGOFF HTTP METHODS:
@@ -317,7 +317,7 @@ FTP/FTPS LOAD (experimental):
 To generate FTP/FTPS load, please, use UAS section and pass user credentials
 via ftp-url according to the RFC 1738), like:
 ftp://username:password@hostname:port/etc-str
-Look at configs/ftp.conf
+Look at conf-examples/ftp.conf
 
 
 LOGFILE:
