@@ -1,0 +1,32 @@
+#
+# Automatically generated make config: don't edit
+#
+
+#
+# General Section
+#
+BATCH_NAME="user_batch.conf"
+CLIENTS_NUM=1
+CLIENTS_INITIAL_INC=0
+INTERFACE="eth0"
+IP_ADDR_MIN="192.168.0.1"
+IP_ADDR_MAX="192.168.0.2"
+NETMASK="255.255.255.0"
+CYCLES_NUM=-1
+
+#
+# Login Options
+#
+LOGIN=y
+LOGIN_USERNAME=""
+LOGIN_PASSWORD=""
+LOGIN_REQ_TYPE="GET+POST"
+LOGIN_POST_STR="username=%s%d&password=%s%d"
+
+#
+# UAS Options
+#
+
+#
+# Logoff Options
+#

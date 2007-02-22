@@ -1,0 +1,144 @@
+#
+# For a description of the syntax of this configuration file,
+# see scripts/kbuild/config-language.txt.
+#
+
+mainmenu "User Configuration"
+
+menu "General Section"
+
+config BATCH_NAME
+	string " Batch Name"
+	default "user_batch"
+	help
+            Batch is a group of clients with the same characteristics and 
+            loading behavior. We recommend you to use unique names for your 
+            batches, because logfiles and statistics files names are derived
+            from the batch name + extension.
+
+config CLIENTS_NUM
+	int " Virtual Clients Number"
+	default 1
+	range 1 2000
+	help
+	  Number of virtual clients used for loading.
+
+config CLIENTS_INITIAL_INC
+	int " Virtual Clients Number Increment at Startup"
+	default 0
+	range 0 2000
+	help
+	  Specify the number of loading clients to be added each second till the 
+            total clients number reaches the number, specified by CLIENTS_NUM.
+            Zero number passed here means, that use for load all CLIENTS_NUM 
+            from the very beginning, don't make gradual increase of clients number 
+            at the loading initial phase.
+
+config INTERFACE
+	string " Network Interface for Loading"
+	default "eth0"
+	help
+            Network interface used for loading. Run "ifconfig" or "ip addr" to 
+            figure out the interfaces, that you have.
+
+config IP_ADDR_MIN
+	string " Minimal Address of the IP-Range for Loading"
+	default "192.168.0.1"
+	help
+            To run loading you should choose a range of IP-addresses to be used
+            by the virtual clients. Pass quad-dotted IPv4 string with the minimal 
+            address here.
+
+config IP_ADDR_MAX
+	string " Maximum Address of the IP-Range for Loading"
+	default "192.168.0.2"
+	help
+            To run loading you should choose a range of IP-addresses to be used
+            by the virtual clients. Pass quad-dotted IPv4 string with the minimal 
+            address here.
+
+config NETMASK
+	string " Netmask of the IP-Range for Loading"
+	default "255.255.255.0"
+	help
+            Ether quad-dotted IPv4 string or number in CIDR notation.
+
+config CYCLES_NUM
+	int " Loading Virtual Clients Number"
+	default -1
+	range -1 10000000
+	help
+	  Number of loading cycles. (-1) means - run load indefinetely.
+
+endmenu
+
+
+menu "Login Options"
+
+config LOGIN
+	bool "Login Enable"
+	default n
+	help
+            Say Y here if you wish to configure virtual clients of the batch to
+            make login operations, using username, password, etc parameters.
+
+config LOGIN_USERNAME
+	string " Login Username"
+	default ""
+          depends on LOGIN
+	help
+            Username string
+comment "Login Username - support disabled"
+	depends on !LOGIN
+
+config LOGIN_PASSWORD
+	string " Login Password"
+	default ""
+          depends on LOGIN
+	help
+            Password string
+comment "Login Password - support disabled"
+	depends on !LOGIN
+
+config LOGIN_REQ_TYPE
+	string " Login Request Type"
+	default "GET+POST"
+          depends on LOGIN
+	help
+            HTTP login may be GET with following POST or direct POST.
+            Use here either GET+POST or POST strings without quotes.
+comment "Login Request Type - support disabled"
+	depends on !LOGIN
+
+config LOGIN_POST_STR
+	string " Login POST String Matrix - see help"
+	default "username=%s%d&password=%s%d"
+          depends on LOGIN
+	help
+            To generate multiple unique users with unique passwords, use the string like
+            "username=%s%d&password=%s%d". First '%s' will be substituted by the 
+            value of LOGIN_USERNAME tag and '%d' by the client number. Second '%s' will
+            be substituted by LOGIN_PASSWORD tag value and second '%d' by the same client
+            number. For example, if LOGIN_USERNAME=robert, LOGIN_PASSWORD=stam
+            and LOGIN_POST_STR "username=%s%d&password=%s%d", the final POST string, 
+            used for the client number 1, will be  "username=robert1&password=stam1".
+            In this case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just 
+            as base-words for generating unique user credentials by appending an number.
+            To use the username and password 'as as', just provide LOGIN_POST_STR without 
+            %d symbols, e.g. "user=%s&secret=%s". Thus, all clients will have the same
+            POST credentials with the string looking like "user=robert&secret=stam".
+comment "Login POST String Matrix - support disabled"
+	depends on !LOGIN
+
+
+endmenu
+
+
+
+menu "UAS Options"
+endmenu
+menu "Logoff Options"
+endmenu
+
+
+

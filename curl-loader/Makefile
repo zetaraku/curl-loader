@@ -59,8 +59,9 @@ tags:
 
 menuconfig:
 	mkdir -p build; cd ./build; tar zxfv ../packages/dialog.tar.gz
+	cd ./build/dialog; patch -p1 < ../../patches/dialog-curl-loader.patch
 	make -C ./build/dialog/scripts/config
-	./build/dialog/scripts/config/mconf ./build/dialog/Config.in
+	cd ./conf-user; ../build/dialog/scripts/config/mconf ../mconfig/Config.in
 
 
 .PHONY: $(LIBCURL)
