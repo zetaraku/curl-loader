@@ -72,6 +72,8 @@ static int login_parser (batch_context*const bctx, char*const value);
 static int login_username_parser (batch_context*const bctx, char*const value);
 static int login_password_parser (batch_context*const bctx, char*const value);
 static int login_req_type_parser (batch_context*const bctx, char*const value);
+static int login_req_type_get_post_parser (batch_context*const bctx, char*const value);
+static int login_req_type_post_parser (batch_context*const bctx, char*const value);
 static int login_post_str_parser (batch_context*const bctx, char*const value);
 static int login_url_parser (batch_context*const bctx, char*const value);
 static int login_url_max_time_parser (batch_context*const bctx, char*const value);
@@ -86,6 +88,9 @@ static int uas_url_interleave_time_parser (batch_context*const bctx, char*const 
 
 static int logoff_parser (batch_context*const bctx, char*const value);
 static int logoff_req_type_parser (batch_context*const bctx, char*const value);
+static int logoff_req_type_get_post_parser (batch_context*const bctx, char*const value);
+static int logoff_req_type_post_parser (batch_context*const bctx, char*const value);
+static int logoff_req_type_get_parser (batch_context*const bctx, char*const value);
 static int logoff_post_str_parser (batch_context*const bctx, char*const value);
 static int logoff_url_parser (batch_context*const bctx, char*const value);
 static int logoff_url_max_time_parser (batch_context*const bctx, char*const value);
@@ -112,6 +117,8 @@ static const tag_parser_pair tp_map [] =
     {"LOGIN_USERNAME", login_username_parser},
     {"LOGIN_PASSWORD", login_password_parser},
     {"LOGIN_REQ_TYPE", login_req_type_parser},
+    {"LOGIN_REQ_TYPE_GET_POST", login_req_type_get_post_parser},
+    {"LOGIN_REQ_TYPE_POST", login_req_type_post_parser},
     {"LOGIN_POST_STR", login_post_str_parser},
     {"LOGIN_URL", login_url_parser},
     {"LOGIN_URL_MAX_TIME", login_url_max_time_parser},
@@ -131,6 +138,9 @@ static const tag_parser_pair tp_map [] =
     {"LOGOFF", logoff_parser},
     /* if logoff is yes - then the optional fields follow: */
     {"LOGOFF_REQ_TYPE", logoff_req_type_parser},
+    {"LOGOFF_REQ_TYPE_GET_POST", logoff_req_type_get_post_parser},
+    {"LOGOFF_REQ_TYPE_POST", logoff_req_type_post_parser},
+    {"LOGOFF_REQ_TYPE_GET", logoff_req_type_get_parser},
     {"LOGOFF_POST_STR", logoff_post_str_parser},
     {"LOGOFF_URL", logoff_url_parser},
     {"LOGOFF_URL_MAX_TIME", logoff_url_max_time_parser},
@@ -214,17 +224,42 @@ static int add_param_to_batch (
   fparser parser = 0;
   if (! (parser = find_tag_parser (str_buff)))
   {
-      fprintf (stderr, "%s - error: unknown tag %s.\n",__func__, str_buff);
-      return -1;
+      fprintf (stderr, "%s - warning: unknown tag %s.\n",__func__, str_buff);
+      return 0;
   }
 
   char* value = equal + 1;
   if (pre_parser (&value, (unsigned int *)&value_len) == -1)
   {
-      fprintf (stderr,"%s - pre_parser () failed for tag %s and value %s.\n",
+      fprintf (stderr,"%s - error: pre_parser () failed for tag %s and value \"%s\".\n",
                __func__, str_buff, equal + 1);
       return -1;
   }
+
+  if (!strlen (value))
+    {
+      fprintf (stderr,"%s - warning: tag %s has an empty value string.\n",
+               __func__, str_buff);
+      return 0;
+    }
+
+  /* Remove quotes */
+  if (*value == '"')
+    {
+      value++, value_len--;
+      if (!value_len)
+        {
+          return 0;
+        }
+      else
+        {
+          if (*(value +value_len-2) == '"')
+            {
+              *(value +value_len-2) = '\0';
+              value_len--;
+            }
+        }
+    }
 
   if (strstr (str_buff, tp_map[0].tag))
   {
@@ -417,6 +452,18 @@ static int login_req_type_parser (batch_context*const bctx, char*const value)
     }
     return 0;
 }
+static int login_req_type_get_post_parser (batch_context*const bctx, char*const value)
+{
+  (void) value;
+  bctx->login_req_type = LOGIN_REQ_TYPE_GET_AND_POST;
+  return 0;
+}
+static int login_req_type_post_parser (batch_context*const bctx, char*const value)
+{
+  (void) value;
+  bctx->login_req_type = LOGIN_REQ_TYPE_POST;
+  return 0;
+}
 static int login_post_str_parser (batch_context*const bctx, char*const value)
 {
     // TODO: validate the input. Important !!!.
@@ -432,8 +479,8 @@ static int login_url_parser (batch_context*const bctx, char*const value)
 
     if ((url_length = strlen (value)) <= 0)
     {
-        fprintf(stderr, "%s - error: empty url for \"%s\"\n",  __func__,value);
-        return -1;
+        fprintf(stderr, "%s - warning: empty url for \"%s\"\n",  __func__,value);
+        return 0;
     }
 
     if (! (bctx->login_url.url_str =(char *)calloc (url_length+1,sizeof (char))))
@@ -509,9 +556,9 @@ static int uas_url_parser (batch_context*const bctx, char*const value)
     
     if ((url_length = strlen (value)) <= 0)
     {
-        fprintf(stderr, "%s - error: url is not correct with\"%s\"\n", 
+        fprintf(stderr, "%s - warning: empty UAS URL\"%s\"\n", 
                 __func__, value);
-        return -1;
+        return 0;
     }
     
     if (! (bctx->uas_url_ctx_array[bctx->url_index].url_str = 
@@ -566,6 +613,24 @@ static int logoff_req_type_parser (batch_context*const bctx, char*const value)
     }
     return 0;     
 }
+static int logoff_req_type_get_post_parser (batch_context*const bctx, char*const value)
+{
+  (void) value;
+  bctx->logoff_req_type = LOGOFF_REQ_TYPE_GET_AND_POST;
+  return 0;
+}
+static int logoff_req_type_post_parser (batch_context*const bctx, char*const value)
+{
+  (void) value;
+  bctx->logoff_req_type = LOGOFF_REQ_TYPE_POST;
+  return 0;
+}
+static int logoff_req_type_get_parser (batch_context*const bctx, char*const value)
+{
+  (void) value;
+  bctx->logoff_req_type = LOGOFF_REQ_TYPE_GET;
+  return 0;
+}
 static int logoff_post_str_parser (batch_context*const bctx, char*const value)
 {
     if (strcmp (value, NON_APPLICABLE_STR)) /* not a N/A string */
@@ -580,8 +645,8 @@ static int logoff_url_parser (batch_context*const bctx, char*const value)
 
     if ((url_length = strlen (value)) <= 0)
     {
-        fprintf(stderr, "%s - error: empty url for \"%s\"\n", __func__,value);
-        return -1;
+        fprintf(stderr, "%s - warning: empty url for \"%s\"\n", __func__,value);
+        return 0;
     }
 
     if (! (bctx->logoff_url.url_str =(char *) calloc (url_length+1,sizeof (char))))
@@ -719,7 +784,13 @@ static int validate_batch_general (batch_context*const bctx)
         fprintf (stderr, "%s - error: CLIENT_NUM is less than 1.\n", __func__);
         return -1;
     }
-    //TODO: validate existence of the network interface
+    if (bctx->clients_initial_inc < 0)
+    {
+        fprintf (stderr, "%s - error: CLIENTS_INITIAL_INC is negative.\n",__func__);
+        return -1;
+    }
+
+    // TODO: validate the existence of the network interface
     if (!strlen (bctx->net_interface))
     {
         fprintf (stderr, "%s - error: INTERFACE name is empty.\n", __func__);
@@ -743,11 +814,7 @@ static int validate_batch_general (batch_context*const bctx)
         fprintf (stderr, "%s - error: CYCLES_NUM is negative.\n",__func__);
         return -1;
     }
-    if (bctx->clients_initial_inc < 0)
-    {
-        fprintf (stderr, "%s - error: CLIENTS_INITIAL_INC is negative.\n",__func__);
-        return -1;
-    }
+
   
     return 0;
 }
@@ -800,17 +867,6 @@ static int validate_batch_login (batch_context*const bctx)
       return -1;
     }
 
-  if (bctx->login_url.url_interleave_time > 0 && 
-      bctx->login_url.url_interleave_time < 10)
-    {
-      fprintf (stderr, 
-               "%s - error: LOGIN_URL_INTERLEAVE_TIME should be either 0 or above 10 msec.\n"
-               "ATTENTION !!! The value starting from version 0.24 is not in seconds, but in msec.\n"
-               "Please, correct the value from seconds to milliseconds.\n\n"
-               , __func__);
-      return -1;
-    }
-
   return 0;
 }
 
@@ -855,16 +911,6 @@ static int validate_batch_uas (batch_context*const bctx)
           return -1;
         }			
 
-      if (bctx->uas_url_ctx_array[k].url_interleave_time > 0 && 
-          bctx->uas_url_ctx_array[k].url_interleave_time < 10)
-        {
-          fprintf (stderr, 
-                   "%s - error: UAS_URL_INTERLEAVE_TIME should be either 0 or above 10 msec.\n"
-                   "ATTENTION !!! The value starting from version 0.24 is not in seconds, but in msec.\n"
-                   "Please, correct the value from seconds to milliseconds.\n\n"
-                   , __func__);
-          return -1;
-        }
     }
   return 0;
 }
@@ -943,7 +989,9 @@ int parse_config_file (char* const filename,
     if (stat (filename, &statbuf) == -1)
     {
         fprintf (stderr,
-                 "%s - failed to find configuration file \"%s\" with errno %d.\n", 
+                 "%s - failed to find configuration file \"%s\" with errno %d.\n"
+                 "If you are using example configurations, note, that directory \"configs\" have "
+                 "been renamed to \"conf-examples\".", 
                  __func__, filename, errno);
         return -1;
     }

@@ -9,7 +9,7 @@ menu "General Section"
 
 config BATCH_NAME
 	string " Batch Name"
-	default "user_batch"
+	default user_batch
 	help
             Batch is a group of clients with the same characteristics and 
             loading behavior. We recommend you to use unique names for your 
@@ -30,9 +30,9 @@ config CLIENTS_INITIAL_INC
 	help
 	  Specify the number of loading clients to be added each second till the 
             total clients number reaches the number, specified by CLIENTS_NUM.
-            Zero number passed here means, that use for load all CLIENTS_NUM 
-            from the very beginning, don't make gradual increase of clients number 
-            at the loading initial phase.
+            Zero number means, that use for loading all CLIENTS_NUM from the 
+            very beginning, instead of gradual increase of clients number at loading 
+            start.
 
 config INTERFACE
 	string " Network Interface for Loading"
@@ -84,29 +84,38 @@ config LOGIN
 
 config LOGIN_USERNAME
 	string " Login Username"
-	default ""
           depends on LOGIN
 	help
             Username string
+
 comment "Login Username - support disabled"
 	depends on !LOGIN
 
 config LOGIN_PASSWORD
 	string " Login Password"
-	default ""
           depends on LOGIN
 	help
             Password string
+
 comment "Login Password - support disabled"
 	depends on !LOGIN
 
-config LOGIN_REQ_TYPE
-	string " Login Request Type"
-	default "GET+POST"
-          depends on LOGIN
+choice
+	prompt " Login Request Type"
+          default LOGIN_REQ_TYPE_GET_POST
+          depends on LOGIN || LOGIN_USERNAME
 	help
             HTTP login may be GET with following POST or direct POST.
-            Use here either GET+POST or POST strings without quotes.
+            Use here either GET+POST or POST options.
+
+config LOGIN_REQ_TYPE_GET_POST
+         bool "GET+POST"
+
+config LOGIN_REQ_TYPE_POST
+         bool "POST"
+
+endchoice
+
 comment "Login Request Type - support disabled"
 	depends on !LOGIN
 
@@ -130,14 +139,168 @@ config LOGIN_POST_STR
 comment "Login POST String Matrix - support disabled"
 	depends on !LOGIN
 
+config LOGIN_URL
+	string " Login URL"
+          depends on LOGIN
+	help
+            Login URL.
+comment "Login URL - support disabled"
+	depends on !LOGIN
+
+config LOGIN_URL_MAX_TIME
+	int " Login URL Maximum Time for Fetching"
+	default 1
+	range 1 1000
+          depends on LOGIN
+	help
+	  The maximum time for login URL fetching is used by the storming mode
+            to limit the fetching time. 
+comment "Maximum time for login URL Fetching - support disabled"
+	depends on !LOGIN
+
+config LOGIN_URL_INTERLEAVE_TIME
+	int " Login URL Interleave Time"
+	default 0
+	range 0 3600000
+          depends on LOGIN
+	help
+	  The time for client to sleep after fetching login URL prior to the next scheduling.
+            Used by the smooth mode and just ignored by the storming mode. Valid values
+            are 0 (don't wait) and 10-3600000.
+comment "Login URL Interleave Time - support disabled"
+	depends on !LOGIN
 
 endmenu
 
 
 
 menu "UAS Options"
+
+config UAS
+	bool "UAS Enable"
+	default n
+	help
+            Say Y here if you wish to emulate UAS (user activity simulation) by 
+            fetching url, sleeping, another url -sleeping cycles, simulating actual user activity.
+
+config UAS_URLS_NUM
+	int " Number of UAS URLs"
+	default 1
+	range 1 100
+          depends on UAS
+	help
+	  Number of UAS (user activity simulation) urls to be used for fetching url, sleeping, 
+            fetchng another url, etc
+comment "Number of UAS URLs - support disabled"
+	depends on !UAS
+
+config UAS_URL
+	string " UAS URL"
+          depends on UAS
+	help
+            UAS (user activity simulation) first URL.
+comment "UAS URL - support disabled"
+	depends on !UAS
+
+config UAS_URL_MAX_TIME
+	int " UAS URL Maximum Time for Fetching"
+	default 1
+	range 1 1000
+          depends on UAS
+	help
+	  The maximum time for UAS URL fetching is used by the storming mode
+            to limit the fetching time. 
+comment "Maximum time for UAS URL Fetching - support disabled"
+	depends on !UAS
+
+config UAS_URL_INTERLEAVE_TIME
+	int " UAS URL Interleave Time"
+	default 0
+	range 0 3600000
+          depends on UAS
+	help
+	  The time for client to sleep after fetching a URL prior to the next scheduling.
+            Used by the smooth mode and just ignored by the storming mode. Valid values
+            are 0 (don't wait) and 10-3600000.
+comment "UAS URL Interleave Time - support disabled"
+	depends on !UAS
+
 endmenu
+
+
+
+
 menu "Logoff Options"
+
+config LOGOFF
+	bool "Logoff Enable"
+	default n
+	help
+            Say Y here if you wish to configure virtual clients of the batch to
+            make logoff operation.
+
+choice
+	prompt " Logoff Request Type"
+          default LOGOFF_REQ_TYPE_GET_POST
+          depends on LOGOFF
+	help
+            HTTP logoff may be GET with following POST or POST-only or GET-only.
+            Use here either GET+POST or POST or GET options.
+
+config LOGOFF_REQ_TYPE_GET_POST
+         bool "GET+POST"
+
+config LOGOFF_REQ_TYPE_POST
+         bool "POST"
+
+config LOGOFF_REQ_TYPE_GET
+         bool "GET"
+
+endchoice
+
+comment "Logoff Request Type - support disabled"
+	depends on !LOGOFF
+
+config LOGOFF_POST_STR
+	string " Logoff POST String Matrix - see help"
+          depends on LOGOFF
+	help
+            String to be used for logoff, like "op=logoff"
+comment "Logoff POST String Matrix - support disabled"
+	depends on !LOGOFF
+
+
+config LOGOFF_URL
+	string " Logoff URL"
+          depends on LOGOFF
+	help
+            Logoff URL.
+comment "Logoff URL - support disabled"
+	depends on !LOGOFF
+
+config LOGOFF_URL_MAX_TIME
+	int " Logoff URL Maximum Time for Fetching"
+          depends on LOGOFF
+	default 1
+	range 1 1000
+	help
+	  The maximum time for logoff URL fetching is used by the storming mode
+            to limit the fetching time. 
+comment "Maximum time for logoff URL Fetching - support disabled"
+	depends on !LOGOFF
+
+config LOGOFF_URL_INTERLEAVE_TIME
+	int " Logoff URL Interleave Time"
+          depends on LOGOFF
+	default 0
+	range 0 3600000
+	help
+	  The time for client to sleep after fetching logoff URL prior to the next scheduling.
+            Used by the smooth mode and just ignored by the storming mode. Valid values
+            are 0 (don't wait) and 10-3600000.
+comment "Logoff URL Interleave Time - support disabled"
+	depends on !LOGOFF
+
 endmenu
 
 
