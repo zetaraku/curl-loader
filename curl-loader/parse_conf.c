@@ -40,7 +40,7 @@
 
 #define BATCH_MAX_CLIENTS_NUM 4096
 
-#define NON_APPLICABLE_STR "N/A"
+#define NON_APPLICABLE_STR ""
 #define REQ_GET "GET"
 #define REQ_POST "POST"
 #define REQ_GET_POST "GET+POST"
@@ -467,9 +467,9 @@ static int login_req_type_post_parser (batch_context*const bctx, char*const valu
 static int login_post_str_parser (batch_context*const bctx, char*const value)
 {
     // TODO: validate the input. Important !!!.
-    if (strcmp (value, NON_APPLICABLE_STR))
+  if (strcmp (value, NON_APPLICABLE_STR) || strcmp (value, "N/A"))
     {
-        strncpy (bctx->login_post_str, value, sizeof (bctx->login_post_str) - 1);
+      strncpy (bctx->login_post_str, value, sizeof (bctx->login_post_str) - 1);
     }
     return 0;
 }
@@ -633,7 +633,7 @@ static int logoff_req_type_get_parser (batch_context*const bctx, char*const valu
 }
 static int logoff_post_str_parser (batch_context*const bctx, char*const value)
 {
-    if (strcmp (value, NON_APPLICABLE_STR)) /* not a N/A string */
+  if (strcmp (value, NON_APPLICABLE_STR) || strcmp (value, "N/A")) /* not an empty string "" */
     {
         strncpy (bctx->logoff_post_str, value, sizeof (bctx->logoff_post_str) - 1);
     }

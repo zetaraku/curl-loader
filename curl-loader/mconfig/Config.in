@@ -1,8 +1,3 @@
-#
-# For a description of the syntax of this configuration file,
-# see scripts/kbuild/config-language.txt.
-#
-
 mainmenu "User Configuration"
 
 menu "General Section"
@@ -103,7 +98,7 @@ comment "Login Password - support disabled"
 choice
 	prompt " Login Request Type"
           default LOGIN_REQ_TYPE_GET_POST
-          depends on LOGIN || LOGIN_USERNAME
+          depends on LOGIN && LOGIN_USERNAME
 	help
             HTTP login may be GET with following POST or direct POST.
             Use here either GET+POST or POST options.
