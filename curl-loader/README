@@ -76,14 +76,14 @@ Supposed to work on linux 2.4 and 2.6 kernels.
 
 BUILDING:
 In most cases just run make and relax. For some linux distributions, however, 
-matters should be fine tuned in build_curl.sh and Makefile (libidn issues, etc). 
+matters should be fine tuned in Makefile (libidn issues, etc). 
 
 Building requirements include:
 1. openssl binaries;
 2. openssl development package with include files (on debian package libssl-dev);
 3. ncurses development package to run 'make menuconfig'.
 
-Adjust the build_curl.sh and Makefile variables to point to the openssl headers and 
+Adjust Makefile variables to point to the openssl headers and 
 libraries. If you want to specify an openssl development directory with 
 include files (e.g. crypto.h), export environment variable OPENSSLDIR with 
 the value of that directory.
@@ -92,8 +92,13 @@ Another known issue is linidn.so, which means, that some linux distributions
 do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink.
 
 Tarball of curl is included to the current release. When libcurl or curl-loader 
-have building issues, correct them in the Makefile and build_curl.sh. To build 
-with optimization, please, follow the instructions in Makefile and build_curl.sh.
+have building issues, correct them in the Makefile. 
+
+By default, we build both libcurl and curl-loader without optimization and with
+debugging. To build with optimization and without debugging, please, run:
+make cleanall 
+make optimize=1 debug=0
+
 
 If still any building issues, please, fill you free to contact us for assistance.
 

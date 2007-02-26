@@ -2,12 +2,14 @@
 TARGET=curl-loader
 TAGFILE=.tagfile
 
+CURL_BUILD=$(shell pwd)/build/curl
 CURL_VER:=7.16.1
 OBJ_DIR:=obj
 SRC_SUFFIX:=c
 OBJ:=$(patsubst %.$(SRC_SUFFIX), $(OBJ_DIR)/$(basename %).o, $(wildcard *.$(SRC_SUFFIX)))
 
-
+debug ?= 1
+optimize ?= 0
 
 # C compiler
 CC=gcc
@@ -15,38 +17,42 @@ CC=gcc
 #C Compiler Flags
 CFLAGS= -W -Wall -Wpointer-arith -pipe -DCURL_LOADER_FD_SETSIZE=20000
 
-#Debug flags. For optimized version remove -g and uncomment OPT_FLAGS below
-# To build libcurl with optimization, go to build_curl.sh and follow instructions
+#Debug flags
+ifeq ($(debug),1)
 DEBUG_FLAGS= -g
+else
+DEBUG_FLAGS=
+endif
 
 #Optimization flags
-#OPT_FLAGS= -O3 -ffast-math -finline-functions -funroll-all-loops \
-#-finline-limit=1000 -mmmx -msse -foptimize-sibling-calls -fomit-frame-pointer
+ifeq ($(optimize),1)
+OPT_FLAGS= -O3 -ffast-math -finline-functions -funroll-all-loops \
+	-finline-limit=1000 -mmmx -msse -foptimize-sibling-calls -fomit-frame-pointer
+else
+OPT_FLAGS=
+endif
 
 #Linker mapping
 LD=gcc
 
- 
-OPENSSLDIR=$(shell $(CURDIR)/openssldir.sh)
-
 #Linker Flags
-LDFLAGS=-L./lib
+LDFLAGS=-L./lib -L$(OPENSSLDIR)/lib
 
 #Link Libraries. RedHat/FC require sometimes lidn
-LIBS= -ldl -lpthread -lrt -lidn -lcurl -lz -L$(OPENSSLDIR)/lib -lssl -L$(OPENSSLDIR)/lib -lcrypto 
+LIBS= -ldl -lpthread -lrt -lidn -lcurl -lz -lssl -lcrypto 
 
 # Include directories
-INCDIR=-I. -I$(OPENSSLDIR)/include -I./inc 
+INCDIR=-I. -I./inc -I$(OPENSSLDIR)/include
 
-LIBCURL=libcurl
+LIBCURL=./lib/libcurl.a ./inc/curl/curl.h
 
 all: $(TARGET)
 
 $(TARGET): $(LIBCURL) $(OBJ)
-	$(LD) $(DEBUG_FLAGS) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
+	$(LD) $(DEBUG_FLAGS) $(OPT_FLAGS) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
 
 nobuildcurl: $(OBJ)
-	$(LD) $(DEBUG_FLAGS) -o $(TARGET) $(OBJ) $(LIBS)
+	$(LD) $(DEBUG_FLAGS) $(OPT_FLAGS) -o $(TARGET) $(OBJ) $(LIBS)
 
 clean:
 	rm -f $(OBJ_DIR)/*.o $(TARGET) core*
@@ -64,9 +70,23 @@ menuconfig:
 	cd ./conf-user; ../build/dialog/scripts/config/mconf ../mconfig/Config.in
 
 
-.PHONY: $(LIBCURL)
 $(LIBCURL):
-	./build_curl.sh
+	cd ./packages; tar zxf curl-$(CURL_VER).tar.gz; ln -sf curl-$(CURL_VER) curl; \
+	patch -d curl -p1 < ../patches/patch-curl-$(CURL_VER); \
+	patch -d curl -p1 < ../patches/patch-fdset-protection
+	mkdir -p $(CURL_BUILD);
+	cd $(CURL_BUILD); ../../packages/curl/configure --prefix $(CURL_BUILD) \
+        --enable-thread \
+        --disable-ipv6 \
+        --with-random=/dev/urandom \
+        --with-ssl=/usr/include/openssl \
+        --enable-shared=no \
+        CFLAGS="$(DEBUG_FLAGS) $(OPT_FLAGS)"
+	make -C $(CURL_BUILD); make -C $(CURL_BUILD) install;
+	mkdir -p ./inc; mkdir -p ./lib
+	cp -a $(CURL_BUILD)/include/curl ./inc/curl
+	cp -pf $(CURL_BUILD)/lib/libcurl* ./lib
+
 
 # Files types rules
 .SUFFIXES: .o .c .h

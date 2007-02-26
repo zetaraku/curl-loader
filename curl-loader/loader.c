@@ -131,9 +131,9 @@ main (int argc, char *argv [])
                "%s - error: lacking root preveledges to run this program.\n", __func__);
       return -1;
     }
+  
    memset(bc_arr, 0, sizeof(bc_arr));
 
-  
   
   ret = getrlimit(RLIMIT_NOFILE, &file_limit);
 

@@ -4,12 +4,11 @@ supporting tens of thousand of clients in one thread without select/poll
 limitations
 
 1. Compile with optimization;
-
-Since you need performance edit Makefile by uncommenting OPT_FLAGS
-and commenting DEBUG_FLAGS. Edit build_curl.sh and place to CFLAFS
--O2 (libcurl uses this option) instead of -g. Y may add optimization for your
-particular processor by -match /-mcpu gcc option directives. Compile with 
-optimization.
+Since you need performance compile with optimization and without debugging.
+make cleanall 
+make optimize=1 debug=0
+Y may add to Makefile optimization for your particular processor by 
+-match /-mcpu gcc option directives to OPT_FLAGS.
 
 2. Login as a su;
 
