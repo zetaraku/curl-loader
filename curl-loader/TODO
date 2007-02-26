@@ -1,18 +1,9 @@
 19/11/2006
 
-1. Menu interface to configure testing conf-file. Dialog-like interface
-may be a good option. There are several requests for that, particularly
-from QA/validation people.
+1. Dialog menu interface to support multiple UAS urls;
 
-2. Configuration/making improvements starting from moving all source-files
+2. Configuration/making improvements: moving all source-files
 to src directory etc.
-Making to perform unified build for all major libraries, like libcurl, libcares.
- 
-make <option> to support as options:
-
-debug=1, 0, default is 0 - no debugging symbols;
-opt=1, 0, default is 1 - build with optimization;
-profile=1,0, default is 0 - build without profiling -pg option
 
 3. Support for CAPS (calls per second) defined mode. Currently, we
 are supporting only a certain number of virtual clients and CAPS is the derived

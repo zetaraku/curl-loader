@@ -1,11 +1,26 @@
-version 0.26 - future
+version 0.26 - some nearest future after more testing
+
+* Make menuconfig opens dialog menu to assist in creation of
+   a loading batch configuration file. Building dialog package requires
+   ncurses development package.
+   Run make menuconfig to see, what happens.
+
+* Batch configuration tags now can we quotted or not quotted. Empty string
+   tags to be marked by either an empty string "", or "N/A" string.
+	
+* Unified making. The script build_curl.sh has gone. Now to build both the libcurl 
+   and curl-loader with optimization, just run:
+   make cleanall; make optimize=1
+   To build both libcurl and curl-loader with optimization and without
+   debugging:
+   make cleanall; make optimize=1 debug=0
 
 * CAPS number added to the "standing" output statistics. It is
    calculated as the number of the first cycled state, entered by clients 
    per second.
 
 * 4xx HTTP client error, which are not 401 or 407 (authentication required)
-   are considered now as errors. TODO: support for 401 and 407 authentication.
+   are considered now errors. TODO: support for 401 and 407 authentication.
 
 * Operation statistics added to the "standing" output, namely,
    number of url successful or failed for LOGIN, for each UAS url
@@ -16,7 +31,7 @@ version 0.26 - future
 
 
 version 0.25, 14/02/2007, svn 121
-	
+
 * "Standing" statistics screen added to present running counters.
     Looks for me as a very convenient way of looking at the loading 
     in-progress.
