@@ -1,0 +1,42 @@
+menu " Login URL Settings"
+
+config LOGIN_URL
+	string " Login URL"
+          depends on LOGIN
+	help
+            Login URL.
+
+config LOGIN_URL_USERNAME
+	string " Login URL Username"
+          depends on LOGIN
+	help
+            Login URL username string
+
+config LOGIN_URL_PASSWORD
+	string " Login URL Password"
+          depends on LOGIN
+	help
+            Login URL password string
+
+config LOGIN_URL_MAX_TIME
+	int " Login URL Maximum Time"
+	default 1
+	range 1 1000
+          depends on LOGIN
+	help
+	  The maximum time for login URL fetching is used by the storming mode
+            to limit the download/upload time. 
+
+config LOGIN_URL_INTERLEAVE_TIME
+	int " Login URL Interleave Time"
+	default 0
+	range 0 3600000
+          depends on LOGIN
+	help
+	  The time for client to sleep after fetching login URL prior to the next scheduling.
+            Used by the smooth mode and just ignored by the storming mode. Valid values
+            are 0 (don't wait) and 10-3600000.
+
+endmenu
+comment " Login URL Settings - support disabled"
+	depends on !LOGIN

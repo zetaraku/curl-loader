@@ -1,0 +1,42 @@
+menu " UAS URL Settings"
+
+config UAS_URL
+	string " UAS URL"
+          depends on UAS
+	help
+            UAS (user activity simulation) first URL.
+
+config UAS_URL_USERNAME
+	string " UAS URL Username"
+          depends on UAS
+	help
+            UAS URL username string
+
+config UAS_URL_PASSWORD
+	string " UAS URL Password"
+          depends on UAS
+	help
+            UAS URL password string
+
+config UAS_URL_MAX_TIME
+	int " UAS URL Maximum Time"
+	default 1
+	range 1 1000
+          depends on UAS
+	help
+	  The maximum time for UAS URL fetching is used by the storming mode
+            to limit the fetching time. 
+
+config UAS_URL_INTERLEAVE_TIME
+	int " UAS URL Interleave Time"
+	default 0
+	range 0 3600000
+          depends on UAS
+	help
+	  The time for client to sleep after fetching a URL prior to the next scheduling.
+            Used by the smooth mode and just ignored by the storming mode. Valid values
+            are 0 (don't wait) and 10-3600000.
+
+endmenu
+comment "  UAS URL Settings - support disabled"
+	depends on !UAS
