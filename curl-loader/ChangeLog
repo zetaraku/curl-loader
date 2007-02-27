@@ -1,4 +1,4 @@
-version 0.26 - some nearest future after more testing
+version 0.26 - svn 151
 
 * Added support for HTTP Authentication and Proxy Authentication.
    The methods supported are Basic, Digest (RFC2617) and NTLM.
