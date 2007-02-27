@@ -122,6 +122,7 @@ enum login_req_type
   {
     LOGIN_REQ_TYPE_GET_AND_POST = 1,
     LOGIN_REQ_TYPE_POST = 2,
+    LOGIN_REQ_TYPE_GET = 3,
   };
 
 

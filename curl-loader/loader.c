@@ -602,9 +602,11 @@ static int setup_curl_handle_appl (client_context*const cctx,
          value of header Location. Great job done by the libcurl people.
       */
       curl_easy_setopt (handle, CURLOPT_FOLLOWLOCATION, 1);
+      curl_easy_setopt (handle, CURLOPT_UNRESTRICTED_AUTH, 1);
       
       /* Enable infinitive (-1) redirection number. */
-      curl_easy_setopt (handle, CURLOPT_MAXREDIRS, -1);     
+      curl_easy_setopt (handle, CURLOPT_MAXREDIRS, -1);
+
       /* 
          TODO: Lets be Explorer-6, but actually User-Agent header 
          should be configurable. 
@@ -631,6 +633,18 @@ static int setup_curl_handle_appl (client_context*const cctx,
               return -1;
             }
           curl_easy_setopt(handle, CURLOPT_POSTFIELDS, post_buff);
+        }
+
+      if (url_ctx->username[0])
+        {
+          char userpwd[256];
+          sprintf (userpwd, "%s:%s", url_ctx->username, url_ctx->password);
+
+          curl_easy_setopt(handle, CURLOPT_USERPWD, userpwd);
+          curl_easy_setopt(handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+          
+          curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, userpwd);
+          curl_easy_setopt(handle, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
         }
     }
   else

@@ -73,6 +73,7 @@ static int login_cycling_parser (batch_context*const bctx, char*const value);
 static int login_req_type_parser (batch_context*const bctx, char*const value);
 static int login_req_type_get_post_parser (batch_context*const bctx, char*const value);
 static int login_req_type_post_parser (batch_context*const bctx, char*const value);
+static int login_req_type_get_parser (batch_context*const bctx, char*const value);
 static int login_post_str_parser (batch_context*const bctx, char*const value);
 static int login_url_parser (batch_context*const bctx, char*const value);
 static int login_url_username_parser (batch_context*const bctx, char*const value);
@@ -121,11 +122,12 @@ static const tag_parser_pair tp_map [] =
     {"LOGIN", login_parser},
     /* if Login Authentication is yes - then the optional fields follow: */
     {"LOGIN_CYCLING", login_cycling_parser},
-    {"LOGIN_USERNAME", login_url_username_parser}, /* depricated, use LOGIN_URL_USERNAME*/
-    {"LOGIN_PASSWORD", login_url_password_parser}, /* depricated *, LOGIN_URL_PASSWORD/
+    {"LOGIN_USERNAME", login_url_username_parser}, /* depricated, use LOGIN_URL_USERNAME */
+    {"LOGIN_PASSWORD", login_url_password_parser}, /* depricated *, LOGIN_URL_PASSWORD */
     {"LOGIN_REQ_TYPE", login_req_type_parser},
     {"LOGIN_REQ_TYPE_GET_POST", login_req_type_get_post_parser},
     {"LOGIN_REQ_TYPE_POST", login_req_type_post_parser},
+    {"LOGIN_REQ_TYPE_GET", login_req_type_get_parser},
     {"LOGIN_POST_STR", login_post_str_parser},
     {"LOGIN_URL", login_url_parser},
     {"LOGIN_URL_USERNAME", login_url_username_parser},
@@ -446,6 +448,8 @@ static int login_req_type_parser (batch_context*const bctx, char*const value)
         bctx->login_req_type = LOGIN_REQ_TYPE_GET_AND_POST;
     else if (!strcmp (value, REQ_POST))
         bctx->login_req_type = LOGIN_REQ_TYPE_POST;
+    else if (!strcmp (value, REQ_GET))
+        bctx->login_req_type = LOGIN_REQ_TYPE_GET;
     else
     {
         fprintf (stderr, 
@@ -465,6 +469,12 @@ static int login_req_type_post_parser (batch_context*const bctx, char*const valu
 {
   (void) value;
   bctx->login_req_type = LOGIN_REQ_TYPE_POST;
+  return 0;
+}
+static int login_req_type_get_parser (batch_context*const bctx, char*const value)
+{
+  (void) value;
+  bctx->login_req_type = LOGIN_REQ_TYPE_GET;
   return 0;
 }
 static int login_post_str_parser (batch_context*const bctx, char*const value)

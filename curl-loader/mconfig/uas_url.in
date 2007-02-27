@@ -10,13 +10,15 @@ config UAS_URL_USERNAME
 	string " UAS URL Username"
           depends on UAS
 	help
-            UAS URL username string
+            Optional UAS URL username string. You may need it for web or proxy
+            authentication.
 
 config UAS_URL_PASSWORD
 	string " UAS URL Password"
           depends on UAS
 	help
-            UAS URL password string
+            Optional UAS URL password string. You may need it for web or proxy
+            authentication.
 
 config UAS_URL_MAX_TIME
 	int " UAS URL Maximum Time"

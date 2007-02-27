@@ -10,13 +10,15 @@ config LOGOFF_URL_USERNAME
 	string " Logoff URL Username"
           depends on LOGOFF
 	help
-            Logoff URL username string
+            Optional logoff URL username string. You may need it for web or proxy
+            authentication.
 
 config LOGOFF_URL_PASSWORD
 	string " Logoff URL Password"
           depends on LOGOFF
 	help
-            Logoff URL password string
+            Optional logoff URL password string. You may need it for web or proxy
+            authentication.
 
 config LOGOFF_URL_MAX_TIME
 	int " Logoff URL Maximum Time"

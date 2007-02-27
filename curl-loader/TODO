@@ -4,16 +4,18 @@
     - multiple UAS urls;
 
 2. Configuration/making improvements: moving all source-files
-to src directory etc.
+    to src directory etc.
 
-3. Support for CAPS (calls per second) defined mode. Currently, we
-are supporting only a certain number of virtual clients and CAPS is the derived
-parameter. CAPS-MODE should support a certain number of CAPS, 
-and virtual clients number to be the derived parameter. 
+3. User-Agent field should be made configurable. Easy to do, but per URL?
 
-4. Future releases will hopefully incorporate libcurl HYPER API, using 
-curl_multi_socket() approach and epoll support by libevent as in
-http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
-from a single process can become a reality.
+4. Client certificates per each https, ftps url. Easy to do.
 
-5. Support for 401 and 407 authentication responses.
+5. Support for CAPS (calls per second) defined mode. Currently, we
+   are supporting only a certain number of virtual clients and CAPS is the derived
+   parameter. CAPS-MODE should support a certain number of CAPS, 
+   and virtual clients number to be the derived parameter. 
+
+6. Future releases will hopefully incorporate libcurl HYPER API, using 
+   curl_multi_socket() approach and epoll support by libevent as in
+   http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
+   from a single process can become a reality.

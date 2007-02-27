@@ -1,3 +1,7 @@
+HOWTOS-BIG-LOAD
+
+Please, start from README.
+
 Temporary instructions till we hopefully migrate
 to epoll-based I/O demultiplexing (or even kevent based?),
 supporting tens of thousand of clients in one thread without select/poll

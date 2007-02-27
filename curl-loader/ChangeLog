@@ -1,5 +1,10 @@
 version 0.26 - some nearest future after more testing
 
+* Added support for HTTP Authentication and Proxy Authentication.
+   The methods supported are Basic, Digest (RFC2617) and NTLM.
+   When responded 401 or 407, libcurl will choose the most safe method
+    from those, supported by the server.
+
 * Make menuconfig opens dialog menu to assist in creation of
    a loading batch configuration file. Building dialog package requires
    ncurses development package.
@@ -20,7 +25,7 @@ version 0.26 - some nearest future after more testing
    per second.
 
 * 4xx HTTP client error, which are not 401 or 407 (authentication required)
-   are considered now errors. TODO: support for 401 and 407 authentication.
+   are considered now errors.
 
 * Operation statistics added to the "standing" output, namely,
    number of url successful or failed for LOGIN, for each UAS url

@@ -71,6 +71,27 @@ MAY BE USED:
 2. For testing of HTTP/HTTPS, FTP/FTPS based applications, application servers;
 3. For etc, etc, etc applications.
 
+LOGIN/LOGOFF SUPPORT:
+There are 3 login and logoff modes supported. GET+POST (response to GET provides
+a post-form to be filled and posted by the next POST), POST-only and GET-only.
+
+AUTHENTICATION SUPPORT:
+The loader supports HTTP Authentication and Proxy Authentication.
+Authentication methods supported are Basic, Digest (RFC2617) and NTLM.
+When responded 401 or 407, libcurl will choose the most safe method
+from those, supported by the server.
+To support GSS Web-Authentication, add in Makefile building of libcurl
+against appropriate GSS library, see libcurl pages for detailed instructions.
+
+COOKIES SUPPORT:
+HTTP cookies are enabled in curl-loader by default.
+
+FTP/FTPS LOAD (experimental):
+To generate FTP/FTPS load, please, use UAS section and pass user credentials
+via ftp-url according to the RFC 1738), like:
+ftp://username:password@hostname:port/etc-str
+Look at conf-examples/ftp.conf
+
 OS SUPPORT:
 Supposed to work on linux 2.4 and 2.6 kernels.
 
@@ -81,7 +102,7 @@ matters should be fine tuned in Makefile (libidn issues, etc).
 Building requirements include:
 1. openssl binaries;
 2. openssl development package with include files (on debian package libssl-dev);
-3. ncurses development package to run 'make menuconfig'.
+3. ncurses development package to run 'make menuconfig' with dialog GUI.
 
 Adjust Makefile variables to point to the openssl headers and 
 libraries. If you want to specify an openssl development directory with 
@@ -98,25 +119,7 @@ By default, we build both libcurl and curl-loader without optimization and with
 debugging. To build with optimization and without debugging, please, run:
 make cleanall 
 make optimize=1 debug=0
-
-
 If still any building issues, please, fill you free to contact us for assistance.
-
-
-CONFIGURATION:
-./curl_loader -h output is your friend. Some examples of configuration are 
-suggested in the files, located in "conf-examples" directory.
-
-
-ENVIRONMENT: ATTENTION !!! IMPORTANT !!!
-Running hundreds and thousands of clients, please do not forget:
-    - to increase limit of descriptors (sockets) by running e.g. 
-      #ulimit -n 10000;
-    - optionally, to set reuse of sockets in time-wait state: by setting 
-      #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or  
-      #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;
-In some cases you may need to increase the system limits for open
-descriptors (sockets).
 
 
 PERFORMANCE ISSUES:
@@ -241,28 +244,25 @@ The dialog window will guide you and create your configuration file in
 conf-user directory. The current limitation of the menu-guided configuration, is
 that enables to create a single UAS URL.
 Just copy your batch file from the conf-user directory  to some other place,
-and  edit it by adding as much url triplets (below) as you need, but don't
+and  edit it by adding as much url tag series (below) as you need, but don't
 forget to update UAS_URLS_NUM accordingly.
 UAS_URL=
+UAS_URL_USERNAME=
+UAS_URL_PASSWORD=
 UAS_URL_MAX_TIME =
 UAS_URL_INTERLEAVE_TIME =
 
 For more details you may look at HOWTOS-CONFIG-FILE
 
-
-LOGIN/LOGOFF HTTP METHODS:
-There are two login modes supported. GET+POST (response to GET provides
-a post-form to be filled and posted by the next POST) and POST-only. 
-There are three logoff modes supported as GET-only, GET+POST and POST-only.
-HTTP cookies are enabled in curl-loader by default.
-
-
-FTP/FTPS LOAD (experimental):
-To generate FTP/FTPS load, please, use UAS section and pass user credentials
-via ftp-url according to the RFC 1738), like:
-ftp://username:password@hostname:port/etc-str
-Look at conf-examples/ftp.conf
-
+ENVIRONMENT: ATTENTION !!! IMPORTANT !!!
+Running hundreds and thousands of clients, please do not forget:
+    - to increase limit of descriptors (sockets) by running e.g. 
+      #ulimit -n 10000;
+    - optionally, to set reuse of sockets in time-wait state: by setting 
+      #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or  
+      #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;
+In some cases you may need to increase the system limits for open
+descriptors (sockets).
 
 LOGFILE:
 The semantics of logfile output, using command line options -v (verbous) and -u 
@@ -341,7 +341,7 @@ err - number of libcurl errors at the resolving, TCP/IP and TLS/SSL levels;
 
 
 ERROR CONDITIONS OF A VIRTUAL CLIENT:
-The following conditions are considered as errors:
+\The following conditions are considered as errors:
 - error at the level of libcurl, which includes resolving, TCP/IP and, when applicable,
   TLS/SSL errors;
 - all HTTP 5xx server errors;

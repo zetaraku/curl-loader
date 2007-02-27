@@ -1,5 +1,5 @@
 HOWTOS-CONFIG-FILE
-
+Please, start from README.
 
 Configuration file should possess at least one client batch defined
 with the following params in each batch:
@@ -18,11 +18,11 @@ CYCLES_NUM= 100            # Number of loading cycles to run, 0 -forever
 ########### LOGIN SECTION ##################################
 LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the 
                   # section to be filled. If 'n' or 'N' - comment out others
-#LOGIN_USERNAME=  # Username string
-#LOGIN_PASSWORD=  # Password string
-#LOGIN_REQ_TYPE=  # Use string either GET+POST or POST. Another option is to use
-                       #LOGIN_REQ_TYPE_GET_POST or LOGIN_REQ_TYPE_POST
-                       #tags by using tag=y to enable                                         
+#LOGIN_USERNAME=  # Redundant tag, use LOGIN_URL_USERNAME instead
+#LOGIN_PASSWORD=  # Redundant tag, use LOGIN_URL_PASSWORD instead
+#LOGIN_REQ_TYPE=  # Use string either GET+POST, POST or GET. Another option 
+                       # is to use LOGIN_REQ_TYPE_GET_POST, LOGIN_REQ_TYPE_POST or
+                       # LOGIN_REQ_TYPE_GET tags by using tag=y to enable                                         
 #LOGIN_POST_STR=  # POST string matrix. See below:
 #
 # To generate multiple unique users with unique passwords, use the string like
@@ -43,6 +43,8 @@ LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the
 # those fields, that login users are required to fill in their POST page.
 
 #LOGIN_URL=                 # A valid http or https url to be used for login
+#LOGIN_URL_USERNAME="" # Username for login url
+#LOGIN_URL_PASSWORD=""  # Password for login url
 #LOGIN_URL_MAX_TIME=        # Maximum batch time in seconds to login
 #LOGIN_URL_INTERLEAVE_TIME= # Time in msec to sleep after login
 #LOGIN_CYCLING=             # If 'y' login should be run in cycles, and not 
@@ -54,6 +56,8 @@ UAS=y            # If 'y' or 'Y', login enabled, and other lines of the section
 UAS_URLS_NUM = 2 # Number of urls
 
 UAS_URL=ftp://anonymous:stam@localhost/curl-7.16.0.tar.gz # Rather large file
+#UAS_URL_USERNAME="" # Username for this particular UAS url
+#UAS_URL_PASSWORD=""  # Password for this particular UAS url
 UAS_URL_MAX_TIME = 20        # Maximum batch time in seconds to fetch the url
 UAS_URL_INTERLEAVE_TIME = 0  # Time in msec to sleep after fetching the url
 
@@ -61,7 +65,7 @@ UAS_URL= http://localhost/apache2-default/index.html
 UAS_URL_MAX_TIME = 4        # Maximum batch time in seconds to fetch the url
 UAS_URL_INTERLEAVE_TIME = 0 # Time in msec to sleep after fetching the url
 
-# You may add any number of urls providing 3-tags for each url as above,
+# You may add any number of urls providing 5-tags for each url as above,
 # but do not forget to update the UAS_URLS_NUM.
 
 ########### LOGOFF SECTION #################################
@@ -70,8 +74,11 @@ LOGOFF=n                 # If 'y' or 'Y', login enabled, and other tags of the
 #LOGOFF_REQ_TYPE=        # Use strings to be GET, GET+POST, or POST
                            #Another option is LOGOFF_REQ_TYPE_GET_POST, LOGOFF_REQ_TYPE_POST
                            #or LOGOFF_REQ_TYPE_GET tags by using tag=y to enable
-#LOGOFF_POST_STR=        # String to be used for logoff, like "op=logoff" 
+#LOGOFF_POST_STR=        # String to be used for logoff, like "op=logoff"
+ 
 #LOGOFF_URL=             # A valid http or https url to be used for logoff
+#LOGOFF_URL_USERNAME="" # Username for logoff url
+#LOGOFF_URL_PASSWORD=""  # Password for logoff url
 #LOGOFF_URL_MAX_TIME=    # Maximum batch time in seconds to logoff
 #LOGOFF_URL_INTERLEAVE_TIME= # Time in msec to sleep after logoff
 #LOGOFF_CYCLING=         # If 'y' login should be run in cycles, and not just 
