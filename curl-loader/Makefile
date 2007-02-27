@@ -19,20 +19,22 @@ CFLAGS= -W -Wall -Wpointer-arith -pipe -DCURL_LOADER_FD_SETSIZE=20000
 
 #Debug flags
 ifeq ($(debug),1)
-DEBUG_FLAGS= -g
+DEBUG_FLAGS+= -g
 else
 DEBUG_FLAGS=
+OPT_FLAGS+=-fomit-frame-pointer
 endif
 
 OPENSSLDIR=$(shell $(CURDIR)/openssldir.sh)
 
 #Optimization flags
 ifeq ($(optimize),1)
-OPT_FLAGS= -O3 -ffast-math -finline-functions -funroll-all-loops \
-	-finline-limit=1000 -mmmx -msse -foptimize-sibling-calls -fomit-frame-pointer
+OPT_FLAGS+= -O3 -ffast-math -finline-functions -funroll-all-loops \
+	-finline-limit=1000 -mmmx -msse -foptimize-sibling-calls
 else
 OPT_FLAGS=
 endif
+
 
 #Linker mapping
 LD=gcc
