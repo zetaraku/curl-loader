@@ -24,6 +24,8 @@ else
 DEBUG_FLAGS=
 endif
 
+OPENSSLDIR=$(shell $(CURDIR)/openssldir.sh)
+
 #Optimization flags
 ifeq ($(optimize),1)
 OPT_FLAGS= -O3 -ffast-math -finline-functions -funroll-all-loops \
