@@ -19,8 +19,7 @@ the same sort of activities. Configurable activities for the simulated clients a
 
 LICENSE:
 Actually it is GPL2 due to the code from iprouted2. However, if somebody
-fills uncomfortable with this license, we can substitute the code of
-ip_secondary.c to calls to command "ip", and release it under BSD-license,
+fills uncomfortable with this license, we can consider BSD-license,
 and/or make it configurable.
 
 TERMINOLOGY:
@@ -72,11 +71,11 @@ MAY BE USED:
 3. For etc, etc, etc applications.
 
 LOGIN/LOGOFF SUPPORT:
-There are 3 login and logoff modes supported. GET+POST (response to GET provides
+There are 3 login and 3 logoff modes supported. GET+POST (response to GET provides
 a post-form to be filled and posted by the next POST), POST-only and GET-only.
 
 AUTHENTICATION SUPPORT:
-The loader supports HTTP Authentication and Proxy Authentication.
+The loader supports HTTP Web Authentication and Proxy Authentication.
 Authentication methods supported are Basic, Digest (RFC2617) and NTLM.
 When responded 401 or 407, libcurl will choose the most safe method
 from those, supported by the server.
@@ -88,7 +87,7 @@ HTTP cookies are enabled in curl-loader by default.
 
 FTP/FTPS LOAD (experimental):
 To generate FTP/FTPS load, please, use UAS section and pass user credentials
-via ftp-url according to the RFC 1738), like:
+via ftp-url according to the RFC 1738 like:
 ftp://username:password@hostname:port/etc-str
 Look at conf-examples/ftp.conf
 
@@ -115,15 +114,15 @@ do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink.
 Tarball of curl is included to the current release. When libcurl or curl-loader 
 have building issues, correct them in the Makefile. 
 
-By default, we build both libcurl and curl-loader without optimization and with
-debugging. To build with optimization and without debugging, please, run:
+By default, we are building both libcurl and curl-loader without optimization and with
+debugging -g option. To build with optimization and without debugging, please, run:
 make cleanall 
 make optimize=1 debug=0
 If still any building issues, please, fill you free to contact us for assistance.
 
 
 PERFORMANCE ISSUES:
-There is no more a limit of 1000 clients per batch due to select FD_SETSIZE,
+There is no more 1000 clients per batch limit due to select FD_SETSIZE,
 so you can try 2000 and may be more number of clients from the single thread
 (select). Please, care about available sockets and limits. System call select () 
 does not scale well with a big number of sockets, therefore, you can try a 
@@ -140,7 +139,7 @@ Read also HOWTOS-BIG-LOAD.
 
 
 MODES:
-One of the modes is storming mode (-m1 command line), where all clients 
+One of the modes is "storming" mode (-m1 command line), where all clients 
 of a batch are starting together. They are expected to finish their job within 
 a certain timeout. After the timeout they are either completed fetching url, 
 or are cutted and disconnected and a new cycle begins. 
@@ -174,10 +173,10 @@ Hyper-mode (option -m3) is currently "under construction".
 
 
 SMOOTH MODE CLIENTS_INITIAL_INC TAG:
-Tag  CLIENTS_INITIAL_INC in batch configuration file serves in gradual increase 
+Tag  CLIENTS_INITIAL_INC in batch configuration file serves for gradual increase 
 of clients number at the loading initial phase. Use tag CLIENTS_INITIAL_INC in 
 GENERAL section to specify the number of loading clients to be added each second 
-till the total clients number reaches the number, specified by CLIENTS_NUM tag.
+till the total clients number reaches the number specified by CLIENTS_NUM tag.
 
 CAPS CONSIDERATIONS
 When number of clients is defined by CLIENTS_NUM tag, the number of
@@ -193,9 +192,10 @@ url retrival time is also server and network dependent and not always easy
 to predict. The result is that number of clients/requests is a known parameter,
 and number of CAPS is something to be estimated from the time of test and
 number of requests.
+Smooth mode presents at the "standing" load monitoring terminal also current
+and average CAPS numbers.
 
-
-COMMAND-LINE OPTIONS
+COMMAND-LINE OPTIONS:
 Usage: run as a root user:
 #./curl-loader -f <configuration filename> [other options]
 
@@ -224,7 +224,7 @@ The default behavior of curl-loader after HTTP response is to re-use the
 tcp-connection for the next request. If you are specifying -r command-line 
 option, the TCP connection will be closed and re-opened for the next request. 
 Whether it is appropriate for you to work with -r option or without, it  depends
- on your server support of Keep-Alive and the purpose of your testing.
+on your server support of Keep-Alive and the purpose of your testing.
 Try with and without -r and see, what you get.
 
 Connection reuse (just the default, without -r option) has advantages due to the 
@@ -233,19 +233,20 @@ decreased consumption of opened descriptors (sockets) and ports.
 
 CONFIGURATION FILE
 To run your load, you need to create your configuration file to be passed to
-curl-loader by -f option, e.g.
+curl-loader by the -f commmand line option, e.g.
 #curl-loader -f ./conf-user/user_batch.conf
 For more examples, please, look at the files in "conf-examples" directory.
-You may copy an example file and edit it by using HOWTOS-CONFIG-FILE.
+You may copy an example file and edit it by using HOWTOS-CONFIG-FILE guidlines.
 
 You may start with running "make menuconfig" on your system, which requires
 ncurses development package on your system.
 The dialog window will guide you and create your configuration file in 
 conf-user directory. The current limitation of the menu-guided configuration, is
 that enables to create a single UAS URL.
-Just copy your batch file from the conf-user directory  to some other place,
-and  edit it by adding as much url tag series (below) as you need, but don't
-forget to update UAS_URLS_NUM accordingly.
+If you need more that a single UAS url, copy your batch file from the conf-user
+directory  to some other place and  edit it by adding as much url tag series 
+(below) as you need, but don't forget to update UAS_URLS_NUM accordingly.
+The UAS url tag series:
 UAS_URL=
 UAS_URL_USERNAME=
 UAS_URL_PASSWORD=
@@ -282,7 +283,7 @@ Effective url may be a result of redirection and, thus, "url:"
 STATISTICS:
 Currently HTTP/HTTPS statistics includes the following counters:
    - requests num;
-   - responses success num;
+   - 2xx success num;
    - 3xx redirects num;
    - client 4xx errors num;
    - server 5xx errors num;
@@ -341,7 +342,7 @@ err - number of libcurl errors at the resolving, TCP/IP and TLS/SSL levels;
 
 
 ERROR CONDITIONS OF A VIRTUAL CLIENT:
-\The following conditions are considered as errors:
+The following conditions are considered as errors:
 - error at the level of libcurl, which includes resolving, TCP/IP and, when applicable,
   TLS/SSL errors;
 - all HTTP 5xx server errors;
