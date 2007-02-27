@@ -77,62 +77,17 @@ config LOGIN
             Say Y here if you wish to configure virtual clients of the batch to
             make login operations, using username, password, etc parameters.
 
-config LOGIN_USERNAME
-	string " Login Username"
-          depends on LOGIN
+config LOGIN_CYCLING
+	bool "Login Cycling Enable"
+	default n
 	help
-            Username string
-
-comment "Login Username - support disabled"
+            Say Y here if you wish to configure virtual clients of the batch to
+            make login operations not once, but in cycles. Logical to combine
+            login cycles with logoff cycles, therefore, if yes, consider LOGOFF
+            cycling as well.
+comment "Login Cycling Enable - support disabled"
 	depends on !LOGIN
 
-config LOGIN_PASSWORD
-	string " Login Password"
-          depends on LOGIN
-	help
-            Password string
-
-comment "Login Password - support disabled"
-	depends on !LOGIN
-
-choice
-	prompt " Login Request Type"
-          default LOGIN_REQ_TYPE_GET_POST
-          depends on LOGIN && LOGIN_USERNAME
-	help
-            HTTP login may be GET with following POST or direct POST.
-            Use here either GET+POST or POST options.
-
-config LOGIN_REQ_TYPE_GET_POST
-         bool "GET+POST"
-
-config LOGIN_REQ_TYPE_POST
-         bool "POST"
-
-endchoice
-
-comment "Login Request Type - support disabled"
-	depends on !LOGIN
-
-config LOGIN_POST_STR
-	string " Login POST String Matrix - see help"
-	default "username=%s%d&password=%s%d"
-          depends on LOGIN
-	help
-            To generate multiple unique users with unique passwords, use the string like
-            "username=%s%d&password=%s%d". First '%s' will be substituted by the 
-            value of LOGIN_USERNAME tag and '%d' by the client number. Second '%s' will
-            be substituted by LOGIN_PASSWORD tag value and second '%d' by the same client
-            number. For example, if LOGIN_USERNAME=robert, LOGIN_PASSWORD=stam
-            and LOGIN_POST_STR "username=%s%d&password=%s%d", the final POST string, 
-            used for the client number 1, will be  "username=robert1&password=stam1".
-            In this case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just 
-            as base-words for generating unique user credentials by appending an number.
-            To use the username and password 'as as', just provide LOGIN_POST_STR without 
-            %d symbols, e.g. "user=%s&secret=%s". Thus, all clients will have the same
-            POST credentials with the string looking like "user=robert&secret=stam".
-comment "Login POST String Matrix - support disabled"
-	depends on !LOGIN
 
 config LOGIN_URL
 	string " Login URL"
@@ -142,15 +97,31 @@ config LOGIN_URL
 comment "Login URL - support disabled"
 	depends on !LOGIN
 
+config LOGIN_URL_USERNAME
+	string " Login URL Username"
+          depends on LOGIN
+	help
+            Login URL username string
+comment "Login URL Username - support disabled"
+	depends on !LOGIN
+
+config LOGIN_URL_PASSWORD
+	string " Login URL Password"
+          depends on LOGIN
+	help
+            Login URL password string
+comment "Login URL Password - support disabled"
+	depends on !LOGIN
+
 config LOGIN_URL_MAX_TIME
-	int " Login URL Maximum Time for Fetching"
+	int " Login URL Maximum Time"
 	default 1
 	range 1 1000
           depends on LOGIN
 	help
 	  The maximum time for login URL fetching is used by the storming mode
-            to limit the fetching time. 
-comment "Maximum time for login URL Fetching - support disabled"
+            to limit the download/upload time. 
+comment "Login URL Maximum Time - support disabled"
 	depends on !LOGIN
 
 config LOGIN_URL_INTERLEAVE_TIME
@@ -163,6 +134,44 @@ config LOGIN_URL_INTERLEAVE_TIME
             Used by the smooth mode and just ignored by the storming mode. Valid values
             are 0 (don't wait) and 10-3600000.
 comment "Login URL Interleave Time - support disabled"
+	depends on !LOGIN
+
+choice
+	prompt " Login Request Type"
+          default LOGIN_REQ_TYPE_GET_POST
+          depends on LOGIN
+	help
+            HTTP login may be GET with following POST or direct POST.
+            Use here either GET+POST or POST options.
+
+config LOGIN_REQ_TYPE_GET_POST
+         bool "GET+POST"
+config LOGIN_REQ_TYPE_POST
+         bool "POST"
+config LOGIN_REQ_TYPE_GET
+         bool "GET"
+endchoice
+comment "Login Request Type - support disabled"
+	depends on !LOGIN
+
+config LOGIN_POST_STR
+	string " Login POST String Matrix - see help"
+	default "username=%s%d&password=%s%d"
+          depends on LOGIN
+	help
+            To generate multiple unique users with unique passwords, use the string like
+            "username=%s%d&password=%s%d". First '%s' will be substituted by the 
+            value of LOGIN_URL_USERNAME tag and '%d' by the client number. Second '%s' will
+            be substituted by LOGIN_URL_PASSWORD tag value and second '%d' by the same client
+            number. For example, if LOGIN_URL_USERNAME=robert, LOGIN_URL_PASSWORD=stam
+            and LOGIN_POST_STR "username=%s%d&password=%s%d", the final POST string, 
+            used for the client number 1, will be  "username=robert1&password=stam1".
+            In this case LOGIN_URL_USERNAME and LOGIN_URL_PASSWORD strings are used just 
+            as base-words for generating unique user credentials by appending an number.
+            To use the username and password 'as as', just provide LOGIN_POST_STR without 
+            %d symbols, e.g. "user=%s&secret=%s". Thus, all clients will have the same
+            POST credentials with the string looking like "user=robert&secret=stam".
+comment "Login POST String Matrix - support disabled"
 	depends on !LOGIN
 
 endmenu
@@ -197,15 +206,31 @@ config UAS_URL
 comment "UAS URL - support disabled"
 	depends on !UAS
 
+config UAS_URL_USERNAME
+	string " UAS URL Username"
+          depends on UAS
+	help
+            UAS URL username string
+comment "UAS URL Username - support disabled"
+	depends on !UAS
+
+config UAS_URL_PASSWORD
+	string " UAS URL Password"
+          depends on UAS
+	help
+            UAS URL password string
+comment "UAS URL Password - support disabled"
+	depends on !UAS
+
 config UAS_URL_MAX_TIME
-	int " UAS URL Maximum Time for Fetching"
+	int " UAS URL Maximum Time"
 	default 1
 	range 1 1000
           depends on UAS
 	help
 	  The maximum time for UAS URL fetching is used by the storming mode
             to limit the fetching time. 
-comment "Maximum time for UAS URL Fetching - support disabled"
+comment "UAS URL Maximum Time - support disabled"
 	depends on !UAS
 
 config UAS_URL_INTERLEAVE_TIME
@@ -234,35 +259,17 @@ config LOGOFF
             Say Y here if you wish to configure virtual clients of the batch to
             make logoff operation.
 
-choice
-	prompt " Logoff Request Type"
-          default LOGOFF_REQ_TYPE_GET_POST
-          depends on LOGOFF
+config LOGOFF_CYCLING
+	bool "Logoff Cycling Enable"
+	default n
 	help
-            HTTP logoff may be GET with following POST or POST-only or GET-only.
-            Use here either GET+POST or POST or GET options.
-
-config LOGOFF_REQ_TYPE_GET_POST
-         bool "GET+POST"
-
-config LOGOFF_REQ_TYPE_POST
-         bool "POST"
-
-config LOGOFF_REQ_TYPE_GET
-         bool "GET"
-
-endchoice
-
-comment "Logoff Request Type - support disabled"
+            Say Y here if you wish to configure virtual clients of the batch to
+            make logoff operations not once, but in cycles. Logical to combine
+            logoff cycles with login cycles, therefore, if yes, consider login
+            cycling as well.
+comment "Logoff Cycling Enable - support disabled"
 	depends on !LOGOFF
 
-config LOGOFF_POST_STR
-	string " Logoff POST String Matrix - see help"
-          depends on LOGOFF
-	help
-            String to be used for logoff, like "op=logoff"
-comment "Logoff POST String Matrix - support disabled"
-	depends on !LOGOFF
 
 
 config LOGOFF_URL
@@ -273,15 +280,31 @@ config LOGOFF_URL
 comment "Logoff URL - support disabled"
 	depends on !LOGOFF
 
+config LOGOFF_URL_USERNAME
+	string " Logoff URL Username"
+          depends on LOGOFF
+	help
+            Logoff URL username string
+comment "Logoff URL Username - support disabled"
+	depends on !LOGOFF
+
+config LOGOFF_URL_PASSWORD
+	string " Logoff URL Password"
+          depends on LOGOFF
+	help
+            Logoff URL password string
+comment "Logoff URL Password - support disabled"
+	depends on !LOGOFF
+
 config LOGOFF_URL_MAX_TIME
-	int " Logoff URL Maximum Time for Fetching"
+	int " Logoff URL Maximum Time"
           depends on LOGOFF
 	default 1
 	range 1 1000
 	help
 	  The maximum time for logoff URL fetching is used by the storming mode
             to limit the fetching time. 
-comment "Maximum time for logoff URL Fetching - support disabled"
+comment "Logoff URL Maximum Time - support disabled"
 	depends on !LOGOFF
 
 config LOGOFF_URL_INTERLEAVE_TIME
@@ -294,6 +317,33 @@ config LOGOFF_URL_INTERLEAVE_TIME
             Used by the smooth mode and just ignored by the storming mode. Valid values
             are 0 (don't wait) and 10-3600000.
 comment "Logoff URL Interleave Time - support disabled"
+	depends on !LOGOFF
+
+choice
+	prompt " Logoff Request Type"
+          default LOGOFF_REQ_TYPE_GET_POST
+          depends on LOGOFF
+	help
+            HTTP logoff may be GET with following POST or POST-only or GET-only.
+            Use here either GET+POST or POST or GET options.
+
+config LOGOFF_REQ_TYPE_GET_POST
+         bool "GET+POST"
+config LOGOFF_REQ_TYPE_POST
+         bool "POST"
+config LOGOFF_REQ_TYPE_GET
+         bool "GET"
+
+endchoice
+comment "Logoff Request Type - support disabled"
+	depends on !LOGOFF
+
+config LOGOFF_POST_STR
+	string " Logoff POST String Matrix - see help"
+          depends on LOGOFF
+	help
+            String to be used for logoff, like "op=logoff"
+comment "Logoff POST String Matrix - support disabled"
 	depends on !LOGOFF
 
 endmenu

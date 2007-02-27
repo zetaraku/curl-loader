@@ -955,8 +955,8 @@ static int alloc_init_client_post_buffers (client_context* cctx)
           snprintf (cctx[i].post_data_login, 
                     POST_LOGIN_BUF_SIZE, 
                     bctx->login_post_str,
-                    bctx->login_username, i + 1,
-                    bctx->login_password, i + 1);
+                    bctx->login_url.username, i + 1,
+                    bctx->login_url.password, i + 1);
         }
       else if (counter_percent_sym == 2)
         {
@@ -964,8 +964,8 @@ static int alloc_init_client_post_buffers (client_context* cctx)
           snprintf (cctx[i].post_data_login, 
                     POST_LOGIN_BUF_SIZE, 
                     bctx->login_post_str,
-                    bctx->login_username, 
-                    bctx->login_password);
+                    bctx->login_url.username, 
+                    bctx->login_url.password);
         }
       else
         {

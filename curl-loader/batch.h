@@ -101,11 +101,14 @@ typedef struct batch_context
   */
   int do_login;
 
-  /* Authentication login_username */
-  char login_username[32];
+  /* Whether to include login to cycling or not. */
+  int login_cycling;
+
+  /* Authentication login_username - depricated, moved to URL*/
+  //char login_username[32];
  
-  /* Authentication login_password */
-  char login_password[32];
+  /* Authentication login_password - depricated, moved to URL */
+  //char login_password[32];
   
   /* 
      Either LOGIN_REQ_TYPE_GET_AND_POST or LOGIN_REQ_TYPE_POST
@@ -118,8 +121,7 @@ typedef struct batch_context
    /* The url object for login. */
   url_context login_url;
 
-  /* Whether to include login to cycling or not. */
-  int login_cycling;
+
 
 
   /*------- UAS (User Activity Simulation) SECTION - fetching urls ----- */
@@ -152,6 +154,9 @@ typedef struct batch_context
   */
   int do_logoff;
 
+  /* Whether to include login to cycling or not. */
+  int logoff_cycling;
+
   /* 
      LOGOFF_REQ_TYPE_GET, 
      LOGOFF_REQ_TYPE_GET_AND_POST,
@@ -165,8 +170,7 @@ typedef struct batch_context
   /* The url object for logoff. */
   url_context logoff_url;
 
-  /* Whether to include login to cycling or not. */
-  int logoff_cycling;
+
 
 
   /*------------------------- ASSISTING SECTION ----------------------------*/

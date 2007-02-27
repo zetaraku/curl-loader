@@ -25,6 +25,7 @@
 #define URL_H
 
 #include <stddef.h>
+#define URL_AUTH_STR_LEN 64
 
   /* 
      Current loading step: login, uas, logoff. If we are in the loading step 
@@ -68,6 +69,10 @@ typedef struct url_context
 
   /* Sleeping interval after fetching this url in msec.*/
   unsigned long url_interleave_time;
+
+  char username[URL_AUTH_STR_LEN];
+
+  char password[URL_AUTH_STR_LEN];
 
   /* Application type of url */
   url_appl_type url_appl_type;

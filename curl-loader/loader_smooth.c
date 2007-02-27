@@ -587,23 +587,6 @@ static int is_last_cycling_state (client_context* cctx)
     return 0;
 
   return (cctx->client_state == last_cstate);
-  
-/*
-  switch (cctx->client_state)
-    {
-    case CSTATE_LOGIN:
-      return (bctx->login_cycling && !bctx->do_uas && 
-              !(bctx->do_logoff && bctx->logoff_cycling)) ? 1 : 0;
-    case CSTATE_UAS_CYCLING:
-      return (!(bctx->do_logoff && bctx->logoff_cycling)) ? 1 : 0;
-    case CSTATE_LOGOFF: 
-      return bctx->logoff_cycling ? 1 : 0;
-    default:
-      return 0;
-    }
-
-  return 0;
-*/
 }
 
 static int is_first_cycling_state (client_context* cctx)
@@ -718,7 +701,7 @@ static int setup_login_logoff (client_context* cctx, const int login)
     {
       /* 
          Three possible cases are treated here:
-         - GET, which is by itself enough for logoff (thanks to cookies);
+         - GET, which is by itself enough, e.g. for logoff using cookies;
          - GET, which will be later followed by later POST login/logoff;
          - POST, which is the standalone login/logoff, without any previous GET;
       */

@@ -1,6 +1,8 @@
 19/11/2006
 
-1. Dialog menu interface to support multiple UAS urls;
+1. Dialog menu interface to support:
+    - multiple UAS urls;
+    - separate URL parameters to a sub-menu;
 
 2. Configuration/making improvements: moving all source-files
 to src directory etc.
