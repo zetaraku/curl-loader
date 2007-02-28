@@ -16,7 +16,10 @@ config CLIENTS_NUM
 	default 1
 	range 1 2000
 	help
-	  Number of virtual clients used for loading.
+	  Number of virtual clients used for loading. This is the maximum number
+            to be used. You may wish to start with a lower number and gradually 
+            increase you load. This is the place, where the next option "Virtual Clients 
+            Number Increment at Startup" comes to your assistance.
 
 config CLIENTS_INITIAL_INC
 	int " Virtual Clients Number Increment at Startup"
@@ -33,8 +36,8 @@ config INTERFACE
 	string " Network Interface for Loading"
 	default "eth0"
 	help
-            Network interface used for loading. Run "ifconfig" or "ip addr" to 
-            figure out the interfaces, that you have.
+            Name of the network interface to be used for loading. Run "/sbin/ifconfig" or 
+            "ip addr" to figure out the interfaces, that you have.
 
 config IP_ADDR_MIN
 	string " Minimal Address of the IP-Range for Loading"
@@ -42,15 +45,21 @@ config IP_ADDR_MIN
 	help
             To run loading you should choose a range of IP-addresses to be used
             by the virtual clients. Pass quad-dotted IPv4 string with the minimal 
-            address here.
+            address here. Please, mind that number of IP-addresses in the range 
+            (Max - Min) should be equal or more, than the "Virtual Clients Number".
+            Thus, every virtual client will have its own IP-address to be used 
+            for loading.
 
 config IP_ADDR_MAX
 	string " Maximum Address of the IP-Range for Loading"
 	default "192.168.0.2"
 	help
             To run loading you should choose a range of IP-addresses to be used
-            by the virtual clients. Pass quad-dotted IPv4 string with the minimal 
-            address here.
+            by the virtual clients. Pass quad-dotted IPv4 string with the maximal 
+            address here. Please, mind that number of IP-addresses in the range 
+            (Max - Min) should be equal or more, than the "Virtual Clients Number".
+            Thus, every virtual client will have its own IP-address to be used 
+            for loading.
 
 config NETMASK
 	string " Netmask of the IP-Range for Loading"
@@ -63,7 +72,8 @@ config CYCLES_NUM
 	default -1
 	range -1 10000000
 	help
-	  Number of loading cycles. (-1) means - run load indefinetely.
+	  Number of loading cycles. (-1) means run load indefinetely. Zero means
+            don't run (Is it really useful for a loader not to load?).
 
 endmenu
 
@@ -83,8 +93,8 @@ config LOGIN_CYCLING
 	help
             Say Y here if you wish to configure virtual clients of the batch to
             make login operations not once, but in cycles. Logical to combine
-            login cycles with logoff cycles, therefore, if yes, consider LOGOFF
-            cycling as well.
+            login cycles with logoff cycles, therefore, if yes, consider Logoff
+            Cycling as well.
 comment " Login Cycling Enable - support disabled"
 	depends on !LOGIN
 

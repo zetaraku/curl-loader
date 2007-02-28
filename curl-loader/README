@@ -108,7 +108,7 @@ LOGIN/LOGOFF SUPPORT:
 Login and logoff operations curl-loader preforms using HTTP methods:
 - GET+POST (server response to GET provides a post-form to be 
    filled and posted by POST);
--POST only;
+- POST only;
 - GET only.
 
 
@@ -137,7 +137,7 @@ Look at conf-examples/ftp.conf
 
 
 PERFORMANCE ISSUES:
-There is no more 1000 clients per batch limit due to select FD_SETSIZE,
+There is no more 1000 virtual clients per batch limit due to select FD_SETSIZE,
 so you can try 2000 and may be more number of clients from the single thread
 (select). Please, care about available sockets and limits. System call select () 
 does not scale well with a big number of sockets, therefore, you can try a 
@@ -189,16 +189,16 @@ the number specified by CLIENTS_NUM tag.
 
 
 
-CAPS CALCULATIONS:
+CAPS CALCULATION:
 When number of clients is defined by CLIENTS_NUM tag, the number of
-CAPS (call attempts per seconds) is derived from the clients number and 
-load duration for each cycle comprising from:
+CAPS (call attempts per seconds) is resulting from the clients number and 
+load duration for each cycle, comprising from:
 - login time with possible redirections and sleeping after login interval;
 - uas time for each url with possible redirections, intervals betwee urls and 
   after uas interval;
 - logoff time with possible redirections and sleeping after logoff interval;
 
-All these actions and time intervals are configurable in batch file, whereas
+The actions and time intervals are configurable in batch file, whereas
 url retrival time is server and network dependent and not always easy 
 to predict. The result is that number of clients/requests is a known parameter,
 and number of CAPS is something to be estimated from the time of test and
@@ -214,8 +214,10 @@ Supposed to work on linux 2.4 and 2.6 kernels.
 
 
 BUILDING:
-In most cases just run make and relax. For some linux distributions, however, 
-matters should be fine tuned in Makefile (libidn issues, etc). 
+In most cases just run make and relax.
+
+For some linux distributions, however,  matters should be fine tuned in 
+Makefile (libidn issues, etc). 
 
 Building requirements include:
 1. openssl binaries;
@@ -227,6 +229,11 @@ libraries. If you want to specify an openssl development directory with
 include files (e.g. crypto.h), export environment variable OPENSSLDIR with 
 the value of that directory.
 
+Build curl-loader by:
+%tar zxfv curl-loader-<version>.tar.gz
+%cd curl-loader-<version>
+%make
+
 Another known issue is linidn.so, which means, that some linux distributions 
 do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink.
 
@@ -235,8 +242,8 @@ have building issues, correct them in the Makefile.
 
 By default, we are building both libcurl and curl-loader without optimization and with
 debugging -g option. To build with optimization and without debugging, please, run:
-make cleanall 
-make optimize=1 debug=0
+%make cleanall 
+%make optimize=1 debug=0
 If still any building issues, please, fill you free to contact us for assistance.
 
 
@@ -307,7 +314,7 @@ For more details you may look at HOWTOS-CONFIG-FILE
 
 
 
-ENVIRONMENT: ATTENTION !!! IMPORTANT !!!
+LINUX ENVIRONMENT: ATTENTION !!! IMPORTANT !!!
 Running hundreds and thousands of clients, please do not forget:
     - to increase limit of descriptors (sockets) by running e.g. 
       #ulimit -n 10000;
@@ -319,7 +326,9 @@ descriptors (sockets).
 
 
 
-LOGFILE:
+DETAILED LOGFILE 
+<Batch-Name>.log:
+
 The semantics of logfile output, using command line options -v (verbous) and -u 
 (url print):
 "Cycle number", "Client number (ip-address)" - some information string, e.g.:
@@ -381,7 +390,7 @@ Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 The bottom strings after asterisks are for final averages.
 
-At the same time a clients dump file with name $batch_name.ctx is generated
+At the same time a clients dump file with name <batch_name>.ctx is generated
 to provide detailed statistics about each client state and statistics counters.
 
 One string from the file
