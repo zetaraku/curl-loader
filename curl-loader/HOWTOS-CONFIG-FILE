@@ -94,6 +94,12 @@ is not applicable). In the case, that LOGIN, UAS or LOGOFF section tag is
 disabled by setting 'n' (no) value, thus, all the tags of the disabled section 
 may appear with empty valued or just to be simply commented out by '#'.
 
+TAG  CLIENTS_INITIAL_INC:
+serves for gradual increase of clients number at the loading initial phase. 
+Use the tag in GENERAL section to specify the number of loading clients to be 
+added each second till the total clients number reaches the number specified by 
+CLIENTS_NUM tag.
+
 Note, that both quotted and non-quotted string are supported as the tags values.
 
 For more examples, please, look at the files in "conf-examples" directory.
