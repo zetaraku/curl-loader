@@ -355,7 +355,7 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
   CURLM *mhandle =  bctx->multiple_handle;
   int cycle_counter = 0;	
   int msg_num = 0;
-  const int snapshot_timeout = intermediate_statistics_timeout*1000;
+  const int snapshot_timeout = snapshot_statistics_timeout*1000;
   unsigned long now_time;
   CURLMsg *msg;
     

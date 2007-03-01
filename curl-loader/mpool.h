@@ -24,8 +24,8 @@
 #define MPOOL_H
 
 /*
-	Object linkable supplies "linkable" property, when
-	inherited.
+   Object linkable supplies "linkable" property, when
+   inherited.
 */
 typedef struct linkable
 {
@@ -33,8 +33,8 @@ typedef struct linkable
 } linkable;
 
 /*
-	Object allocatable supplies "allocatable" property, when
-	inherited.
+  Object allocatable supplies "allocatable" property, when
+  inherited.
 */
 typedef struct allocatable
 {
@@ -48,8 +48,8 @@ typedef struct allocatable
 } allocatable;
 
 /*
-	Memory pool. 
-	Attention: Non-thread safe.
+  Memory pool. 
+  Attention: Non-thread safe, but you may add it.
 */
 typedef struct mpool
 {

@@ -55,7 +55,7 @@ extern int threads_run;
    Time in seconds between intermediate statistics printouts to
    screen as well as to the statistics file
 */
-extern long intermediate_statistics_timeout;
+extern long snapshot_statistics_timeout;
 
 /*
   Output to the logfile will be re-directed to the file's start, thus 

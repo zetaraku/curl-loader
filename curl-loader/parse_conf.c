@@ -51,7 +51,7 @@
 typedef int (*fparser) (batch_context*const bctx, char*const value);
 
 /*
-  Used to map tag to its value parser function.
+  Used to map a tag to its value parser function.
 */
 typedef struct tag_parser_pair
 {
@@ -184,6 +184,13 @@ static int is_non_ws (char*const ptr);
 static int netmask_to_cidr (char *dotted_ipv4);
 
 
+/****************************************************************************************
+* Function name - find_tag_parser
+*
+* Description - Makes a look-up of a tag value parser function for an input tag-string 
+* Input -       *tag - pointer to the tag string, coming from the configuration file
+* Return Code/Output - On success - parser function, on failure - NULL
+****************************************************************************************/
 static fparser find_tag_parser (const char* tag)
 {
     size_t index;
@@ -196,6 +203,20 @@ static fparser find_tag_parser (const char* tag)
     return NULL;
 }
 
+/****************************************************************************************
+* Function name - add_param_to_batch
+*
+* Description - Takes configuration file string of the form TAG = value and extacts
+*                    loading batch configuration parameters from it.
+* 
+* Input -       *str_buff - pointer to the configuration file string of the form TAG = value
+*                    str_len - length of the <str_buff> string
+*                    *bctx_array - array of the batch contexts
+* Input/Output - batch_num - index of the batch to fill and advance, when required.
+*                                                      Supporting multiple batches in one batch file.
+*
+* Return Code/Output - On success - 0, on failure - (-1)
+****************************************************************************************/
 static int add_param_to_batch (
     char*const str_buff, 
     size_t  str_len,
@@ -236,6 +257,7 @@ static int add_param_to_batch (
   if (str_end)
       *str_end = '\0';
   
+  /* Lookup for value parsing function for the input tag */
   fparser parser = 0;
   if (! (parser = find_tag_parser (str_buff)))
   {
@@ -243,6 +265,7 @@ static int add_param_to_batch (
       return 0;
   }
 
+  /* Removing LWS, TWS and comments from the value */
   char* value = equal + 1;
   if (pre_parser (&value, (unsigned int *)&value_len) == -1)
   {
@@ -258,11 +281,11 @@ static int add_param_to_batch (
       return 0;
     }
 
-  /* Remove quotes */
+  /* Remove quotes from the value */
   if (*value == '"')
     {
       value++, value_len--;
-      if (!value_len)
+      if (value_len < 2)
         {
           return 0;
         }
@@ -1040,128 +1063,143 @@ static int validate_batch_logoff (batch_context*const bctx)
 /*******************************************************************************
 * Function name - parse_config_file
 *
-* Description - Parses configuration file and fills batch contexts in array
+* Description - Parses configuration file and fills loading batch contexts in array
+*
+* Input -          *filename - name of the configuration file to parse.
 * Output -       *bctx_array - array of batch contexts to be filled on parsing
-* Input-              bctx_array_size - number of bctx contexts in <bctx_array>.
+* Input-              bctx_array_size - number of bctx contexts in <bctx_array>
+*                          
 * Return Code/Output - On Success - number of batches >=1, on Error -1
 ********************************************************************************/
 int parse_config_file (char* const filename, 
                        batch_context* bctx_array, 
                        size_t bctx_array_size)
 {
-    char fgets_buff[2048];
-    FILE* fp;
-    struct stat statbuf;
-    int batch_index = -1;
+  char fgets_buff[2048];
+  FILE* fp;
+  struct stat statbuf;
+  int batch_index = -1;
 
-    /* Check, if the configuration file exists. */
-    if (stat (filename, &statbuf) == -1)
+  /* Check, if the configuration file exists. */
+  if (stat (filename, &statbuf) == -1)
     {
-        fprintf (stderr,
-                 "%s - failed to find configuration file \"%s\" with errno %d.\n"
-                 "If you are using example configurations, note, that directory \"configs\" have "
-                 "been renamed to \"conf-examples\".", 
-                 __func__, filename, errno);
-        return -1;
+      fprintf (stderr,
+               "%s - failed to find configuration file \"%s\" with errno %d.\n"
+               "If you are using example configurations, note, that directory \"configs\" have "
+               "been renamed to \"conf-examples\".", 
+               __func__, filename, errno);
+      return -1;
     }
 
-    if (!(fp = fopen (filename, "r")))
+  if (!(fp = fopen (filename, "r")))
     {
-        fprintf (stderr, 
-                 "%s - fopen() failed to open for reading filename \"%s\", errno %d.\n", 
-                 __func__, filename, errno);
-        return -1;
+      fprintf (stderr, 
+               "%s - fopen() failed to open for reading filename \"%s\", errno %d.\n", 
+               __func__, filename, errno);
+      return -1;
     }
 
-    while (fgets (fgets_buff, sizeof (fgets_buff) - 1, fp))
+  while (fgets (fgets_buff, sizeof (fgets_buff) - 1, fp))
     {
-        fprintf (stderr, "%s - processing file string \"%s\n", 
-                 __func__, fgets_buff);
+      fprintf (stderr, "%s - processing file string \"%s\n", 
+               __func__, fgets_buff);
 
-        char* string_buff = NULL;
-        size_t string_len = 0;
+      char* string_buff = NULL;
+      size_t string_len = 0;
 
-        if ((string_len = strlen (fgets_buff)) && 
-            (string_buff = eat_ws (fgets_buff, &string_len)))
+      if ((string_len = strlen (fgets_buff)) && 
+          (string_buff = eat_ws (fgets_buff, &string_len)))
         {
 
-            if ((batch_index + 1) >= (int) bctx_array_size)
+          if ((batch_index + 1) >= (int) bctx_array_size)
             {
-                fprintf(stderr, "%s - error: maximum batches limit (%d) reached \n", 
-                        __func__, bctx_array_size);
-                fclose (fp);
-                return -1 ;
+              fprintf(stderr, "%s - error: maximum batches limit (%d) reached \n", 
+                      __func__, bctx_array_size);
+              fclose (fp);
+              return -1 ;
             }
 
-            /* Line may be commented out by '#'.*/
-            if (fgets_buff[0] == '#')
+          /* Line may be commented out by '#'.*/
+          if (fgets_buff[0] == '#')
             {
-                fprintf (stderr, "%s - skipping commented file string \"%s\n", 
-                         __func__, fgets_buff);
-                continue;
+              fprintf (stderr, "%s - skipping commented file string \"%s\n", 
+                       __func__, fgets_buff);
+              continue;
             }
 
-            if (add_param_to_batch (fgets_buff,
-                                    string_len,
-                                    bctx_array, 
-                                    &batch_index) == -1)
+          if (add_param_to_batch (fgets_buff,
+                                  string_len,
+                                  bctx_array, 
+                                  &batch_index) == -1)
             {
-                fprintf (stderr, 
-                         "%s - error: add_param_to_batch () failed processing line \"%s\"\n", 
-                         __func__, fgets_buff);
-                fclose (fp);
-                return -1 ;
+              fprintf (stderr, 
+                       "%s - error: add_param_to_batch () failed processing line \"%s\"\n", 
+                       __func__, fgets_buff);
+              fclose (fp);
+              return -1 ;
             }
         }
     }
 
-    fclose (fp);
+  fclose (fp);
 
-    if (! (batch_index + 1))
+  if (! (batch_index + 1))
     {
-        fprintf (stderr, 
-                 "%s - error: failed to load even a single batch.\n",__func__);
-        return -1;
+      fprintf (stderr, 
+               "%s - error: failed to load even a single batch.\n",__func__);
+      return -1;
     }
-    else
+  else
     {
-        fprintf (stderr, "%s - loaded %d batches\n", 
-                 __func__, batch_index + 1);
+      fprintf (stderr, "%s - loaded %d batches\n", 
+               __func__, batch_index + 1);
     }
 
-    int k = 0;
-    for (k = 0; k < batch_index + 1; k++)
+  int k = 0;
+  for (k = 0; k < batch_index + 1; k++)
     {
-        if (validate_batch (&bctx_array[k]) == -1)
+      /* Validate batch configuration */
+      if (validate_batch (&bctx_array[k]) == -1)
         {
-            fprintf (stderr, 
-                     "%s - error: validation of batch %d failed.\n",__func__, k);
-            return -1;
+          fprintf (stderr, 
+                   "%s - error: validation of batch %d failed.\n",__func__, k);
+          return -1;
         }
 
-        /* Init operational statistics structures */
-        if (op_stat_point_init(&bctx_array[k].op_delta, 
-                               (size_t)bctx_array[k].do_login, 
-                               bctx_array[k].uas_urls_num, 
-                               (size_t)bctx_array[k].do_logoff) == -1)
-          {
-            fprintf (stderr, "%s - error: init of op_delta failed for batch %d.\n",__func__, k);
-            return -1;
-          }
+      /* Init operational statistics structures */
 
-        if (op_stat_point_init(&bctx_array[k].op_total, 
-                               (size_t)bctx_array[k].do_login, 
-                               bctx_array[k].uas_urls_num, 
-                               (size_t)bctx_array[k].do_logoff) == -1)
-          {
-            fprintf (stderr, "%s - error: init of op_total failed for batch %d.\n",__func__, k);
-            return -1;
-          }
+      if (op_stat_point_init(&bctx_array[k].op_delta, 
+                             (size_t)bctx_array[k].do_login, 
+                             bctx_array[k].uas_urls_num, 
+                             (size_t)bctx_array[k].do_logoff) == -1)
+        {
+          fprintf (stderr, "%s - error: init of op_delta failed for batch %d.\n",__func__, k);
+          return -1;
+        }
+
+      if (op_stat_point_init(&bctx_array[k].op_total, 
+                             (size_t)bctx_array[k].do_login, 
+                             bctx_array[k].uas_urls_num, 
+                             (size_t)bctx_array[k].do_logoff) == -1)
+        {
+          fprintf (stderr, "%s - error: init of op_total failed for batch %d.\n",__func__, k);
+          return -1;
+        }
     }
 
-    return (batch_index + 1);
+  return (batch_index + 1);
 }
 
+/*******************************************************************************
+* Function name - netmask_to_cidr
+*
+* Description - Converts quad-dotted IPv4 address string to the CIDR number
+*                      from 0 to 32.
+*
+* Input -          *dotted_ipv4 - quad-dotted IPv4 address string
+*                          
+* Return Code/Output - On Success - CIDR number from 0 to 32, on Error - (-1)
+********************************************************************************/
 static int netmask_to_cidr (char *dotted_ipv4)
 {
   int network = 0;

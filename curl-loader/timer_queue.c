@@ -379,5 +379,5 @@ int tq_empty (timer_queue*const tq)
 ****************************************************************************************/
 int tq_size (timer_queue*const tq)
 {
-	return heap_size ((heap *const) tq);
+  return heap_size ((heap *const) tq);
 }

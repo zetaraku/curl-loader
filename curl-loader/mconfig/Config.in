@@ -2,6 +2,7 @@ mainmenu "User Configuration"
 
 menu "General Section"
 
+
 config BATCH_NAME
 	string " Batch Name"
 	default user_batch
@@ -72,8 +73,9 @@ config CYCLES_NUM
 	default -1
 	range -1 10000000
 	help
-	  Number of loading cycles. (-1) means run load indefinetely. Zero means
-            don't run (Is it really useful for a loader not to load?).
+	  Number of loading cycles. (-1) means run load indefinetely (but you can stop
+            running your load at any time by Control-C). Zero means don't run (Is it really 
+            useful for a loader not to load?).
 
 endmenu
 

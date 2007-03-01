@@ -31,7 +31,7 @@ typedef int (*handle_timer) (struct timer_node*, void*, unsigned long);
 
 /*
   struct timer_node - 
-  to be use in timer_queue as user data structure.
+  to be use in timer_queue as the user data structure.
  */
 typedef struct timer_node
 {
@@ -41,7 +41,7 @@ typedef struct timer_node
   /* Interval in msec between periodic timer shots. Zero for non-periodic timer. */
   unsigned long period;
   
-  /* Function to call on timer expiration. Trying to be Object Oriented ...*/
+  /* Function to be called on timer expiration. Trying to be Object Oriented ...*/
   handle_timer func_timer;
 } timer_node;
 

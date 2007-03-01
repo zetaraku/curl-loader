@@ -18,6 +18,17 @@ the same sort of activities. Configurable activities for the simulated clients a
 - logoff.
 
 
+
+THANKS:
+Thanks to the creators and maintainers of libcurl (Daniel Stenberg) for the HTTP 1.1,
+FTP, telnet, ldap, etc client stacks, of openssl for the TLS/SSL stack, of libevent 
+(Niels Provos) for the demultiplexing framework, of iprouted2, netlink and linux TCP/IP
+kernel (Alexey Kuznetsov and others).
+More thanks specific to the tool are in the THANKS file.
+
+
+
+
 LICENSE:
 Actually it is GPL2 due to the code from iprouted2. However, if somebody
 fills uncomfortable with this license, we can consider BSD-license, and/or 
@@ -100,7 +111,7 @@ HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,Delay:0,Delay-2xx:0,Thr-in:0(b/s)
 
 A copy of the output is also safed in the file <batch-name>.txt
 The detailed explanations about the file, collected statistics and 
-troubleshooting are in section STATISTICS.
+troubleshooting are in HOWTOS-STATISTICS.
 
 
 
@@ -155,13 +166,14 @@ http://curl.haxx.se/lxr/source/hiper/hipev.c
 Read also HOWTOS-BIG-LOAD.
 
 
+
 MODES:
-One of the modes is "storming" mode (-m1 command line), where all clients 
-of a batch are starting together. They are expected to finish their job within 
+One of the modes is called "storming" (-m1 command line), where all clients 
+of a batch are starting together. They are expected to finish their job within
 a certain timeout. After the timeout they are either completed fetching url, 
-or are cutted and disconnected and a new cycle begins. Storming
-mode is better to use, when login operation is a single one and not in cycles, 
-or when the tool is used just as a traffic generator. 
+or are cutted and disconnected and a new cycle begins. Storming mode is better 
+to use, when login operation is a single one and not in cycles, or when the 
+tool is used just as a traffic generator. 
 
 Another mode is a so-called "smooth" (the default mode or -m2 command line), 
 where each client spends as much time as wishes and starts another url or 
@@ -189,7 +201,7 @@ the number specified by CLIENTS_NUM tag.
 
 
 
-CAPS CALCULATION:
+CAPS CONSIDERATIONS:
 When number of clients is defined by CLIENTS_NUM tag, the number of
 CAPS (call attempts per seconds) is resulting from the clients number and 
 load duration for each cycle, comprising from:
@@ -229,7 +241,7 @@ libraries. If you want to specify an openssl development directory with
 include files (e.g. crypto.h), export environment variable OPENSSLDIR with 
 the value of that directory.
 
-Build curl-loader by:
+Build curl-loader by e.g.:
 %tar zxfv curl-loader-<version>.tar.gz
 %cd curl-loader-<version>
 %make
@@ -255,7 +267,8 @@ Usage: run as a root user:
 Possible options are:
 -c[onnection establishment timeout, seconds]
 -e[rror drop client (smooth mode). Client on error doesn't attempt loading any mode]
--i[ntermediate statistics time interval (default 2 seconds)]
+-h[elp]
+-i[ntermediate (snapshot) statistics time interval (default 3 sec)]
 -f[ilename of configuration to run (batches of clients)]
 -l[ogfile max size in MB (default 1024). On the size reached, file pointer rewinded]
 -m[ode of loading, 1 - storming, 2 - smooth (default)]
@@ -282,6 +295,7 @@ Try with and without -r and see, what you get.
 
 Connection reuse (just the default, without -r option) has advantages due to the 
 decreased consumption of opened descriptors (sockets) and ports.
+
 
 
 
@@ -344,85 +358,9 @@ Effective url may be a result of redirection and, thus, "url:"
 
 
 
-STATISTICS AND STATISTICS FILE:
 
-Currently HTTP/HTTPS statistics includes the following counters:
-   - requests num;
-   - 2xx success num;
-   - 3xx redirects num;
-   - client 4xx errors num;
-   - server 5xx errors num;
-   - other errors num, like resolving, tcp-connect, server closing or 
-     empty responses number;
-   - average application server delay (msec), estimated as the time between 
-     HTTP request and HTTP response without taking into the account network
-     latency (RTT);
-   - average application server delay for 2xx (success) HTTP-responses, as above,
-     but only for 2xx responses. The motivation for that is that 3xx redirections
-     and 5xx server errors/rejects may not necessarily provide a true indication
-     of a testing server working functionality.
-   - throughput out (batch average);
-   - throughput in (batch average);
-
-The statistics goes to the screen (both the interval and the current summary 
-statistics for the load) as well as to the file with name <batch_name>.txt
-When the load completes or when the user presses CTRL-C (sometimes some clients
-may stall), the final load report is printed at the console as well as to the statistics
-file. 
-Some strings from the file:
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out
-2, HTTP/FTP, 100, 155, 0, 96, 0, 0, 1154, 1154, 2108414, 15538
-2, HTTPS/FTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
-4, HTTP/FTP, 100, 75, 32, 69, 0, 0, 1267, 1559, 1634656, 8181
-4, HTTPS/FTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
-
-Cutted here
-
-36, HTTP/FTP, 39, 98, 35, 58, 0, 0, 869, 851, 1339168, 11392
-36, HTTPS/FTPS, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0
-38, HTTP/FTP, 3, 91, 44, 62, 0, 0, 530, 587, 1353899, 10136
-38, HTTPS/FTPS, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0
-*, *, *, *, *, *, *, *, *, *, *, *
-Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out
-38, HTTP/FTP, 0, 2050, 643, 1407, 0, 213, 725, 812, 1610688, 11706
-38, HTTPS/FTPS, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-The bottom strings after asterisks are for final averages.
-
-At the same time a clients dump file with name <batch_name>.ctx is generated
-to provide detailed statistics about each client state and statistics counters.
-
-One string from the file
-1 (192.168.0.1) ,cycles:124,cstate:1,b-in:22722029,b-out:174605,req:745,2xx:497,3xx:248,4xx:0,5xx:0,err:0
-where
-1 (192.168.0.1)- is the index of the client and its ip-address;
-cycles- number of loading cycles done;
-cstate - is the number of the client state (-1 - error, 0 - init, 1- login, 2- uas, 3-logoff, 4-final-ok);
-b-in - bytes passed in;
-b-out - bytes passed out;
-req- number of requests done;
-2xx, 3xx, 4xx, 5xx - number of responses Nxx received;
-err - number of libcurl errors at the resolving, TCP/IP and TLS/SSL levels;
-
-
-
-ERROR CONDITIONS FOR A VIRTUAL CLIENT:
-
-The following conditions are considered as errors:
-- error at the level of libcurl, which includes resolving, TCP/IP and, when applicable,
-  TLS/SSL errors;
-- all HTTP 5xx server errors;
-- most of HTTP 4xx client errors, excluding are 401 and 407 authentication responses
-  not considered as errors;
-When the above error conditions occur, a virtual client is marked as being 
-in the error state.
-By default we "recover" such client by scheduling it to the next loading cycle, 
-starting from the first operation of the cycle. You may use command line option
--e to change the default behavior to another, so that clients once arriving at 
-error state will not be scheduled for load any more. 
-
-
+STATISTICS:
+See HOWTOS-STATISTICS
 
 
 HOWTOS-BIG-LOAD

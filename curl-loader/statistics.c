@@ -219,16 +219,22 @@ void op_stat_point_release (op_stat_point* point)
 {
   if (point->login_ok)
     free (point->login_ok);
+
   if (point->login_failed)
     free (point->login_failed);
+
   if (point->uas_url_ok)
     free (point->uas_url_ok);
+
   if (point->uas_url_failed)
     free (point->uas_url_failed);
+
   if (point->logoff_ok)
     free (point->logoff_ok);
+
   if (point->logoff_failed)
     free (point->logoff_failed);
+
   memset (point, 0, sizeof (op_stat_point));
 }
 
@@ -661,6 +667,15 @@ static void print_statistics_data (FILE* file,
     fflush (file);
 }
 
+/****************************************************************************************
+* Function name - dump_clients
+*
+* Description - Prints to the <batch-name>.ctx file debug and statistics information
+*                     collected by every loading client.
+* Input -       *cctx_array - array of client contexts
+*
+* Return Code/Output - None
+****************************************************************************************/
 static void dump_clients (client_context* cctx_array)
 {
   batch_context* bctx = cctx_array->bctx;
@@ -689,6 +704,16 @@ static void dump_clients (client_context* cctx_array)
   fclose (ct_file);
 }
 
+/****************************************************************************************
+* Function name - print_operational_statistics
+*
+* Description - Prints to stdout number of login, UAS - for each URL and logoff operations
+*                    success and failure numbers
+*
+* Input -       *osp - pointer to the operational statistics point
+*
+* Return Code/Output - None
+****************************************************************************************/
 static void print_operational_statistics (op_stat_point*const osp)
 {
   if (!osp)

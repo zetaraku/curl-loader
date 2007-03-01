@@ -56,7 +56,7 @@ int user_activity_storm (client_context*const cctx_array)
   unsigned long now_time;
   long u_index = 0;
   batch_context* bctx = cctx_array->bctx;
-  const int snapshot_timeout = intermediate_statistics_timeout*1000;
+  const int snapshot_timeout = snapshot_statistics_timeout*1000;
 
   if (!bctx)
     {

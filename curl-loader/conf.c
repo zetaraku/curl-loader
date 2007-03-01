@@ -43,10 +43,10 @@ int verbose_logging = 0;
 int threads_run = 0;
 
 /* 
-   Time in seconds between intermediate statistics printouts to
+   Time in seconds between snapshot statistics printouts to
    screen as well as to the statistics file
 */
-long intermediate_statistics_timeout = 3; /* Seconds */
+long snapshot_statistics_timeout = 3; /* Seconds */
 /*  
     Rewind logfile, if above the size above MB 
 */
@@ -118,7 +118,7 @@ int parse_command_line (int argc, char *argv [])
 
           case 'i': /* Statistics snapshot timeout */
           if (!optarg ||
-              (intermediate_statistics_timeout = atoi (optarg)) < 1)
+              (snapshot_statistics_timeout = atoi (optarg)) < 1)
             {
               fprintf (stderr, 
                        "%s error: -i option should be followed by a number >= 1.\n", 
@@ -203,9 +203,9 @@ void print_help ()
   fprintf (stderr, "#./curl-loader -f <configuration file name> with [other options below]:\n");
   fprintf (stderr, " -c[onnection establishment timeout, seconds]\n");
   fprintf (stderr, " -e[rror drop client (smooth mode). Client on error doesn't attempt next cycle]\n");
-  fprintf (stderr, " -i[ntermediate statistics time interval (default 2 seconds)]\n");
+  fprintf (stderr, " -i[ntermediate (snapshot) statistics time interval (default 3 sec)]\n");
   fprintf (stderr, " -l[ogfile max size in MB (default 1024). On the size reached, file pointer rewinded]\n");
-  fprintf (stderr, " -m[ode of loading, 1 - storming, 2 - smooth (default)]\n");
+  fprintf (stderr, " -m[ode of loading, 1 - storming, 2 - smooth (default), 3 - hyper (under construction)]\n");
   fprintf (stderr, " -o[utput to stdout bodies of downloaded files - attn!- bulky]\n");
   fprintf (stderr, " -r[euse onnections disabled. Close connections and re-open them. Try with and without]\n");
   fprintf (stderr, " -s[tderr printout of client messages instead of to logfile - attn!- bulky]\n");
@@ -214,7 +214,8 @@ void print_help ()
   fprintf (stderr, " -u[rl logging - logs url names to logfile, when -v verbose option is used]\n");
   fprintf (stderr, "\n");
 
-  fprintf (stderr, "Use \"make menuconfig\" and/or read HOWTOS-CONFIG-FILE to create your batch configuration file\n\n");
+  fprintf (stderr, "Use \"make menuconfig\" after reading HOWTOS-CONFIG-FILE\n" 
+           "to create your loading batch configuration file\n\n");
 
   fprintf (stderr, "For more examples of configuration files please, look at \"conf-examples\" directory.\n");
   fprintf (stderr, "\n");

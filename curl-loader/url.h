@@ -70,8 +70,16 @@ typedef struct url_context
   /* Sleeping interval after fetching this url in msec.*/
   unsigned long url_interleave_time;
 
+   /* 
+      The username to be used to access the URL by filling the POST form or
+      when requested by server to provide Web or Proxy authentication
+   */
   char username[URL_AUTH_STR_LEN];
 
+  /* 
+     The password to be used to access the URL by filling the POST form or
+     when requested by server to provide Web or Proxy authentication
+  */
   char password[URL_AUTH_STR_LEN];
 
   /* Application type of url */
@@ -85,6 +93,9 @@ typedef struct url_context
   */
   url_load_step url_lstep;
 
+  /*
+    If we are in the UAS step, this is the index of the UAS-url, that we are using.
+  */
   long url_uas_num;
 
 } url_context;
