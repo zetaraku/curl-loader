@@ -91,6 +91,11 @@ typedef struct batch_context
   */
   long clients_initial_inc;
 
+   /* 
+      User-agent string to appear in the HTTP 1/1 requests.
+  */
+  char user_agent[BATCH_NAME_SIZE*4];
+
 
   /*------------------------ LOGIN SECTION -------------------------------- */
 

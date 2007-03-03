@@ -38,6 +38,7 @@
 #include "conf.h"
 #include "batch.h"
 
+#define EXPLORER_USERAGENT_STR "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" 
 #define BATCH_MAX_CLIENTS_NUM 4096
 
 #define NON_APPLICABLE_STR ""
@@ -67,6 +68,7 @@ static int ip_addr_min_parser (batch_context*const bctx, char*const value);
 static int ip_addr_max_parser (batch_context*const bctx, char*const value);
 static int cycles_num_parser (batch_context*const bctx, char*const value);
 static int clients_initial_inc_parser (batch_context*const bctx, char*const value);
+static int user_agent_parser (batch_context*const bctx, char*const value);
 
 static int login_parser (batch_context*const bctx, char*const value);
 static int login_cycling_parser (batch_context*const bctx, char*const value);
@@ -116,6 +118,7 @@ static const tag_parser_pair tp_map [] =
     {"IP_ADDR_MAX", ip_addr_max_parser},
     {"CYCLES_NUM", cycles_num_parser},
     {"CLIENTS_INITIAL_INC", clients_initial_inc_parser},
+    {"USER_AGENT", user_agent_parser},
     
 
     /*------------------------ LOGIN SECTION -------------------------------- */
@@ -318,6 +321,8 @@ static int add_param_to_batch (
 static int pre_parser (char** ptr, size_t* len)
 {
     char* value_start = NULL;
+    char* quotes_closing = NULL;
+    char* value_end = NULL;
 
     /* remove LWS */
     if ( ! (value_start = eat_ws (*ptr, len)))
@@ -340,8 +345,26 @@ static int pre_parser (char** ptr, size_t* len)
         }
     }
 
-    /* remove TWS */
-    char* value_end = skip_non_ws (value_start, len);
+    /* Everything after quotes closing or TWS */
+    
+    if (*value_start == '"')
+    {
+        /* Enable usage of quotted strings with wight spaces inside, line User-Agent strings. */
+
+        if (*(value_start + 1))
+        {
+            if ((quotes_closing = strchr (value_start + 1, '"')))
+                value_end = quotes_closing + 1;
+        }
+        else
+        {
+            value_end = value_start;
+        }
+    }
+     
+    /* If not quotted strings, thus, cut the value on the first white space */ 
+    if (!value_end)
+        value_end = skip_non_ws (value_start, len);
 
     if (value_end)
     {
@@ -457,6 +480,19 @@ static int clients_initial_inc_parser (batch_context*const bctx, char*const valu
     }
     return 0;
 }
+static int user_agent_parser (batch_context*const bctx, char*const value)
+{
+    if (strlen (value) <= 0)
+    {
+        fprintf(stderr, "%s - warning: empty USER_AGENT\"%s\", taking the defaults\n", 
+                __func__, value);
+        return 0;
+    }
+    strncpy (bctx->user_agent, value, sizeof(bctx->user_agent) - 1);
+    return 0;    
+}
+
+
 
 
 static int login_parser (batch_context*const bctx, char*const value)
@@ -907,6 +943,11 @@ static int validate_batch_general (batch_context*const bctx)
         return -1;
     }
 
+    if (!strlen (bctx->user_agent))
+    {
+        /* user-agent not provided, taking the defaults */
+        strncpy (bctx->user_agent, EXPLORER_USERAGENT_STR, sizeof (bctx->user_agent) -1);
+    }
   
     return 0;
 }

@@ -58,7 +58,6 @@
 #include "ssl_thr_lock.h"
 
 
-#define EXPLORER_USERAGENT_STR "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" 
 #define OPEN_FDS_SUGGESTION 10000
 
 static int create_ip_addrs (batch_context* bctx, int bctx_num);
@@ -585,16 +584,16 @@ static int setup_curl_handle_appl (client_context*const cctx,
                                    url_context* url_ctx,
                                    int post_method)
 {
-  //  batch_context* bctx = cctx->bctx;
-  CURL* handle = cctx->handle;
-
-  cctx->is_https = (url_ctx->url_appl_type == URL_APPL_HTTPS);
-
-  if (url_ctx->url_appl_type == URL_APPL_HTTPS ||
-      url_ctx->url_appl_type == URL_APPL_HTTP)
+    batch_context* bctx = cctx->bctx;
+    CURL* handle = cctx->handle;
+    
+    cctx->is_https = (url_ctx->url_appl_type == URL_APPL_HTTPS);
+    
+    if (url_ctx->url_appl_type == URL_APPL_HTTPS ||
+        url_ctx->url_appl_type == URL_APPL_HTTP)
     {
-      /*************** HTTP-specific *************************************/
-      
+        /*************** HTTP-specific *************************************/
+        
       /* 
          Follow possible HTTP-redirection from header Location of the 
          3xx HTTP responses, like 301, 302, 307, etc. It also updates the url 
@@ -611,7 +610,7 @@ static int setup_curl_handle_appl (client_context*const cctx,
          TODO: Lets be Explorer-6, but actually User-Agent header 
          should be configurable. 
       */
-      curl_easy_setopt (handle, CURLOPT_USERAGENT, EXPLORER_USERAGENT_STR);
+      curl_easy_setopt (handle, CURLOPT_USERAGENT, bctx->user_agent);
       
       /* Enable cookies. This is important for verious authentication schemes. */
       curl_easy_setopt (handle, CURLOPT_COOKIEFILE, "");
