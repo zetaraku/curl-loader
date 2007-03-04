@@ -109,14 +109,14 @@ HTTP/FTP-Req:95,2xx:47,3xx:48,4xx:0,5xx:3,Err:1,Delay:31,Delay-2xx:15,Thr-in:113
 HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,Delay:0,Delay-2xx:0,Thr-in:0(b/s),Thr-out:0(b/s)
 =====================================================
 
-A copy of the output is also safed in the file <batch-name>.txt
+A copy of the output is also saved in the file <batch-name>.txt
 The detailed explanations about the file, collected statistics and 
 troubleshooting are in HOWTOS-STATISTICS.
 
 
 
 LOGIN/LOGOFF SUPPORT:
-Login and logoff operations curl-loader preforms using HTTP methods:
+curl-loader preforms Login and logoff operations using the following HTTP methods:
 - GET+POST (server response to GET provides a post-form to be 
    filled and posted by POST);
 - POST only;
@@ -148,12 +148,13 @@ Look at conf-examples/ftp.conf
 
 
 PERFORMANCE ISSUES:
-There is no more 1000 virtual clients per batch limit due to select FD_SETSIZE,
-so you can try 2000 and may be more number of clients from the single thread
-(select). Please, care about available sockets and limits. System call select () 
-does not scale well with a big number of sockets, therefore, you can try a 
-script, which runs several instances of curl_loader, each with 1000-2000 
-clients.
+The limit of no more than 1000 virtual clients per batch (due to the 
+select () FD_SETSIZE) has been lifted, so you can try now 2000 and may be 
+more number of clients from the single thread (single select ()). 
+Please, care however about available sockets and limits. Note, that the system 
+call select () does not scale well with a big number of sockets, therefore, 
+you can try a script, which runs several instances of curl_loader, each with 
+1000-2000 clients.
 
 Running several batches with threads (option -t), each with 1000-2000 clients is 
 another valid option, however, may be less stable - try it.
