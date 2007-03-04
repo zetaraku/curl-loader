@@ -2,8 +2,16 @@
 TARGET=curl-loader
 TAGFILE=.tagfile
 
-CURL_BUILD=$(shell pwd)/build/curl
+BUILD=$(shell pwd)/build
+
+CURL_BUILD=$(BUILD)/curl
 CURL_VER:=7.16.1
+
+LIBEVENT_BUILD=$(BUILD)/libevent
+LIBEVENT_VER:=1.3
+LIBEVENT_MAKE_DIR=$(LIBEVENT_BUILD)/libevent-$(LIBEVENT_VER)
+
+
 OBJ_DIR:=obj
 SRC_SUFFIX:=c
 OBJ:=$(patsubst %.$(SRC_SUFFIX), $(OBJ_DIR)/$(basename %).o, $(wildcard *.$(SRC_SUFFIX)))
@@ -42,17 +50,19 @@ LD=gcc
 #Linker Flags
 LDFLAGS=-L./lib -L$(OPENSSLDIR)/lib
 
-#Link Libraries. RedHat/FC require sometimes lidn
-LIBS= -ldl -lpthread -lrt -lidn -lcurl -lz -lssl -lcrypto 
+# Link Libraries. RedHat/FC require sometimes lidn
+LIBS= -ldl -lpthread -lrt -lidn -lcurl -levent -lz -lssl -lcrypto 
 
 # Include directories
 INCDIR=-I. -I./inc -I$(OPENSSLDIR)/include
 
-LIBCURL=./lib/libcurl.a ./inc/curl/curl.h
+# 
+LIBCURL=./lib/libcurl.a
+LIBEVENT=./lib/libevent.a
 
 all: $(TARGET)
 
-$(TARGET): $(LIBCURL) $(OBJ)
+$(TARGET): $(LIBCURL) $(LIBEVENT) $(OBJ)
 	$(LD) $(DEBUG_FLAGS) $(OPT_FLAGS) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
 
 nobuildcurl: $(OBJ)
@@ -73,6 +83,15 @@ menuconfig:
 	cd ./build/dialog; patch -p1 < ../../patches/dialog-curl-loader.patch
 	make -C ./build/dialog/scripts/config
 	cd ./conf-user; ../build/dialog/scripts/config/mconf ../mconfig/Config.in
+
+$(LIBEVENT):
+	mkdir -p $(LIBEVENT_BUILD)
+	cd $(LIBEVENT_BUILD); tar zxfv ../../packages/libevent-$(LIBEVENT_VER).tar.gz;
+	cd $(LIBEVENT_MAKE_DIR); ./configure --prefix $(LIBEVENT_BUILD) \
+		CFLAGS="$(DEBUG_FLAGS) $(OPT_FLAGS)"
+	make -C $(LIBEVENT_MAKE_DIR); make -C $(LIBEVENT_MAKE_DIR) install
+	cp -pf $(LIBEVENT_BUILD)/include/*.h ./inc
+	cp -pf $(LIBEVENT_BUILD)/lib/libevent.a ./lib
 
 
 $(LIBCURL):
