@@ -1,3 +1,14 @@
+* Libevent library added to making process. libevent is a separate
+   make target.
+	
+* Added USER_AGENT tag section GENERAL in order that User-Agent 
+   HTTP header to be configurable. When no tag or empty tag or empty tag
+   string is specified, curl-loader takes the default User-Agent header of
+   MS Internet Explorer 6.
+
+* Documentation improved and all HOWTOS-* files moved to the docs directory.
+	
+
 version 0.26 - svn 151
 
 * Added support for HTTP Authentication and Proxy Authentication.
