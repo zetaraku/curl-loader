@@ -107,35 +107,36 @@ __u32           nlmsg_pid;      //Sending process PID
 */
 
 
-
-int get_prefix(inet_prefix *dst, char *arg, int family);
-int get_prefix_1(inet_prefix *dst, char *arg, int family);
-int get_integer(int *val, const char *arg, int base);
-int get_addr_1(inet_prefix *addr, const char *name, int family);
-int addattr_l(struct nlmsghdr *n, int maxlen, int type, void *data, int alen);
-int default_scope(inet_prefix *lcl);
-int rtnl_open(struct rtnl_handle *rth, unsigned subscriptions);
-int ll_init_map(struct rtnl_handle *rth);
-int ll_remember_index(struct sockaddr_nl *who, struct nlmsghdr *n, void *arg);
-int rtnl_talk(struct rtnl_handle *rtnl, struct nlmsghdr *n, pid_t peer,
+static int get_prefix(inet_prefix *dst, char *arg, int family);
+static int get_prefix_1(inet_prefix *dst, char *arg, int family);
+static int get_integer(int *val, const char *arg, int base);
+static int get_addr_1(inet_prefix *addr, const char *name, int family);
+static int addattr_l(struct nlmsghdr *n, int maxlen, int type, void *data, int alen);
+static int default_scope(inet_prefix *lcl);
+static int rtnl_open(struct rtnl_handle *rth, unsigned subscriptions);
+static int ll_init_map(struct rtnl_handle *rth);
+static int ll_remember_index(struct sockaddr_nl *who, struct nlmsghdr *n, void *arg);
+static int rtnl_talk(struct rtnl_handle *rtnl, struct nlmsghdr *n, pid_t peer,
               unsigned groups, struct nlmsghdr *answer,
               int (*junk)(struct sockaddr_nl *,struct nlmsghdr *n, void *),
               void *jarg);
-int rtnl_dump_filter(struct rtnl_handle *rth,
+static int rtnl_dump_filter(struct rtnl_handle *rth,
                      int (*filter)(struct sockaddr_nl *, struct nlmsghdr *n, void *),
                      void *arg1,
                      int (*junk)(struct sockaddr_nl *,struct nlmsghdr *n, void *),
                      void *arg2);
-int rtnl_wilddump_request(struct rtnl_handle *rth, int family, int type);
-int parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);
-int ll_name_to_index(char *name);
+static int rtnl_wilddump_request(struct rtnl_handle *rth, int family, int type);
+static int parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);
+static int ll_name_to_index(char *name);
+static int rtnl_rtscope_a2n(__u32 *id, char *arg);
+static void rtnl_rtscope_initialize(void);
 
 typedef struct
 {
   struct nlmsghdr 	n;
   struct ifaddrmsg 	ifa;
   char   			buf[256];
-} Request;
+} request;
 
 
 /*******************************************************************************
@@ -147,9 +148,10 @@ typedef struct
 * Return Code/Output - On Success - 0, on Error -1
 ********************************************************************************/
 int add_secondary_ip_to_device(const char*const device, 
-                               const char*const ip_slash_mask) 
+                               const char*const ip_slash_mask,
+                               char* scope) 
 {
-  Request req;
+  request req;
 
   static struct rtnl_handle rth =
     {
@@ -188,7 +190,24 @@ int add_secondary_ip_to_device(const char*const device,
 
   /* do not support broadcast addresses */
 
-  req.ifa.ifa_scope = default_scope(&lcl);
+  __u32 scope_id = 0;
+
+  if (scope)
+    {
+      if (rtnl_rtscope_a2n(&scope_id, scope)) 
+        {
+          fprintf (stderr, "%s - error: invalid scope \"%s\".\n", __func__, scope);
+          return -1;
+        }
+      else
+        {
+          req.ifa.ifa_scope = scope_id;
+        }
+    }
+  else
+    {
+      req.ifa.ifa_scope = default_scope(&lcl);
+    }
 
   if (rth.fd < 0)
     {
@@ -200,7 +219,7 @@ int add_secondary_ip_to_device(const char*const device,
 
   if ((req.ifa.ifa_index = ll_name_to_index((char*)d)) == 0) 
     {
-        fprintf (stderr, "%s - Cannot find device \"%s\"\n", __func__, d);
+      fprintf (stderr, "%s - Cannot find device \"%s\"\n", __func__, d);
       return -1;
     }
 
@@ -210,7 +229,7 @@ int add_secondary_ip_to_device(const char*const device,
   return 0;
 }
 
-int get_prefix(inet_prefix *dst, char *arg, int family)
+static int get_prefix(inet_prefix *dst, char *arg, int family)
 {
   if (family == AF_PACKET) 
     {
@@ -229,7 +248,7 @@ int get_prefix(inet_prefix *dst, char *arg, int family)
   return 0;
 }
 
-int get_prefix_1(inet_prefix *dst, char *arg, int family)
+static int get_prefix_1(inet_prefix *dst, char *arg, int family)
 {
   int err;
   int plen;
@@ -283,7 +302,7 @@ int get_prefix_1(inet_prefix *dst, char *arg, int family)
   return err;
 }
 
-int get_integer(int *val, const char *arg, int base)
+static int get_integer(int *val, const char *arg, int base)
 {
   long res;
   char *ptr;
@@ -297,7 +316,7 @@ int get_integer(int *val, const char *arg, int base)
   return 0;
 }
 
-int addattr_l(struct nlmsghdr *n, int maxlen, int type, void *data, int alen)
+static int addattr_l(struct nlmsghdr *n, int maxlen, int type, void *data, int alen)
 {
   int len = RTA_LENGTH(alen);
   struct rtattr *rta;
@@ -313,7 +332,7 @@ int addattr_l(struct nlmsghdr *n, int maxlen, int type, void *data, int alen)
   return 0;
 }
 
-int default_scope(inet_prefix *lcl)
+static int default_scope(inet_prefix *lcl)
 {
   if (lcl->family == AF_INET) 
     {		
@@ -323,7 +342,7 @@ int default_scope(inet_prefix *lcl)
   return 0;
 }
 
-int rtnl_open(struct rtnl_handle *rth, unsigned subscriptions)
+static int rtnl_open(struct rtnl_handle *rth, unsigned subscriptions)
 {
   socklen_t addr_len;
 
@@ -367,7 +386,7 @@ int rtnl_open(struct rtnl_handle *rth, unsigned subscriptions)
   return 0;
 }
 
-int ll_init_map(struct rtnl_handle *rth)
+static int ll_init_map(struct rtnl_handle *rth)
 {
   if (rtnl_wilddump_request(rth, AF_UNSPEC, RTM_GETLINK) < 0) 
     {
@@ -382,7 +401,7 @@ int ll_init_map(struct rtnl_handle *rth)
   return 0;
 }
 
-int rtnl_talk(struct rtnl_handle *rtnl, 
+static int rtnl_talk(struct rtnl_handle *rtnl, 
           struct nlmsghdr *n, 
           pid_t peer,
           unsigned groups, 
@@ -524,7 +543,7 @@ int rtnl_talk(struct rtnl_handle *rtnl,
     }
 }
 
-int get_addr_1(inet_prefix *addr, const char *name, int family)
+static int get_addr_1(inet_prefix *addr, const char *name, int family)
 {
   const char *cp;
   unsigned char *ap = (unsigned char*)addr->data;
@@ -579,7 +598,7 @@ int get_addr_1(inet_prefix *addr, const char *name, int family)
   return 0;
 }
 
-int ll_remember_index(struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
+static int ll_remember_index(struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 {
   int h;
   struct ifinfomsg *ifi = NLMSG_DATA(n);
@@ -636,7 +655,7 @@ int ll_remember_index(struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
   return 0;
 }
 
-int rtnl_wilddump_request(struct rtnl_handle *rth, int family, int type)
+static int rtnl_wilddump_request(struct rtnl_handle *rth, int family, int type)
 {
   struct 
   {
@@ -663,7 +682,7 @@ int rtnl_wilddump_request(struct rtnl_handle *rth, int family, int type)
                  sizeof(nladdr));
 }
 
-int 
+static int 
 rtnl_dump_filter(struct rtnl_handle *rth,
                  int (*filter)(struct sockaddr_nl *, struct nlmsghdr *n, void *),
                  void *arg1,
@@ -765,7 +784,7 @@ rtnl_dump_filter(struct rtnl_handle *rth,
     }
 }
 
-int parse_rtattr(struct rtattr *tb[], 
+static int parse_rtattr(struct rtattr *tb[], 
              int max, 
              struct rtattr *rta, 
              int len)
@@ -781,7 +800,7 @@ int parse_rtattr(struct rtattr *tb[],
   return 0;
 }
 
-int 
+static int 
 ll_name_to_index(char *name)
 {
   static char ncache[16];
@@ -809,6 +828,56 @@ ll_name_to_index(char *name)
   return 0;
 }
 
+static char * rtnl_rtscope_tab[256] = {
+	"global",
+};
+
+static int rtnl_rtscope_init;
+
+static void rtnl_rtscope_initialize(void)
+{
+	rtnl_rtscope_init = 1;
+	rtnl_rtscope_tab[255] = "nowhere";
+	rtnl_rtscope_tab[254] = "host";
+	rtnl_rtscope_tab[253] = "link";
+	rtnl_rtscope_tab[200] = "site";
+	//rtnl_tab_initialize("/etc/iproute2/rt_scopes",
+	//		    rtnl_rtscope_tab, 256);
+}
+
+static int rtnl_rtscope_a2n(__u32 *id, char *arg)
+{
+	static char *cache = NULL;
+	static unsigned long res;
+	char *end;
+	int i;
+
+	if (cache && strcmp(cache, arg) == 0) {
+		*id = res;
+		return 0;
+	}
+
+	if (!rtnl_rtscope_init)
+		rtnl_rtscope_initialize();
+
+	for (i=0; i<256; i++) {
+		if (rtnl_rtscope_tab[i] &&
+		    strcmp(rtnl_rtscope_tab[i], arg) == 0) {
+			cache = rtnl_rtscope_tab[i];
+			res = i;
+			*id = res;
+			return 0;
+		}
+	}
+
+	res = strtoul(arg, &end, 0);
+	if (!end || end == arg || *end || res > 255)
+		return -1;
+	*id = res;
+	return 0;
+}
+
+
 
 /*******************************************************************************
 * Function name - add_secondary_ip_addrs
@@ -820,10 +889,13 @@ ll_name_to_index(char *name)
 *               netmask - CIDR notation netmask
 * Return Code/Output - On Success - 0, on Error -1
 ********************************************************************************/
-int add_secondary_ip_addrs (const char*const interface, int addr_number, 
-                        const char**const addresses, int netmask)
+int add_secondary_ip_addrs (const char*const interface, 
+                            int addr_number, 
+                            const char**const addresses, 
+                            int netmask,
+                            char* addr_scope)
 {
-  char ip_slash_mask_buffer[32];
+  char ip_slash_mask_buffer[64];
   int j = 0, rval_set_ip = -1;
 
   for (j = 0; j < addr_number && addresses[j] ; j++)
@@ -835,7 +907,9 @@ int add_secondary_ip_addrs (const char*const interface, int addr_number,
                   "%s/%d", 
                   addresses[j], netmask);
             
-      rval_set_ip = add_secondary_ip_to_device(interface, ip_slash_mask_buffer);
+      rval_set_ip = add_secondary_ip_to_device (interface, 
+                                                ip_slash_mask_buffer,
+                                                addr_scope);
 
       switch (rval_set_ip)
         {

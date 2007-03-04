@@ -27,7 +27,6 @@
 #include <stdio.h>
 
 #define BATCHES_MAX_NUM 64
-#define IPADDR_STR_SIZE 16
 
 #define POST_LOGIN_BUF_SIZE 128
 #define POST_LOGOFF_BUF_SIZE 64
@@ -87,11 +86,13 @@ int setup_curl_handle_init (
 * Input -       *device - network device name as linux sees it, like "eth0"
 *               *ip_slash_mask - string in the form of ipv4/mask, 
 *                                e.g. "192.168.0.1/24"
+*              *scope - network scope of the addresses: "global", "site" (IPv6), "link", "host"
 *
 * Return Code/Output - On Success - 0, on Error -1
 ********************************************************************************/
 int add_secondary_ip_to_device (const char*const device,
-                                const char*const ip_slash_mask);
+                                const char*const ip_slash_mask, 
+                                char* scope);
 
 /*******************************************************************************
 * Function name - add_secondary_ip_addrs

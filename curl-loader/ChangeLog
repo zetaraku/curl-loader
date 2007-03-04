@@ -1,3 +1,5 @@
+* Initial IPv6 support. More debugging is required.
+	
 * Libevent library added to making process. libevent is a separate
    make target.
 	

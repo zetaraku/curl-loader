@@ -101,7 +101,7 @@ $(LIBCURL):
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix $(CURL_BUILD) \
         --enable-thread \
-        --disable-ipv6 \
+        --enable-ipv6 \
         --with-random=/dev/urandom \
         --with-ssl=/usr/include/openssl \
         --enable-shared=no \

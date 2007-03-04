@@ -29,7 +29,7 @@
 #include "statistics.h"
 #include "timer_node.h"
 
-#define CLIENT_NAME_LEN 32
+#define CLIENT_NAME_LEN 64
 
 /*
   cstates - states of a virtual client.

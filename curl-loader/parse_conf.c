@@ -410,7 +410,7 @@ static int netmask_parser (batch_context*const bctx, char*const value)
 {
     /* CIDR number of non-masked first bits -16, 24, etc */
 
-  if (! strchr (value, '.'))
+  if (! strchr (value, '.') && !strchr (value, ':'))
     {
       /* CIDR number of non-masked first bits -16, 24, etc */
       bctx->cidr_netmask = atoi (value);
@@ -420,44 +420,78 @@ static int netmask_parser (batch_context*const bctx, char*const value)
       bctx->cidr_netmask = netmask_to_cidr (value);
     }
   
-  if (bctx->cidr_netmask < 1 || bctx->cidr_netmask > 32)
+  if (bctx->cidr_netmask < 1 || bctx->cidr_netmask > 128)
     {
       fprintf (stderr, 
-               "%s - error: network mask (%d) is out of the range\n", 
+               "%s - error: network mask (%d) is out of range. Expecting from 1 to 128.\n", 
                __func__, bctx->cidr_netmask);
       return -1;
     }
+
   return 0;
 }
 static int ip_addr_min_parser (batch_context*const bctx, char*const value)
 {
-    struct in_addr in_address;
-    memset (&in_address, 0, sizeof (struct in_addr));
-    
-    if (! inet_aton (value, &in_address))
+    struct in_addr inv4;
+
+    memset (&inv4, 0, sizeof (struct in_addr));
+
+    bctx->ipv6 = strchr (value, ':') ? 1 : 0;
+
+    /*    
+    if (! inet_aton (value, &inv4))
         {
           fprintf (stderr, 
-                   "%s - error: inet_aton failed for ip_addr_min %s\n", 
+                   "%s - error: inet_aton()  failed for ip_addr_min %s\n", 
                    __func__, value);
           return -1;
         }
-      bctx->ip_addr_min = ntohl (in_address.s_addr);
+    */
+
+    if (inet_pton (bctx->ipv6 ? AF_INET6 : AF_INET, 
+                   value, 
+                   bctx->ipv6 ? (void *)&bctx->ipv6_addr_min : (void *)&inv4) == -1)
+      {
+        fprintf (stderr, 
+                   "%s - error: inet_pton ()  failed for ip_addr_min %s\n", 
+                   __func__, value);
+          return -1;
+      }
+    
+    if (!bctx->ipv6)
+      bctx->ip_addr_min = ntohl (inv4.s_addr);
       return 0;
 }
 static int ip_addr_max_parser (batch_context*const bctx, char*const value)
 {
-    struct in_addr in_address;
-    memset (&in_address, 0, sizeof (struct in_addr));
-    
-    if (!inet_aton (value, &in_address))
+  struct in_addr inv4;
+  memset (&inv4, 0, sizeof (struct in_addr));
+  
+  bctx->ipv6 = strchr (value, ':') ? 1 : 0;
+  
+    /*    
+    if (! inet_aton (value, &inv4))
+        {
+          fprintf (stderr, 
+                   "%s - error: inet_aton()  failed for ip_addr_min %s\n", 
+                   __func__, value);
+          return -1;
+        }
+    */
+
+  if (inet_pton (bctx->ipv6 ? AF_INET6 : AF_INET, 
+                 value, 
+                 bctx->ipv6 ? (void *)&bctx->ipv6_addr_max : (void *)&inv4) == -1)
     {
-        fprintf (stderr, 
-                 "%s - error: inet_aton failed for ip_addr_max %s\n", 
-                 __func__, value);
-        return -1;
+      fprintf (stderr, 
+               "%s - error: inet_pton ()  failed for ip_addr_max %s\n", 
+               __func__, value);
+      return -1;
     }
-    bctx->ip_addr_max = ntohl (in_address.s_addr);
-    return 0;
+  
+  if (!bctx->ipv6)
+    bctx->ip_addr_max = ntohl (inv4.s_addr);
+  return 0;
 }
 static int cycles_num_parser (batch_context*const bctx, char*const value)
 {
@@ -924,19 +958,38 @@ static int validate_batch_general (batch_context*const bctx)
         fprintf (stderr, "%s - error: INTERFACE name is empty.\n", __func__);
         return -1;
     }
-    if (bctx->cidr_netmask < 0 || bctx->cidr_netmask > 32)
-    {
-        fprintf (stderr, "%s - error: NETMASK out of the valid range.\n", __func__);
-        return -1;
-    }
-    if ((bctx->ip_addr_max - bctx->ip_addr_min + 1) < bctx->client_num)
-    {
-        fprintf (stderr, "%s - error: range of ip-addresses "
-                 "is less than number of clients.\n"
-                 "Increase IP_ADDR_MAX.\n",
-                 __func__);
-        return -1;
-    }
+
+    if (bctx->ipv6)
+      {
+        if (bctx->cidr_netmask < 1 || bctx->cidr_netmask > 128)
+          {
+            fprintf (stderr, 
+                     "%s - error: IPv6 network mask (%d) is out of the range\n", 
+                     __func__, bctx->cidr_netmask);
+            return -1;
+          }
+      }
+    else
+      {
+        if (bctx->cidr_netmask < 1 || bctx->cidr_netmask > 32)
+          {
+            fprintf (stderr, 
+                     "%s - error: IPv4 network mask (%d) is out of the range\n", 
+                     __func__, bctx->cidr_netmask);
+            return -1;
+          }
+      }
+    
+    if (!bctx->ipv6)
+      {
+        if ((bctx->ip_addr_max - bctx->ip_addr_min + 1) < bctx->client_num)
+          {
+            fprintf (stderr, "%s - error: range of IPv4 addresses is less than number of clients.\n"
+                     "Please, increase IP_ADDR_MAX.\n", __func__);
+            return -1;
+          }
+      }
+
     if (bctx->cycles_num < 0)
     {
         fprintf (stderr, "%s - error: CYCLES_NUM is negative.\n",__func__);
