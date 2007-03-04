@@ -6,13 +6,14 @@
 2. Configuration/making improvements: moving all source-files
     to src directory etc.
 
-3. User-Agent field should be made configurable. Easy to do, but per URL?
+3. Client certificates per each https, ftps url. Easy to do.
 
-4. Client certificates per each https, ftps url. Easy to do.
+4. Support PUT and POST methods for UAS urls. Does somebody really
+    wants it?
 
-5. Support for CAPS (calls per second) defined mode. Currently, we
-   are supporting only a certain number of virtual clients and CAPS is the derived
-   parameter. CAPS-MODE should support a certain number of CAPS, 
+5. Support for CAPS (calls per second) defined mode. Currently, we are 
+   supporting only a certain number of virtual clients and CAPS is the derived
+   parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter. 
 
 6. Future releases will hopefully incorporate libcurl HYPER API, using 

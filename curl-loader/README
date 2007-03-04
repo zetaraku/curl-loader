@@ -20,10 +20,13 @@ the same sort of activities. Configurable activities for the simulated clients a
 
 
 THANKS:
-Thanks to the creators and maintainers of libcurl (Daniel Stenberg) for the HTTP 1.1,
-FTP, telnet, ldap, etc client stacks, of openssl for the TLS/SSL stack, of libevent 
-(Niels Provos) for the demultiplexing framework, of iprouted2, netlink and linux TCP/IP
-kernel (Alexey Kuznetsov and others).
+Thanks to the creators and maintainers of the packages, that we are using, 
+namely:
+- libcurl (Daniel Stenberg) for the HTTP 1.1, FTP, telnet, ldap, etc client stacks;
+- openssl for the TLS/SSL stack;
+- libevent (Niels Provos) for the I/O event demultiplexing framework;
+- iprouted2 for the netlink and linux TCP/IP kernel (Alexey Kuznetsov and others).
+
 More thanks specific to the tool are in the THANKS file.
 
 
@@ -79,11 +82,13 @@ SUCCESSFULLY USED:
     traffic, containing thousands of tcp-streams at the gateway in the middle.
 
 
+
 MAY BE USED:
 1. To create testing performance load for various HTTP/HTTPS/FTP/FTPS/LDAP, 
     etc devices, where libcurl supports various variants and flavors of the protocols;
 2. For testing of HTTP/HTTPS, FTP/FTPS based applications, application servers;
 3. For etc, etc, etc applications.
+
 
 
 LOAD STATUS GUI:
@@ -111,7 +116,7 @@ HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,Delay:0,Delay-2xx:0,Thr-in:0(b/s)
 
 A copy of the output is also saved in the file <batch-name>.txt
 The detailed explanations about the file, collected statistics and 
-troubleshooting are in HOWTOS-STATISTICS.
+troubleshooting are in docs/HOWTOS-STATISTICS.
 
 
 
@@ -121,6 +126,17 @@ curl-loader preforms Login and logoff operations using the following HTTP method
    filled and posted by POST);
 - POST only;
 - GET only.
+
+UAS urls similar to Login urls are coming with an option to configure username 
+and password. The difference is that only GET method is currently allowed in 
+UAS mode and username+ password are solely to support Web or Proxy 
+Authentication (see below). Login url uniquely allows POSTing user credentials 
+via configurable POST forms as well as configuring a unique username and password
+for each virtual client by adding a sequence number to the user and password 
+basewords.
+ 
+Does somebody really needs PUT or POST methods as an option for UAS urls? 
+If yes, please, signal us.
 
 
 
@@ -164,7 +180,7 @@ of virtual clients from a single curl-loader process, using curl_multi_socket()
 approach and epoll API support by libevent as in
 http://curl.haxx.se/lxr/source/hiper/hipev.c
 
-Read also HOWTOS-BIG-LOAD.
+Read also docs/HOWTOS-BIG-LOAD.
 
 
 
@@ -183,7 +199,7 @@ terminated due to some reason, e.g. connection timeout, the default behavior
 is to schedule loading for this client at the next cycle. If -e option is passed to
 command line, the client will not be re-scheduled any more, which is usefull
 to get indication of errors by monitoring drop in number of active clients. Look
-in logfile for errors, and when connection timeout error appears, adjust the
+in the logfile for errors, and when connection timeout error appears, adjust the
 connection timeout using -c command line option. Note, that the smooth mode
 is suitable for login-logoff cycles of load.
 
@@ -300,15 +316,18 @@ decreased consumption of opened descriptors (sockets) and ports.
 
 
 
+
 CONFIGURATION FILE:
 
-NEW! DIALOG GUI TO GUIDE THROUGH LOADING CONFIGURATION!
+=== NEW ! === 
+DIALOG GUI TO GUIDE THROUGH LOADING CONFIGURATION!
 
 To run your load, you need to create your configuration file to be passed to
 curl-loader by the -f commmand line option, e.g.
 #curl-loader -f ./conf-user/user_batch.conf
 For more examples, please, look at the files in "conf-examples" directory.
-You may copy an example file and edit it by using HOWTOS-CONFIG-FILE guidlines.
+You may copy an example file and edit it by using ./docs/HOWTOS-CONFIG-FILE 
+guidlines.
 
 You may start with running by "make menuconfig" configuration GUI on your system, 
 which requires ncurses development package on your system.
@@ -325,7 +344,7 @@ UAS_URL_PASSWORD=
 UAS_URL_MAX_TIME =
 UAS_URL_INTERLEAVE_TIME =
 
-For more details you may look at HOWTOS-CONFIG-FILE
+For more details you may look at ./docs/HOWTOS-CONFIG-FILE
 
 
 
@@ -357,15 +376,22 @@ empty, which means, that it is the same as effective.
 Effective url may be a result of redirection and, thus, "url:" 
 (target url, specified in batch configuration file) will be printed as well.
 
+Please, note, that when the logfile reaches 1024 MB size, curl-loader
+rewinds it and starts to overwrite it from the beginning. Y may tune
+the rewinding file size by using command line option:
+ -l <log-filesize-in-MB>
 
 
 
 STATISTICS:
-See HOWTOS-STATISTICS
+Lots of statistics and data about each individual virtual client are available.
+Please, see ./docs/HOWTOS-STATISTICS
 
 
-HOWTOS-BIG-LOAD
-The file contains some useful tips.
+
+MY BIG-LOAD
+Useful tips are in the file:
+./docs/HOWTOS-BIG-LOAD
 
 
 
