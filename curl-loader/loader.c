@@ -80,7 +80,8 @@ static int alloc_init_client_contexts (client_context** p_cctx,
                                        batch_context* bctx, 
                                        FILE* output_file);
 static void free_batch_data_allocations (struct batch_context* bctx);
-static void advance_in6_addr (struct in6_addr* in6, uint32_t offset);
+static int ipv6_increment(const struct in6_addr *const src, 
+                          struct in6_addr *const dest);
 
 int stop_loading = 0;
 
@@ -1118,7 +1119,7 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
 {
   int bi, cli; /* Batch and client indexes */
   struct in_addr in_address;
-  struct in6_addr in6_address;
+  struct in6_addr in6_prev, in6_new;
   char*** ip_addresses =0;
   char* ipv4_string = 0;
   char ipv6_string[INET6_ADDRSTRLEN+1];
@@ -1156,29 +1157,50 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
                        __func__, bi, cli) ;
               return -1;
             }
- 
-          /* 
-             Advance the ip-address, using client index as the offset. 
-           */
 
-          if (!bctx_array[bi].ipv6)
+          if (bctx_array[bi].ipv6 == 0)
             {
+              /* 
+                 Advance the IPv4-address, using client index as the offset. 
+              */
               in_address.s_addr = htonl (bctx_array[bi].ip_addr_min + cli);
               if (! (ipv4_string = inet_ntoa (in_address)))
                 {
-                  fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses[%d][%d]\n", __func__, bi, cli) ;
+                  fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses[%d][%d]\n", 
+                           __func__, bi, cli) ;
                   return -1;
                 }
             }
           else
             {
-              memcpy (&in6_address, &bctx_array[bi].ipv6_addr_min, sizeof (in6_address));
-              advance_in6_addr (&in6_address, cli);
-
-              if (!inet_ntop (AF_INET6, &in6_address, ipv6_string, sizeof (ipv6_string)))
+              /* 
+                 Advance the IPv6-address by incrementing previous address. 
+              */
+              if (cli == 0)
                 {
-                  fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses[%d][%d]\n", __func__, bi, cli) ;
+                  memcpy (&in6_prev, &bctx_array[bi].ipv6_addr_min, sizeof (in6_prev));
+                  memcpy (&in6_new, &bctx_array[bi].ipv6_addr_min, sizeof (in6_new));
+                }
+              else
+                {
+                  if (ipv6_increment (&in6_prev, &in6_new) == -1)
+                    {
+                      fprintf (stderr, "%s - ipv6_increment() failed for ip_addresses[%d][%d]\n", 
+                               __func__, bi, cli) ;
+                      return -1;
+                    }
+                }
+
+              if (!inet_ntop (AF_INET6, &in6_new, ipv6_string, sizeof (ipv6_string)))
+                {
+                  fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses[%d][%d]\n", 
+                           __func__, bi, cli) ;
                   return -1;
+                }
+              else
+                {
+                  /* Remember in6_new address in in6_prev */
+                  memcpy (&in6_prev, &in6_new, sizeof (in6_prev));
                 }
             }
 
@@ -1246,24 +1268,29 @@ int rewind_logfile_above_maxsize (FILE* filepointer)
   return 0;
 }
 
-static void advance_in6_addr (struct in6_addr* in6, uint32_t offset)
+/* store 'src + 1' in dest, and check that dest remains in the same scope as src */
+static int ipv6_increment(const struct in6_addr *const src, 
+                          struct in6_addr *const dest)
 {
-  /* implying network order and starting from zero integer */
-  uint32_t current_value = in6->s6_addr32[0];
+  uint32_t temp = 1;
   int i;
-  
-  in6->s6_addr32[3] += offset;
 
-  if (in6->s6_addr32[3] >= current_value)
-    return;
-  else
+  for (i = 15; i > 1; i--) 
     {
-      for (i = 2; i >= 0; i--)
-        {
-          if (++in6->s6_addr32[i])
-            break;
-        }
-      if (i == 0)
-        in6->s6_addr32[3] = 0;
+      temp += src->s6_addr[i];
+      dest->s6_addr[i] = temp & 0xff;
+      temp >>= 8;
     }
+
+  if (temp != 0)
+    {
+      fprintf (stderr, "%s - error: passing the scope.\n "
+               "Check you IPv6 range.\n", __func__);
+      return -1;
+    }
+
+  dest->s6_addr[1] = src->s6_addr[1];
+  dest->s6_addr[0] = src->s6_addr[0];
+
+  return 0;
 }
