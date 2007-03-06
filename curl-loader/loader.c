@@ -484,8 +484,11 @@ int setup_curl_handle_init (client_context*const cctx,
     }
 
   curl_easy_reset (handle);
+
+  if (bctx->ipv6)
+    curl_easy_setopt (handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
       
-      /* Bind the handle to a certain IP-address */
+  /* Bind the handle to a certain IP-address */
   curl_easy_setopt (handle, CURLOPT_INTERFACE, 
                     bctx->ip_addr_array [cctx->client_index]);
 
@@ -1214,8 +1217,11 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
          Add all the addresses to the network interface as secondary ip-addresses.
          using netlink userland-kernel interface.
       */
-      if (add_secondary_ip_addrs (bctx_array[bi].net_interface, bctx_array[bi].client_num, 
-                                  (const char** const) ip_addresses[bi], bctx_array[bi].cidr_netmask) == -1)
+      if (add_secondary_ip_addrs (bctx_array[bi].net_interface,
+                                  bctx_array[bi].client_num, 
+                                  (const char** const) ip_addresses[bi], 
+                                  bctx_array[bi].cidr_netmask,
+                                  bctx_array[bi].scope) == -1)
         {
           fprintf (stderr, 
                    "%s - error: add_secondary_ip_addrs() - failed for batch = %d\n", 

@@ -71,17 +71,20 @@ typedef struct batch_context
 
   /* Flag: 0 means IPv4, 1 means IPv6 */ 
   int ipv6;
-
-  /* 
-     CIDR netmask number from 0 to 32, like 16 or 24, etc. If the input netmask is
-     a dotted IPv4 address, we convert it to CIDR by calculating number of 1 bits.
-   */
-  int cidr_netmask;
   
   /* Minimal IPv4-address of a client in the batch (host order). */
   long ip_addr_min;
   /* Maximum IPv4-address of a client in the batch (host order).*/
   long ip_addr_max;
+
+  /* 
+     CIDR netmask number from 0 to 128, like 16 or 24, etc. If the input netmask is
+     a dotted IPv4 address, we convert it to CIDR by calculating number of 1 bits.
+  */
+  int cidr_netmask;
+
+  /* "global", "host", "link", for IPV6 only "site" */
+  char scope[16];
 
   /* Minimal IPv6-address of a client in the batch. */
   struct in6_addr ipv6_addr_min;

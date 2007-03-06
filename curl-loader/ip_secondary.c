@@ -192,7 +192,7 @@ int add_secondary_ip_to_device(const char*const device,
 
   __u32 scope_id = 0;
 
-  if (scope)
+  if (scope && scope[0])
     {
       if (rtnl_rtscope_a2n(&scope_id, scope)) 
         {

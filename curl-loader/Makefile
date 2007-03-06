@@ -97,7 +97,8 @@ $(LIBEVENT):
 $(LIBCURL):
 	cd ./packages; tar zxf curl-$(CURL_VER).tar.gz; ln -sf curl-$(CURL_VER) curl; \
 	patch -d curl -p1 < ../patches/patch-curl-$(CURL_VER); \
-	patch -d curl -p1 < ../patches/patch-fdset-protection
+	patch -d curl -p1 < ../patches/patch-fdset-protection; \
+	patch -d curl -p1 < ../patches/curl-ipv6-bind.patch
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix $(CURL_BUILD) \
         --enable-thread \

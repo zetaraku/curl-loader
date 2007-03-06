@@ -102,12 +102,14 @@ int add_secondary_ip_to_device (const char*const device,
 *               addr_number - number of addresses to add
 *               *addresses - array of strings of ipv4 addresses
 *               netmask - CIDR notation netmask
+*               scope - address scope, like "global", "host", "link", "site"
 * Return Code/Output - On Success - 0, on Error -1
 ********************************************************************************/
 int add_secondary_ip_addrs (const char*const interface, 
                             int addr_number, 
                             const char**const addresses,
-                            int netmask);
+                            int netmask,
+                            char* scope);
 
 /*******************************************************************************
 * Function name - parse_config_file
