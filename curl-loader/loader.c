@@ -150,11 +150,13 @@ main (int argc, char *argv [])
   if (!ret && file_limit.rlim_cur > CURL_LOADER_FD_SETSIZE)
     {
       fprintf(stderr, 
-              " %s - ERROR: The current file resource limit is larger then this program allows for.\n"
-              "This program allows for maximum of %d file descriptors, the current system limit is %d\n"
+              " %s - ERROR: The current open descriptors limit in your shell is larger then this program allows for.\n"
+              "This program allows for maximum of %d file descriptors, whereas the current shell limit is %d\n"
               "If you will get notifications, like \"fd (socket) <num> is less than FD_SETSIZE\" increase\n" 
-              "CURL_LOADER_FD_SETSIZE in Makefile and recompile.\n", 
-              __func__ , CURL_LOADER_FD_SETSIZE, (int) file_limit.rlim_cur );   
+              "CURL_LOADER_FD_SETSIZE in Makefile and recompile.\n"
+              "Alternatively, decrease the shell limit by e.g. #ulimit -n %d .\n",
+              __func__ , CURL_LOADER_FD_SETSIZE, (int) file_limit.rlim_cur,
+              CURL_LOADER_FD_SETSIZE - 1);   
     exit (-1);
   }
 
