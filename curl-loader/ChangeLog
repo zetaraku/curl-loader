@@ -1,4 +1,6 @@
-* Initial IPv6 support. More debugging is required.
+* Initial IPv6 support added. Batch configuration conf-example/ipv6.conf
+   and patch patches/curl-ipv6-bind.patch are added. 
+   TODO: IPv6 flow label support?
 	
 * Libevent library added to making process. libevent is a separate
    make target.

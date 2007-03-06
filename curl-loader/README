@@ -389,9 +389,16 @@ Please, see ./docs/HOWTOS-STATISTICS
 
 
 
-MY BIG-LOAD
+MY BIG-LOAD:
 Useful tips are in the file:
 ./docs/HOWTOS-BIG-LOAD
+
+
+
+IPv6:
+Supported. Please, look at ./config-examples/ipv6.conf
+Note, that IPv6 addresses, when used as hostnames in URI
+should be inclosed in brackets.
 
 
 

@@ -21,6 +21,4 @@
    http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
    from a single process can become a reality.
 
-7. Support for IPv6.
-
-8. Testing and better support for FTP and FTPS.
+7. Testing and better support for FTP and FTPS.
