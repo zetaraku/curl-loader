@@ -1,7 +1,7 @@
 /* 
  *     loader.c
  *
- * 2006 Copyright (c) 
+ * 2006-2007 Copyright (c) 
  * Robert Iakobashvili, <coroberti@gmail.com>
  * Michael Moser, <moser.michael@gmail.com>
  * All rights reserved.
@@ -24,7 +24,7 @@
  * great CURL-project authors and contributors.
  */
 
-// must be first include
+// must be the first include
 #include "fdsetsize.h"
 
 #include <stdio.h>
@@ -172,7 +172,7 @@ main (int argc, char *argv [])
    
   /* 
      Add ip-addresses to the loading network interfaces
-     and keep the ip-addr of each loading client in batch-contexts. 
+     and keep them in batch-contexts. 
   */
   if (create_ip_addrs (bc_arr, batches_num) == -1)
     {
@@ -258,7 +258,7 @@ static void* batch_function (void * batch_data)
   if (! stderr_print_client_msg)
     {
       /*
-        Init batch logfile for the batch clients output 
+        Init batch logfile for the batch client output 
       */
       sprintf (bctx-> batch_logfile, "./%s.log", bctx->batch_name);
 
@@ -271,7 +271,7 @@ static void* batch_function (void * batch_data)
         }
 
       /*
-        Init batch statistics file for loading statistics.
+        Init batch statistics file
       */
       sprintf (bctx->batch_statistics, "./%s.txt", bctx->batch_name);
       
@@ -290,7 +290,7 @@ static void* batch_function (void * batch_data)
     }
   
   /* 
-     Allocates and inits objects, containing client-context information.
+     Allocate and init objects, containing client-context information.
   */
   if (alloc_init_client_contexts (&cctx, bctx, log_file) == -1)
     {
@@ -313,7 +313,8 @@ static void* batch_function (void * batch_data)
   /* 
      Now run login, user-defined actions, like fetching various urls and and 
      sleeping in between, and logoff.
-     Calls 
+     Calls user activity loading function corresponding to the loading mode
+     used (user_activity_smooth or user_activity_storm or user_activity_hyper).
   */ 
   rval = ua_array[loading_mode] (cctx);
 
@@ -355,7 +356,7 @@ static void* batch_function (void * batch_data)
 /****************************************************************************************
 * Function name - initial_handles_init
 *
-* Description - Initial initialization of curl multi-handle and the curl handles (clients), 
+* Description - Libcurl initialization of curl multi-handle and the curl handles (clients), 
 *               used in the batch
 * Input -       *ctx_array - array of clients for a particular batch of clients
 *
@@ -405,12 +406,12 @@ static int initial_handles_init (client_context*const ctx_array)
 * Function name - setup_curl_handle
 *
 * Description - Setup for a single curl handle (client): removes a handle from multi-handle, 
-*               and inits it, using setup_curl_handle_init () function, and, finally, 
-*               adds the handle back to the multi-handle.
+*               inits it, using setup_curl_handle_init () function, and adds the
+*               handle back to the multi-handle.
 *
-* Input -       *cctx - pointer to client context, which contains CURL handle pointer;
+* Input -       *cctx - pointer to client context, containing CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
-*               cycle_number - current number of loading cycle, passing here for storming mode;
+*               cycle_number - current number of loading cycle, passed here for storming mode;
 *               post_method - when 'true', POST method is used instead of the default GET
 *
 * Return Code/Output - On Success - 0, on Error -1
@@ -461,13 +462,13 @@ int setup_curl_handle (client_context*const cctx,
 /****************************************************************************************
 * Function name - setup_curl_handle_init
 *
-* Description - Resets client context kept CURL handle and inits it locally and using 
+* Description - Resets client context kept CURL handle and inits it locally, using 
 *               setup_curl_handle_appl () function for the application-specific 
 *               (HTTP/FTP) initialization.
 *
-* Input -       *cctx - pointer to client context, which contains CURL handle pointer;
+* Input -       *cctx - pointer to client context, containing CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
-*               cycle_number - current number of loading cycle, passing here for storming mode;
+*               cycle_number - current number of loading cycle, passed here for storming mode;
 *               post_method - when 'true', POST method is used instead of the default GET
 *
 * Return Code/Output - On Success - 0, on Error -1
@@ -508,7 +509,7 @@ int setup_curl_handle_init (client_context*const cctx,
       exit (-1);
     }
   
-  /* Set the index to client for smooth-mode */
+  /* Set the index to client for the smooth-mode */
   if (url_ctx->url_uas_num >= 0)
     cctx->uas_url_curr_index = url_ctx->url_uas_num;
   
@@ -551,7 +552,7 @@ int setup_curl_handle_init (client_context*const cctx,
     }
 
   /* 
-     This is to return cctx pointer as the last void* userp to the 
+     This is to return cctx pointer as the void* userp to the 
      tracing function. 
   */
   curl_easy_setopt (handle, CURLOPT_DEBUGDATA, cctx);
@@ -581,7 +582,7 @@ int setup_curl_handle_init (client_context*const cctx,
 *
 * Description - Application/url-type specific setup for a single curl handle (client)
 *
-* Input -       *cctx - pointer to client context, which contains CURL handle pointer;
+* Input -       *cctx - pointer to client context, containing CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
 *               post_method - when 'true', POST method is used instead of the default GET
 *
@@ -603,9 +604,9 @@ static int setup_curl_handle_appl (client_context*const cctx,
         
       /* 
          Follow possible HTTP-redirection from header Location of the 
-         3xx HTTP responses, like 301, 302, 307, etc. It also updates the url 
-         in the options, so you do not need to parse headers and extract the 
-         value of header Location. Great job done by the libcurl people.
+         3xx HTTP responses, like 301, 302, 307, etc. It also updates the url, 
+         thus no need to parse header Location. Great job done by the libcurl 
+         people.
       */
       curl_easy_setopt (handle, CURLOPT_FOLLOWLOCATION, 1);
       curl_easy_setopt (handle, CURLOPT_UNRESTRICTED_AUTH, 1);
@@ -619,7 +620,7 @@ static int setup_curl_handle_appl (client_context*const cctx,
       */
       curl_easy_setopt (handle, CURLOPT_USERAGENT, bctx->user_agent);
       
-      /* Enable cookies. This is important for verious authentication schemes. */
+      /* Enable cookies. This is important for various authentication schemes. */
       curl_easy_setopt (handle, CURLOPT_COOKIEFILE, "");
       
       /* Make POST, using post buffer, if requested. */
@@ -655,7 +656,7 @@ static int setup_curl_handle_appl (client_context*const cctx,
     }
   else
     {
-      /* FTP-specific setup */
+      /* FTP-specific setup. Place here */
     }
 
   return 0;
@@ -664,17 +665,22 @@ static int setup_curl_handle_appl (client_context*const cctx,
 /****************************************************************************************
 * Function name - client_tracing_function
 * 
-* Description - Used to log activities of each client to $batch_name.log file
+* Description - Used to log activities of each client to the <batch_name>.log file
+*
 * Input -       *handle - pointer to CURL handle;
 *               type - type of libcurl information passed, like headers, data, info, etc
 *               *data- pointer to data, like headers, etc
-*               size - number of bytes passed with data-pointer
+*               size - number of bytes passed with <data> pointer
 *               *userp - pointer to user-specific data, which in our case is the 
 *                        client_context structure
+*
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-static int client_tracing_function (CURL *handle, curl_infotype type, 
-                                    unsigned char *data, size_t size, void *userp)
+static int client_tracing_function (CURL *handle, 
+                                    curl_infotype type, 
+                                    unsigned char *data, 
+                                    size_t size, 
+                                    void *userp)
 {
   client_context* cctx = (client_context*) userp;
   char*url_target = NULL, *url_effective = NULL;
@@ -764,7 +770,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
       
     case CURLINFO_HEADER_IN:
       /* 
-         CURL library assists us by passing to the full HTTP-headers, 
+         CURL library assists us by passing here the full HTTP-header, 
          not just parts. 
       */
       stat_data_in_add (cctx, (unsigned long) size);
@@ -838,9 +844,9 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
                       url_print ? url : "", url_diff ? url_target : "");
 
                 /*
-                  We are not marking client on 401 and 407 errors as 
-                  CSTATE_ERROR state, because there are authenticatio errors, 
-                  that client still can overcome.
+                  We are not marking client on 401 and 407 as coming to the
+                  error state, because the responses are just authentication 
+                  challenges, that virtual client may overcome.
                 */
                 if (response_status != 401 || response_status != 407)
                   {
@@ -918,7 +924,7 @@ static int client_tracing_function (CURL *handle, curl_infotype type,
 /****************************************************************************************
 * Function name - alloc_init_client_post_buffers
 *
-* Description - Allocate and initialize buffers to be used for POST-ing
+* Description - Allocate and initialize post form buffers to be used for POST-ing
 * Input -       *ctx - pointer to client context
 *
 * Return Code/Output - On Success - 0, on Error -1
@@ -1216,8 +1222,8 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
         }
 
       /* 
-         Add all the addresses to the network interface as secondary ip-addresses.
-         using netlink userland-kernel interface.
+         Add all the addresses to the network interface as the secondary 
+         ip-addresses, using netlink userland-kernel interface.
       */
       if (add_secondary_ip_addrs (bctx_array[bi].net_interface,
                                   bctx_array[bi].client_num, 
@@ -1235,7 +1241,7 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
 }
 
 /*
-  The callback to libcurl to skip all body bites of the fetched urls.
+  The callback to libcurl to skip all body bytes of the fetched urls.
 */
 static size_t 
 do_nothing_write_func (void *ptr, size_t size, size_t nmemb, void *stream)
@@ -1250,6 +1256,14 @@ do_nothing_write_func (void *ptr, size_t size, size_t nmemb, void *stream)
   return (size*nmemb);
 }
 
+/****************************************************************************************
+* Function name - rewind_logfile_above_maxsize
+*
+* Description - Rewinds the file pointer, when reaching configurable max-size
+* Input -       *filepointer - file pointer to control and rewind, when necessary
+*
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 int rewind_logfile_above_maxsize (FILE* filepointer)
 {
   long position = -1;
@@ -1276,6 +1290,15 @@ int rewind_logfile_above_maxsize (FILE* filepointer)
   return 0;
 }
 
+/****************************************************************************************
+* Function name - ipv6_increment
+*
+* Description - Increments the source IPv6 address to provide the next
+* Input -       *src - pointer to the IPv6 address to be used as the source
+* Input/Output    *dest - pointer to the resulted incremented address
+*
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
 /* store 'src + 1' in dest, and check that dest remains in the same scope as src */
 static int ipv6_increment(const struct in6_addr *const src, 
                           struct in6_addr *const dest)
