@@ -19,6 +19,65 @@ the same sort of activities. Configurable activities for the simulated clients a
 
 
 
+TERMINOLOGY:
+--- What is the batch?
+Batch is a group of clients with the same characteristics and 
+loading behavior. Configuration file has one or more batches.
+--- What means UAS?
+UAS - user activity simulation - fetching url, sleeping, another url -sleeping
+cycles, simulating actual user activity.
+
+
+
+FEATURES:
+
+- Up to 2000-3000 thousand of virtual clients from every running curl-loader 
+   process (future hyper mode will enable tens of thousand). Each client performs
+   loading from its own IP-address;
+
+- Two loading modes: smooth and storming. Gradual increase of virtual clients
+   number at loading number is an option for the smooth mode;
+
+- IPv4 and IPv6, URI with IPv6 addresses;
+
+- HTTP 1.1, HTTPS, FTP, FTPS, TLS/SSL;
+
+- HTTP authentication login with POST or GET+POST methods. Unique configurable 
+  username&password for each virtual client as well as configurable posted 
+  string (post-forms) are the options;
+
+- HTTP logooff with POST, GET+POST, or GET (cookies). For POST logoff
+  configurable posted string (post-forms);
+
+- HTTP Web and Proxy Authentication (HTTP 401 and 407 responses) with 
+  Basic, Digest (RFC2617) and NTLM supported;
+
+- HTTP 3xx redirections with unlimited number of redirections;
+
+- HTTP cookies and DNS caches;
+
+- TCP connections reuse or re-establishment is configurable;
+
+- Unlimited configurable amount of UAS URLs and configurable time in between them;
+
+- Mixing of HTTP, HTTPS, FTP and FTPS urls in a batch of clients configuration;
+
+- Load Status GUI and load status output to file;
+
+- Detailed loading statistics at Load Status GUI and to file;
+
+- Logfile with configurable verbousness of tracing of the load activies for 
+  each virtual client. The logfile is atomatically rewinded, when reaching 
+  configurable size to prevent disk crashes;
+
+- Virtual client status and statistics file;
+
+- Dialog GUI guided creation of configuration files and well as pre-cooked 
+  examples of configuration files;
+
+
+
+
 THANKS:
 Thanks to the creators and maintainers of the packages, that we are using, 
 namely:
@@ -36,15 +95,6 @@ LICENSE:
 Actually it is GPL2 due to the code from iprouted2. However, if somebody
 fills uncomfortable with this license, we can consider BSD-license, and/or 
 make it configurable.
-
-
-TERMINOLOGY:
---- What is the batch?
-Batch is a group of clients with the same characteristics and 
-loading behavior. Configuration file has one or more batches.
---- What means UAS?
-UAS - user activity simulation - fetching url, sleeping, another url -sleeping
-cycles, simulating actual user activity.
 
 
 
@@ -147,11 +197,6 @@ When responded 401 or 407, libcurl will choose the most safe method
 from those, supported by the server.
 To support GSS Web-Authentication, add in Makefile building of libcurl
 against appropriate GSS library, see libcurl pages for detailed instructions.
-
-
-
-COOKIES SUPPORT:
-HTTP cookies are enabled in curl-loader by default.
 
 
 
@@ -388,11 +433,9 @@ Lots of statistics and data about each individual virtual client are available.
 Please, see ./docs/HOWTOS-STATISTICS
 
 
-
 MY BIG-LOAD:
 Useful tips are in the file:
 ./docs/HOWTOS-BIG-LOAD
-
 
 
 IPv6:
@@ -403,4 +446,4 @@ should be inclosed in brackets.
 
 
 LIMITATIONS:
-See the TODO file for some of them.
+Please, see the TODO file for some of them.
