@@ -61,18 +61,18 @@
 #define OPEN_FDS_SUGGESTION 10000
 
 static int create_ip_addrs (batch_context* bctx, int bctx_num);
-static int client_tracing_function (CURL *handle, 
+int client_tracing_function (CURL *handle, 
                                     curl_infotype type, 
                                     unsigned char *data, 
                                     size_t size, 
                                     void *userp);
-static size_t do_nothing_write_func (void *ptr, 
+size_t do_nothing_write_func (void *ptr, 
                                      size_t size, 
                                      size_t nmemb, 
                                      void *stream);
 static void* batch_function (void *batch_data);
 static int initial_handles_init (struct client_context*const cdata);
-static int setup_curl_handle_appl (struct client_context*const cctx,  
+int setup_curl_handle_appl (struct client_context*const cctx,  
                                    url_context* url_ctx,
                                    int post_method);
 static int alloc_init_client_post_buffers (struct client_context* cctx);
@@ -588,7 +588,7 @@ int setup_curl_handle_init (client_context*const cctx,
 *
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-static int setup_curl_handle_appl (client_context*const cctx,  
+int setup_curl_handle_appl (client_context*const cctx,  
                                    url_context* url_ctx,
                                    int post_method)
 {
@@ -676,7 +676,7 @@ static int setup_curl_handle_appl (client_context*const cctx,
 *
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-static int client_tracing_function (CURL *handle, 
+int client_tracing_function (CURL *handle, 
                                     curl_infotype type, 
                                     unsigned char *data, 
                                     size_t size, 
@@ -1243,7 +1243,7 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
 /*
   The callback to libcurl to skip all body bytes of the fetched urls.
 */
-static size_t 
+size_t 
 do_nothing_write_func (void *ptr, size_t size, size_t nmemb, void *stream)
 {
   (void)ptr;

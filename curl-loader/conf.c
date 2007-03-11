@@ -142,11 +142,11 @@ int parse_command_line (int argc, char *argv [])
 
             if (!optarg || 
                 ((loading_mode = atoi (optarg)) != LOAD_MODE_STORMING &&
-                 loading_mode != LOAD_MODE_SMOOTH))
+                 loading_mode != LOAD_MODE_SMOOTH && loading_mode != LOAD_MODE_HYPER ))
             {
               fprintf (stderr, 
-                       "%s error: -m to be followed by a number either %d or %d.\n",
-                       __func__, LOAD_MODE_STORMING, LOAD_MODE_SMOOTH);
+                       "%s error: -m to be followed by a number either %d or %d or %d.\n",
+                       __func__, LOAD_MODE_STORMING, LOAD_MODE_SMOOTH, LOAD_MODE_HYPER);
               return -1;
             }
           
