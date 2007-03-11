@@ -1,0 +1,2 @@
+WARN    (2007-03-11) 21:55.07:622   [core.language.java] (Unknown-URI) Unknown-thread/JavaLanguage: Attempted to retrieve directory listing of non-directory /usr/share/java/ext
+WARN    (2007-03-11) 21:55.41:491   [core.manager] (/skin/profile.css) PoolThread-4/TextSerializer: Encountered text before root element. Creating <text> wrapper element.
