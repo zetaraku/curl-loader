@@ -1,0 +1,655 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE faqs PUBLIC "-//APACHE//DTD FAQ V2.0//EN" "http://forrest.apache.org/dtd/faq-v20.dtd">
+
+<faqs>
+  <title>Frequently Asked Questions</title>
+  <faqsection id="Terminology">
+    <title>Basic terminology</title>
+    <faq id="batch">
+      <question>
+     What is the batch?
+      </question>
+      <answer>
+      Batch is a group of clients with the same characteristics and 
+      loading behavior. Configuration file has one or more batches.
+       </answer>
+    </faq>
+   <faq id="uas">
+      <question>
+     What means UAS?
+      </question>
+      <answer>
+      UAS - user activity simulation - fetching url, sleeping, another url -sleeping
+      cycles, simulating actual user activity.
+       </answer>
+    </faq>
+  </faqsection>
+  <faqsection id="building">
+    <title>Building curl-loader</title>
+    <faq id="platform">
+      <question>
+        Which operating systems are supported by curl-loader?
+      </question>
+      <answer>
+        curl-loader supposed to work on linux with 2.4 and 2.6 kernels.
+       </answer>
+    </faq>
+    <faq id="pre-requirements">
+      <question>
+        What are the building pre-requirements?
+      </question>
+      <answer>
+        General C development environment with bash, gcc, make, etc on a linux machine
+        is required.<br/>
+        <br/>
+        Building pre-requirements are including:<br/>
+          1. openssl binaries;<br/>
+          2. openssl development package with include files (on debian package libssl-dev);<br/>
+          3. ncurses development package to run 'make menuconfig' with dialog GUI.<br/>
+         <br/>
+         Adjust Makefile variables to point to the openssl headers and libraries. 
+         If you want to specify an openssl development directory with include 
+         files (e.g. crypto.h), export environment variable OPENSSLDIR with 
+         the value of that directory.<br/>
+         For example: $export OPENSSLDIR=the-full-path-to-the-directory<br/>
+         <br/>
+         Another known issue is linidn.so, which means, that some linux distributions 
+         do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink. <br/>
+         <br/>
+         Tarball of curl is included to the current release. When libcurl or curl-loader 
+         have building issues, correct them in the Makefile. 
+       </answer>
+    </faq>
+    <faq id="building">
+      <question>
+        How to build curl-loader?
+      </question>
+      <answer>
+          Run the following commands from your (hopefully) bash linux shell:<br/>
+         %tar zxfv curl-loader-&lt;version&gt;.tar.gz<br/>
+         %cd curl-loader-&lt;version&gt;<br/>
+         %make<br/>
+         <br/>
+         By default, we are building both libcurl and curl-loader without optimization and with
+         debugging -g option. To build with optimization and without debugging, please, run:<br/>
+         %make cleanall<br/>
+         %make optimize=1 debug=0<br/>
+         If still any building issues, please, fill you free to contact us for assistance.<br/>
+       </answer>
+    </faq>
+    <!-- More faqs or parts here -->
+  </faqsection>
+  <faqsection id="configuration">
+    <title>Creating Loading Configuration </title>
+    <faq id="conf-file general">
+      <question>
+        How can I create loading configuration file?
+      </question>
+      <answer>
+        <p>
+        To run your load, you need to create your configuration file to be passed to
+         curl-loader by the -f commmand line option, e.g.<br/>
+         <br/>
+         #curl-loader -f ./conf-user/user_batch.conf<br/>
+        <br/>
+        For more examples, please, look at the files in "conf-examples" directory. You may 
+        copy an example file and edit it by using the next FAQ guidelines.
+        </p>
+         <p>
+        You may start with running "%make menuconfig" configuration GUI, which 
+        requires ncurses development package on your system. The dialog window 
+        will guide you and create your configuration file in conf-user directory. 
+        The current limitation of the menu-guided configuration, is that enables 
+        to create a single UAS URL.<br/>
+        If you need more that a single UAS url, copy your batch file from the conf-user
+        directory  to some other place and  edit it by adding as much url tag series 
+        (below) as you need, but don't forget to update UAS_URLS_NUM accordingly.<br/>
+         The UAS url tag series:<br/>
+         UAS_URL=<br/>
+         UAS_URL_USERNAME=<br/>
+         UAS_URL_PASSWORD=<br/>
+         UAS_URL_MAX_TIME =<br/>
+         UAS_URL_INTERLEAVE_TIME =<br/>
+         <br/>
+         For more details you may look at the next FAQ guidelines.
+        </p>
+      </answer>
+    </faq>
+    <faq id="conf-file details">
+      <question>
+        What are the loading configuration file tags and semantics?
+      </question>
+      <answer>
+        <p>
+Configuration file or "batch configuration file" consists from tag=value
+strings, groupped into 4 sections:<br/>
+- general;<br/>
+-login;<br/>
+-UAS (user activity simulation by fetching urls and waiting for timeouts);<br/>
+-logoff;<br/>
+<br/>
+Configuration file should possess at least one client batch defined
+with the following params in each batch:<br/>
+<br/>
+----------------------------------------------------------------------------<br/>
+########### GENERAL SECTION ################################<br/>
+BATCH_NAME= bulk_batch     # The name of the batch. Logfile - bulk_batch.log<br/>
+CLIENTS_NUM=300                 # Number of clients in the batch<br/>
+CLIENTS_INITIAL_INC=30 # Clients to be added each second till CLIENTS_NUM<br/>
+INTERFACE = eth0           # Name of the network interface from which to load <br/>
+NETMASK=255.255.240.0       # Netmask either as an IPv4 dotted string or as a CIDR number<br/>
+IP_ADDR_MIN= 192.168.1.1   # The client addresses starting address<br/>
+IP_ADDR_MAX= 192.168.5.255 # Redundant, for self-control<br/>
+CYCLES_NUM= 100            # Number of loading cycles to run, -1 means forever<br/>
+<br/>
+########### LOGIN SECTION ##################################<br/>
+LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the <br/>
+                  # section to be filled. If 'n' or 'N' - comment out others<br/>
+#LOGIN_USERNAME=  # Redundant tag, use LOGIN_URL_USERNAME instead<br/>
+#LOGIN_PASSWORD=  # Redundant tag, use LOGIN_URL_PASSWORD instead<br/>
+#LOGIN_REQ_TYPE=  # Use string either GET+POST, POST or GET. Another option <br/>
+                       # is to use LOGIN_REQ_TYPE_GET_POST, LOGIN_REQ_TYPE_POST or<br/>
+                       # LOGIN_REQ_TYPE_GET tags by using tag=y to enable <br/>                                        
+#LOGIN_POST_STR=  # POST string matrix. See below:<br/>
+#<br/>
+# To generate multiple unique users with unique passwords, use the string like<br/>
+# "username=%s%d&password;=%s%d". First '%s' will be substituted by the <br/>
+# value of LOGIN_USERNAME tag and '%d' by the client number. Second '%s' will<br/>
+# be substituted by LOGIN_PASSWORD tag value and second '%d' by the same client<br/>
+# number. For example, if LOGIN_USERNAME=robert, LOGIN_PASSWORD=stam<br/>
+# and LOGIN_POST_STR "username=%s%d&password;=%s%d", the final POST string, <br/>
+# used for the client number 1, will be  "username=robert1&password;=stam1".<br/>
+# In this case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just <br/>
+# as base-words for generating unique user credentials by appending an number.<br/>
+#
+# To use the username and password 'as as', just provide LOGIN_POST_STR without <br/>
+# %d symbols, e.g. "user=%s&secret;=%s". Thus, all clients will have the same<br/>
+# POST credentials with the string looking like "user=robert&secret;=stam".<br/>
+#<br/>
+# Note, that the words like 'username', 'user', 'password', 'secret', etc are<br/> 
+# those fields, that login users are required to fill in their POST page.<br/>
+<br/>
+#LOGIN_URL=                 # A valid http or https url to be used for login<br/>
+#LOGIN_URL_USERNAME="" # Username for login url<br/>
+#LOGIN_URL_PASSWORD=""  # Password for login url<br/>
+#LOGIN_URL_MAX_TIME=        # Maximum batch time in seconds to login<br/>
+#LOGIN_URL_INTERLEAVE_TIME= # Time in msec to sleep after login<br/>
+#LOGIN_CYCLING=             # If 'y' login should be run in cycles, and not <br/>
+                            # just done only once<br/>
+<br/>
+########### UAS SECTION ####################################<br/>
+UAS=y            # If 'y' or 'Y', login enabled, and other lines of the section to be filled
+UAS_URLS_NUM = 2 # Number of urls
+UAS_URL=ftp://anonymous:stam@localhost/curl-7.16.0.tar.gz # Rather large file
+#UAS_URL_USERNAME="" # Username for this particular UAS url<br/>
+#UAS_URL_PASSWORD=""  # Password for this particular UAS url<br/>
+UAS_URL_MAX_TIME = 20        # Maximum batch time in seconds to fetch the url<br/>
+UAS_URL_INTERLEAVE_TIME = 0  # Time in msec to sleep after fetching the url<br/>
+<br/>
+UAS_URL= http://localhost/apache2-default/index.html<br/>
+UAS_URL_MAX_TIME = 4        # Maximum batch time in seconds to fetch the url<br/>
+UAS_URL_INTERLEAVE_TIME = 0 # Time in msec to sleep after fetching the url<br/>
+<br/>
+# You may add any number of urls providing 5-tags for each url as above,<br/>
+# but do not forget to update the UAS_URLS_NUM.<br/>
+<br/>
+########### LOGOFF SECTION #################################<br/>
+LOGOFF=n                 # If 'y' or 'Y', login enabled, and other tags of the <br/>
+                         # section to be filled. If 'n' or 'N' - comment out others<br/>
+#LOGOFF_REQ_TYPE=        # Use strings to be GET, GET+POST, or POST<br/>
+                           #Another option is LOGOFF_REQ_TYPE_GET_POST, LOGOFF_REQ_TYPE_POST<br/>
+                           #or LOGOFF_REQ_TYPE_GET tags by using tag=y to enable<br/>
+#LOGOFF_POST_STR=        # String to be used for logoff, like "op=logoff"<br/>
+ <br/>
+#LOGOFF_URL=             # A valid http or https url to be used for logoff<br/>
+#LOGOFF_URL_USERNAME="" # Username for logoff url<br/>
+#LOGOFF_URL_PASSWORD=""  # Password for logoff url<br/>
+#LOGOFF_URL_MAX_TIME=    # Maximum batch time in seconds to logoff<br/>
+#LOGOFF_URL_INTERLEAVE_TIME= # Time in msec to sleep after logoff<br/>
+#LOGOFF_CYCLING=         # If 'y' login should be run in cycles, and not just done only once<br/>
+        </p>
+        <p>
+Worth to mention, that each batch configuration should contain all tags from
+the section GENERAL as well as LOGIN, UAS and LOGOFF section tags. When 
+LOGIN, UAS or LOGOFF is set as 'y' (yes), all tags for that section should 
+appear (uncommented) and to be set to some valid values (empty string "" to be used 
+not to define LOGIN_POST_STR and LOGOFF_POST_STR tags, when POST 
+is not applicable). In the case, that LOGIN, UAS or LOGOFF section tag is 
+disabled by setting 'n' (no) value, thus, all the tags of the disabled section 
+may appear with with empty strings "", without values or just may be
+commented out by '#'.
+        </p>
+        <p>
+TAG  CLIENTS_INITIAL_INC:<br/>
+It serves for gradual increase of clients number at the loading initial phase. 
+Use the tag in GENERAL section to specify the number of loading clients to be 
+added each second till the total clients number reaches the number specified by 
+CLIENTS_NUM tag.<br/>
+       </p>
+        <p>
+Note, that both quotted and non-quotted string are supported as the tags values.<br/>
+<br/>
+For more examples, please, look at the files in "conf-examples" directory.<br/>
+        </p>
+      </answer>
+    </faq>
+
+    <faq id="login-logoff">
+      <question>
+        How does the configuration support login, logoff and authentication flavors?
+      </question>
+      <answer>
+       curl-loader preforms Login and logoff operations using the following HTTP methods:<br/>
+         - GET+POST (server response to GET provides a post-form to be 
+            filled and posted by POST);<br/>
+          - POST only;<br/>
+           - GET only.<br/>
+           <br/>
+           UAS urls similar to Login urls are coming with an option to configure username 
+           and password. The difference is that only GET method is currently allowed in 
+           UAS mode and username+ &password; are solely to support Web or Proxy 
+           Authentication (see below). Login url uniquely allows POSTing user credentials 
+           via configurable POST forms as well as configuring a unique username and password
+           for each virtual client by adding a sequence number to the user and password 
+           basewords.<br/>
+           <br/>
+          Does somebody really needs PUT or POST methods as an option for UAS urls? <br/>
+          If yes, please, signal us.<br/>
+          <br/>
+         The loader supports HTTP Web Authentication and Proxy Authentication.
+         Authentication methods supported are Basic, Digest (RFC2617) and NTLM.
+         When responded 401 or 407, libcurl will choose the most safe method
+         from those, supported by the server.<br/>
+         To support GSS Web-Authentication, add in Makefile building of libcurl
+         against appropriate GSS library, see libcurl pages for detailed instructions.<br/>
+      </answer>
+    </faq>
+    <faq id="ftp">
+      <question>
+     What about FTP load?
+      </question>
+      <answer>
+To generate FTP/FTPS load, please, use UAS section and pass user credentials
+via ftp-url according to the RFC 1738 like:<br/>
+ftp://username:password@hostname:port/etc-str<br/>
+Please, look at conf-examples/ftp.conf<br/>
+      </answer>
+     </faq>
+   </faqsection>
+
+  <faqsection id="Running">
+    <title>Running load</title>
+    <faq id="environment">
+      <question>
+     What are the running environment requirements?
+      </question>
+      <answer>
+      Running hundreds and thousands of clients, please, do not forget:<br/>
+        - to increase limit of descriptors (sockets) by running e.g. <br/>
+           #ulimit -n 10000;<br/>
+        - optionally, to set reuse of sockets in time-wait state: by setting <br/>
+            #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or<br/> 
+           #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;<br/>
+       <br/>
+     In some cases you may need to increase the system limits for open
+     descriptors (sockets).<br/>
+       </answer>
+       </faq>
+
+   <faq id="command-line">
+      <question>
+     How I can run the load?
+      </question>
+      <answer>
+        Usage: run as a root user:<br/>
+        #./curl-loader -f &lt;configuration filename&gt; [other options]<br/>
+         <br/>
+         Other possible options are:<br/>
+        -c[onnection establishment timeout, seconds]<br/>
+        -e[rror drop client (smooth mode). Client on error doesn't attempt loading any mode]<br/>
+        -h[elp]<br/>
+        -i[ntermediate (snapshot) statistics time interval (default 3 sec)]<br/>
+        -f[ilename of configuration to run (batches of clients)]<br/>
+        -l[ogfile max size in MB (default 1024). On the size reached, file pointer rewinded]<br/>
+        -m[ode of loading, 1 - storming, 2 - smooth (default)]<br/>
+        -o[utput to stdout bodies of downloaded files - attn!- bulky]<br/>
+        -r[euse connections disabled. Close connections and re-open them. Try with and without]<br/>
+        -s[tderr printout of client messages instead of to logfile - attn!- bulky]<br/>
+        -t[hreads enable - enables threads, each runs a batch of clients]<br/>
+        -v[erbose output to the logfiles; includes info about headers sent/received]<br/>
+        -u[rl logging - logs url names to logfile, when -v verbose option is used]<br/>
+        <br/>
+       For the rare cases, when several batches are specified in the same config file,
+       note, please, that curl-loader without -t runs only the first batch specified.
+       Thus, running several client batches without threads requires some script with
+       several curl-loader processes.<br/>
+       <br/>
+       Connection Reuse Disable Option (-r):<br/>
+       The default behavior of curl-loader after HTTP response is to re-use the 
+       tcp-connection for the next request. If you are specifying -r command-line 
+       option, the TCP connection will be closed and re-opened for the next request. 
+       Whether it is appropriate for you to work with -r option or without, it  depends
+       on your server support of Keep-Alive and the purpose of your testing.
+       Try with and without -r and see, what you get.<br/>
+
+      Connection reuse (just the default, without -r option) has advantages due to the 
+      decreased consumption of opened descriptors (sockets) and ports.<br/>
+       </answer>
+       </faq>
+
+   <faq id="loading modes">
+      <question>
+     Which loading modes are supported?
+      </question>
+      <answer>
+One of the modes is called "storming" (-m1 command line), where all clients 
+of a batch are starting together. They are expected to finish their job within
+a certain timeout. After the timeout they are either completed fetching url, 
+or are cutted and disconnected and a new cycle begins. Storming mode is better 
+to use, when login operation is a single one and not in cycles, or when the 
+tool is used just as a traffic generator. <br/>
+<br/>
+Another mode is a so-called "smooth" (the default mode or -m2 command line), 
+where each client spends as much time as wishes and starts another url or 
+another cycle only after completing the previous url. When a client loading is
+terminated due to some reason, e.g. connection timeout, the default behavior
+is to schedule loading for this client at the next cycle. If -e option is passed to
+command line, the client will not be re-scheduled any more, which is usefull
+to get indication of errors by monitoring drop in number of active clients. Look
+in the logfile for errors, and when connection timeout error appears, adjust the
+connection timeout using -c command line option. Note, that the smooth mode
+is suitable for login-logoff cycles of load.<br/>
+<br/>
+A combination of the both modes (two separate instances of the program)
+can provide somehow realistic behavior with some "smooth" load plus
+"storming" bursts of requests.<br/>
+<br/>
+Hyper-mode (option -m3) is currently "under construction".<br/>
+       </answer>
+       </faq>
+
+   <faq id="loading status">
+      <question>
+     How I can monitor loading progress status?
+      </question>
+      <answer>
+curl-loader outputs to the console loading status and statistics as the "standing" 
+ouput, where the upper part is for the latest interval and below is the average 
+numbers since load start. The example is below:<br/>
+<br/>
+<pre>
+=====================================================<br/>
+Last interval stats (interval:3 sec, clients:10, CAPS:3):<br/>
+ Operations:    Success         Failed<br/>
+ LOGIN:         4               1<br/>
+ UAS-0:         3               0<br/>
+ LOGOFF:        2               0<br/>
+HTTP/FTP-Req:10,2xx:5,3xx:4,4xx:0,5xx:1,Err:0,Delay:20,Delay-2xx:12,Thr-in:12015(b/s),Thr-out:35511(b/s)<br/>
+HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,Delay:0,Delay-2xx:0,Thr-in:0(b/s),Thr-out:0(b/s)<br/>
+-----------------------------------------------------<br/>
+Summary stats since load start (load runs:24 secs, CAPS-average:4):<br/>
+ Operations:    Success         Failed<br/>
+ LOGIN:         0               32<br/>
+ UAS-0:         0               0<br/>
+ LOGOFF:        0               0<br/>
+HTTP/FTP-Req:95,2xx:47,3xx:48,4xx:0,5xx:3,Err:1,Delay:31,Delay-2xx:15,Thr-in:113921(b/s),Thr-out:330215(b/s)<br/>
+HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,Delay:0,Delay-2xx:0,Thr-in:0(b/s),Thr-out:0(b/s)<br/>
+=====================================================<br/>
+</pre>
+A copy of the output is also saved in the file &lt;batch-name&gt;.txt<br/>
+       </answer>
+       </faq>
+
+  <faq id="logfile">
+      <question>
+     Where is the detaled log of all virtual clients activities and how to read it?
+      </question>
+      <answer>
+DETAILED LOGFILE is written to the file named:<br/>
+&lt;batch-name&gt;.log:<br/>
+<br/>
+The semantics of logfile output, using command line options -v (verbous) and -u 
+(url print):<br/>
+"Cycle number", "Client number (ip-address)" - some information string, e.g.:<br/>
+<br/>
+4 39 (192.168.0.39)  :== Info:   Trying 10.30.6.42... : eff-url: http://10.30.6.42:8888/server/Admin/ServiceList.do, url:<br/>
+<br/>
+Which meas: cycle: 4, client number 39 with ipv4 address (192.168.0.39), 
+status of the message is Info, eff-url - is the url, used right now, "url:" is 
+empty, which means, that it is the same as effective.<br/>
+<br/>
+Effective url may be a result of redirection and, thus, "url:" <br/>
+(target url, specified in batch configuration file) will be printed as well.<br/>
+<br/>
+Please, note, that when the logfile reaches 1024 MB size, curl-loader
+rewinds it and starts to overwrite it from the beginning. Y may tune
+the rewinding file size by using command line option:<br/>
+ -l &lt;log-filesize-in-MB&gt;<br/>
+      </answer>
+       </faq>
+   <faq id="statistics">
+      <question>
+     Which statistics is collected and how to get to it?
+      </question>
+      <answer>
+Currently HTTP/HTTPS statistics includes the following counters:<br/>
+   - requests num;<br/>
+   - 2xx success num;<br/>
+   - 3xx redirects num;<br/>
+   - client 4xx errors num;<br/>
+   - server 5xx errors num;<br/>
+   - other errors num, like resolving, tcp-connect, server closing or 
+     empty responses number;<br/>
+   - average application server delay (msec), estimated as the time between 
+     HTTP request and HTTP response without taking into the account network
+     latency (RTT);<br/>
+   - average application server delay for 2xx (success) HTTP-responses, as above,
+     but only for 2xx responses. The motivation for that is that 3xx redirections
+     and 5xx server errors/rejects may not necessarily provide a true indication
+     of a testing server working functionality.<br/>
+   - throughput out (batch average);<br/>
+   - throughput in (batch average);<br/>
+<br/>
+The statistics goes to the screen (both the interval and the current summary 
+statistics for the load) as well as to the file with name &lt;batch_name&gt;.txt
+When the load completes or when the user presses CTRL-C (sometimes some clients
+may stall), the final load report is printed at the console as well as to the statistics
+file.<br/>
+<br/>
+Some strings from the file:<br/>
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------<br/>
+Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out<br/>
+2, HTTP/FTP, 100, 155, 0, 96, 0, 0, 1154, 1154, 2108414, 15538<br/>
+2, HTTPS/FTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+4, HTTP/FTP, 100, 75, 32, 69, 0, 0, 1267, 1559, 1634656, 8181<br/>
+4, HTTPS/FTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+<br/>
+Cutted here<br/>
+<br/>
+36, HTTP/FTP, 39, 98, 35, 58, 0, 0, 869, 851, 1339168, 11392<br/>
+36, HTTPS/FTPS, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+38, HTTP/FTP, 3, 91, 44, 62, 0, 0, 530, 587, 1353899, 10136<br/>
+38, HTTPS/FTPS, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+*, *, *, *, *, *, *, *, *, *, *, *<br/>
+Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out<br/>
+38, HTTP/FTP, 0, 2050, 643, 1407, 0, 213, 725, 812, 1610688, 11706<br/>
+38, HTTPS/FTPS, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------<br/>
+The bottom strings after asterisks are for final averages.<br/>
+<br/>
+At the same time a clients dump file with name &lt;batch_name&gt;.ctx is generated
+to provide detailed statistics about each client state and statistics counters.<br/>
+
+One string from the file:<br/>
+1 (192.168.0.1) ,cycles:124,cstate:1,b-in:22722029,b-out:174605,req:745,2xx:497,3xx:248,4xx:0,5xx:0,err:0<br/>
+where<br/>
+1 (192.168.0.1)- is the index of the client and its ip-address;<br/>
+cycles- number of loading cycles done;<br/>
+cstate - is the number of the client state (-1 - error, 0 - init, 1- login, 2- uas, 3-logoff, 4-final-ok);<br/>
+b-in - bytes passed in;<br/>
+b-out - bytes passed out;<br/>
+req- number of requests done;<br/>
+2xx, 3xx, 4xx, 5xx - number of responses Nxx received;<br/>
+err - number of libcurl errors at the resolving, TCP/IP and TLS/SSL levels;<br/>
+<br/>
+<br/>
+The following conditions are considered as errors:<br/>
+- error at the level of libcurl, which includes resolving, TCP/IP and, when applicable,<br/>
+  TLS/SSL errors;<br/>
+- all HTTP 5xx server errors;<br/>
+- most of HTTP 4xx client errors, excluding are 401 and 407 authentication responses
+  not considered as errors;<br/>
+When the above error conditions occur, a virtual client is marked as being 
+in the error state.<br/>
+By default we "recover" such client by scheduling it to the next loading cycle, 
+starting from the first operation of the cycle. You may use command line option
+-e to change the default behavior to another, so that clients once arriving at 
+error state will not be scheduled for load any more. <br/>
+<br/>
+       </answer>
+       </faq>
+  </faqsection>
+
+  <faqsection id="Advanced">
+    <title>Advanced Issues</title>
+    <faq id="performance">
+      <question>
+     What about performance?
+      </question>
+      <answer>
+The limit of no more than 1000 virtual clients per batch (due to the 
+select () FD_SETSIZE) has been lifted, so you can try now 2000 and may be 
+more number of clients from the single thread (single select ()). 
+Please, care however about available sockets and limits. Note, that the system 
+call select () does not scale well with a big number of sockets, therefore, 
+you can try a script, which runs several instances of curl_loader, each with 
+1000-2000 clients.<br/>
+<br/>
+Running several batches with threads (option -t), each with 1000-2000 clients is 
+another valid option, however, may be less stable - try it.<br/>
+<br/>
+A future release will incorporate libcurl HYPER API to support tens of thousand 
+of virtual clients from a single curl-loader process, using curl_multi_socket() 
+approach and epoll API support by libevent as in
+http://curl.haxx.se/lxr/source/hiper/hipev.c<br/>
+       </answer>
+    </faq>
+
+   <faq id="big-load">
+      <question>
+     How to run a really big load?
+      </question>
+      <answer>
+These are the temporary instructions till we hopefully migrate
+to epoll-based I/O demultiplexing (or even kevent based?),
+supporting tens of thousand of clients in one thread without select/poll
+limitations.<br/>
+<br/>
+1. Compile with optimization;<br/>
+Since you need performance compile with optimization and without debugging.<br/>
+%make cleanall <br/>
+%make optimize=1 debug=0<br/>
+Y may add to Makefile optimization for your particular processor by 
+-match /-mcpu gcc option directives to OPT_FLAGS.<br/>
+<br/>
+<br/>
+2. Login as a su;<br/>
+<br/>
+3. Increase the default number of allowed open descriptors (sockets);<br/>
+E.g. running #ulimit -n 20000<br/>
+If running several instances of curl-loader, consider increase of system
+limits for open descriptors, if necessary. Take your own account of the
+socket usage in the system, considering sockets faster recycling (less
+time in the time-wait state), by setting, optionally, something like this:<br/>
+      #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or  <br/>
+      #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;<br/>
+<br/>
+Correct, if required, the value of CURL_LOADER_FD_SETSIZE (set to 20000 in 
+Makefile) to control the maximum fd, that may be used for select.<br/>
+<br/>
+Increase the maximum number of open descriptors in your linux system, if required,
+using linux HOWTOS.<br/>
+<br/>
+<br/>
+4. Create configuration files for each instance of curl-loader to run.<br/>
+<br/>
+What is important is to give a unique BATCH_NAME for each batch-file,
+which is in use by a separate instance of curl-loader. Logfile, report file, etc 
+have name, which are derivatives of the BATCH_NAME, and when several
+instances of curl-loader are writing to the same file, this is not
+helpful and crashful. Please, use in the configuration batch files 
+non-overlapping ranges of IP-addresses, else libcurl virtual clients will 
+compete for the IP-addresses to bind to.<br/>
+<br/>
+Use CLIENTS_INITIAL_INC tag in smooth mode to increase number of your 
+clients gradually at start-up in order not boom the server.<br/>
+<br/>
+<br/>
+5. Connections re-use.<br/>
+<br/>
+The default behavior of curl-loader now is after HTTP response to re-use 
+the tcp-connection for the next request-response. 
+If you are specifying -r command-line option, the connection will be closed and 
+re-opened for the next request. Whether it is appropriate for you to work with
+-r or without depends on your server support of Keep-Alive and the purpose 
+of your testing.<br/>
+Try with and without -r and see, what you get.<br/>
+<br/>
+<br/>
+6. Try sometimes the non-default storming mode (commandline option -m1), 
+which may better suit your needs. See, README for explanations. A combination of
+-m1 and -r is a valid combination, still, if the server does not make problems 
+with connections reuse.
+<br/>
+<br/>
+7. Troubleshooting.<br/>
+<br/>
+Running first runs one may try command-line options -v (verbose) and -u (url
+in logs). Grep to look for the errors and their reasons. If an error is
+"Connection timeout", you may try to increase the connection establishment
+timeout (the default is 5 seconds - huge, but "ih veis"), using -c command-line
+option.<br/>
+<br/>
+If any assistance required, please, don't hesitate to contact us.<br/>
+<br/>
+<br/>
+8. Logs and statistics.<br/>
+<br/>
+After end of a run, or after SIGINT (Cntl-C), the final results are calculated
+and printed to the console as well as to the file &lt;batch-name&gt;.txt.
+Current results are presented in each row, and average summary as the last
+raws, separated from the rest by asterisks.<br/>
+<br/>
+Pay attention, that &lt;batch-name&gt;.log log file may become huge, particularly, 
+when using verbose output (-v -u). Commandline option -l &lt;maxsize in MB&gt; may 
+be useful, whereas the default policy is to rewind the logfile (writing from the 
+file start), when it reaches 1 GB. Otherwise, do not use -v and -u options for 
+rather long loads.<br/>
+       </answer>
+    </faq>
+
+   <faq id="caps">
+      <question>
+     How to calculate CAPS numbers for a load?
+      </question>
+      <answer>
+When number of clients is defined by CLIENTS_NUM tag, the number of
+CAPS (call attempts per seconds) is resulting from the clients number and 
+load duration for each cycle, comprising from:<br/>
+- login time with possible redirections and sleeping after login interval;<br/>
+- uas time for each url with possible redirections, intervals betwee urls and 
+  after uas interval;<br/>
+- logoff time with possible redirections and sleeping after logoff interval;<br/>
+<br/>
+The actions and time intervals are configurable in batch file, whereas
+url retrival time is server and network dependent and not always easy 
+to predict. The result is that number of clients/requests is a known parameter,
+and number of CAPS is something to be estimated from the time of test and
+number of requests.<br/>
+Smooth mode presents at the LOAD STATUS GUI output calculated current 
+and average CAPS numbers.<br/>
+       </answer>
+    </faq>
+</faqsection>
+  <!-- More faqs or parts here -->
+</faqs>

@@ -13,7 +13,7 @@ INTERFACE = eth0           # Name of the network interface from which to load
 NETMASK=255.255.240.0       # Netmask either as an IPv4 dotted string or as a CIDR number
 IP_ADDR_MIN= 192.168.1.1   # The client addresses starting address
 IP_ADDR_MAX= 192.168.5.255 # Redundant, for self-control
-CYCLES_NUM= 100            # Number of loading cycles to run, 0 -forever
+CYCLES_NUM= 100            # Number of loading cycles to run, -1 means forever
 
 ########### LOGIN SECTION ##################################
 LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the 
@@ -92,7 +92,8 @@ appear (uncommented) and to be set to some valid values (empty string "" to be u
 not to define LOGIN_POST_STR and LOGOFF_POST_STR tags, when POST 
 is not applicable). In the case, that LOGIN, UAS or LOGOFF section tag is 
 disabled by setting 'n' (no) value, thus, all the tags of the disabled section 
-may appear with empty valued or just to be simply commented out by '#'.
+may appear with empty strings "", without values or just may be
+commented out by '#'.
 
 TAG  CLIENTS_INITIAL_INC:
 serves for gradual increase of clients number at the loading initial phase. 

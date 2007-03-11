@@ -11,7 +11,7 @@ establishment, sending of requests, receiving responses, headers and data
 received/sent, errors from network, TLS/SSL and application (HTTP, FTP) levels. 
 The tool can be easily extended to generate telnet, tftp, ldap, etc other 
 application load, supported by the great libcurl library.
-    Virtual clients are grouped to so-called batches of clients, performing
+    Virtual clients are grouped to the so-called batches of clients, performing
 the same sort of activities. Configurable activities for the simulated clients are:
 - authentication login;
 - user activity simulation by fetching several urls and timeouts in between;
@@ -46,7 +46,7 @@ FEATURES:
   username&password for each virtual client as well as configurable posted 
   string (post-forms) are the options;
 
-- HTTP logooff with POST, GET+POST, or GET (cookies). For POST logoff
+- HTTP logooff with POST, GET+POST, or GET (cookies); POST logoff with
   configurable posted string (post-forms);
 
 - HTTP Web and Proxy Authentication (HTTP 401 and 407 responses) with 
@@ -58,7 +58,8 @@ FEATURES:
 
 - TCP connections reuse or re-establishment is configurable;
 
-- Unlimited configurable amount of UAS URLs and configurable time in between them;
+- Unlimited configurable number of UAS URLs and inter-URL waiting time 
+   for the smooth mode;
 
 - Mixing of HTTP, HTTPS, FTP and FTPS urls in a batch of clients configuration;
 
@@ -86,7 +87,7 @@ namely:
 - libevent (Niels Provos) for the I/O event demultiplexing framework;
 - iprouted2 for the netlink and linux TCP/IP kernel (Alexey Kuznetsov and others).
 
-More thanks specific to the tool are in the THANKS file.
+More thanks specific to the tool are in the THANKS file of the tarball.
 
 
 
@@ -293,7 +294,10 @@ In most cases just run make and relax.
 For some linux distributions, however,  matters should be fine tuned in 
 Makefile (libidn issues, etc). 
 
-Building requirements include:
+General C development environment with bash, gcc, make, etc on a linux machine
+is required.
+
+Building pre-requirements are including:
 1. openssl binaries;
 2. openssl development package with include files (on debian package libssl-dev);
 3. ncurses development package to run 'make menuconfig' with dialog GUI.
@@ -303,16 +307,18 @@ libraries. If you want to specify an openssl development directory with
 include files (e.g. crypto.h), export environment variable OPENSSLDIR with 
 the value of that directory.
 
-Build curl-loader by e.g.:
-%tar zxfv curl-loader-<version>.tar.gz
-%cd curl-loader-<version>
-%make
-
 Another known issue is linidn.so, which means, that some linux distributions 
 do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink.
 
 Tarball of curl is included to the current release. When libcurl or curl-loader 
 have building issues, correct them in the Makefile. 
+
+Build curl-loader by e.g.:
+%tar zxfv curl-loader-<version>.tar.gz
+%cd curl-loader-<version>
+%make
+
+
 
 By default, we are building both libcurl and curl-loader without optimization and with
 debugging -g option. To build with optimization and without debugging, please, run:
@@ -342,8 +348,7 @@ Possible options are:
 -u[rl logging - logs url names to logfile, when -v verbose option is used]
 
 For the rare cases, when several batches are specified in the same config file,
-note, please, that curl-loader without -t this option runs only the first batch of 
-clients specified.
+note, please, that curl-loader without -t runs only the first batch specified.
 Thus, running several client batches without threads requires some script with
 several curl-loader processes.
 
@@ -372,9 +377,9 @@ curl-loader by the -f commmand line option, e.g.
 #curl-loader -f ./conf-user/user_batch.conf
 For more examples, please, look at the files in "conf-examples" directory.
 You may copy an example file and edit it by using ./docs/HOWTOS-CONFIG-FILE 
-guidlines.
+guidelines.
 
-You may start with running by "make menuconfig" configuration GUI on your system, 
+You may start with running "%make menuconfig" configuration GUI on your system, 
 which requires ncurses development package on your system.
 The dialog window will guide you and create your configuration file in 
 conf-user directory. The current limitation of the menu-guided configuration, is
