@@ -119,12 +119,12 @@ document.write("<text>Last Published:</text> " + document.lastModified);
              application load and application behavior of thousands and tens of 
              thousands HTTP/HTTPS and FTP/FTPS clients, each with its own 
              source IP-address. In contrast to other tools, curl-loader is using real 
-             protocol client stacks, namely HTTP 1.1 and FTP stacks of libcurl
-             and TLS/SSL stacks of openssl. 
+             client protocol stacks, namely, HTTP 1.1 and FTP of libcurl, TLS/SSL 
+             of openssl, and supports login and authentication flavors.
   </p>
-<p>The tool is useful for performance testing of various application services,
+<p>The tool is useful for performance loading of various application services,
               using HTTP, HTTPS, FTP, FTPS, web-sites testing, and traffic generation.
-              Activities of each virtual client are logged to file: resolving, connection
+              Activities of each virtual client are logged and statistics provided: resolving, connection
              establishment, sending of requests, receiving responses, headers and data 
              received/sent, errors from network, TLS/SSL and application (HTTP, FTP) levels.
   </p>
@@ -144,16 +144,16 @@ document.write("<text>Last Published:</text> " + document.lastModified);
 <h2 class="boxed">Features List</h2>
 <div class="section">
 <p>
-          Up to 2000-3000 thousand of virtual clients from every running curl-loader 
+          Virtual clients -  up to 2000-3000 clients from every running curl-loader 
           process (future hyper mode will enable tens of thousand). Each client performs
           loading from its own IP-address;
       </p>
 <p>
-          Two loading modes: smooth and storming. Gradual increase of virtual clients
-          number at loading number is an option for the smooth mode;
+          Loading modes: smooth and storming. Gradual increase of virtual clients
+          number at loading start is an option for the smooth mode;
       </p>
 <p>
-           IPv4 and IPv6, URI with IPv6 addresses;
+           IPv4 and IPv6 addresses and URIs;
       </p>
 <p>
            HTTP 1.1, HTTPS, FTP, FTPS, TLS/SSL;
@@ -194,7 +194,7 @@ document.write("<text>Last Published:</text> " + document.lastModified);
             Detailed loading statistics at Load Status GUI and to file;
       </p>
 <p>
-            Logfile with configurable verbousness of tracing of the load activies for 
+            Logfile with configurable verbousness of tracing with output for 
             each virtual client. The logfile is atomatically rewinded, when reaching 
             configurable size to prevent disk crashes;
       </p>
@@ -203,7 +203,7 @@ document.write("<text>Last Published:</text> " + document.lastModified);
       </p>
 <p>
             Dialog GUI guided creation of configuration files and well as pre-cooked 
-             examples of configuration files;
+            configuration examples;
       </p>
 </div>
 
@@ -212,9 +212,8 @@ document.write("<text>Last Published:</text> " + document.lastModified);
 <h2 class="boxed">License</h2>
 <div class="section">
 <p>
-             Actually it is GPL2 due to the code from iprouted2. However, if somebody
-             fills uncomfortable with this license, we can consider GPL-compartible 
-             BSD-like license, and/or make it configurable.
+             Actually it is GPL2 due to the code from iprouted2. If required, we can also 
+             consider GPL-compartible BSD-like license, and/or make it configurable.
       </p>
 </div>
 
