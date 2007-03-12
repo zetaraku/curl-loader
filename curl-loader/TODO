@@ -16,9 +16,18 @@
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter. 
 
-6. Future releases will hopefully incorporate libcurl HYPER API, using 
+6. Load Status GUI. Keyboard input as in SIPP to  increase/decrease of load 
+   (loading clients or CAPS).
+
+7. Login usernames and passwords input from a text file with the structure of
+    each string:
+    username separator password.
+    According to RFC1738, only reserved ':', '@', '/' and ' ' (space) are safe 
+    to use as separators between username and password. 
+
+7. Future releases will hopefully incorporate libcurl HYPER API, using 
    curl_multi_socket() approach and epoll support by libevent as in
    http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
    from a single process can become a reality.
 
-7. Testing and better support for FTP and FTPS.
+8. Testing and better support for FTP and FTPS.

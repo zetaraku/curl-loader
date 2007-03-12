@@ -1,14 +1,24 @@
+version 0.30? - svn?
+
+* Hyper-mode is coming?
+	
+* README file re-worked to have a more structured fashion.
+	
 * Initial IPv6 support added. Batch configuration conf-example/ipv6.conf
-   and patch patches/curl-ipv6-bind.patch are added. 
+   and patch patches/curl-ipv6-bind.patch are added. The patch has been
+   integrated to the mainline libcurl, therefore we shall remove it, when moving
+   to the next libcurl release.
+   Our code now actually supports other scopes for IP, than "global". Do we 
+   need to make an option to configure scope for IP-address?
    TODO: IPv6 flow label support?
 	
-* Libevent library added to making process. libevent is a separate
-   make target.
+* Libevent library added to the making process as a separate
+   making target.
 	
-* Added USER_AGENT tag section GENERAL in order that User-Agent 
-   HTTP header to be configurable. When no tag or empty tag or empty tag
-   string is specified, curl-loader takes the default User-Agent header of
-   MS Internet Explorer 6.
+* Added USER_AGENT tag to the section GENERAL to make HTTP User-Agent 
+   header configurable. When no tag or empty tag or empty tag string is 
+   specified, curl-loader takes the default User-Agent header of MSIE-6 (sorry
+   FireFox folks).
 
 * Documentation improved and all HOWTOS-* files moved to the docs directory.
 	
@@ -17,44 +27,44 @@ version 0.26 - svn 151
 
 * Added support for HTTP Authentication and Proxy Authentication.
    The methods supported are Basic, Digest (RFC2617) and NTLM.
-   When responded 401 or 407, libcurl will choose the most safe method
-    from those, supported by the server.
+   When an HTTP server/proxy responds by 401 or 407, libcurl will choose the 
+    most safe method from those, supported by the server/proxy.
 
-* Make menuconfig opens dialog menu to assist in creation of
+* "make menuconfig" opens dialog menu to assist in creation of
    a loading batch configuration file. Building dialog package requires
    ncurses development package.
-   Run make menuconfig to see, what happens.
+   Run "make menuconfig" to see, what happens.
 
-* Batch configuration tags now can we quotted or not quotted. Empty string
-   tags to be marked by either an empty string "", or "N/A" string.
+* Batch configuration tags since this version can be provided as either quotted 
+   or not quotted. Empty string tags to be marked as "", whereas "N/A" string is
+   still supported for the backward compartibility.
 	
 * Unified making. The script build_curl.sh has gone. Now to build both the libcurl 
    and curl-loader with optimization, just run:
-   make cleanall; make optimize=1
+   >make cleanall; make optimize=1
    To build both libcurl and curl-loader with optimization and without
    debugging:
-   make cleanall; make optimize=1 debug=0
+   >make cleanall; make optimize=1 debug=0
 
-* CAPS number added to the "standing" output statistics. It is
+* CAPS number added to the "standing" Loading Status GUI. It is
    calculated as the number of the first cycled state, entered by clients 
    per second.
 
-* 4xx HTTP client error, which are not 401 or 407 (authentication required)
+* 4xx HTTP client error, which are not 401 or 407 (authentication required),
    are considered now errors.
 
-* Operation statistics added to the "standing" output, namely,
-   number of url successful or failed for LOGIN, for each UAS url
-  and for LOGOFF operations;
+* Operation statistics added to the "standing" Loading Status GUI, namely,
+   number of url successful or failed for LOGIN, for each UAS url and for 
+   LOGOFF operations;
 
-* "Standing" statistics improved with regards to its layout.
+* "Standing" Loading Status GUI improved with regards to its layout.
 
 
 
 version 0.25, 14/02/2007, svn 121
 
-* "Standing" statistics screen added to present running counters.
-    Looks for me as a very convenient way of looking at the loading 
-    in-progress.
+* "Standing" Loading Status GUI added to present running counters.
+    Looks like a very convenient way for looking at loading in-progress.
 	
 * Added summary statistics of load to be outputted at statistics
    snapshot intervals together with an interval statistics. Very useful
@@ -64,17 +74,16 @@ version 0.25, 14/02/2007, svn 121
    quad-dotted string, not only as a CIDR number.
 	
 * Command line option -i <seconds> added to make intermediate statistics
-   snapshoting configurable with regards to its time period.
+   snapshoting timer configurable.
 
 * Gradual increase of clients number at startup re-worked to use timer and
     timer-queue.
 
-* Added timer to test size of logfile periodically in smooth mode. Command-line
-   option -l < logfile maxsize> now brings another semantics and provides size
-   limit for a batch logfile in MB (default 1024 MB). When a logfile size limit is 
-   reached and the logfile size is tested and found to be above the limit, the file
-   is rewinded.
-   This closes the issue of not limiting logfile in the smooth mode.
+* Added timer to test periodically the size of logfile in smooth mode. 
+   Command-line option -l < logfile maxsize> now brings another semantics and 
+   provides size limit for a batch logfile in MB (default 1024 MB). When the
+   logfile size limit is reached, the file is rewinded.
+   This closes the issue of unlimited logfile in smooth mode.
 
 * Added to the timer-node pointer to timer handling function <func_timer>. 
   Timer-queue will use another newly added function <tq_dispatch_nearest_timer>
@@ -82,7 +91,7 @@ version 0.25, 14/02/2007, svn 121
   of the node. Further <tq_dispatch_nearest_timer> re-schedules periodic timers,
   and manages memory issues against internal mpool of hnodes.
 	
-  This makes handling of timers used in smooth mode rather Object Oriented.
+  This makes handling of timers mode rather Object Oriented.
 
 
 
@@ -91,7 +100,7 @@ version 0.24, 06/02/2007, svn 106
 
 * Smooth mode now respects the interleave timeouts between urls,
    when the timeouts configured to be some values in milliseconds above
-   10 msec. This is achived by keeping clients in heap-based timer queue.
+   10 msec. This is achived by keeping clients in the heap-based timer queue.
    When an interleave timeout is specified as 0, next url or next action of
     such clients is scheduled immediately without timer-queue scheduling.
 
@@ -120,7 +129,7 @@ version 0.23 06/12/2006, svn-79
   may be even more, but care about number of sockets available and their 
   recycling.
 	
-* The behavior of -r option reverted.
+* The behavior of -r option has been reverted.
    The default behavior of curl-loader now is to re-use a tcp-connection for next
    request-response cycles. If you are specifying -r command-line option, the 
    connection will be closed and re-opened for the next request. Whether it is

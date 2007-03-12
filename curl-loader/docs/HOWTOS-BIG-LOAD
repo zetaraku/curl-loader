@@ -9,8 +9,8 @@ limitations
 
 1. Compile with optimization;
 Since you need performance compile with optimization and without debugging.
-make cleanall 
-make optimize=1 debug=0
+$make cleanall 
+$make optimize=1 debug=0
 Y may add to Makefile optimization for your particular processor by 
 -match /-mcpu gcc option directives to OPT_FLAGS.
 

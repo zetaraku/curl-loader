@@ -236,6 +236,7 @@ NETMASK=255.255.240.0 # Netmask either as an IPv4 dotted string or as a CIDR num
 IP_ADDR_MIN= 192.168.1.1 # The client addresses starting address
 IP_ADDR_MAX= 192.168.5.255 # Redundant, for self-control
 CYCLES_NUM= 100 # Number of loading cycles to run, -1 means forever
+USER_AGENT=""      # User-Agent HTTP header. When empty or missed - MSIE-6 default
 
 ########### LOGIN SECTION ##################################
 LOGIN=n # If 'y' or 'Y', login enabled, all other tags of the
