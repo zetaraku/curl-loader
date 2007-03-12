@@ -84,8 +84,6 @@ struct batch_context;
 */
 typedef struct client_context
 {
-  void * ext_data;
-
   /*
     Inheritance from timer_node to enable its usage in the timer-queue.
     We can use it as a timer_node without disclosing all other
@@ -178,6 +176,12 @@ typedef struct client_context
     client-based statistics is also updated.
   */
   stat_point st;
+
+  /*
+     extension data. 
+   */
+  void * ext_data;
+
 
 } client_context;
 
