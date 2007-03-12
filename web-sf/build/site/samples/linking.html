@@ -1,0 +1,506 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta content="Apache Forrest" name="Generator">
+<meta name="Forrest-version" content="0.7">
+<meta name="Forrest-skin-name" content="pelt">
+<title>Demonstration of linking</title>
+<link type="text/css" href="../skin/basic.css" rel="stylesheet">
+<link media="screen" type="text/css" href="../skin/screen.css" rel="stylesheet">
+<link media="print" type="text/css" href="../skin/print.css" rel="stylesheet">
+<link type="text/css" href="../skin/profile.css" rel="stylesheet">
+<script src="../skin/getBlank.js" language="javascript" type="text/javascript"></script><script src="../skin/getMenu.js" language="javascript" type="text/javascript"></script><script src="../skin/fontsize.js" language="javascript" type="text/javascript"></script>
+<link rel="shortcut icon" href="../">
+</head>
+<body onload="init()">
+<script type="text/javascript">ndeSetTextSize();</script>
+<div id="top">
+<div class="breadtrail">
+<a href="http://www.apache.org/">myGroup</a> &gt; <a href="http://forrest.apache.org/">myProject</a><script src="../skin/breadcrumbs.js" language="JavaScript" type="text/javascript"></script>
+</div>
+<div class="header">
+<div class="grouplogo">
+<a href="http://mygroup.org"><img class="logoImage" alt="MyGroup" src="../images/group.png" title="MyGroup Description"></a>
+</div>
+<div class="projectlogo">
+<a href="http://myproj.mygroup.org/"><img class="logoImage" alt="MyProject" src="../images/project.png" title="MyProject Description"></a>
+</div>
+<div class="searchbox">
+<form action="http://www.google.com/search" method="get" class="roundtopsmall">
+<input value="mydomain" name="sitesearch" type="hidden"><input onFocus="getBlank (this, 'Search the site with google');" size="25" name="q" id="query" type="text" value="Search the site with google">&nbsp; 
+                    <input attr="value" name="Search" value="Search" type="submit">
+</form>
+</div>
+<ul id="tabs">
+<li>
+<a class="base-not-selected" href="../index.html">Home</a>
+</li>
+<li class="current">
+<a class="base-selected" href="../samples/sample.html">Samples</a>
+</li>
+<li>
+<a class="base-not-selected" href="http://xml.apache.org">Apache XML Projects</a>
+</li>
+<li>
+<a class="base-not-selected" href="../pluginDocs/plugins_0_70/index.html">Plugins</a>
+</li>
+</ul>
+</div>
+</div>
+<div id="main">
+<div id="publishedStrip">
+<div id="level2tabs">
+<a class="base-selected" href="../samples/index.html">Index</a> | <a class="base-selected" href="../samples/static.html">Sample2</a>
+</div>
+<script type="text/javascript"><!--
+document.write("<text>Last Published:</text> " + document.lastModified);
+//  --></script>
+</div>
+<div class="breadtrail">
+             
+             &nbsp;
+           </div>
+<div id="menu">
+<div onclick="SwitchMenu('menu_selected_1.1', '../skin/')" id="menu_selected_1.1Title" class="menutitle" style="background-image: url('../skin/images/chapter_open.gif');">Samples</div>
+<div id="menu_selected_1.1" class="selectedmenuitemgroup" style="display: block;">
+<div class="menuitem">
+<a href="../samples/sample.html" title="A nonsense document using all possible elements in the current document v2.0">Apache doc v2.0</a>
+</div>
+<div class="menuitem">
+<a href="../samples/document-v13.html" title="A nonsense document using all possible elements in the document v1.3">Apache doc v1.3</a>
+</div>
+<div class="menuitem">
+<a href="../samples/static.html" title="Static raw un-processed content">Static content</a>
+</div>
+<div class="menupage">
+<div class="menupagetitle">Linking</div>
+</div>
+<div class="menuitem">
+<a href="../samples/embedded_html.html" title="Test of Embedded HTML">Embedded HTML</a>
+</div>
+<div class="menuitem">
+<a href="../samples/ascii-art.html" title="Sample Ascii Art page">ascii-art page</a>
+</div>
+<div class="menuitem">
+<a href="../samples/usemap.html" title="Client-side imagemap">usemap</a>
+</div>
+<div class="menuitem">
+<a href="../samples/customSchema.html" title="Custom XML Schemas">User Schemas</a>
+</div>
+<div class="menuitem">
+<a href="../samples/custom.html" title="A custom XML file">Custom File</a>
+</div>
+<div class="menuitem">
+<a href="../samples/faq.html" title="Frequently Asked Questions">FAQ</a>
+</div>
+<div onclick="SwitchMenu('menu_1.1.11', '../skin/')" id="menu_1.1.11Title" class="menutitle">Subdir</div>
+<div id="menu_1.1.11" class="menuitemgroup">
+<div class="menuitem">
+<a href="../samples/subdir/index.html" title="Page generated from a sub-directory">Index</a>
+</div>
+</div>
+</div>
+<div id="credit"></div>
+<div id="roundbottom">
+<img style="display: none" class="corner" height="15" width="15" alt="" src="../skin/images/rc-b-l-15-1body-2menu-3menu.png"></div>
+<div id="credit2"></div>
+</div>
+<div id="content">
+<div title="Portable Document Format" class="pdflink">
+<a class="dida" href="linking.pdf"><img alt="PDF -icon" src="../skin/images/pdfdoc.gif" class="skin"><br>
+        PDF</a>
+</div>
+<h1>Demonstration of linking</h1>
+<div id="minitoc-area">
+<ul class="minitoc">
+<li>
+<a href="#overview">Overview</a>
+</li>
+<li>
+<a href="#uri-space">Building and maintaining consistent URI space</a>
+</li>
+<li>
+<a href="#resource-space">Mapping the local resource space to the final URI space</a>
+<ul class="minitoc">
+<li>
+<a href="#How+Plugins+May+Affect+The+URI+Space">How Plugins May Affect The URI Space</a>
+</li>
+</ul>
+</li>
+<li>
+<a href="#generated">Basic link to internal generated pages</a>
+</li>
+<li>
+<a href="#raw">Basic link to raw un-processed content</a>
+<ul class="minitoc">
+<li>
+<a href="#Serving+%28X%29HTML+content+without+Skinning">Serving (X)HTML content without Skinning</a>
+</li>
+</ul>
+</li>
+<li>
+<a href="#url">Full URL to external documents</a>
+</li>
+<li>
+<a href="#site">Using site.xml to manage the links</a>
+<ul class="minitoc">
+<li>
+<a href="#site-simple">Basic link to internal generated pages</a>
+</li>
+<li>
+<a href="#site-compound">Group some items</a>
+</li>
+<li>
+<a href="#site-fragment">Fragment identifiers</a>
+</li>
+<li>
+<a href="#site-raw">Define items for raw content</a>
+</li>
+<li>
+<a href="#site-ext">External links</a>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+    
+<a name="N1000D"></a><a name="overview"></a>
+<h2 class="boxed">Overview</h2>
+<div class="section">
+<p>Forrest has many powerful techniques for linking between documents
+      and for managing the site navigation. This document demonstrates those
+      techniques.
+      The document "<a href="http://forrest.apache.org/docs/linking.html">Menus and Linking</a>" 
+      has the full details.
+      </p>
+</div>
+
+    
+<a name="N1001B"></a><a name="uri-space"></a>
+<h2 class="boxed">Building and maintaining consistent URI space</h2>
+<div class="section">
+<p>
+      When Forrest builds your site, it starts from the front page. Like
+      a robot, it traverses all of the links that it finds in the documents
+      and builds the corresponding pages. Any new links are further traversed.
+      </p>
+<p>
+      Sometimes those links lead to documents that are generated directly
+      from xml source files, sometimes they are generated from other source
+      via an intermediate xml format. Other times the links lead to raw
+      un-processed content.
+      </p>
+<p>
+       The site navigation configuration file "<span class="codefrag">site.xml</span>" provides
+       a way to manage this URI space. In the future, when documents are
+       re-arranged and renamed, the site.xml configuration will enable this
+       smoothly.
+      </p>
+</div>
+
+    
+<a name="N1002E"></a><a name="resource-space"></a>
+<h2 class="boxed">Mapping the local resource space to the final URI space</h2>
+<div class="section">
+<p>
+       For both generated and raw (un-processed) files, the top-level of the
+       URI space corresponds to the "<span class="codefrag">content/xdocs/</span>" directory,
+       i.e. the location of the "<span class="codefrag">site.xml</span>" configuration file.
+      </p>
+<div class="frame note">
+<div class="label">Note</div>
+<div class="content">
+        In versions prior to 0.7 raw un-processed content was stored in
+        the "<span class="codefrag">content/</span>" directory. In 0.7 onwards, raw
+        un-processed data is stored alongside the xdocs. In addition,
+        in 0.6 and earlier, HTML documents could be stored in the xdocs
+        directory and served without processing. If you 
+        you wish to emulate the behaviour of 0.6 and earlier see the 
+        next section.
+      </div>
+</div>
+<p>
+        A diagram will help.
+      </p>
+<pre class="code">
+The resource space          ==============&gt;    The final URI space
+------------------                             -------------------
+Generated content ...
+ content/xdocs/index.xml                       index.html
+ content/xdocs/samples/index.xml               samples/index.html
+ content/xdocs/samples/faq.xml                 samples/faq.html
+ content/xdocs/test1.html                      test1.html
+ content/xdocs/samples/test3.html              samples/test3.html
+ content/xdocs/samples/subdir/test4.html       samples/subdir/test4.html
+
+Raw un-processed content ...
+ content/xdocs/hello.pdf                       hello.pdf
+ content/xdocs/hello.sxw                       hello.sxw
+ content/xdocs/subdir/hello.sxw                subdir/hello.sxw
+</pre>
+<a name="N1004A"></a><a name="How+Plugins+May+Affect+The+URI+Space"></a>
+<h3 class="boxed">How Plugins May Affect The URI Space</h3>
+<p>By using <a href="../pluginDocs/plugins_0_70/">Forrest Input Plugins</a>
+      you can process some file formats, such as
+      OpenOffice.org documents and produce processed content from them. For example,
+      the file <span class="codefrag">content/xdocs/hello.sxw</span> can be used to produce a 
+      skinned version of the document at with the name <span class="codefrag">hello.html</span>.
+      Similarly, you can use <a href="../pluginDocs/plugins_0_70/">Forrest Output 
+      Plugins</a> to create different output formats such as PDF, in this 
+      case <span class="codefrag">content/xdocs/hello.sxw</span> can produce 
+      <span class="codefrag">hello.pdf</span>.</p>
+<p>However, this does not affect the handling of raw content. That is, you 
+      can still retrieve the raw un-processed version with, for example, 
+      <span class="codefrag">hello.sxw</span>. If you want to prevent the user retrieving the 
+      un-processed version you will have to create matchers that intercept
+      these requests within your project sitemap.</p>
+</div>
+
+    
+<a name="N1006F"></a><a name="generated"></a>
+<h2 class="boxed">Basic link to internal generated pages</h2>
+<div class="section">
+<p>
+      When this type of link is encountered, Forrest will look for a
+      corresponding xml file, relative to this document (i.e. in
+      <span class="codefrag">content/xdocs/samples/</span>).
+      </p>
+<p>A generated document in the current directory, which corresponds to
+      <span class="codefrag">content/xdocs/samples/sample.html</span> ...
+      </p>
+<pre class="code">&lt;a href="sample.html"&gt;<a href="sample.html">sample.html</a>&lt;/a&gt;</pre>
+<p>In a sub-directory, which corresponds to
+      <span class="codefrag">content/xdocs/samples/subdir/index.html</span> ...
+      </p>
+<pre class="code">&lt;a href="subdir/index.html"&gt;<a href="subdir/index.html">subdir/index.html</a>&lt;/a&gt;</pre>
+</div>
+
+    
+<a name="N10098"></a><a name="raw"></a>
+<h2 class="boxed">Basic link to raw un-processed content</h2>
+<div class="section">
+<p>
+      Raw content files are not intended for any processing, they are just
+      linked to (e.g. pre-prepared PDFs, zip archives).
+      These files are placed alongside your normal content in the 
+      "<span class="codefrag">content/xdocs</span>" directory.
+      </p>
+<p>A raw document in the current directory, which corresponds to
+      <span class="codefrag">content/xdocs/samples/helloAgain.pdf</span> ...
+      </p>
+<pre class="code">&lt;a href="helloAgain.pdf"&gt;<a href="helloAgain.pdf">helloAgain.pdf</a>&lt;/a&gt;</pre>
+<p>A raw document in a sub-directory, which corresponds to 
+      <span class="codefrag">content/xdocs/samples/subdir/hello.zip</span> ...
+      </p>
+<pre class="code">&lt;a href="subdir/hello.zip"&gt;<a href="subdir/hello.zip">subdir/hello.zip</a>&lt;/a&gt;</pre>
+<p>A raw document at the next level up, which corresponds to 
+      <span class="codefrag">content/hello.pdf</span> ...
+      </p>
+<pre class="code">&lt;a href="../hello.pdf"&gt;<a href="../hello.pdf">../hello.pdf</a>&lt;/a&gt;</pre>
+<a name="N100CE"></a><a name="Serving+%28X%29HTML+content+without+Skinning"></a>
+<h3 class="boxed">Serving (X)HTML content without Skinning</h3>
+<p>Prior to version 0.7, the raw un-processed content was stored in
+        the "<span class="codefrag">content/</span>" directory. In 0.7 onwards, raw
+        un-processed data is stored alongside the xdocs. In addition
+        in 0.6 and earlier, HTML files could be stored in the xdocs 
+        directory and they would be served without further processing.
+        As described above, this is not the case in 0.7 where HTML files
+        are, by default, skinned by Forrest.</p>
+<p>If you 
+        you wish to emulate the behaviour of 0.6 and earlier then you
+        must add the following to your project sitemap.</p>
+<pre class="code">
+&lt;map:match pattern="**.html"&gt;
+ &lt;map:select type="exists"&gt;
+  &lt;map:when test="{project:content}{0}"&gt;
+    &lt;map:read src="{project:content}/{0}" mime-type="text/html"/&gt;
+    &lt;!--
+      Use this instead if you want JTidy to clean up your HTML
+      &lt;map:generate type="html" src="{project:content}/{0}" /&gt;
+      &lt;map:serialize type="html"/&gt;
+    --&gt;
+  &lt;/map:when&gt;
+  &lt;map:when test="{project:content.xdocs}{0}"&gt;
+    &lt;map:read src="{project:content.xdocs}/{0}" mime-type="text/html"/&gt;
+    &lt;!--
+      Use this instead if you want JTidy to clean up your HTML
+      &lt;map:generate type="html" src="{project:content.xdocs}/{0}" /&gt;
+      &lt;map:serialize type="html"/&gt;
+    --&gt;
+  &lt;/map:when&gt;
+ &lt;/map:select&gt;
+&lt;/map:match&gt;
+        </pre>
+<p>The above allows us to create links to un-processed skinned files stored
+        in the <span class="codefrag">{project:content}</span> or <span class="codefrag">{project:content.xdocs}</span> 
+        directory. For example:  
+        &lt;a href="/test1.html"&gt;HTML content&lt;/a&gt;. However, it will
+        break the 0.7 behaviour of skinning HTML content. For this reason the old
+        ".ehtml" extension can be used to embed HTML content in a Forrest skinned
+        site </p>
+<p>Note that you can change the matchers above to selectively serve some
+        content as raw un-processed content, whilst still serving other content
+        as skinned documents. For example, the following snippet would allow
+        you to serve the content of an old, deprecated site without processing
+        from Forrest, whilst still allowing all other content to be processed 
+        by Forrest in the normal way:</p>
+<pre class="code">
+&lt;map:match pattern="old_site/**.html"&gt;
+ &lt;map:select type="exists"&gt;
+  &lt;map:when test="{project:content}{1}.html"&gt;
+    &lt;map:read src="{project:content}/{1}.html" mime-type="text/html"/&gt;
+    &lt;!--
+      Use this instead if you want JTidy to clean up your HTML
+      &lt;map:generate type="html" src="{project:content}/{0}" /&gt;
+      &lt;map:serialize type="html"/&gt;
+    --&gt;
+  &lt;/map:when&gt;
+&lt;/map:match&gt;
+        </pre>
+<p>For example, <a href="/old_site/test1.html">HTML content</a>.</p>
+</div>
+
+    
+<a name="N100FA"></a><a name="url"></a>
+<h2 class="boxed">Full URL to external documents</h2>
+<div class="section">
+<p>A full URL ...</p>
+<pre class="code">&lt;a href="http://forrest.apache.org/"&gt;<a href="http://forrest.apache.org/">http://forrest.apache.org/</a>&lt;/a&gt;</pre>
+<p>A full URL with a fragment identifier ...</p>
+<pre class="code">&lt;a href="http://forrest.apache.org/faq.html#link_raw"&gt;<a href="http://forrest.apache.org/faq.html#link_raw">http://forrest.apache.org/faq.html#link_raw</a>&lt;/a&gt;</pre>
+<p>
+      Note that Forrest does not traverse external links to look for
+      other links.
+      </p>
+</div>
+
+    
+<a name="N1011A"></a><a name="site"></a>
+<h2 class="boxed">Using site.xml to manage the links</h2>
+<div class="section">
+<p>As you will have discovered, using pathnames with ../../ etc. will
+      get very nasty. Real problems occur when you use a smart text editor
+      that tries to manage the links for you. For example, it will have
+      trouble linking to the raw content files which are not yet in their
+      final location.
+      </p>
+<p>
+      Links and filenames are bound to change and re-arrange. It is
+      essential to only change those links in one central place, not in every
+      document.
+      </p>
+<p>
+      The "<span class="codefrag">site.xml</span>" configuration file to the rescue. It maps
+      symbolic names to actual resources.
+      </p>
+<a name="N1012C"></a><a name="site-simple"></a>
+<h3 class="boxed">Basic link to internal generated pages</h3>
+<p>This single entry ...</p>
+<pre class="code">&lt;index label="Index" href="index.html"/&gt;</pre>
+<p>
+        enables a simple link to a generated document, which corresponds to 
+        <span class="codefrag">content/xdocs/index.xml</span> ...
+        </p>
+<pre class="code">&lt;a href="site:index"&gt;<a href="../index.html">site:index</a>&lt;/a&gt;</pre>
+<a name="N10148"></a><a name="site-compound"></a>
+<h3 class="boxed">Group some items</h3>
+<p>This compound entry ...</p>
+<pre class="code">
+  &lt;samples label="Samples" href="samples/" tab="samples"&gt;
+    &lt;faq label="FAQ" href="faq.html"/&gt;
+    ...
+  &lt;/samples&gt;
+</pre>
+<p>
+        enables a link to a generated document, which corresponds to 
+        <span class="codefrag">content/xdocs/samples/index.xml</span> ...
+        </p>
+<pre class="code">&lt;a href="site:samples"&gt;<a href="../samples/">site:samples</a>&lt;/a&gt;</pre>
+<p>
+        and a link to a generated document, which corresponds to 
+        <span class="codefrag">content/xdocs/samples/faq.xml</span> ...
+        </p>
+<pre class="code">
+&lt;a href="site:faq"&gt;<a href="../samples/faq.html">site:faq</a>&lt;/a&gt;
+which can also be a complete reference
+&lt;a href="site:samples/faq"&gt;<a href="../samples/faq.html">site:samples/faq</a>&lt;/a&gt;
+        </pre>
+<a name="N10176"></a><a name="site-fragment"></a>
+<h3 class="boxed">Fragment identifiers</h3>
+<p>This compound entry ...</p>
+<pre class="code">
+  &lt;samples label="Samples" href="samples/" tab="samples"&gt;
+    &lt;sample label="Apache document" href="sample.html"&gt;
+      &lt;top href="#top"/&gt;
+      &lt;section href="#section"/&gt;
+    &lt;/sample&gt;
+    ...
+  &lt;/samples&gt;
+</pre>
+<p>
+        enables a link to a fragment identifier within the
+        <span class="codefrag">samples/sample.html</span> document ...
+        </p>
+<pre class="code">&lt;a href="site:samples/sample/section"&gt;<a href="../samples/sample.html#section">site:samples/sample/section</a>&lt;/a&gt;</pre>
+<a name="N10192"></a><a name="site-raw"></a>
+<h3 class="boxed">Define items for raw content</h3>
+<p>This entry ...</p>
+<pre class="code">&lt;hello_print href="hello.pdf"/&gt;</pre>
+<p>
+        enables a link to a raw document, which corresponds to 
+        <span class="codefrag">content/hello.pdf</span> ...
+        </p>
+<pre class="code">&lt;a href="site:hello_print"&gt;<a href="../hello.pdf">site:hello_print</a>&lt;/a&gt;</pre>
+<a name="N101AE"></a><a name="site-ext"></a>
+<h3 class="boxed">External links</h3>
+<p>This compound entry ...</p>
+<pre class="code">
+  &lt;external-refs&gt;
+    &lt;forrest href="http://forrest.apache.org/"&gt;
+      &lt;linking href="docs/linking.html"/&gt;
+      &lt;webapp href="docs/your-project.html#webapp"/&gt;
+    &lt;/forrest&gt;
+  &lt;/external-refs&gt;
+</pre>
+<p>
+        enables a link to an external URL ...
+        </p>
+<pre class="code">&lt;a href="ext:forrest"&gt;<a href="http://forrest.apache.org/">ext:forrest</a>&lt;/a&gt;</pre>
+<p>
+        and a link to another external URL ...
+        </p>
+<pre class="code">
+&lt;a href="ext:linking"&gt;<a href="http://forrest.apache.org/docs/linking.html">ext:linking</a>&lt;/a&gt;
+which can also be a complete reference
+&lt;a href="ext:forrest/linking"&gt;<a href="http://forrest.apache.org/docs/linking.html">ext:forrest/linking</a>&lt;/a&gt;
+        </pre>
+<p>
+        and a link to another external URL with a fragment identifier ...
+        </p>
+<pre class="code">
+&lt;a href="ext:webapp"&gt;<a href="http://forrest.apache.org/docs/your-project.html#webapp">ext:webapp</a>&lt;/a&gt;
+which can also be a complete reference
+&lt;a href="ext:forrest/webapp"&gt;<a href="http://forrest.apache.org/docs/your-project.html#webapp">ext:forrest/webapp</a>&lt;/a&gt;
+        </pre>
+</div>
+  
+</div>
+<div class="clearboth">&nbsp;</div>
+</div>
+<div id="footer">
+<div class="lastmodified">
+<script type="text/javascript"><!--
+document.write("<text>Last Published:</text> " + document.lastModified);
+//  --></script>
+</div>
+<div class="copyright">
+        Copyright &copy;
+         2005 The Acme Software Foundation.</div>
+<div id="feedback">
+    Send feedback about the website to:
+  <a id="feedbackto" href="mailto:webmaster@foo.com?subject=Feedback%C2%A0samples/linking.html">webmaster@foo.com</a>
+</div>
+</div>
+</body>
+</html>
