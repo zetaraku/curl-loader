@@ -179,9 +179,9 @@ LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the <br/>
                             # just done only once<br/>
 <br/>
 ########### UAS SECTION ####################################<br/>
-UAS=y            # If 'y' or 'Y', login enabled, and other lines of the section to be filled
-UAS_URLS_NUM = 2 # Number of urls
-UAS_URL=ftp://anonymous:stam@localhost/curl-7.16.0.tar.gz # Rather large file
+UAS=y            # If 'y' or 'Y', login enabled, and other lines of the section to be filled<br/>
+UAS_URLS_NUM = 2 # Number of urls<br/>
+UAS_URL=ftp://anonymous:stam@localhost/curl-7.16.0.tar.gz # Rather large file<br/>
 #UAS_URL_USERNAME="" # Username for this particular UAS url<br/>
 #UAS_URL_PASSWORD=""  # Password for this particular UAS url<br/>
 UAS_URL_MAX_TIME = 20        # Maximum batch time in seconds to fetch the url<br/>
