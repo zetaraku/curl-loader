@@ -63,9 +63,42 @@ document.write("<text>Last Published:</text> " + document.lastModified);
 <div id="credit2"></div>
 </div>
 <div id="content">
+<script language="Javascript" type="text/javascript">
+function printit() {
+  if (window.print) {
+    window.focus();
+    window.print();
+  }
+}
+        </script><script language="Javascript" type="text/javascript">
+var NS = (navigator.appName == "Netscape");
+var VERSION = parseInt(navigator.appVersion);
+if (VERSION > 3) {
+  document.write('<div title="Print this Page" class="printlink">');
+  document.write('  <a class="dida" href="javascript:printit()">');
+  document.write('    <img alt="print - icon" src="../skin/images/printer.gif" class="skin">');
+  document.write('    <br>');
+  document.write('  PRINT</a>');
+  document.write('</div>');
+}
+        </script>
+<div title="Plain Old Documentation" class="podlink">
+<a class="dida" href="faq.pod"><img alt="POD - icon" src="../skin/images/poddoc.png" class="skin"><br>
+        POD</a>
+</div>
+<div title="Plain Text Documentation" class="podlink">
+<a class="dida" href="faq.txt"><img alt="TXT - icon" src="../skin/images/txtdoc.png" class="skin"><br>
+        TXT</a>
+</div>
 <div title="Portable Document Format" class="pdflink">
 <a class="dida" href="faq.pdf"><img alt="PDF -icon" src="../skin/images/pdfdoc.gif" class="skin"><br>
         PDF</a>
+</div>
+<div class="trail">
+<text>Font size:</text> 
+	          &nbsp;<input value="Reset" class="resetfont" title="Reset text" onclick="ndeSetTextSize('reset'); return false;" type="button">      
+	          &nbsp;<input value="-a" class="smallerfont" title="Shrink text" onclick="ndeSetTextSize('decr'); return false;" type="button">
+	          &nbsp;<input value="+a" class="biggerfont" title="Enlarge text" onclick="ndeSetTextSize('incr'); return false;" type="button">
 </div>
 <h1>Frequently Asked Questions</h1>
 <div id="minitoc-area">
