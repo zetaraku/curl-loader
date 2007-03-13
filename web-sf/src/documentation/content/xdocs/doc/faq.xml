@@ -124,9 +124,9 @@
 Configuration file or "batch configuration file" consists from tag=value
 strings, groupped into 4 sections:<br/>
 - general;<br/>
--login;<br/>
--UAS (user activity simulation by fetching urls and waiting for timeouts);<br/>
--logoff;<br/>
+- login;<br/>
+- UAS (user activity simulation by fetching urls and waiting for timeouts);<br/>
+- logoff;<br/>
 <br/>
 Configuration file should possess at least one client batch defined
 with the following params in each batch:<br/>
@@ -240,18 +240,18 @@ For more examples, please, look at the files in "conf-examples" directory.<br/>
         How does the configuration support login, logoff and authentication flavors?
       </question>
       <answer>
-       curl-loader preforms Login and logoff operations using the following HTTP methods:<br/>
+       curl-loader performs login and logoff operations using the following HTTP methods:<br/>
          - GET+POST (server response to GET provides a post-form to be 
             filled and posted by POST);<br/>
           - POST only;<br/>
            - GET only.<br/>
            <br/>
-           UAS urls similar to Login urls are coming with an option to configure username 
+           UAS urls (similar to Login urls) are coming with an option to configure username 
            and password. The difference is that only GET method is currently allowed in 
-           UAS mode and username+&amp;password are solely to support Web or Proxy 
+           UAS mode and username+&amp;password are intended to support Web or Proxy 
            Authentication (see below). Login url uniquely allows POSTing user credentials 
            via configurable POST forms as well as configuring a unique username and password
-           for each virtual client by adding a sequence number to the user and password 
+           for each virtual client by appending a sequence number to the username and password 
            basewords.<br/>
            <br/>
           Does somebody really needs PUT or POST methods as an option for UAS urls? <br/>
@@ -350,7 +350,7 @@ or are cutted and disconnected and a new cycle begins. Storming mode is better
 to use, when login operation is a single one and not in cycles, or when the 
 tool is used just as a traffic generator. <br/>
 <br/>
-Another mode is a so-called "smooth" (the default mode or -m2 command line), 
+The default loading mode is a so-called "smooth" (by default or -m2 command line), 
 where each client spends as much time as wishes and starts another url or 
 another cycle only after completing the previous url. When a client loading is
 terminated due to some reason, e.g. connection timeout, the default behavior
