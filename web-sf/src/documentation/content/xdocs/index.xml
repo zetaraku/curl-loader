@@ -94,12 +94,6 @@
             Mixing of HTTP, HTTPS, FTP and FTPS urls in a single batch of client configuration;   
       </p>
       <p>
-            Load Status GUI and load status output to file;
-      </p>
-      <p>
-            Detailed loading statistics at Load Status GUI and to file;
-      </p>
-      <p>
             Logfile with configurable verbousness of tracing with output for 
             each virtual client. The logfile is atomatically rewinded, when reaching 
             configurable size to prevent disk crashes;
@@ -111,6 +105,16 @@
             Dialog GUI guided creation of configuration files and well as pre-cooked 
             configuration examples;
       </p>
+      <p>
+            Load Status GUI and load status output to file;
+      </p>
+      <p>
+            Detailed loading statistics at Load Status GUI and to file;
+      </p>
+       <p>Here is a screenshot:</p>
+      <p>
+          <img src="images/black_screen.jpg" alt="curl-loader screenshot" />
+       </p>
     </section>
 
     <section id="license">
