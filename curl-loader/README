@@ -249,17 +249,17 @@ LOGIN=n # If 'y' or 'Y', login enabled, all other tags of the
 #LOGIN_POST_STR= # POST string matrix. See below:
 #
 # To generate multiple unique users with unique passwords, use the string like
-# "username=%s%d=%s%d". First '%s' will be substituted by the
+# "username=%s%d&password=%s%d". First '%s' will be substituted by the
 # value of LOGIN_USERNAME tag and '%d' by the client number. Second '%s' will
 # be substituted by LOGIN_PASSWORD tag value and second '%d' by the same client
 # number. For example, if LOGIN_USERNAME=robert, LOGIN_PASSWORD=stam
-# and LOGIN_POST_STR "username=%s%d=%s%d", the final POST string,
-# used for the client number 1, will be "username=robert1=stam1".
+# and LOGIN_POST_STR "username=%s%d&password=%s%d", the final POST string,
+# used for the client number 1, will be "username=robert1&password=stam1".
 # In this case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just
 # as base-words for generating unique user credentials by appending an number.
 # # To use the username and password 'as as', just provide LOGIN_POST_STR without
-# %d symbols, e.g. "user=%s=%s". Thus, all clients will have the same
-# POST credentials with the string looking like "user=robert=stam".
+# %d symbols, e.g. "user=%s&secret=%s". Thus, all clients will have the same
+# POST credentials with the string looking like "user=robert&secret=stam".
 #
 # Note, that the words like 'username', 'user', 'password', 'secret', etc are
 # those fields, that login users are required to fill in their POST page.
