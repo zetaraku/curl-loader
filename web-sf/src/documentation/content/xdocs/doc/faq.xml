@@ -4,7 +4,7 @@
 <faqs>
   <title>Frequently Asked Questions</title>
   <faqsection id="Terminology">
-    <title>Basic terminology</title>
+    <title>Basic Terminology</title>
     <faq id="batch">
       <question>
      What is the batch?
@@ -279,7 +279,7 @@ Please, look at conf-examples/ftp.conf<br/>
    </faqsection>
 
   <faqsection id="Running">
-    <title>Running load</title>
+    <title>Running Load</title>
     <faq id="environment">
       <question>
      What are the running environment requirements?
