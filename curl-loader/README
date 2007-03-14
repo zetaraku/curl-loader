@@ -2,32 +2,45 @@
     Robert Iakobashvili, Ashdod, Israel, coroberti@gmail.com
     Michael Moser, Modiin, Israel, moser.michael@gmail.com
 
+
+
 ABOUT:
-    Provides application load using libcurl/openssl stacks, simulating behaviour
-of thousands and tens of thousands clients, each with its own source IP-address.
-    This version simulates HTTP/HTTPS and FTP/FTPS (experimental) clients. 
-Activities of each virtual client are logged to file: resolving, connection
-establishment, sending of requests, receiving responses, headers and data 
-received/sent, errors from network, TLS/SSL and application (HTTP, FTP) levels. 
-The tool can be easily extended to generate telnet, tftp, ldap, etc other 
-application load, supported by the great libcurl library.
-    Virtual clients are grouped to the so-called batches of clients, performing
+
+The loader is a C-written open-source community tool, simulating 
+application load and application behavior of thousands and tens of 
+thousands HTTP/HTTPS and FTP/FTPS clients, each with its own 
+source IP-address. In contrast to other tools, curl-loader is using real 
+client protocol stacks, namely, HTTP 1.1 and FTP of libcurl, TLS/SSL 
+of openssl, and supports login and authentication flavors.
+
+The tool is useful for performance loading of various application services,
+using HTTP, HTTPS, FTP, FTPS, web-sites testing, and traffic generation.
+Activities of each virtual client are logged and statistics provided: resolving, 
+connection establishment, sending of requests, receiving responses, headers and 
+data received/sent, errors from network, TLS/SSL and application (HTTP, FTP) 
+levels.
+
+Virtual clients are grouped to the so-called batches of clients, performing
 the same sort of activities. Configurable activities for the simulated clients are:
 - authentication login;
-- user activity simulation by fetching several urls and timeouts in between;
-- logoff.
+- user activity simulation (UAS) by fetching several urls and timeouts in between;
+ - logoff.
+
+The tool can be easily extended to generate telnet, tftp, ldap, etc other 
+application load, supported by the great libcurl library.
+
 
 
 FEATURES:
 
-- Up to 2000-3000 thousand of virtual clients from every running curl-loader 
-   process (future hyper mode will enable tens of thousand). Each client performs
-   loading from its own IP-address;
+- Virtual clients -  up to 2000-3000 clients from every running curl-loader 
+  process (future hyper mode will enable tens of thousand). Each client performs
+  loading from its own IP-address;
 
-- Two loading modes: smooth and storming. Gradual increase of virtual clients
-   number at loading number is an option for the smooth mode;
+- Loading modes: smooth and storming. Gradual increase of virtual clients
+   number at loading start is an option for the smooth mode;
 
-- IPv4 and IPv6, URI with IPv6 addresses;
+- IPv4 and IPv6 addresses and URIs;
 
 - HTTP 1.1, HTTPS, FTP, FTPS, TLS/SSL;
 
@@ -111,14 +124,18 @@ MAY BE USED:
 
 
 THANKS:
-Thanks to the creators and maintainers of the packages, that we are using, 
-namely:
+Thanks to the creators and maintainers of the packages, we are using:
 - libcurl (Daniel Stenberg) for the HTTP 1.1, FTP, telnet, ldap, etc client stacks;
 - openssl for the TLS/SSL stack;
+- dialog for the console dialog manu;
 - libevent (Niels Provos) for the I/O event demultiplexing framework;
-- iprouted2 for the netlink and linux TCP/IP kernel (Alexey Kuznetsov and others).
+- iprouted2 and linux netdev for netlink and linux TCP/IP stack (Alexey Kuznetsov, 
+  David Miller and many others).
 
-More thanks specific to the tool are in the THANKS file of the tarball.
+The list of people, that provided assistance, patches, bug-fixes, ideas is 
+in the THANKS file of the curl-loader tarball.
+
+
 
 LICENSE:
 Actually it is GPL2 due to the code from iprouted2. However, if somebody
@@ -274,7 +291,9 @@ LOGIN=n # If 'y' or 'Y', login enabled, all other tags of the
 
 ########### UAS SECTION ####################################
 UAS=y # If 'y' or 'Y', login enabled, and other lines of the section to be filled 
-UAS_URLS_NUM = 2 # Number of urls UAS_URL=ftp://anonymous:stam@localhost/curl-7.16.0.tar.gz # Rather large file #UAS_URL_USERNAME="" # Username for this particular UAS url
+UAS_URLS_NUM = 2 # Number of urls 
+UAS_URL=ftp://anonymous:stam@localhost/curl-7.16.0.tar.gz # Rather large file 
+#UAS_URL_USERNAME="" # Username for this particular UAS url
 #UAS_URL_PASSWORD="" # Password for this particular UAS url
 UAS_URL_MAX_TIME = 20 # Maximum batch time in seconds to fetch the url
 UAS_URL_INTERLEAVE_TIME = 0 # Time in msec to sleep after fetching the url
@@ -505,7 +524,10 @@ testing server working functionality.
 - throughput out (batch average);
 - throughput in (batch average);
 
-The statistics goes to the screen (both the interval and the current summary statistics for the load) as well as to the file with name <batch_name>.txt When the load completes or when the user presses CTRL-C (sometimes some clients may stall), the final load report is printed at the console as well as to the statistics file.
+The statistics goes to the screen (both the interval and the current summary 
+statistics for the load) as well as to the file with name <batch_name>.txt. 
+When the load completes or when the user presses CTRL-C (sometimes some clients 
+may stall), the final load report is printed at the console as well as to the statistics file.
 
 Some strings from the file:
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -528,7 +550,8 @@ Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 The bottom strings after asterisks are for final averages.
 
-At the same time a clients dump file with name <batch_name>.ctx is generated to provide detailed statistics about each client state and statistics counters.
+At the same time a clients dump file with name <batch_name>.ctx is generated to 
+provide detailed statistics about each client state and statistics counters.
 One string from the file:
 1 (192.168.0.1) ,cycles:124,cstate:1,b-in:22722029,b-out:174605,req:745,2xx:497,3xx:248,4xx:0,5xx:0,err:0
 where
@@ -620,7 +643,11 @@ Use CLIENTS_INITIAL_INC tag in smooth mode to increase number of your clients
 gradually at start-up in order not boom the server.
 
 5. Connections re-use.
-The default behavior of curl-loader now is after HTTP response to re-use the tcp-connection for the next request-response. If you are specifying -r command-line option, the connection will be closed and re-opened for the next request. Whether it is appropriate for you to work with -r or without depends on your server support of Keep-Alive and the purpose of your testing.
+The default behavior of curl-loader now is after HTTP response to re-use the 
+tcp-connection for the next request-response. If you are specifying -r 
+command-line option, the connection will be closed and re-opened for the next 
+request. Whether it is appropriate for you to work with -r or without depends 
+on your server support of Keep-Alive and the purpose of your testing.
 Try with and without -r and see, what you get.
 
 6. Try sometimes the non-default storming mode (commandline option -m1), which 
