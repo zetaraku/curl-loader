@@ -53,7 +53,7 @@
          the value of that directory.<br/>
          For example: $export OPENSSLDIR=the-full-path-to-the-directory<br/>
          <br/>
-         Another known issue is linidn.so, which means, that some linux distributions 
+         Another known issue is libidn.so, which means, that some linux distributions 
          do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink. <br/>
          <br/>
          Tarball of curl is included to the current release. When libcurl or curl-loader 
@@ -99,8 +99,8 @@
         You may start with running "%make menuconfig" configuration GUI, which 
         requires ncurses development package on your system. The dialog window 
         will guide you and create your configuration file in conf-user directory. 
-        The current limitation of the menu-guided configuration, is that enables 
-        to create a single UAS URL.<br/>
+        The current limitation of the menu-guided configuration, is that it enables 
+        to create only a single UAS URL.<br/>
         If you need more that a single UAS url, copy your batch file from the conf-user
         directory  to some other place and  edit it by adding as much url tag series 
         (below) as you need, but don't forget to update UAS_URLS_NUM accordingly.<br/>
@@ -138,19 +138,20 @@ CLIENTS_NUM=300                 # Number of clients in the batch<br/>
 CLIENTS_INITIAL_INC=30 # Clients to be added each second till CLIENTS_NUM<br/>
 INTERFACE = eth0           # Name of the network interface from which to load <br/>
 NETMASK=255.255.240.0       # Netmask either as an IPv4 dotted string or as a CIDR number<br/>
-IP_ADDR_MIN= 192.168.1.1   # The client addresses starting address<br/>
-IP_ADDR_MAX= 192.168.5.255 # Redundant, for self-control<br/>
+IP_ADDR_MIN= 192.168.1.1   # Client addresses range starting address<br/>
+IP_ADDR_MAX= 192.168.5.255 # Client addresses range last address<br/>
 CYCLES_NUM= 100            # Number of loading cycles to run, -1 means forever<br/>
-USER_AGENT=""      # User-Agent HTTP header. When empty or missed - MSIE-6 default<br/>
+USER_AGENT=""      # User-Agent HTTP header quoted string. <br/>
+                                       #When empty string or missed - MSIE-6 default<br/>
 <br/>
 ########### LOGIN SECTION ##################################<br/>
 LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the <br/>
                   # section to be filled. If 'n' or 'N' - comment out others<br/>
 #LOGIN_USERNAME=  # Redundant tag, use LOGIN_URL_USERNAME instead<br/>
 #LOGIN_PASSWORD=  # Redundant tag, use LOGIN_URL_PASSWORD instead<br/>
-#LOGIN_REQ_TYPE=  # Use string either GET+POST, POST or GET. Another option <br/>
-                       # is to use LOGIN_REQ_TYPE_GET_POST, LOGIN_REQ_TYPE_POST or<br/>
-                       # LOGIN_REQ_TYPE_GET tags by using tag=y to enable <br/>                                        
+#LOGIN_REQ_TYPE=  # To be either GET+POST, POST or GET. Depricated.<br/>
+                       # Use instead LOGIN_REQ_TYPE_GET_POST, LOGIN_REQ_TYPE_POST<br/>
+                       # or LOGIN_REQ_TYPE_GET tags by using tag=y to enable <br/>                                        
 #LOGIN_POST_STR=  # POST string matrix. See below:<br/>
 #<br/>
 # To generate multiple unique users with unique passwords, use the string like<br/>
@@ -181,6 +182,7 @@ LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the <br/>
 ########### UAS SECTION ####################################<br/>
 UAS=y            # If 'y' or 'Y', login enabled, and other lines of the section to be filled<br/>
 UAS_URLS_NUM = 2 # Number of urls<br/>
+<br/>
 UAS_URL=ftp://anonymous:stam@localhost/curl-7.16.0.tar.gz # Rather large file<br/>
 #UAS_URL_USERNAME="" # Username for this particular UAS url<br/>
 #UAS_URL_PASSWORD=""  # Password for this particular UAS url<br/>
@@ -188,6 +190,8 @@ UAS_URL_MAX_TIME = 20        # Maximum batch time in seconds to fetch the url<br
 UAS_URL_INTERLEAVE_TIME = 0  # Time in msec to sleep after fetching the url<br/>
 <br/>
 UAS_URL= http://localhost/apache2-default/index.html<br/>
+#UAS_URL_USERNAME="" # Username for this particular UAS url<br/>
+#UAS_URL_PASSWORD=""  # Password for this particular UAS url<br/>
 UAS_URL_MAX_TIME = 4        # Maximum batch time in seconds to fetch the url<br/>
 UAS_URL_INTERLEAVE_TIME = 0 # Time in msec to sleep after fetching the url<br/>
 <br/>
@@ -197,9 +201,9 @@ UAS_URL_INTERLEAVE_TIME = 0 # Time in msec to sleep after fetching the url<br/>
 ########### LOGOFF SECTION #################################<br/>
 LOGOFF=n                 # If 'y' or 'Y', login enabled, and other tags of the <br/>
                          # section to be filled. If 'n' or 'N' - comment out others<br/>
-#LOGOFF_REQ_TYPE=        # Use strings to be GET, GET+POST, or POST<br/>
-                           #Another option is LOGOFF_REQ_TYPE_GET_POST, LOGOFF_REQ_TYPE_POST<br/>
-                           #or LOGOFF_REQ_TYPE_GET tags by using tag=y to enable<br/>
+#LOGOFF_REQ_TYPE=        # To be GET, GET+POST, or POST. Depricated.<br/>
+                           # Use instead LOGOFF_REQ_TYPE_GET_POST, LOGOFF_REQ_TYPE_POST<br/>
+                           # or LOGOFF_REQ_TYPE_GET tags by using tag=y to enable<br/>
 #LOGOFF_POST_STR=        # String to be used for logoff, like "op=logoff"<br/>
  <br/>
 #LOGOFF_URL=             # A valid http or https url to be used for logoff<br/>
@@ -211,11 +215,14 @@ LOGOFF=n                 # If 'y' or 'Y', login enabled, and other tags of the <
         </p>
         <p>
 Worth to mention, that each batch configuration should contain all tags from
-the section GENERAL as well as LOGIN, UAS and LOGOFF section tags. When 
-LOGIN, UAS or LOGOFF is set as 'y' (yes), all tags for that section should 
+the section GENERAL as well as LOGIN, UAS and LOGOFF section tags. <br/>
+<br/>
+When LOGIN, UAS or LOGOFF is set as 'y' (yes), all tags for that section should 
 appear (uncommented) and to be set to some valid values (empty string "" to be used 
 not to define LOGIN_POST_STR and LOGOFF_POST_STR tags, when POST 
-is not applicable). In the case, that LOGIN, UAS or LOGOFF section tag is 
+is not applicable). <br/>
+<br/>
+In the case, that LOGIN, UAS or LOGOFF section tag is 
 disabled by setting 'n' (no) value, thus, all the tags of the disabled section 
 may appear with with empty strings "", without values or just may be
 commented out by '#'.
@@ -246,19 +253,19 @@ For more examples, please, look at the files in "conf-examples" directory.<br/>
           - POST only;<br/>
            - GET only.<br/>
            <br/>
-           UAS urls (similar to Login urls) are coming with an option to configure username 
-           and password. The difference is that only GET method is currently allowed in 
-           UAS mode and username+&amp;password are intended to support Web or Proxy 
-           Authentication (see below). Login url uniquely allows POSTing user credentials 
-           via configurable POST forms as well as configuring a unique username and password
-           for each virtual client by appending a sequence number to the username and password 
-           basewords.<br/>
+           Both UAS and Login URLs are coming with an option to configure username 
+           and password. The difference is that for UAS only GET method is currently allowed in 
+           and username&amp;password are intended to support Web or Proxy Authentication 
+           (see below). <br/>
+           Login url uniquely allows POSTing user credentials via configurable POST forms as 
+           well as configuring a unique username and password for each virtual client by appending 
+           a sequence number to the username and password basewords.<br/>
            <br/>
           Does somebody really needs PUT or POST methods as an option for UAS urls? <br/>
           If yes, please, signal us.<br/>
           <br/>
          The loader supports HTTP Web Authentication and Proxy Authentication.
-         Authentication methods supported are Basic, Digest (RFC2617) and NTLM.
+         The supported authentication methods are Basic, Digest (RFC2617) and NTLM.
          When responded 401 or 407, libcurl will choose the most safe method
          from those, supported by the server.<br/>
          To support GSS Web-Authentication, add in Makefile building of libcurl
@@ -307,22 +314,22 @@ Please, look at conf-examples/ftp.conf<br/>
          <br/>
          Other possible options are:<br/>
         -c[onnection establishment timeout, seconds]<br/>
-        -e[rror drop client (smooth mode). Client on error doesn't attempt loading any mode]<br/>
+        -e[rror drop client (smooth mode). Client on error doesn't attempt loading any more]<br/>
         -h[elp]<br/>
         -i[ntermediate (snapshot) statistics time interval (default 3 sec)]<br/>
         -f[ilename of configuration to run (batches of clients)]<br/>
         -l[ogfile max size in MB (default 1024). On the size reached, file pointer rewinded]<br/>
-        -m[ode of loading, 1 - storming, 2 - smooth (default)]<br/>
+        -m[ode of loading, 0 - hyper, 1 - storming, 2 - smooth (the default)]<br/>
         -o[utput to stdout bodies of downloaded files - attn!- bulky]<br/>
-        -r[euse connections disabled. Close connections and re-open them. Try with and without]<br/>
+        -r[euse connections disabled. Closes TCP-connections and re-open them. Try with and without]<br/>
         -s[tderr printout of client messages instead of to logfile - attn!- bulky]<br/>
         -t[hreads enable - enables threads, each runs a batch of clients]<br/>
         -v[erbose output to the logfiles; includes info about headers sent/received]<br/>
         -u[rl logging - logs url names to logfile, when -v verbose option is used]<br/>
         <br/>
        For the rare cases, when several batches are specified in the same config file,
-       note, please, that curl-loader without -t runs only the first batch specified.
-       Thus, running several client batches without threads requires some script with
+       note, please, that curl-loader without -t runs only the first batch.
+       Thus, running several client batches without threads requires some script starting
        several curl-loader processes.<br/>
        <br/>
        Connection Reuse Disable Option (-r):<br/>
@@ -333,7 +340,7 @@ Please, look at conf-examples/ftp.conf<br/>
        on your server support of Keep-Alive and the purpose of your testing.
        Try with and without -r and see, what you get.<br/>
 
-      Connection reuse (just the default, without -r option) has advantages due to the 
+      Connection reuse (the default, without -r option) has advantages due to the 
       decreased consumption of opened descriptors (sockets) and ports.<br/>
        </answer>
        </faq>
@@ -343,13 +350,6 @@ Please, look at conf-examples/ftp.conf<br/>
      Which loading modes are supported?
       </question>
       <answer>
-One of the modes is called "storming" (-m1 command line), where all clients 
-of a batch are starting together. They are expected to finish their job within
-a certain timeout. After the timeout they are either completed fetching url, 
-or are cutted and disconnected and a new cycle begins. Storming mode is better 
-to use, when login operation is a single one and not in cycles, or when the 
-tool is used just as a traffic generator. <br/>
-<br/>
 The default loading mode is a so-called "smooth" (by default or -m2 command line), 
 where each client spends as much time as wishes and starts another url or 
 another cycle only after completing the previous url. When a client loading is
@@ -361,11 +361,20 @@ in the logfile for errors, and when connection timeout error appears, adjust the
 connection timeout using -c command line option. Note, that the smooth mode
 is suitable for login-logoff cycles of load.<br/>
 <br/>
+Another loading mode is called "storming" (-m1 command line), where all clients 
+of a batch are starting together. They are expected to finish their job within
+a certain timeout. After the timeout the clients either accomplished fetching url, 
+or are cutted and disconnected; thus, a new loading cycle begins. Storming mode 
+is better to use, when login operation is done once and not in cycles, or when the 
+tool is used just as a traffic generator. <br/>
+<br/>
+
+<br/>
 A combination of the both modes (two separate instances of the program)
-can provide somehow realistic behavior with some "smooth" load plus
+can provide somehow realistic behavior with a "smooth" load plus
 "storming" bursts of requests.<br/>
 <br/>
-Hyper-mode (option -m3) is currently "under construction".<br/>
+Hyper-mode (option -m0) is currently "under construction".<br/>
        </answer>
        </faq>
 
@@ -376,9 +385,9 @@ Hyper-mode (option -m3) is currently "under construction".<br/>
       <answer>
 curl-loader outputs to the console loading status and statistics as the "standing" 
 ouput, where the upper part is for the latest interval and below is the average 
-numbers since load start. The example is below:<br/>
+numbers since load start. The example is here:<br/>
 <br/>
-<!-- <pre>  -->
+<!--<pre>  -->
 =====================================================<br/>
 Last interval stats (interval:3 sec, clients:10, CAPS:3):<br/>
  Operations:    Success         Failed<br/>
@@ -495,13 +504,14 @@ err - number of libcurl errors at the resolving, TCP/IP and TLS/SSL levels;<br/>
 <br/>
 <br/>
 The following conditions are considered as errors:<br/>
-- error at the level of libcurl, which includes resolving, TCP/IP and, when applicable,<br/>
+- error at the level of libcurl, which includes resolving, TCP/IP and, when applicable,
   TLS/SSL errors;<br/>
 - all HTTP 5xx server errors;<br/>
-- most of HTTP 4xx client errors, excluding are 401 and 407 authentication responses
-  not considered as errors;<br/>
+- most of HTTP 4xx client errors, excluding 401 and 407 authentication responses
+  not considered real errors;<br/>
 When the above error conditions occur, a virtual client is marked as being 
 in the error state.<br/>
+<br/>
 By default we "recover" such client by scheduling it to the next loading cycle, 
 starting from the first operation of the cycle. You may use command line option
 -e to change the default behavior to another, so that clients once arriving at 
@@ -518,16 +528,16 @@ error state will not be scheduled for load any more. <br/>
      What about performance?
       </question>
       <answer>
-The limit of no more than 1000 virtual clients per batch (due to the 
+The limit of no more than 1000 virtual clients per batch (due to syscall 
 select () FD_SETSIZE) has been lifted, so you can try now 2000 and may be 
-more number of clients from the single thread (single select ()). 
-Please, care however about available sockets and limits. Note, that the system 
+more number of clients from the single thread. <br/>
+Please, care, however, about available sockets and limits. Note, that the system 
 call select () does not scale well with a big number of sockets, therefore, 
-you can try a script, which runs several instances of curl_loader, each with 
+you can try a script, which runs several instances of curl_loader each with 
 1000-2000 clients.<br/>
 <br/>
-Running several batches with threads (option -t), each with 1000-2000 clients is 
-another valid option, however, may be less stable - try it.<br/>
+Running several batches with threads (option -t), each thread with 1000-2000 clients is 
+another valid option, whereas it may be less stable - try it.<br/>
 <br/>
 A future release will incorporate libcurl HYPER API to support tens of thousand 
 of virtual clients from a single curl-loader process, using curl_multi_socket() 
@@ -553,12 +563,13 @@ Since you need performance compile with optimization and without debugging.<br/>
 Y may add to Makefile optimization for your particular processor by 
 -match /-mcpu gcc option directives to OPT_FLAGS.<br/>
 <br/>
-<br/>
 2. Login as a su;<br/>
 <br/>
 3. Increase the default number of allowed open descriptors (sockets);<br/>
-E.g. running #ulimit -n 20000<br/>
-If running several instances of curl-loader, consider increase of system
+<br/>
+Run e.g. #ulimit -n 19900<br/>
+<br/>
+When running several instances of curl-loader, consider increase of system
 limits for open descriptors, if necessary. Take your own account of the
 socket usage in the system, considering sockets faster recycling (less
 time in the time-wait state), by setting, optionally, something like this:<br/>
@@ -571,20 +582,18 @@ Makefile) to control the maximum fd, that may be used for select.<br/>
 Increase the maximum number of open descriptors in your linux system, if required,
 using linux HOWTOS.<br/>
 <br/>
-<br/>
 4. Create configuration files for each instance of curl-loader to run.<br/>
 <br/>
-What is important is to give a unique BATCH_NAME for each batch-file,
+What is important is to give a unique value for tag BATCH_NAME,
 which is in use by a separate instance of curl-loader. Logfile, report file, etc 
-have name, which are derivatives of the BATCH_NAME, and when several
-instances of curl-loader are writing to the same file, this is not
-helpful and crashful. Please, use in the configuration batch files 
-non-overlapping ranges of IP-addresses, else libcurl virtual clients will 
-compete for the IP-addresses to bind to.<br/>
+have name, which are the derivatives of the BATCH_NAME value. 
+Therefore, when several instances of curl-loader are writing to the same file, 
+this is not helpful and may be even "crashful". Please, use in your configuration 
+batch files non-overlapping ranges of IP-addresses, else libcurl virtual clients 
+will compete for the IP-addresses to bind to.<br/>
 <br/>
 Use CLIENTS_INITIAL_INC tag in smooth mode to increase number of your 
 clients gradually at start-up in order not boom the server.<br/>
-<br/>
 <br/>
 5. Connections re-use.<br/>
 <br/>
@@ -596,25 +605,16 @@ re-opened for the next request. Whether it is appropriate for you to work with
 of your testing.<br/>
 Try with and without -r and see, what you get.<br/>
 <br/>
+6. Troubleshooting.<br/>
 <br/>
-6. Try sometimes the non-default storming mode (commandline option -m1), 
-which may better suit your needs. See, README for explanations. A combination of
--m1 and -r is a valid combination, still, if the server does not make problems 
-with connections reuse.
-<br/>
-<br/>
-7. Troubleshooting.<br/>
-<br/>
-Running first runs one may try command-line options -v (verbose) and -u (url
+Run the first loading attempt using command-line options -v (verbose) and -u (url
 in logs). Grep to look for the errors and their reasons. If an error is
 "Connection timeout", you may try to increase the connection establishment
 timeout (the default is 5 seconds - huge, but "ih veis"), using -c command-line
 option.<br/>
-<br/>
 If any assistance required, please, don't hesitate to contact us.<br/>
 <br/>
-<br/>
-8. Logs and statistics.<br/>
+7. Logs and statistics.<br/>
 <br/>
 After end of a run, or after SIGINT (Cntl-C), the final results are calculated
 and printed to the console as well as to the file &lt;batch-name&gt;.txt.
@@ -622,10 +622,10 @@ Current results are presented in each row, and average summary as the last
 raws, separated from the rest by asterisks.<br/>
 <br/>
 Pay attention, that &lt;batch-name&gt;.log log file may become huge, particularly, 
-when using verbose output (-v -u). Commandline option -l &lt;maxsize in MB&gt; may 
+when using verbose output (-v -u). Command-line option -l &lt;maxsize in MB&gt; may 
 be useful, whereas the default policy is to rewind the logfile (writing from the 
-file start), when it reaches 1 GB. Otherwise, do not use -v and -u options for 
-rather long loads.<br/>
+file start), when it reaches 1 GB. Do not use -v and -u options, when you have 
+performance issues.<br/>
        </answer>
     </faq>
 
@@ -647,8 +647,8 @@ url retrival time is server and network dependent and not always easy
 to predict. The result is that number of clients/requests is a known parameter,
 and number of CAPS is something to be estimated from the time of test and
 number of requests.<br/>
-Smooth mode presents at the LOAD STATUS GUI output calculated current 
-and average CAPS numbers.<br/>
+Smooth mode presents at the LOAD STATUS GUI the output of calculated current 
+and average CAPS.<br/>
        </answer>
     </faq>
 </faqsection>
