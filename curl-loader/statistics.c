@@ -476,7 +476,11 @@ void dump_final_statistics (client_context* cctx)
 ****************************************************************************************/
 void dump_snapshot_interval (batch_context* bctx, unsigned long now)
 {
-  fprintf(stdout, "\033[2J");
+  if (!stop_loading)
+    {
+      fprintf(stdout, "\033[2J");
+    }
+
   dump_snapshot_interval_and_advance_total_statistics(bctx, now);
 
   const int seconds_run = (int)(now - bctx->start_time)/ 1000;
