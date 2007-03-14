@@ -135,7 +135,6 @@ typedef struct {
 
   struct event ev;
   int evset;       /* is ev currently in use ? */
-  int assigned;
 
 } sock_info;
 
@@ -157,8 +156,9 @@ static void update_timeout(batch_context *g)
   struct timeval timeout;
 
   curl_multi_timeout(g->multiple_handle, &timeout_ms);
-  if(timeout_ms < 0)
+  if(timeout_ms < 0) {
     return;
+  }
 
   timeout.tv_sec = timeout_ms/1000;
   timeout.tv_usec = (timeout_ms%1000)*1000;
@@ -177,8 +177,9 @@ static void setsock(sock_info*f, curl_socket_t s, CURL*e, int act, batch_context
 
   f->sockfd = s;
   f->action = act;
-  //f->easy = e;
-  if (f->evset) { event_del(&f->ev); }
+  if (f->evset) { 
+    event_del(&f->ev); 
+  }
   event_set( &f->ev, f->sockfd, kind, event_cb, g);
   f->evset=1;
   event_add(&f->ev, NULL);
@@ -187,7 +188,6 @@ static void setsock(sock_info*f, curl_socket_t s, CURL*e, int act, batch_context
 /* Initialize a new sock_info structure */
 static void addsock(curl_socket_t s, CURL *easy, int action, client_context *cctx, sock_info *fdp, batch_context *g) {
   setsock(fdp, s, easy, action, g);
-  fdp->assigned = 1;
   curl_multi_assign(g->multiple_handle, s, cctx);
 }
 
@@ -195,10 +195,13 @@ static void addsock(curl_socket_t s, CURL *easy, int action, client_context *cct
 /* Clean up the sock_info structure */
 static void remsock(sock_info *f)
 {
-  if (!f) { return; }
-  if (f->evset) { event_del(&f->ev); }
-  free(f);
-  f->assigned = 0;
+  if (!f) { 
+    return; 
+  }
+  if (f->evset) { 
+    event_del(&f->ev); 
+  }
+  f->evset = 0;
 }
 
 
@@ -216,8 +219,6 @@ static void event_cb(int fd, short kind, void *userp)
   do {
     rc = curl_multi_socket(g->multiple_handle, fd, &still_running);
   } while (rc == CURLM_CALL_MULTI_PERFORM);
-
-  mperform_smooth (g, &still_running);
  
   if(still_running) {
     update_timeout(g);
@@ -239,9 +240,6 @@ static int sock_cb(CURL *e, curl_socket_t s, int what, void *cbp, void *sockp)
   sock_info *fdp = (sock_info*) cctx ? cctx->ext_data : 0;
 
   char *whatstr[]={ "none", "IN", "OUT", "INOUT", "REMOVE" };
-  fprintf(MSG_OUT,
-          "socket callback: s=%d e=%p what=%s ", s, e, whatstr[what]);
-
 
   if (!cctx) {
    curl_easy_getinfo (e, CURLINFO_PRIVATE, &cctx);
@@ -254,13 +252,23 @@ static int sock_cb(CURL *e, curl_socket_t s, int what, void *cbp, void *sockp)
     printf("no client context\n");
     return 0;
   }
+
+  if (!fdp) {
+    printf("no extension data\n");
+    return 0;
+  }
+  
+  fprintf(MSG_OUT,
+          "socket callback: ctx=%p sock=%d what=%s\n",cctx, s , whatstr[what]);
+
    
   if (what == CURL_POLL_REMOVE) {
     fprintf(MSG_OUT, "\n");
     remsock(fdp);
-    cctx->ext_data = 0;
+
+    load_next_step( cctx, get_tick_count () );
   } else {
-    if (!fdp->assigned) {
+    if (!fdp->evset) {
       fprintf(MSG_OUT, "Adding data: %s%s\n",
              what&CURL_POLL_IN?"READ":"",
              what&CURL_POLL_OUT?"WRITE":"" );
@@ -291,6 +299,17 @@ static void timer_cb(int fd, short kind, void *userp)
 
   if ( still_running ) { update_timeout(g); }
 }
+
+#if 0 
+/* CURLOPT_PROGRESSFUNCTION */
+int prog_cb (void *p, double dltotal, double dlnow, double ult, double uln)
+{
+  (void) ult;
+  (void) uln;
+  fprintf(MSG_OUT, "Progress: ctx %p (%g/%g)\n", p, dlnow, dltotal);
+  return 0;
+}
+#endif
 
 
 
@@ -325,17 +344,8 @@ int user_activity_hyper (client_context* cctx_array)
       }
       memset(sinfo, 0, sizeof(sock_info));
       bctx->cctx_array[k].ext_data = sinfo;
-      //curl_easy_setopt (bctx->cctx_array[k].handle, CURLOPT_PRIVATE, bctx->cctx_array + k);
-
-      
-      if (load_next_step (&bctx->cctx_array[k], get_tick_count()) == -1) {
-	 fprintf(stderr,"load_next_step failed\n");
-	 return -1;
-      }
+      curl_easy_setopt (bctx->cctx_array[k].handle, CURLOPT_PRIVATE, bctx->cctx_array + k);
     }
-
-  
-
 
   if (!bctx)
     {
@@ -897,6 +907,7 @@ static int on_cycling_completed (client_context* cctx, unsigned long *wait_msec)
   if (bctx->do_logoff && !bctx->logoff_cycling)
     return load_logoff_state (cctx, wait_msec);
 
+
   return (cctx->client_state = CSTATE_FINISHED_OK);
 }
 
@@ -989,8 +1000,9 @@ int setup_curl_handle_init_hyper(client_context*const cctx,
     {
       return -1;
     }
-
-  curl_easy_reset (handle);
+  
+  printf("init_hyper %p\n",cctx);
+  //curl_easy_reset (handle);
 
   if (bctx->ipv6)
     curl_easy_setopt (handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
@@ -1041,6 +1053,11 @@ int setup_curl_handle_init_hyper(client_context*const cctx,
                     client_tracing_function);
   curl_easy_setopt (handle, CURLOPT_DEBUGDATA, cctx);
 
+#if 0
+  curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, prog_cb);
+  curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, cctx);
+#endif
+
 
   if (!output_to_stdout)
     {
@@ -1065,9 +1082,6 @@ int setup_curl_handle_init_hyper(client_context*const cctx,
   /* Set the private pointer to be used by the smooth-mode. */
   curl_easy_setopt (handle, CURLOPT_PRIVATE, cctx);
   curl_easy_setopt (handle, CURLOPT_WRITEDATA, cctx);
-
-  fprintf(MSG_OUT,">%p:%p ",handle,cctx);
-
 
   /* Without the buffer set, we do not get any errors in tracing function. */
   curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer);    
@@ -1128,6 +1142,8 @@ static int setup_uas (client_context* cctx)
  ****************************************************************************************/
 static int load_init_state (client_context* cctx, unsigned long *wait_msec)
 {
+  printf("->STATE: load_init_state %p\n",cctx);
+
   batch_context* bctx = cctx->bctx;
 
   *wait_msec = 0;
@@ -1204,6 +1220,8 @@ static int load_login_state (client_context* cctx, unsigned long *wait_msec)
 {
   batch_context* bctx = cctx->bctx;
 
+  printf("->STATE: load_login_state %p\n",cctx);
+
   /*
     Test for login state, if a single login operation has been accomplished. 
     Sometimes, the operation contains two elements: GET and POST.
@@ -1270,6 +1288,9 @@ static int load_login_state (client_context* cctx, unsigned long *wait_msec)
 static int load_uas_state (client_context* cctx, unsigned long *wait_msec)
 { 
   batch_context* bctx = cctx->bctx;
+
+  printf("->STATE: load_uas_state %p\n",cctx);
+
 
   if (cctx->client_state == CSTATE_UAS_CYCLING)
     {
@@ -1437,6 +1458,7 @@ static int client_add_to_load (batch_context* bctx, client_context* cctx)
  ****************************************************************************************/
 static int client_remove_from_load (batch_context* bctx, client_context* cctx)
 {
+  printf("client_remove_from_load %p\n",cctx);
   if (curl_multi_remove_handle (bctx->multiple_handle, cctx->handle) == CURLM_OK)
     {
       if (bctx->active_clients_count > 0)
@@ -1447,7 +1469,7 @@ static int client_remove_from_load (batch_context* bctx, client_context* cctx)
     }
   else
     {
-      fprintf (stderr, "%s - curl_multi_remove_handle () failed.\n", __func__);
+      fprintf (stderr, "%s - curl_multi_eemove_handle () failed.\n", __func__);
       return -1;
     }
 
