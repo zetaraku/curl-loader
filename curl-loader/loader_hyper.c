@@ -732,7 +732,7 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
           return -1;
         }
     }
-
+ 
   /* 
      When load_error_state () gets client (in CSTATE_ERROR) and 
      <recoverable_error_state> is true (the default), it recovers the 
