@@ -148,6 +148,11 @@ static void event_cb(int fd, short kind, void *userp);
 /*--------------------------------------------------------------------------*/
 
 struct event timer_event;
+struct event timer_next_load_event;
+
+int next_load_event_set;
+  
+
 
 /* Update the event timer after curl_multi library calls */
 static void update_timeout(batch_context *g)
@@ -159,7 +164,6 @@ static void update_timeout(batch_context *g)
   if(timeout_ms < 0) {
     return;
   }
-
   timeout.tv_sec = timeout_ms/1000;
   timeout.tv_usec = (timeout_ms%1000)*1000;
   evtimer_add(&timer_event, &timeout);
@@ -213,22 +217,34 @@ static void event_cb(int fd, short kind, void *userp)
 {
   batch_context *g = (batch_context *) userp;
   (void) kind;
+  (void) fd;
 
+  printf("event_cb enter\n");
+
+#if 1
   CURLMcode rc;
 
   do {
     rc = curl_multi_socket(g->multiple_handle, fd, &still_running);
   } while (rc == CURLM_CALL_MULTI_PERFORM);
+#else
+  mperform_smooth (g, &still_running);
  
+#endif
+
+
+
   if(still_running) {
     update_timeout(g);
   } else {
-
+#if 0
     fprintf(MSG_OUT,"last transfer done, kill timeout\n");
     if (evtimer_pending(&timer_event, NULL)) {
       evtimer_del(&timer_event);
     }
+#endif
   }
+  printf("event_cb exit\n");
 }
 
 
@@ -265,8 +281,6 @@ static int sock_cb(CURL *e, curl_socket_t s, int what, void *cbp, void *sockp)
   if (what == CURL_POLL_REMOVE) {
     fprintf(MSG_OUT, "\n");
     remsock(fdp);
-
-    load_next_step( cctx, get_tick_count () );
   } else {
     if (!fdp->evset) {
       fprintf(MSG_OUT, "Adding data: %s%s\n",
@@ -300,6 +314,18 @@ static void timer_cb(int fd, short kind, void *userp)
   if ( still_running ) { update_timeout(g); }
 }
 
+
+
+
+static void next_load_cb(int fd, short kind, void *userp)
+{
+  (void)fd;
+  (void)kind;
+  batch_context *g = (batch_context *)userp;
+  printf("next_load_cb\n");
+  dispatch_expired_timers (g, get_tick_count());
+}
+
 #if 0 
 /* CURLOPT_PROGRESSFUNCTION */
 int prog_cb (void *p, double dltotal, double dlnow, double ult, double uln)
@@ -329,12 +355,15 @@ int user_activity_hyper (client_context* cctx_array)
   long logfile_timer_id = -1;
   long clients_num_inc_id = -1;
   sock_info *sinfo;
-  int k;
+  int k,rc;
 
   event_init();
   curl_multi_setopt(bctx->multiple_handle, CURLMOPT_SOCKETFUNCTION, sock_cb);
   curl_multi_setopt(bctx->multiple_handle, CURLMOPT_SOCKETDATA, bctx);
   evtimer_set(&timer_event, timer_cb, &bctx);
+  evtimer_set(&timer_next_load_event, next_load_cb, &bctx);
+
+ 
  
   for (k = 0 ; k < bctx->client_num ; k++)
     {
@@ -393,7 +422,6 @@ int user_activity_hyper (client_context* cctx_array)
   bctx->start_time = bctx->last_measure = now_time;
   bctx->active_clients_count = 0;
   
-
   if (add_loading_clients (bctx) == -1)
     {
       fprintf (stderr, "%s error: add_loading_clients () failed.\n", __func__);
@@ -420,6 +448,12 @@ int user_activity_hyper (client_context* cctx_array)
           return -1;
         }
     }
+
+#if 1
+  do {
+    rc = curl_multi_socket_all(bctx->multiple_handle, &still_running);
+  } while (CURLM_CALL_MULTI_PERFORM == rc);
+#endif
 
   /* 
      ========= Run the loading machinery ================
@@ -539,6 +573,8 @@ static int mget_url_smooth (batch_context* bctx)
     }
  
   event_dispatch();
+   mperform_smooth (bctx, &still_running);
+
 
 
 #if 0
@@ -599,10 +635,11 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
   unsigned long now_time;
   CURLMsg *msg;
     
+#if 0    
   while (CURLM_CALL_MULTI_PERFORM == 
         curl_multi_perform(mhandle, still_running))
     ;
-
+#endif
   now_time = get_tick_count ();
 
   if ((long)(now_time - bctx->last_measure) > snapshot_timeout) 
@@ -705,6 +742,7 @@ dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
   return 0;
 }
 
+
 /****************************************************************************************
  * Function name - load_next_step
  *
@@ -722,6 +760,8 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
   batch_context* bctx = cctx->bctx;
   int rval_load = CSTATE_ERROR;
   unsigned long interleave_waiting_time = 0;
+
+  printf("load_next_step %p state %d\n",cctx, cctx->client_state);
 	
   /* Remove handle from the multiple handle, if it was added there before. */
   if (cctx->client_state != CSTATE_INIT)
@@ -786,6 +826,9 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
     }
   else
     {
+      struct timeval timeout;
+ 
+      printf("load_next_step: ctx %p schedule next load in %d seconds\n", cctx,(int) interleave_waiting_time/1000);
       /* 
          Postpone client scheduling for the interleave_waiting_time msec by 
          placing it to the timer queue. 
@@ -797,6 +840,15 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
           fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
           return -1;
         }
+
+ 
+      timeout.tv_sec = (tq_time_to_nearest_timer (bctx->waiting_queue) - get_tick_count()) / 1000;
+      timeout.tv_usec = 0;
+      evtimer_add(&timer_next_load_event, &timeout);
+
+      printf("load_next_step: next evlib timer %d\n",(int) timeout.tv_sec);
+
+	
       
       //fprintf (stderr, "%s - scheduled client to wq with wtime %ld\n", 
       //				 __func__, interleave_waiting_time);
@@ -900,6 +952,8 @@ static void advance_cycle_num (client_context* cctx)
 static int on_cycling_completed (client_context* cctx, unsigned long *wait_msec)
 {
   batch_context* bctx = cctx->bctx;
+
+  printf("on_cycling_completed %p\n",cctx);
 
   /* 
      Go to not-cycling logoff, else to the finish-line. 
@@ -1097,10 +1151,11 @@ int setup_curl_handle_init_hyper(client_context*const cctx,
       return -1;
     }
 
+#if 0
   do {
     rc = curl_multi_socket_all(bctx->multiple_handle, &still_running);
   } while (CURLM_CALL_MULTI_PERFORM == rc);
-
+#endif
      
   return 0;
 }
@@ -1426,6 +1481,8 @@ static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec)
  ****************************************************************************************/
 static int client_add_to_load (batch_context* bctx, client_context* cctx)
 {
+  printf("client_add_to_load %p\n",cctx);
+
   /* Remember the previous state and UAS index: fur operational statistics */
   cctx->preload_state = cctx->client_state;
   cctx->preload_uas_url_curr_index = cctx->uas_url_curr_index;

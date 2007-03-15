@@ -686,7 +686,7 @@ int client_tracing_function (CURL *handle,
   char*url_target = NULL, *url_effective = NULL;
   int i;
 
-  printf("->client_tracing_function size=%d | %s\n",size, data);
+  printf("->client_tracing_function cctx=%p size=%d\n",cctx,size);
 
   url_logging=verbose_logging=1;
 
