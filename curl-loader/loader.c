@@ -257,7 +257,7 @@ static void* batch_function (void * batch_data)
 
   if (! stderr_print_client_msg)
     {
-      /*
+      ///*
         Init batch logfile for the batch client output 
       */
       sprintf (bctx-> batch_logfile, "./%s.log", bctx->batch_name);
@@ -686,9 +686,8 @@ int client_tracing_function (CURL *handle,
   char*url_target = NULL, *url_effective = NULL;
   int i;
 
-  printf("->client_tracing_function cctx=%p size=%d\n",cctx,size);
-
-  url_logging=verbose_logging=1;
+  //printf("->client_tracing_function cctx=%p size=%d\n",cctx,size);
+  //url_logging=verbose_logging=1;
 
   if (url_logging)
     {
