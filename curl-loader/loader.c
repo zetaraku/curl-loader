@@ -60,6 +60,7 @@
 
 #define OPEN_FDS_SUGGESTION 10000
 
+
 static int create_ip_addrs (batch_context* bctx, int bctx_num);
 int client_tracing_function (CURL *handle, 
                                     curl_infotype type, 
@@ -257,7 +258,7 @@ static void* batch_function (void * batch_data)
 
   if (! stderr_print_client_msg)
     {
-      ///*
+      /*
         Init batch logfile for the batch client output 
       */
       sprintf (bctx-> batch_logfile, "./%s.log", bctx->batch_name);
@@ -684,10 +685,15 @@ int client_tracing_function (CURL *handle,
 {
   client_context* cctx = (client_context*) userp;
   char*url_target = NULL, *url_effective = NULL;
-  int i;
+#if 0
+  char buf[300];
+  int n;
 
-  //printf("->client_tracing_function cctx=%p size=%d\n",cctx,size);
-  //url_logging=verbose_logging=1;
+  n = snprintf(buf,sizeof(buf)-1,"->client_tracing_function cctx=%p size=%d | %s",cctx,size,data);
+  buf[n] = '\0';
+  printf("%s\n",buf);
+#endif  
+  url_logging=verbose_logging=1;
 
   if (url_logging)
     {
