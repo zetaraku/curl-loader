@@ -7,9 +7,9 @@
   <body> 
       <p>
 Thanks to the creators and maintainers of the packages, we are using:<br/>
-- libcurl (Daniel Stenberg) for the HTTP 1.1, FTP, telnet, ldap, etc client stacks;<br/>
+- libcurl (Daniel Stenberg and others) for the HTTP 1.1, FTP, telnet, ldap, etc client stacks;<br/>
 - openssl for the TLS/SSL stack;<br/>
-- dialog for the console dialog manu;<br/>
+- dialog package for the console menus;<br/>
 - libevent (Niels Provos) for the I/O event demultiplexing framework;<br/>
 - iprouted2 and linux netdev for netlink and linux TCP/IP stack (Alexey Kuznetsov, David Miller and many others).<br/>
       </p>

@@ -27,8 +27,10 @@
              application load and application behavior of thousands and tens of 
              thousands HTTP/HTTPS and FTP/FTPS clients, each with its own 
              source IP-address. In contrast to other tools, curl-loader is using real 
-             client protocol stacks, namely, HTTP 1.1 and FTP of libcurl, TLS/SSL 
-             of openssl, and supports login and authentication flavors.
+             client protocol stacks, namely, HTTP 1.1 and FTP of 
+             <a href="http://curl.haxx.se/libcurl/features.html">libcurl</a>,
+             TLS/SSL of <a href="http://www.openssl.org/support/faq.html">openssl</a>, 
+             and supports login and authentication flavors.
   </p>
       <p>The tool is useful for performance loading of various application services,
               using HTTP, HTTPS, FTP, FTPS, web-sites testing, and traffic generation.
@@ -120,15 +122,17 @@
     <section id="license">
       <title>License</title>
       <p>
-             Actually it is GPL2 due to the code from iprouted2. If required, we can also 
-             consider GPL-compartible BSD-like license, and/or make it configurable.
+             Actually it is GPL2 due to the code from 
+            <a href="http://linux-net.osdl.org/index.php/Iproute2">iprouted2</a>. 
+           If required, we can also consider GPL-compartible BSD-like license, and/or make it configurable.
       </p>
      </section>
 
     <section id="authors">
       <title>Authors</title>
       <p>
-         Robert Iakobashvili (coroberti et gmail.com) and Michael Moser (moser.michael et gmail.com)
+         Robert Iakobashvili (coroberti et gmail.com) and Michael Moser (moser.michael et gmail.com), both
+         from Israel.
       </p>
      </section>
      <section id="success-usage">

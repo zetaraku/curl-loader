@@ -272,6 +272,24 @@ For more examples, please, look at the files in "conf-examples" directory.<br/>
          against appropriate GSS library, see libcurl pages for detailed instructions.<br/>
       </answer>
     </faq>
+
+    <faq id="login-logoff-uas">
+      <question>
+        When is better to use Login/Logoff section and when UAS?
+      </question>
+      <answer>
+        Login and Logoff section enable usage of POST-ed credentials, whereas UAS urls are 
+        using only GET method.<br/>
+        <br/>
+        Another business case for Login url is that it may be either used in a cycle or in a 
+        non-cycling mode, whereas UAS urls are always cycled.<br/>
+        When e.g. proxy authentication is the first operation to be performed and only once,
+        non-cycling Login url is useful.<br/>
+        <br/>
+     </answer>
+     </faq>
+   </faqsection>
+
     <faq id="ftp">
       <question>
      What about FTP load?
@@ -283,7 +301,6 @@ ftp://username:password@hostname:port/etc-str<br/>
 Please, look at conf-examples/ftp.conf<br/>
       </answer>
      </faq>
-   </faqsection>
 
   <faqsection id="Running">
     <title>Running Load</title>
@@ -647,6 +664,7 @@ url retrival time is server and network dependent and not always easy
 to predict. The result is that number of clients/requests is a known parameter,
 and number of CAPS is something to be estimated from the time of test and
 number of requests.<br/>
+<br/>
 Smooth mode presents at the LOAD STATUS GUI the output of calculated current 
 and average CAPS.<br/>
        </answer>
