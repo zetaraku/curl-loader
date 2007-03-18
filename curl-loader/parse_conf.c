@@ -37,6 +37,7 @@
 
 #include "conf.h"
 #include "batch.h"
+#include "client.h"
 
 #define EXPLORER_USERAGENT_STR "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" 
 #define BATCH_MAX_CLIENTS_NUM 4096
@@ -77,6 +78,7 @@ static int login_req_type_get_post_parser (batch_context*const bctx, char*const 
 static int login_req_type_post_parser (batch_context*const bctx, char*const value);
 static int login_req_type_get_parser (batch_context*const bctx, char*const value);
 static int login_post_str_parser (batch_context*const bctx, char*const value);
+static int login_credentials_file_parser  (batch_context*const bctx, char*const value);
 static int login_url_parser (batch_context*const bctx, char*const value);
 static int login_url_username_parser (batch_context*const bctx, char*const value);
 static int login_url_password_parser (batch_context*const bctx, char*const value);
@@ -132,6 +134,7 @@ static const tag_parser_pair tp_map [] =
     {"LOGIN_REQ_TYPE_POST", login_req_type_post_parser},
     {"LOGIN_REQ_TYPE_GET", login_req_type_get_parser},
     {"LOGIN_POST_STR", login_post_str_parser},
+    {"LOGIN_CREDENTIALS_FILE", login_credentials_file_parser},
     {"LOGIN_URL", login_url_parser},
     {"LOGIN_URL_USERNAME", login_url_username_parser},
     {"LOGIN_URL_PASSWORD", login_url_password_parser},
@@ -173,6 +176,14 @@ static int validate_batch_general (batch_context*const bctx);
 static int validate_batch_login (batch_context*const bctx);
 static int validate_batch_uas (batch_context*const bctx);
 static int validate_batch_logoff (batch_context*const bctx);
+
+static int post_validate_init (batch_context*const bctx);
+static int init_client_post_buffers_from_file (batch_context*const bctx);
+static int init_post_buffer (char*const input, 
+                             size_t input_length,
+                             batch_context*const bctx, 
+                             int*const client_num,
+                             char* separator);
 
 static int add_param_to_batch (char*const input, 
                                size_t input_length,
@@ -315,6 +326,111 @@ static int add_param_to_batch (
       return -1;
     }
 
+  return 0;
+}
+
+static int init_post_buffer (char*const input, 
+                             size_t input_len,
+                             batch_context*const bctx, 
+                             int*const client_num,
+                             char* separator)
+{
+  const char separators_supported [] =
+    {
+      ':', ' ', '@', '/', '\0'
+    };
+  char* sp = NULL;
+  int i;
+  
+  /* 
+     Figure out the separator used by the first string analyses 
+  */
+  if (*client_num == 0)
+    {
+      for (i = 0; separators_supported [i]; i++)
+        {
+          if ((sp = strchr (input, separators_supported [i])))
+            {
+              *separator = *sp; /* Remember the separator */
+              break;
+            }
+        }
+
+      if (!separators_supported [i])
+        {
+          fprintf (stderr,
+                   "%s - failed to locate in the first string \"%s\" \n" 
+                   "any supported separator.\nThe supported separators are:\n",
+               __func__, input);
+          for (i = 0; separators_supported [i]; i++)
+            {
+              fprintf (stderr,"\"%c\"\n", separators_supported [i]);
+            }
+          return -1;
+        }
+    }
+
+  if ((sp = strchr (input, *separator)))
+    {
+      *sp = '\0'; /* The idea from Igor Potulnitsky */
+    }
+  else
+    {
+      fprintf (stderr, "%s - separator not found.\n", __func__);
+      return -1;
+    }
+
+  char* username = input;
+  char* password = NULL;
+
+  if ((input_len - (sp - input) - 1) > 0)
+    {
+      sp = sp + 1;
+
+      if (strlen (sp))
+        {
+          password = sp;
+        }
+    }
+
+  /*
+    Allocate client buffers for POSTing login and logoff credentials.
+  */
+  if (! (bctx->cctx_array[*client_num].post_data_login =
+         (char *) calloc(POST_LOGIN_BUF_SIZE, sizeof (char))))
+    {
+      fprintf (stderr, "\"%s\" - %s - failed to allocate post login buffer.\n",
+               bctx->batch_name, __func__) ;
+      return -1;
+    }
+  
+  if (! (bctx->cctx_array[*client_num].post_data_logoff =
+         (char *) calloc(POST_LOGOFF_BUF_SIZE, sizeof (char))))
+    {
+      fprintf (stderr, "%s - error: %s - failed to allocate post login buffer.\n",
+               __func__, bctx->batch_name);
+      return -1;
+    }
+
+  if (bctx->login_post_str[0])
+    {
+      snprintf (bctx->cctx_array[*client_num].post_data_login, 
+                POST_LOGIN_BUF_SIZE, 
+                bctx->login_post_str,
+                username, 
+                password ? password : "");
+    }
+
+  if (bctx->logoff_post_str[0])
+    {
+      snprintf (bctx->cctx_array[*client_num].post_data_logoff,
+                POST_LOGOFF_BUF_SIZE,
+                "%s",
+                bctx->logoff_post_str);
+    }
+
+  ++*client_num;
+  
   return 0;
 }
 
@@ -576,6 +692,31 @@ static int login_post_str_parser (batch_context*const bctx, char*const value)
   if (strcmp (value, NON_APPLICABLE_STR) || strcmp (value, "N/A"))
     {
       strncpy (bctx->login_post_str, value, sizeof (bctx->login_post_str) - 1);
+    }
+    return 0;
+}
+static int login_credentials_file_parser  (batch_context*const bctx, char*const value)
+{
+  struct stat statbuf;
+  size_t string_len = 0;
+
+  if (strcmp (value, NON_APPLICABLE_STR))
+    {
+      /* Stat the file, it it exists. */
+      if (stat (value, &statbuf) == -1)
+        {
+          fprintf(stderr, "%s error: file \"%s\" does not exist.\n",  __func__,value);
+          return -1;
+        }
+
+      string_len = strlen (value) + 1;
+      if (! (bctx->login_credentials_file = (char *) calloc (string_len, sizeof (char))))
+        {
+          fprintf(stderr, "%s error: failed to allocate memory with errno %d.\n",  __func__, errno);
+          return -1;
+        }
+
+      strncpy (bctx->login_credentials_file, value, string_len -1);
     }
     return 0;
 }
@@ -1021,21 +1162,39 @@ static int validate_batch_login (batch_context*const bctx)
       return 0;
     }
 
-  if (!strlen (bctx->login_url.username))
+  /* Check the username, but let empty passwords in */
+  if (! bctx->login_credentials_file && !strlen (bctx->login_url.username))
     {
       fprintf (stderr, "%s - error: empty LOGIN_URL_USERNAME .\n", 
                __func__);
       return -1;
     }
 
-  // Let empty passwords in
-
-  if (bctx->login_req_type != LOGIN_REQ_TYPE_POST &&
+  if (bctx->login_req_type != LOGIN_REQ_TYPE_POST && 
+      bctx->login_req_type != LOGIN_REQ_TYPE_GET &&
       bctx->login_req_type != LOGIN_REQ_TYPE_GET_AND_POST)
     {
       fprintf (stderr, "%s - error: LOGIN_REQ_TYPE is out of valid range .\n", 
                __func__);
       return -1;
+    }
+
+  if (bctx->login_credentials_file)
+    {
+      if (! bctx->login_post_str[0])
+        {
+          fprintf (stderr, "%s - error: empty LOGIN_POST_STR, "
+                   "when LOGIN_CREDENTIALS_FILE defined.\n Either disable" 
+                   "LOGIN_CREDENTIALS_FILE or define LOGIN_POST_STR\n", __func__);
+          return -1;
+        }
+      if (strstr (bctx->login_post_str, "%d"))
+        {
+          fprintf (stderr, "%s - error: \"%%d\" symbols in LOGIN_POST_STR, "
+                   "when LOGIN_CREDENTIALS_FILE defined.\n Either remove \"%%d\" " 
+                   "symbols or disable LOGIN_CREDENTIALS_FILE\n", __func__);
+          return -1;
+        }
     }
     
   if (!bctx->login_url.url_str || !strlen (bctx->login_url.url_str))
@@ -1169,7 +1328,7 @@ int parse_config_file (char* const filename,
                        batch_context* bctx_array, 
                        size_t bctx_array_size)
 {
-  char fgets_buff[2048];
+  char fgets_buff[1024];
   FILE* fp;
   struct stat statbuf;
   int batch_index = -1;
@@ -1260,28 +1419,135 @@ int parse_config_file (char* const filename,
           return -1;
         }
 
-      /* Init operational statistics structures */
-
-      if (op_stat_point_init(&bctx_array[k].op_delta, 
-                             (size_t)bctx_array[k].do_login, 
-                             bctx_array[k].uas_urls_num, 
-                             (size_t)bctx_array[k].do_logoff) == -1)
+      if (post_validate_init (&bctx_array[k]) == -1)
         {
-          fprintf (stderr, "%s - error: init of op_delta failed for batch %d.\n",__func__, k);
-          return -1;
-        }
-
-      if (op_stat_point_init(&bctx_array[k].op_total, 
-                             (size_t)bctx_array[k].do_login, 
-                             bctx_array[k].uas_urls_num, 
-                             (size_t)bctx_array[k].do_logoff) == -1)
-        {
-          fprintf (stderr, "%s - error: init of op_total failed for batch %d.\n",__func__, k);
+          fprintf (stderr, 
+                   "%s - error: post_validate_init () for batch %d failed.\n",__func__, k);
           return -1;
         }
     }
 
   return (batch_index + 1);
+}
+
+static int post_validate_init (batch_context*const bctx)
+{
+  if (bctx->login_credentials_file && 
+      init_client_post_buffers_from_file (bctx) == -1)
+    {
+      fprintf (stderr, 
+               "%s - error: init_client_post_buffers_from_file () failed.\n",
+               __func__);
+      return -1;
+    }
+
+  /* Init operational statistics structures */
+  
+  if (op_stat_point_init(&bctx->op_delta, 
+                         (size_t)bctx->do_login, 
+                         bctx->uas_urls_num, 
+                         (size_t)bctx->do_logoff) == -1)
+    {
+      fprintf (stderr, "%s - error: init of op_delta failed.\n",__func__);
+      return -1;
+    }
+  
+  if (op_stat_point_init(&bctx->op_total, 
+                         (size_t)bctx->do_login, 
+                             bctx->uas_urls_num, 
+                         (size_t)bctx->do_logoff) == -1)
+        {
+          fprintf (stderr, "%s - error: init of op_total failed.",__func__);
+          return -1;
+        }
+  return 0;
+}
+
+static int init_client_post_buffers_from_file (batch_context*const bctx)
+{
+  char fgets_buff[512];
+  FILE* fp;
+  int client_index = 0;
+  char sep;
+
+  if (!(fp = fopen (bctx->login_credentials_file, "r")))
+    {
+      fprintf (stderr, 
+               "%s - fopen() failed to open for reading filename \"%s\", errno %d.\n", 
+               __func__, bctx->login_credentials_file, errno);
+      return -1;
+    }
+
+  if (!(bctx->cctx_array  = (client_context *) calloc(bctx->client_num, 
+                                                      sizeof (client_context))))
+    {
+      fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
+               bctx->batch_name, __func__);
+      return -1;
+    }
+
+  while (fgets (fgets_buff, sizeof (fgets_buff) - 1, fp))
+    {
+      fprintf (stderr, "%s - processing login credentials file string \"%s\n", 
+               __func__, fgets_buff);
+
+      char* string_buff = NULL;
+      size_t string_len = 0;
+
+      if ((string_len = strlen (fgets_buff)) && 
+          (string_buff = eat_ws (fgets_buff, &string_len)))
+        {
+          /* Line may be commented out by '#'.*/
+          if (fgets_buff[0] == '#')
+            {
+              fprintf (stderr, "%s - skipping commented file string \"%s\n", 
+                       __func__, fgets_buff);
+              continue;
+            }
+
+          if (!string_len)
+            {
+              fprintf (stderr, "%s - skipping empty line.\n", __func__);
+              continue;
+            }
+
+          if (client_index >= bctx->client_num)
+            {
+              fprintf (stderr, 
+                       "%s - warning: CLIENTS_NUM (%d) is less than the number of" 
+                       "credentials pair is the file\n", __func__, bctx->client_num);
+              sleep (2);
+              break;
+            }
+
+          if (init_post_buffer (fgets_buff,
+                                string_len,
+                                bctx, 
+                                &client_index,
+                                &sep) == -1)
+            {
+              fprintf (stderr, 
+                       "%s - error: init_post_buffer () failed on credentials line \"%s\"\n", 
+                       __func__, fgets_buff);
+              fclose (fp);
+              return -1 ;
+            }
+        }
+    }
+
+  if (client_index < bctx->client_num)
+    {
+      fprintf (stderr, 
+               "%s - error: CLIENTS_NUM (%d) is above the number " 
+               "of credentials pairs\nPlease, either decrease the CLIENTS_NUM "
+               "or add more credentials strings to the file.\n", 
+               __func__, bctx->client_num);
+      fclose (fp);
+      return -1 ;
+    }
+
+  fclose (fp);
+  return 0;
 }
 
 /*******************************************************************************

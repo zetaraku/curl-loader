@@ -1,5 +1,14 @@
 version 0.30? - svn?
 
+* Credentials (user and password) loading from file is a new option
+   added. Login usernames and passwords input from a text file with 
+   the structure of each string like:
+    username separator password.
+    According to RFC1738, only reserved ':', '@', '/' and ' ' (space) are safe 
+    to use as separators between username and password.
+	
+*  Cleanup of allocations and client array initializations in login.c
+
 * Hyper-mode is coming?
 	
 * README file re-worked to have a more structured fashion.

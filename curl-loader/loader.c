@@ -77,9 +77,7 @@ int setup_curl_handle_appl (struct client_context*const cctx,
                                    url_context* url_ctx,
                                    int post_method);
 static int alloc_init_client_post_buffers (struct client_context* cctx);
-static int alloc_init_client_contexts (client_context** p_cctx, 
-                                       batch_context* bctx, 
-                                       FILE* output_file);
+static int alloc_init_client_contexts (batch_context* bctx, FILE* output_file);
 static void free_batch_data_allocations (struct batch_context* bctx);
 static int ipv6_increment(const struct in6_addr *const src, 
                           struct in6_addr *const dest);
@@ -242,7 +240,6 @@ main (int argc, char *argv [])
 static void* batch_function (void * batch_data)
 {
   batch_context* bctx = (batch_context *) batch_data;
-  client_context* cctx = NULL;
   FILE* log_file = 0;
   FILE* statistics_file = 0;
   
@@ -293,9 +290,9 @@ static void* batch_function (void * batch_data)
   /* 
      Allocate and init objects, containing client-context information.
   */
-  if (alloc_init_client_contexts (&cctx, bctx, log_file) == -1)
+  if (alloc_init_client_contexts (bctx, log_file) == -1)
     {
-      fprintf (stderr, "%s - \"%s\" - failed to allocate or init cctx.\n", 
+      fprintf (stderr, "%s - \"%s\" - failed to allocate or init client_contexts.\n", 
                __func__, bctx->batch_name);
       goto cleanup;
     }
@@ -304,7 +301,7 @@ static void* batch_function (void * batch_data)
      Init libcurl MCURL and CURL handles. Setup of the handles is delayed to
      the later step, depending on whether login, UAS or logoff is required.
   */
-  if (initial_handles_init (cctx) == -1)
+  if (initial_handles_init (bctx->cctx_array) == -1)
     {
       fprintf (stderr, "%s - \"%s\" initial_handles_init () failed.\n", 
                __func__, bctx->batch_name);
@@ -317,7 +314,7 @@ static void* batch_function (void * batch_data)
      Calls user activity loading function corresponding to the loading mode
      used (user_activity_smooth or user_activity_storm or user_activity_hyper).
   */ 
-  rval = ua_array[loading_mode] (cctx);
+  rval = ua_array[loading_mode] (bctx->cctx_array);
 
   if (rval == -1)
     {
@@ -336,13 +333,13 @@ static void* batch_function (void * batch_data)
         curl_easy_cleanup(bctx->cctx_array[i].handle);
 
       /* Free POST-buffers */
-      if (cctx[i].post_data_login)
-        free (cctx[i].post_data_login);
-      if (cctx[i].post_data_logoff)
-        free (cctx[i].post_data_logoff);
+      if (bctx->cctx_array[i].post_data_login)
+        free (bctx->cctx_array[i].post_data_login);
+      if (bctx->cctx_array[i].post_data_logoff)
+        free (bctx->cctx_array[i].post_data_logoff);
     }
 
-  free(cctx);
+  free(bctx->cctx_array);
 
   if (log_file)
       fclose (log_file);
@@ -948,7 +945,26 @@ static int alloc_init_client_post_buffers (client_context* cctx)
 
   if (! bctx->login_post_str[0])
     {
-      return -1;
+      if (bctx->login_req_type == LOGOFF_REQ_TYPE_GET)
+        {
+          return 0;
+        }
+      else
+        {
+          fprintf (stderr,
+                   "%s - error: %s - LOGIN_POST_STR not defined.\n",
+                   __func__, bctx->batch_name);
+          return -1;
+        }
+    }
+
+  if (bctx->login_credentials_file)
+    {
+      /* 
+         If we are loading credentials from a file, thus, the 
+         job has supposed to be done in post_validation ().
+      */
+      return 0;
     }
 
   char* pos = bctx->login_post_str;
@@ -985,14 +1001,18 @@ static int alloc_init_client_post_buffers (client_context* cctx)
 
       if (counter_percent_sym == 4)
         {
-          /* For each client init post buffer, containing username and
+          /* 
+             For each client init post buffer, containing username and
              password with uniqueness added via added to the base 
-             username and password client index. */
+             username and password client index.
+          */
           snprintf (cctx[i].post_data_login, 
                     POST_LOGIN_BUF_SIZE, 
                     bctx->login_post_str,
-                    bctx->login_url.username, i + 1,
-                    bctx->login_url.password, i + 1);
+                    bctx->login_url.username, 
+                    i + 1,
+                    bctx->login_url.password[0] ? bctx->login_url.password : "",
+                    i + 1);
         }
       else if (counter_percent_sym == 2)
         {
@@ -1001,7 +1021,7 @@ static int alloc_init_client_post_buffers (client_context* cctx)
                     POST_LOGIN_BUF_SIZE, 
                     bctx->login_post_str,
                     bctx->login_url.username, 
-                    bctx->login_url.password);
+                    bctx->login_url.password[0] ? bctx->login_url.password : "");
         }
       else
         {
@@ -1023,27 +1043,29 @@ static int alloc_init_client_post_buffers (client_context* cctx)
 * Function name - alloc_init_client_contexts
 *
 * Description - Allocate and initialize client contexts
-* Input -       *bctx - back-pointer to batch context to be set to all clients  of the batch
+* Input -       *bctx - pointer to batch context to be set to all clients  of the batch
 *               *log_file - output file to be used by all clients of the batch
-* Output -      **p_cctx - pointer to client contexts array to be allocated and initialized
 *
 * Return Code -  On Success - 0, on Error -1
 ****************************************************************************************/
 static int alloc_init_client_contexts (
-                                       client_context** p_cctx, 
                                        batch_context* bctx,
                                        FILE* log_file)
 {
   int i;
-  client_context* cctx = 0;
 
-  /* Allocate client contexts */
-  if (!(cctx  = (client_context *) calloc(bctx->client_num, 
-                                          sizeof (client_context))))
+  /*
+    Allocate client contexts, if not allocated before 
+  */
+  if (!bctx->cctx_array)
     {
-      fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
-               bctx->batch_name, __func__);
-      return -1;
+      if (!(bctx->cctx_array  = (client_context *) calloc(bctx->client_num, 
+                                              sizeof (client_context))))
+        {
+          fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
+                   bctx->batch_name, __func__);
+          return -1;
+        }
     }
 
   /* 
@@ -1055,38 +1077,36 @@ static int alloc_init_client_contexts (
          Set the timer handling function, which is used by the smooth 
          loading mode. 
       */
-      set_timer_handling_func (&cctx[i], handle_cctx_timer);
+      set_timer_handling_func (&bctx->cctx_array[i], handle_cctx_timer);
 
       /* 
          Build client name for logging, based on sequence number and 
          ip-address for each simulated client. 
       */
-      cctx[i].cycle_num = 0;
+      bctx->cctx_array[i].cycle_num = 0;
 
-      snprintf(cctx[i].client_name, 
-               sizeof(cctx[i].client_name) - 1, 
-               "%d (%s) ", i + 1, bctx->ip_addr_array[i]);
+      snprintf(bctx->cctx_array[i].client_name, 
+               sizeof(bctx->cctx_array[i].client_name) - 1, 
+               "%d (%s) ", 
+               i + 1, 
+               bctx->ip_addr_array[i]);
 
        /* 
          Set index of the client within the batch.
          Useful to get the client's CURL handle from bctx. 
       */
-      cctx[i].client_index = i;
-      cctx[i].uas_url_curr_index = 0; /* Actually zeroed by calloc. */
-
+      bctx->cctx_array[i].client_index = i;
+      bctx->cctx_array[i].uas_url_curr_index = 0; /* Actually zeroed by calloc. */
+      
       /* Set output stream for each client to be either batch logfile or stderr. */
-      cctx[i].file_output = stderr_print_client_msg ? stderr : log_file;
+      bctx->cctx_array[i].file_output = stderr_print_client_msg ? stderr : log_file;
 
       /* 
          Set pointer in client to its batch object. The pointer will be used to get 
          configuration and set back statistics to batch.
       */
-      cctx[i].bctx = bctx;
+      bctx->cctx_array[i].bctx = bctx;
     }
-
-  bctx->cctx_array = cctx;
-
-  *p_cctx = cctx;
 
   return 0;
 }
@@ -1102,12 +1122,17 @@ static void free_batch_data_allocations (batch_context* bctx)
 {
   int i;
 
+  free (bctx->login_credentials_file);
+  bctx->login_credentials_file = NULL;
+
   /* Free the login and logoff urls */
   free (bctx->login_url.url_str);
   bctx->login_url.url_str = NULL;
 
   free (bctx->logoff_url.url_str);
   bctx->logoff_url.url_str = NULL;
+
+  free (bctx->login_credentials_file);
 
   /* Free the allocated UAS url contexts*/
   if (bctx->uas_url_ctx_array && bctx->uas_urls_num)

@@ -740,7 +740,7 @@ static void print_operational_statistics (op_stat_point*const osp)
         }
     }
 
-  if (osp->login_ok && osp->login_failed)
+  if (osp->logoff_ok && osp->logoff_failed)
     {
       fprintf (stdout, " LOGOFF:\t%ld\t\t%ld\n", *osp->logoff_ok, *osp->logoff_failed);
     }

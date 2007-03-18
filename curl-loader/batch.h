@@ -123,11 +123,9 @@ typedef struct batch_context
   /* Whether to include login to cycling or not. */
   int login_cycling;
 
-  /* Authentication login_username - depricated, moved to URL*/
-  //char login_username[32];
+  /* Authentication login_username - depricated, moved to Login URL*/
  
-  /* Authentication login_password - depricated, moved to URL */
-  //char login_password[32];
+  /* Authentication login_password - depricated, moved to Login URL */
   
   /* 
      Either LOGIN_REQ_TYPE_GET_AND_POST or LOGIN_REQ_TYPE_POST
@@ -136,6 +134,13 @@ typedef struct batch_context
 
   /* The string to be used as the base for login post message */
   char login_post_str [POST_BUFFER_SIZE + 1];
+
+  /* 
+     The file with strings like "user:password", where separator may be 
+     ':', '@', '/' and ' ' (space) in line with RFC1738. The file may be created
+     as a dump of DB tables of users and passwords.
+  */
+  char* login_credentials_file;
 
    /* The url object for login. */
   url_context login_url;
@@ -213,8 +218,8 @@ typedef struct batch_context
   int active_clients_count;
 
   /* 
-	 Whether to do gradual increase of loading clients to prevent
-	 a simulteneous huge flow of client requests to server.
+     Whether to do gradual increase of loading clients to prevent
+     a simulteneous huge flow of client requests to server.
   */
   int do_client_num_gradual_increase;
 

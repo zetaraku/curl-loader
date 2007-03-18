@@ -28,8 +28,7 @@
 
 #define BATCHES_MAX_NUM 64
 
-#define POST_LOGIN_BUF_SIZE 128
-#define POST_LOGOFF_BUF_SIZE 64
+
 
 /* forward declarations */
 struct url_context;
