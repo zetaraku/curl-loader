@@ -15,7 +15,7 @@ at the site <link href="http://www.opensourcetesting.org/">opensourcetesting</li
 <link href="http://jakarta.apache.org/jmeter/">Apache JMeter</link> is a good open-source
 HTTP/S loading and performance testing tools competing with curl-loader.<br/>
 <br/>
-<link href="http://jakarta.apache.org/jmeter/">SIPp</link> is an excellent open-source
+<link href="http://sipp.sourceforge.net/">SIPp</link> is an excellent open-source
 SIP protocol loader.<br/>
 <br/>
       </p>
@@ -23,7 +23,7 @@ Some good commercial application loading and testing tools (but they are very ex
       <ol> 
         <li><link href="http://www.radview.com/Products/LoadTesting-WebLOAD-Overview.aspx">RadView WebLoad</link></li> 
         <li><link href="http://www.mercury.com">Mercury Interactive (HP) Tools</link></li> 
-        <li><link href="http://www.spirentcom.com/analysis/technology.cfm?WS=325%26SS=109&amp;wt=2">Spirent Avalanche</link></li> 
+        <li><link href="http://www.spirentcom.com/analysis/technology.cfm?WS=325&amp;SS=109&amp;wt=2">Spirent Avalanche</link></li> 
         <li><link href="http://www.ixiacom.com/products/display?skey=aptixia_ixload_http_ssl_ftp">IXIA IxLoad</link></li> 
       </ol>
   </body>
