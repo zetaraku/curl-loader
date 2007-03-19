@@ -329,6 +329,20 @@ static int add_param_to_batch (
   return 0;
 }
 
+/****************************************************************************************
+* Function name - init_post_buffer
+*
+* Description - Parses string with credentials <user>SP<password>, allocates at virtual client
+*                      memory and keeps the credentials with the virtual client in the post form buffer
+* 
+* Input -       *input - pointer to the credentials file string
+*                    input_len - length of the <input> string
+*                    *bctx - batch context to which the initia
+* Input/Output - *client_num - index of the client in the array
+*                        *separator - the separating symbol initialized by the first string and further used.
+*
+* Return Code/Output - On success - 0, on failure - (-1)
+****************************************************************************************/
 static int init_post_buffer (char*const input, 
                              size_t input_len,
                              batch_context*const bctx, 
@@ -434,6 +448,18 @@ static int init_post_buffer (char*const input,
   return 0;
 }
 
+
+/****************************************************************************************
+* Function name - pre_parser
+*
+* Description - Prepares value token from the configuration file to parsing. Removes LWS,
+*                    cuts off comments, removes TWS or after quotes closing, removes quotes
+* 
+* Input/Output - **ptr - second pointer to value string
+*                        *len - pointer to the length of the value string
+*
+* Return Code/Output - On success - 0, on failure - (-1)
+****************************************************************************************/
 static int pre_parser (char** ptr, size_t* len)
 {
     char* value_start = NULL;
@@ -554,16 +580,6 @@ static int ip_addr_min_parser (batch_context*const bctx, char*const value)
 
     bctx->ipv6 = strchr (value, ':') ? 1 : 0;
 
-    /*    
-    if (! inet_aton (value, &inv4))
-        {
-          fprintf (stderr, 
-                   "%s - error: inet_aton()  failed for ip_addr_min %s\n", 
-                   __func__, value);
-          return -1;
-        }
-    */
-
     if (inet_pton (bctx->ipv6 ? AF_INET6 : AF_INET, 
                    value, 
                    bctx->ipv6 ? (void *)&bctx->ipv6_addr_min : (void *)&inv4) == -1)
@@ -584,16 +600,6 @@ static int ip_addr_max_parser (batch_context*const bctx, char*const value)
   memset (&inv4, 0, sizeof (struct in_addr));
   
   bctx->ipv6 = strchr (value, ':') ? 1 : 0;
-  
-    /*    
-    if (! inet_aton (value, &inv4))
-        {
-          fprintf (stderr, 
-                   "%s - error: inet_aton()  failed for ip_addr_min %s\n", 
-                   __func__, value);
-          return -1;
-        }
-    */
 
   if (inet_pton (bctx->ipv6 ? AF_INET6 : AF_INET, 
                  value, 
@@ -644,13 +650,11 @@ static int user_agent_parser (batch_context*const bctx, char*const value)
 
 
 
-
 static int login_parser (batch_context*const bctx, char*const value)
 {
     bctx->do_login = (*value == 'Y' || *value == 'y') ? 1 : 0;
     return 0;
 }
-
 static int login_req_type_parser (batch_context*const bctx, char*const value)
 {
     if (!strcmp (value, REQ_GET_POST))
@@ -1043,6 +1047,15 @@ static int is_non_ws (char*const ptr)
   return ! is_ws (ptr);
 }
 
+/****************************************************************************************
+* Function name - validate_batch
+*
+* Description - Validates all parameters in the batch. Calls validation functions for all sections.
+* 
+* Input -       *bctx - pointer to the initialized batch context to validate
+*
+* Return Code/Output - On success - 0, on failure - (-1)
+****************************************************************************************/
 static int validate_batch (batch_context*const bctx)
 {
     if (validate_batch_general (bctx) == -1)
@@ -1075,6 +1088,15 @@ static int validate_batch (batch_context*const bctx)
     return 0;
 }
 
+/****************************************************************************************
+* Function name - validate_batch_general
+*
+* Description - Validates section general parameters
+* 
+* Input -       *bctx - pointer to the initialized batch context to validate
+*
+* Return Code/Output - On success - 0, on failure - (-1)
+****************************************************************************************/
 static int validate_batch_general (batch_context*const bctx)
 {
     if (!strlen (bctx->batch_name))
@@ -1146,6 +1168,15 @@ static int validate_batch_general (batch_context*const bctx)
     return 0;
 }
 
+/****************************************************************************************
+* Function name - validate_batch_login
+*
+* Description - Validates section login parameters
+* 
+* Input -       *bctx - pointer to the initialized batch context to validate
+*
+* Return Code/Output - On success - 0, on failure - (-1)
+****************************************************************************************/
 static int validate_batch_login (batch_context*const bctx)
 {
   if (! bctx->do_login)
@@ -1215,6 +1246,15 @@ static int validate_batch_login (batch_context*const bctx)
   return 0;
 }
 
+/****************************************************************************************
+* Function name - validate_batch_uas
+*
+* Description - Validates section UAS parameters
+* 
+* Input -       *bctx - pointer to the initialized batch context to validate
+*
+* Return Code/Output - On success - 0, on failure - (-1)
+****************************************************************************************/
 static int validate_batch_uas (batch_context*const bctx)
 {
   if (! bctx->do_uas)
@@ -1260,6 +1300,15 @@ static int validate_batch_uas (batch_context*const bctx)
   return 0;
 }
 
+/****************************************************************************************
+* Function name - validate_batch_logoff
+*
+* Description - Validates section logoff parameters
+* 
+* Input -       *bctx - pointer to the initialized batch context to validate
+*
+* Return Code/Output - On success - 0, on failure - (-1)
+****************************************************************************************/
 static int validate_batch_logoff (batch_context*const bctx)
 {
     if (! bctx->do_logoff)
@@ -1311,6 +1360,48 @@ static int validate_batch_logoff (batch_context*const bctx)
     }
 
     return 0;
+}
+
+/****************************************************************************************
+* Function name - post_validate_init
+*
+* Description - Performs post validate initializations of a batch context.
+* 
+* Input -       *bctx - pointer to the initialized batch context to validate
+*
+* Return Code/Output - On success - 0, on failure - (-1)
+****************************************************************************************/
+static int post_validate_init (batch_context*const bctx)
+{
+  if (bctx->login_credentials_file && 
+      init_client_post_buffers_from_file (bctx) == -1)
+    {
+      fprintf (stderr, 
+               "%s - error: init_client_post_buffers_from_file () failed.\n",
+               __func__);
+      return -1;
+    }
+
+  /* Init operational statistics structures */
+  
+  if (op_stat_point_init(&bctx->op_delta, 
+                         (size_t)bctx->do_login, 
+                         bctx->uas_urls_num, 
+                         (size_t)bctx->do_logoff) == -1)
+    {
+      fprintf (stderr, "%s - error: init of op_delta failed.\n",__func__);
+      return -1;
+    }
+  
+  if (op_stat_point_init(&bctx->op_total, 
+                         (size_t)bctx->do_login, 
+                             bctx->uas_urls_num, 
+                         (size_t)bctx->do_logoff) == -1)
+        {
+          fprintf (stderr, "%s - error: init of op_total failed.",__func__);
+          return -1;
+        }
+  return 0;
 }
 
 /*******************************************************************************
@@ -1430,39 +1521,17 @@ int parse_config_file (char* const filename,
   return (batch_index + 1);
 }
 
-static int post_validate_init (batch_context*const bctx)
-{
-  if (bctx->login_credentials_file && 
-      init_client_post_buffers_from_file (bctx) == -1)
-    {
-      fprintf (stderr, 
-               "%s - error: init_client_post_buffers_from_file () failed.\n",
-               __func__);
-      return -1;
-    }
 
-  /* Init operational statistics structures */
-  
-  if (op_stat_point_init(&bctx->op_delta, 
-                         (size_t)bctx->do_login, 
-                         bctx->uas_urls_num, 
-                         (size_t)bctx->do_logoff) == -1)
-    {
-      fprintf (stderr, "%s - error: init of op_delta failed.\n",__func__);
-      return -1;
-    }
-  
-  if (op_stat_point_init(&bctx->op_total, 
-                         (size_t)bctx->do_login, 
-                             bctx->uas_urls_num, 
-                         (size_t)bctx->do_logoff) == -1)
-        {
-          fprintf (stderr, "%s - error: init of op_total failed.",__func__);
-          return -1;
-        }
-  return 0;
-}
-
+/*******************************************************************************
+* Function name - init_client_post_buffers_from_file
+*
+* Description - Itializes client post form buffers, using credentials loaded from file.
+*                     To be called after batch context validation.
+*
+* Input -          *bctx - pointer to the batch context
+*                          
+* Return Code/Output - On Success - number of batches >=1, on Error -1
+********************************************************************************/
 static int init_client_post_buffers_from_file (batch_context*const bctx)
 {
   char fgets_buff[512];

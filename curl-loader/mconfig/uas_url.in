@@ -21,14 +21,14 @@ config UAS_URL_PASSWORD
             authentication.
 
 config UAS_URL_MAX_TIME
-	int " UAS URL Maximum Time"
+	int " UAS URL Maximum Time (Storming-only)"
 	default 4
 	range 1 1000
           depends on UAS
 	help
+	  Not used by the default smooth more. Adjust it for storming mode only.
 	  The maximum time in seconds for UAS URL fetching. The parameter is used by the 
-            storming mode to limit the download/upload time. Is is not in use for the default smooth
-            mode, where the url fetch takes the time, that in needs (till HTTP timer expires).
+            storming mode to limit the download/upload time.
 
 config UAS_URL_INTERLEAVE_TIME
 	int " UAS URL Interleave Time"

@@ -80,7 +80,8 @@ config CYCLES_NUM
 config USER_AGENT
 	string " User Agent for HTTP"
 	help
-            If not specified, we are taking the default MSIE Explorer 6 string. Skip it if it is OK for you, or if it is not applicable, e.g. FTP.
+            If not specified, we are taking the default MSIE Explorer 6 string. 
+            Skip it if it is OK for you, or if it is not applicable, e.g. FTP.
 
 endmenu
 
@@ -154,11 +155,13 @@ config LOGIN_POST_STR
             number. For example, if LOGIN_URL_USERNAME=robert, LOGIN_URL_PASSWORD=stam
             and LOGIN_POST_STR "username=%s%d&password=%s%d", the final POST string, 
             used for the client number 1, will be  "username=robert1&password=stam1".
+
             In this case LOGIN_URL_USERNAME and LOGIN_URL_PASSWORD strings are used just 
             as base-words for generating unique user credentials by appending an number.
             To use the username and password 'as as', just provide LOGIN_POST_STR without 
             %d symbols, e.g. "user=%s&secret=%s". Thus, all clients will have the same
             POST credentials with the string looking like "user=robert&secret=stam". 
+
             The option without %d symbols to be used also, when "Login Credentials File" is defined,
             because the credentials uniqueness is ensured by the file content.
             

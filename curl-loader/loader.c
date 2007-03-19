@@ -932,7 +932,7 @@ int client_tracing_function (CURL *handle,
 * Function name - alloc_init_client_post_buffers
 *
 * Description - Allocate and initialize post form buffers to be used for POST-ing
-* Input -       *ctx - pointer to client context
+* Input -       *cctx - pointer to client context
 *
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/

@@ -21,14 +21,14 @@ config LOGOFF_URL_PASSWORD
             authentication.
 
 config LOGOFF_URL_MAX_TIME
-	int " Logoff URL Maximum Time"
+	int " Logoff URL Maximum Time (Storming-only)"
           depends on LOGOFF
 	default 4
 	range 1 1000
 	help
+	  Not used by the default smooth more. Adjust it for storming mode only.
 	  The maximum time in seconds for logoff URL fetching. The parameter is used by the 
-            storming mode to limit the download/upload time. Is is not in use for the default smooth
-            mode, where the url fetch takes the time, that in needs (till HTTP timer expires).
+            storming mode to limit the download/upload time.
 
 config LOGOFF_URL_INTERLEAVE_TIME
 	int " Logoff URL Interleave Time"

@@ -21,14 +21,14 @@ config LOGIN_URL_PASSWORD
             Login URL password string, when required.
 
 config LOGIN_URL_MAX_TIME
-	int " Login URL Maximum Time"
+	int " Login URL Maximum Time (Storming-only)"
 	default 4
 	range 1 1000
           depends on LOGIN
 	help
-	  The maximum time in seconds for login URL fetching. The parameter is used by the 
-            storming mode to limit the download/upload time. Is is not in use for the default smooth
-            mode, where the url fetch takes the time, that in needs (till HTTP timer expires).
+	  Not used by the default smooth more. Adjust it for storming mode only.
+            The maximum time in seconds for login URL fetching. The parameter is used by the 
+            storming mode to limit the download/upload time.
 
 config LOGIN_URL_INTERLEAVE_TIME
 	int " Login URL Interleave Time"
