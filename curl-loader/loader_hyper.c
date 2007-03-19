@@ -664,7 +664,13 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
       dump_snapshot_interval (bctx, now_time);
     }
 
-  dispatch_expired_timers (bctx, now_time);
+  if (dispatch_expired_timers (bctx, now_time) > 0) {
+
+      while (CURLM_CALL_MULTI_PERFORM == 
+	    curl_multi_perform(mhandle, still_running))
+	;
+
+  }
 
   while( (msg = curl_multi_info_read (mhandle, &msg_num)) != 0)
     {
@@ -732,12 +738,13 @@ static int
 dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
 {
   timer_queue* tq = bctx->waiting_queue;
+  int dispatched = 0;
 
   if (!tq)
     return -1;
 
   if (tq_empty (tq))
-    return 1;
+    return 0;
 
   while (! tq_empty (tq))
     {
@@ -752,12 +759,13 @@ dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
               //         __func__);
               return -1;
             }
+ 	  dispatched ++; 
         }
       else
         break;
     }
 
-  return 0;
+  return dispatched;
 }
 
 
@@ -833,7 +841,7 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
      Schedule virtual clients by adding them to multi-handle, 
      if the clients are not in error or finished final states.
   */
-  if (1) //! interleave_waiting_time)
+  if (!interleave_waiting_time)
     {
       /* Schedule the client immediately */
       if (client_add_to_load (bctx, cctx) == -1)
