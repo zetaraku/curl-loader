@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/dtd/document-v12.dtd">
+<document> 
+  <header> 
+    <title>RECOMMENDED TOOLS</title> 
+  </header>
+  <body> 
+      <p>
+This page reflects our personal experience and preferences.<br/>
+      </p>
+      <p>
+A very extensive collection of open-source testing tools could be found
+at the site <link href="http://www.opensourcetesting.org/">opensourcetesting</link><br/>
+<br/>
+<link href="http://jakarta.apache.org/jmeter/">Apache JMeter</link> is a good open-source
+HTTP/S loading and performance testing tools competing with curl-loader.<br/>
+<br/>
+<link href="http://jakarta.apache.org/jmeter/">SIPp</link> is an excellent open-source
+SIP protocol loader.<br/>
+<br/>
+      </p>
+Some good commercial application loading and testing tools (but they are very expensive) are here:
+      <ol> 
+        <li><link href="http://www.radview.com/Products/LoadTesting-WebLOAD-Overview.aspx">RadView WebLoad</link></li> 
+        <li><link href="http://www.mercury.com">Mercury Interactive (HP) Tools</link></li> 
+        <li><link href="http://www.spirentcom.com/analysis/technology.cfm?WS=325%26SS=109&amp;wt=2">Spirent Avalanche</link></li> 
+        <li><link href="http://www.ixiacom.com/products/display?skey=aptixia_ixload_http_ssl_ftp">IXIA IxLoad</link></li> 
+      </ol>
+  </body>
+</document>

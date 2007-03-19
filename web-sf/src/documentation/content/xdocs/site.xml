@@ -33,11 +33,20 @@ See http://xml.apache.org/forrest/linking.html for more info
      <dev label='Download Link' href='ext:download_link' />
   </download>
 
+  <support label="Support">
+     <mail label='Mailing List' href='ext:sourceforge_ml' />
+  </support>
+
   <sourceforge label="Sourceforge">
      <dev label='Sourceforge' href='ext:sourceforge_dev' />
      <cvs label='SVN' href='ext:sourceforge_svn' />
-     <cvs label='Mailing list' href='ext:sourceforge_ml' />
+     <mail label='Mailing list' href='ext:sourceforge_ml' />
   </sourceforge>
+
+  <useful-links label="Useful Links" href="doc/" tab="doc">
+     <links label='Links' href='links.html' />
+     <tools label='Tools' href='tools.html' />
+  </useful-links>
 
   
   <external-refs>
@@ -51,7 +60,6 @@ See http://xml.apache.org/forrest/linking.html for more info
     </sourceforge_svn>
     <sourceforge_ml href="http://lists.sourceforge.net/lists/listinfo/curl-loader-devel">
     </sourceforge_ml>
-
     
     <xml.apache.org href="http://xml.apache.org/">
       <forrest href="forrest/">
