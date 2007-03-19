@@ -126,6 +126,22 @@ endchoice
 comment " Login Request Type - support disabled"
 	depends on !LOGIN
 
+config LOGIN_CREDENTIALS_FILE
+	string " Login Credentials File"
+	default ""
+          depends on LOGIN
+	help
+             Fullpath to the credentials file containing credentials lines formatted as 
+             userSEPARATORpassword without spaces left. 
+             We are supporting separators ':', '@', '/' and ' ' (space), which according to 
+             RFC1738 are safe to use between username and password. Only one of the 
+             above separators to be used in each file. Note, that when the file with credentials 
+             is specified, "Login POST String Matrix" should not contain %d symbols and to 
+             be something like  "user=%s&password=%s"
+
+comment "Login Credentials File - support disabled"
+	depends on !LOGIN
+
 config LOGIN_POST_STR
 	string " Login POST String Matrix - see help"
 	default "username=%s%d&password=%s%d"
@@ -142,7 +158,10 @@ config LOGIN_POST_STR
             as base-words for generating unique user credentials by appending an number.
             To use the username and password 'as as', just provide LOGIN_POST_STR without 
             %d symbols, e.g. "user=%s&secret=%s". Thus, all clients will have the same
-            POST credentials with the string looking like "user=robert&secret=stam".
+            POST credentials with the string looking like "user=robert&secret=stam". 
+            The option without %d symbols to be used also, when "Login Credentials File" is defined,
+            because the credentials uniqueness is ensured by the file content.
+            
 comment "Login POST String Matrix - support disabled"
 	depends on !LOGIN
 

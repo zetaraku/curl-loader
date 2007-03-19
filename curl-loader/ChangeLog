@@ -293,3 +293,12 @@ and POST-only.
 	
 version 0.15
 Basic version to be referred to.
+            Full path to the file (from curl-loader binary), containing login credentials strings
+         formatted as usernameSEPARATORpassword without spaces left. We are supporting 
+         separators ':', '@', '/' and ' ' (space), which according to RFC1738 are safe to use between username 
+         and password. Only one of the above separators to be used in each file.         
+        Note, that when the file with credentials is specified, "Login POST String Matrix" should not contain %d
+         symbols and to be something like  "user=%s&password=%s"
+
+containing credentials lines formatted as 
+          userSEPpasswrd without spaces left. 	
