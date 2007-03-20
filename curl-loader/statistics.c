@@ -416,9 +416,9 @@ void dump_final_statistics (client_context* cctx)
   stat_point_add (&bctx->https_total, &bctx->https_delta); 
   op_stat_point_add (&bctx->op_delta, &bctx->op_total);
     
-  fprintf(stdout,"===========================================\n");
-  fprintf(stdout,"End of the test:\n"); 
-  fprintf(stdout,"===========================================\n");
+  fprintf(stdout,"==================================================\n");
+  fprintf(stdout,"End of the test for batch: %-10.10s\n", bctx->batch_name); 
+  fprintf(stdout,"==================================================\n");
   
   now = get_tick_count();
 
@@ -497,7 +497,7 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
                    &bctx->http_total,  
                    &bctx->https_total);
 
-  fprintf(stdout,"=====================================================\n\n");
+  fprintf(stdout,"=============================================================\n\n");
 }
 
 /****************************************************************************************
@@ -548,7 +548,8 @@ void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
       exit (1); 
     }
 
-  fprintf(stdout,"=====================================================\n");
+  fprintf(stdout,"============  loading batch is: %-10.10s ==================\n",
+          bctx->batch_name);
   fprintf(stdout,"Last interval stats (interval:%d sec, clients:%d, CAPS:%ld):\n",
           (int) delta_time/1000, pending_active_and_waiting_clients_num (bctx),
           bctx->op_delta.call_init_count* 1000/delta_time);
