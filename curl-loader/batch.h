@@ -37,6 +37,8 @@
 #define BATCH_NAME_SIZE 32
 #define POST_BUFFER_SIZE 64
 
+#define CUSTOM_HTTP_HDRS_MAX_NUM 16
+
 struct client_context;
 
 /**********************
@@ -109,6 +111,16 @@ typedef struct batch_context
       User-agent string to appear in the HTTP 1/1 requests.
   */
   char user_agent[BATCH_NAME_SIZE*4];
+
+  /* 
+      Number of custom  HTTP headers in array.
+  */
+  size_t custom_http_hdrs_num;
+
+    /* 
+      The list of custom  HTTP headers.
+  */
+  struct curl_slist *custom_http_hdrs;
 
 
   /*------------------------ LOGIN SECTION -------------------------------- */

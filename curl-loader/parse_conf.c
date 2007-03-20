@@ -70,6 +70,7 @@ static int ip_addr_max_parser (batch_context*const bctx, char*const value);
 static int cycles_num_parser (batch_context*const bctx, char*const value);
 static int clients_initial_inc_parser (batch_context*const bctx, char*const value);
 static int user_agent_parser (batch_context*const bctx, char*const value);
+static int custom_http_header_parser (batch_context*const bctx, char*const value);
 
 static int login_parser (batch_context*const bctx, char*const value);
 static int login_cycling_parser (batch_context*const bctx, char*const value);
@@ -121,6 +122,7 @@ static const tag_parser_pair tp_map [] =
     {"CYCLES_NUM", cycles_num_parser},
     {"CLIENTS_INITIAL_INC", clients_initial_inc_parser},
     {"USER_AGENT", user_agent_parser},
+    {"CUSTOM_HTTP_HEADER", custom_http_header_parser},
     
 
     /*------------------------ LOGIN SECTION -------------------------------- */
@@ -645,7 +647,46 @@ static int user_agent_parser (batch_context*const bctx, char*const value)
         return 0;
     }
     strncpy (bctx->user_agent, value, sizeof(bctx->user_agent) - 1);
-    return 0;    
+    return 0;
+}
+
+static int custom_http_header_parser (batch_context*const bctx, char*const value)
+{
+  const char colomn = ':';
+  size_t hdr_len;
+  
+  if (!value || !(hdr_len = strlen (value)))
+    {
+      fprintf (stderr, "%s - error: wrong input.\n", __func__);
+      return -1;
+    }
+
+  if (!strchr (value, colomn))
+    {
+      fprintf (stderr, 
+               "%s - error: HTTP protocol requires \"%c\" colomn symbol" 
+               " in HTTP headers.\n", __func__, colomn);
+      return -1;
+    }
+
+  if (bctx->custom_http_hdrs_num >= CUSTOM_HTTP_HDRS_MAX_NUM)
+    {
+      fprintf (stderr, 
+               "%s - error: number of custom HTTP headers is limited to %d.\n", 
+               __func__, CUSTOM_HTTP_HDRS_MAX_NUM);
+      return -1;
+    }
+
+  if (!(bctx->custom_http_hdrs = curl_slist_append (bctx->custom_http_hdrs, value)))
+    {
+      fprintf (stderr, "%s - error: failed to append the header \"%s\"\n", 
+               __func__, value);
+      return -1;
+    }
+  
+  bctx->custom_http_hdrs_num++;
+
+  return 0;
 }
 
 

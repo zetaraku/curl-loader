@@ -243,7 +243,7 @@ static void* batch_function (void * batch_data)
   FILE* log_file = 0;
   FILE* statistics_file = 0;
   
-  int  i = 0, rval = -1;
+  int  rval = -1;
 
   if (!bctx)
     {
@@ -326,20 +326,6 @@ static void* batch_function (void * batch_data)
  cleanup:
   if (bctx->multiple_handle)
     curl_multi_cleanup(bctx->multiple_handle);
-
-  for (i = 0 ; i < bctx->client_num ; i++)
-    {
-      if (bctx->cctx_array[i].handle)
-        curl_easy_cleanup(bctx->cctx_array[i].handle);
-
-      /* Free POST-buffers */
-      if (bctx->cctx_array[i].post_data_login)
-        free (bctx->cctx_array[i].post_data_login);
-      if (bctx->cctx_array[i].post_data_logoff)
-        free (bctx->cctx_array[i].post_data_logoff);
-    }
-
-  free(bctx->cctx_array);
 
   if (log_file)
       fclose (log_file);
@@ -617,6 +603,15 @@ int setup_curl_handle_appl (client_context*const cctx,
          should be configurable. 
       */
       curl_easy_setopt (handle, CURLOPT_USERAGENT, bctx->user_agent);
+
+      /*
+        Setup the custom HTTP headers, if appropriate.
+      */
+      if (bctx->custom_http_hdrs && bctx->custom_http_hdrs_num)
+        {
+          curl_easy_setopt (handle, CURLOPT_HTTPHEADER, 
+                            bctx->custom_http_hdrs);
+        }
       
       /* Enable cookies. This is important for various authentication schemes. */
       curl_easy_setopt (handle, CURLOPT_COOKIEFILE, "");
@@ -1122,6 +1117,37 @@ static void free_batch_data_allocations (batch_context* bctx)
 {
   int i;
 
+  /* 
+     Free Client contexts 
+  */
+  if (bctx->cctx_array)
+    {
+      for (i = 0 ; i < bctx->client_num ; i++)
+        {
+          if (bctx->cctx_array[i].handle)
+            curl_easy_cleanup(bctx->cctx_array[i].handle);
+          
+          /* Free POST-buffers */
+          
+          if (bctx->cctx_array[i].post_data_login)
+            free (bctx->cctx_array[i].post_data_login);
+          if (bctx->cctx_array[i].post_data_logoff)
+            free (bctx->cctx_array[i].post_data_logoff);
+        }
+
+      free(bctx->cctx_array);
+      bctx->cctx_array = NULL;
+    }
+  
+  /* Free custom HTTP headers. */
+  if (bctx->custom_http_hdrs)
+    {
+      curl_slist_free_all(bctx->custom_http_hdrs);
+      bctx->custom_http_hdrs = NULL;
+    }
+
+
+  /* Free login credentials. */
   free (bctx->login_credentials_file);
   bctx->login_credentials_file = NULL;
 

@@ -7,25 +7,23 @@
 
 3. X.509 client certificates per each https, ftps url. Easy to do.
 
-4. Custom HTTP headers (per url or the batch? how much to enable?).
-
 5. Support for CAPS (calls per second) defined mode. Currently, we are 
    supporting only a certain number of virtual clients and CAPS is the derived
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter. 
 
-6. Load Status GUI. Keyboard input as in SIPP to  increase/decrease load 
+5. Load Status GUI. Keyboard input as in SIPP to  increase/decrease load 
    (number of loading clients or CAPS).
 
-7. Future releases will hopefully incorporate libcurl HYPER API, using 
+6. Future releases will hopefully incorporate libcurl HYPER API, using 
    curl_multi_socket() approach and epoll support by libevent as in
    http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
    from a single process can become a reality.
 
-8. Testing and better support for FTP and FTPS.
+7. Testing and better support for FTP and FTPS.
 
-9. Support PUT and POST methods for UAS urls. Does somebody really
+8. Support PUT and POST methods for UAS urls. Does somebody really
     wants it?
 
-10. HTTP GET filled forms for login credentials (they are sent using url). 
+9. HTTP GET filled forms for login credentials (they are sent using url). 
       Does somebody really wants it?

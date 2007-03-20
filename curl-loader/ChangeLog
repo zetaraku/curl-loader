@@ -1,5 +1,13 @@
 version 0.30? - svn?
 
+* Added ability to add custom HTTP headers. Tag CUSTOM_HTTP_HEADER
+   serves this feature. It is allowed up to 16 custom HTTP header. If the header
+   already exits, the custom header over-writes it. USER_AGENT tag is for
+   User-Agent header only, whereas by CUSTOM_HTTP_HEADER may be added
+   or over-written every header.
+	
+* Fix for a crash in statistics, when login operations defined, but logoff not.
+	
 * Loading login credentials (user and password) from file is a new option added.
    Login usernames and passwords input from a text file with the structure of 
    each string like: <username><separator><password>.

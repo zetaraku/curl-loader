@@ -78,10 +78,23 @@ config CYCLES_NUM
             useful for a loader not to load?).
 
 config USER_AGENT
-	string " User Agent for HTTP"
+	string " User Agent Header Value"
+          default ""
 	help
             If not specified, we are taking the default MSIE Explorer 6 string. 
             Skip it if it is OK for you, or if it is not applicable, e.g. FTP.
+
+config CUSTOM_HTTP_HEADER
+	string " Custom HTTP Header"
+          default ""
+	help
+            Provide your own header using the correct RFC syntax, e.g. "Connection: close".
+            Note, that providing the header, which already exist in libcurl, overwrites the
+            libcurl defaults. 
+            Use ethereal/wireshark to figure out, what are the current headers used by the loader.
+            You can specify as much CUSTOM_HTTP_HEADER values, as you wish, but outside
+            of the 'make menuconfig' system. Just copy the configuration file out and add to
+            the section GENERAL more CUSTOM_HTTP_HEADER settings.
 
 endmenu
 
