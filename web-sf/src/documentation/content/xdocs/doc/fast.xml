@@ -26,31 +26,30 @@
          do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink. <br/>
         <br/>
           Run the following commands from your (hopefully) bash linux shell:<br/>
-         %tar zxfv curl-loader-&lt;version&gt;.tar.gz<br/>
-         %cd curl-loader-&lt;version&gt;<br/>
-         %make<br/>
+         $tar zxfv curl-loader-&lt;version&gt;.tar.gz<br/>
+         $cd curl-loader-&lt;version&gt;<br/>
+         $make<br/>
          <br/>
          By default, we are building both libcurl and curl-loader without optimization and with
          debugging -g option. To build with optimization and without debugging, please, run:<br/>
-         %make cleanall<br/>
-         %make optimize=1 debug=0<br/>
+         $make cleanall<br/>
+         $make optimize=1 debug=0<br/>
          If still any building issues, please, fill you free to contact us for assistance.<br/>
          <br/>
       <p>
        LOADING CONFIGURATION.
       </p>
-        To run the load, you need to create your configuration file to be passed to
+        To run the load create a configuration file to be passed to
          curl-loader by the -f commmand line option, e.g.<br/>
          #curl-loader -f ./conf-user/user_batch.conf<br/>
         <br/>
         For more examples, please, look at the files in "conf-examples" directory. You may 
-        copy an example file and edit it by using the next FAQ guidelines.<br/>
+        copy an example file and edit it.<br/>
         <br/>
-        A very fast start option is to copy a file conf-example directory, and edit it.<br/>
-        Another option is to start with running "%make menuconfig" configuration GUI, which 
+        Another option is to start with running "$make menuconfig" configuration GUI, which 
         requires ncurses development package on your system. The dialog window 
         will guide you and create your configuration file in conf-user directory. 
-        The current limitation of the menu-guided configuration, is that it enables 
+        A limitation of the menu-guided configuration, is that it enables 
         to create only a single UAS URL.<br/>
         <br/>
        <p>
@@ -71,11 +70,11 @@
       </p>
         run as a root user:<br/>
         #./curl-loader -f &lt;configuration filename&gt; [other options]<br/>
-         For the details about [other options] - see FAQs.<br/>
+         For the details about [other options], please see FAQs.<br/>
         <br/>
         If curl-loader reports any problems with validation of your configuration,
-        "don't panic" - just fix it.<br/>
-       For more details, please, look into FAQs page.<br/>
+        please, "don't panic" - just fix it.<br/>
+       For more details, please, look into the FAQs page.<br/>
        <br/>
   </body>
 </document>
