@@ -25,6 +25,7 @@ See http://xml.apache.org/forrest/linking.html for more info
   </about>
 
   <doc label="Doc" href="doc/" tab="doc">
+     <fast label='FAST START' href='fast.html' />
      <howto label='FAQ' href='faq.html' />
      <thanks label='THANKS' href='thanks.html' />
   </doc>

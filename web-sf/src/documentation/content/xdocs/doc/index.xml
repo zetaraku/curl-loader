@@ -7,6 +7,7 @@
   <body> 
       <p>The docs here:</p>
         <ul>
+            <li><link href="fast.html">FAST START</link></li>
             <li><link href="faq.html">FAQ</link></li>
         </ul>
   </body>
