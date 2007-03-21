@@ -22,14 +22,14 @@ Another known issue is libidn.so, which means, that some linux distributions
 do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink. 
         
 Run the following commands from your (hopefully) bash linux shell:
-%tar zxfv curl-loader-&lt;version&gt;.tar.gz
-%cd curl-loader-&lt;version&gt;
-%make
+$tar zxfv curl-loader-&lt;version&gt;.tar.gz
+$cd curl-loader-&lt;version&gt;
+$make
          
 By default, we are building both libcurl and curl-loader without optimization and with
 debugging -g option. To build with optimization and without debugging, please, run:
-%make cleanall
-%make optimize=1 debug=0
+$make cleanall
+$make optimize=1 debug=0
 If still any building issues, please, fill you free to contact us for assistance.
 
        
@@ -42,10 +42,9 @@ curl-loader by the -f commmand line option, e.g.
 #curl-loader -f ./conf-user/user_batch.conf
         
 For more examples, please, look at the files in "conf-examples" directory. You may 
-copy an example file and edit it by using the next FAQ guidelines.
+copy an example file and edit it.
         
-A very fast start option is to copy a file conf-example directory, and edit it.
-Another option is to start with running "%make menuconfig" configuration GUI, which 
+Another option is to start with running "$make menuconfig" configuration GUI, which 
 requires ncurses development package on your system. The dialog window 
 will guide you and create your configuration file in conf-user directory. 
 The current limitation of the menu-guided configuration, is that it enables 
@@ -79,5 +78,5 @@ If curl-loader reports any problems with validation of your configuration,
 "don't panic" - just fix it.
 
 
-For more details, please, look into FAQs of README.
+For more details, please, look into the FAQs in README file.
        
