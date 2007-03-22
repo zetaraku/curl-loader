@@ -14,7 +14,7 @@
         Building pre-requirements are:<br/>
           1. openssl binaries;<br/>
           2. openssl development package with include files (on debian package libssl-dev);<br/>
-          3. ncurses development package to run 'make menuconfig' with dialog GUI.<br/>
+          3. ncurses development package.<br/>
          <br/>
          Adjust Makefile variables to point to the openssl headers and libraries. 
          If you want to specify an openssl development directory with include 
@@ -72,9 +72,9 @@
         #./curl-loader -f &lt;configuration filename&gt; [other options]<br/>
          For the details about [other options], please see FAQs.<br/>
         <br/>
-        If curl-loader reports any problems with validation of your configuration,
+        If curl-loader on start reports any problems your configuration file,
         please, "don't panic" - just fix it.<br/>
-       For more details, please, look into the FAQs page.<br/>
+        For more details, please, look into the FAQs page.<br/>
        <br/>
   </body>
 </document>

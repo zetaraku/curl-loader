@@ -19,7 +19,7 @@ linux <link href="http://linux-net.osdl.org/index.php/Main_Page">netdev</link> f
 linux TCP/IP stack (Alexey Kuznetsov, David Miller and many others).<br/>
       </p>
       <p>
-        The list of people, that provided assistance, patches, bug-fixes, ideas is 
+        The list of the people, that provided assistance, patches, bug-fixes, ideas is 
         in the THANKS file of the curl-loader tarball.
       </p>
   </body>
