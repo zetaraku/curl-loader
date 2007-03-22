@@ -149,6 +149,14 @@ int parse_command_line (int argc, char *argv [])
                        __func__, LOAD_MODE_STORMING, LOAD_MODE_SMOOTH, LOAD_MODE_HYPER);
               return -1;
             }
+
+            if (loading_mode == LOAD_MODE_HYPER)
+              {
+                fprintf (stderr, 
+                       "%s error: LOAD_MODE_HYPER is \"Under Construction\".\n",
+                       __func__);
+              return -1;
+              }
           
           break;
 
