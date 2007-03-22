@@ -1,8 +1,6 @@
 /* 
-    * ip_secondary.c
-*/
-
-/*
+ *      ip_secondary.c
+ *
  *        This program is free software; you can redistribute it and/or
  *        modify it under the terms of the GNU General Public License
  *        as published by the Free Software Foundation; either version
@@ -12,7 +10,6 @@
  *
  * The ideas and most of the implementation comes from iprouted2
  * project, directory ip, written by Alexey Kuznetsov.
- *
  * Cutted and combined by Robert Iakobashvili, <coroberti@gmail.com>
  */
 
