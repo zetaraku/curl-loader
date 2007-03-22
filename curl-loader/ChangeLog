@@ -1,11 +1,9 @@
-version 0.30? - svn?
-
-* Hyper-mode is coming?
+version 0.27 svn 227
 
 * Added facility to customize/add/over-write HTTP/FTP headers. 
    Tag CUSTOM_HEADER is serving for this feature. Up to 16 custom 
    HTTP/FTP headers are allowed. 
-   If the header already exits by default, the custom header over-writes it. 
+   If a header already exits by default, the custom header over-writes it. 
    USER_AGENT tag is for User-Agent header only, whereas by 
    CUSTOM_HEADER may be added or over-written any header (including
    User-Agent).
