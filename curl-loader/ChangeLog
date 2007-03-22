@@ -1,26 +1,31 @@
 version 0.30? - svn?
 
-* Added ability to add custom HTTP headers. Tag CUSTOM_HTTP_HEADER
-   serves this feature. It is allowed up to 16 custom HTTP header. If the header
-   already exits, the custom header over-writes it. USER_AGENT tag is for
-   User-Agent header only, whereas by CUSTOM_HTTP_HEADER may be added
-   or over-written every header.
+* Hyper-mode is coming?
+
+* Added facility to customize/add/over-write HTTP/FTP headers. 
+   Tag CUSTOM_HEADER is serving for this feature. Up to 16 custom 
+   HTTP/FTP headers are allowed. 
+   If the header already exits by default, the custom header over-writes it. 
+   USER_AGENT tag is for User-Agent header only, whereas by 
+   CUSTOM_HEADER may be added or over-written any header (including
+   User-Agent).
+   An example of batch configuration is ./conf-examples/custom_hdrs.conf
 	
-* Fix for a crash in statistics, when login operations defined, but logoff not.
+* Fixed crash in statistics, when login operations defined, but logoff not.
 	
-* Loading login credentials (user and password) from file is a new option added.
-   Login usernames and passwords input from a text file with the structure of 
-   each string like: <username><separator><password>.
-   According to RFC1738, only reserved ':', '@', '/' and ' ' (space) are safe 
+* Added an option to load login credentials (user and password) from a file.
+   A text file with usernames and passwords with the structure of 
+   each string like: <username><separator><password> can be used as an input.
+   According to RFC1738, only reserved ':', '@', '/' and probably ' ' (space) are safe 
    to use as separators between username and password.
+   Tag LOGIN_CREDENTIALS_FILE specifies the path to the file with
+   credentials (full-path or relative to curl-loader). An example of batch 
+   configuration is ./conf-examples/credentials_fr_file.conf and an example of
+   credentials in ./conf-examples/credentials.cred.
 	
 * Cleanup of allocations and client array initializations in login.c
-
-* Hyper-mode is coming?
 	
-* README file re-worked to have a more structured fashion.
-	
-* Initial IPv6 support added. Batch configuration conf-example/ipv6.conf
+* IPv6 support added. Batch configuration conf-example/ipv6.conf
    and patch patches/curl-ipv6-bind.patch are added. The patch has been
    integrated to the mainline libcurl, therefore we shall remove it, when moving
    to the next libcurl release.
@@ -36,7 +41,11 @@ version 0.30? - svn?
    specified, curl-loader takes the default User-Agent header of MSIE-6 (sorry,
    FireFox folks).
 
-* Documentation improved and all HOWTOS-* files moved to the docs directory.
+* Documentation improved, HOWTOS-* files removed with their content
+   moved to README. README file re-worked to have a more structured fashion.
+   FAST-START file added.
+
+* Web-site added.
 	
 
 version 0.26 - svn 151

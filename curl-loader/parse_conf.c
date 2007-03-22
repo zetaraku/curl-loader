@@ -70,7 +70,7 @@ static int ip_addr_max_parser (batch_context*const bctx, char*const value);
 static int cycles_num_parser (batch_context*const bctx, char*const value);
 static int clients_initial_inc_parser (batch_context*const bctx, char*const value);
 static int user_agent_parser (batch_context*const bctx, char*const value);
-static int custom_http_header_parser (batch_context*const bctx, char*const value);
+static int custom_header_parser (batch_context*const bctx, char*const value);
 
 static int login_parser (batch_context*const bctx, char*const value);
 static int login_cycling_parser (batch_context*const bctx, char*const value);
@@ -122,7 +122,7 @@ static const tag_parser_pair tp_map [] =
     {"CYCLES_NUM", cycles_num_parser},
     {"CLIENTS_INITIAL_INC", clients_initial_inc_parser},
     {"USER_AGENT", user_agent_parser},
-    {"CUSTOM_HTTP_HEADER", custom_http_header_parser},
+    {"CUSTOM_HEADER", custom_header_parser},
     
 
     /*------------------------ LOGIN SECTION -------------------------------- */
@@ -650,7 +650,7 @@ static int user_agent_parser (batch_context*const bctx, char*const value)
     return 0;
 }
 
-static int custom_http_header_parser (batch_context*const bctx, char*const value)
+static int custom_header_parser (batch_context*const bctx, char*const value)
 {
   const char colomn = ':';
   size_t hdr_len;

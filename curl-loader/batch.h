@@ -110,7 +110,7 @@ typedef struct batch_context
    /* 
       User-agent string to appear in the HTTP 1/1 requests.
   */
-  char user_agent[BATCH_NAME_SIZE*4];
+  char user_agent[256];
 
   /* 
       Number of custom  HTTP headers in array.
