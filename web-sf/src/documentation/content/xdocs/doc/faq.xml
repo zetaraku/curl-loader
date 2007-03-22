@@ -143,7 +143,9 @@ IP_ADDR_MAX= 192.168.5.255 # Client addresses range last address<br/>
 CYCLES_NUM= 100            # Number of loading cycles to run, -1 means forever<br/>
 USER_AGENT=""      # User-Agent HTTP header quoted string. <br/>
                                        #When empty string or missed - MSIE-6 default<br/>
+CUSTOM_HEADER="My-header1: header1" # Up to 16 custom headers.<br/>
 <br/>
+#<br/>
 ########### LOGIN SECTION ##################################<br/>
 LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the <br/>
                   # section to be filled. If 'n' or 'N' - comment out others<br/>
@@ -151,7 +153,9 @@ LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the <br/>
 #LOGIN_PASSWORD=  # Redundant tag, use LOGIN_URL_PASSWORD instead<br/>
 #LOGIN_REQ_TYPE=  # To be either GET+POST, POST or GET. Depricated.<br/>
                        # Use instead LOGIN_REQ_TYPE_GET_POST, LOGIN_REQ_TYPE_POST<br/>
-                       # or LOGIN_REQ_TYPE_GET tags by using tag=y to enable <br/>                                        
+                       # or LOGIN_REQ_TYPE_GET tags by using tag=y to enable <br/> 
+#<br/>
+#LOGIN_CREDENTIALS_FILE=""# A file with strings &lt;user&gt;&lt;separator&gt;&lt;password&gt;<br/> 
 #LOGIN_POST_STR=  # POST string matrix. See below:<br/>
 #<br/>
 # To generate multiple unique users with unique passwords, use the string like<br/>
@@ -161,12 +165,15 @@ LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the <br/>
 # number. For example, if LOGIN_USERNAME=robert, LOGIN_PASSWORD=stam<br/>
 # and LOGIN_POST_STR "user=%s%d&amp;password=%s%d", the final POST string, <br/>
 # used for the client number 1, will be  "user=robert1 password;=stam1".<br/>
+#<br/>
 # In this case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just <br/>
 # as base-words for generating unique user credentials by appending an number.<br/>
 #
 # To use the username and password 'as as', just provide LOGIN_POST_STR without <br/>
 # %d symbols, e.g. "user=%s&amp;secret=%s". Thus, all clients will have the same<br/>
 # POST credentials with the string looking like "user=robert&amp; secret=stam".<br/>
+#The option without %d symbols to be used also, when LOGIN_CREDENTIALS_FILE is defined,<br/>
+#because the credentials uniqueness is ensured by the file content.<br/>
 #<br/>
 # Note, that the words like 'username', 'user', 'password', 'secret', etc are<br/> 
 # those fields, that login users are required to fill in their POST page.<br/>
@@ -228,12 +235,28 @@ may appear with with empty strings "", without values or just may be
 commented out by '#'.
         </p>
         <p>
-TAG  CLIENTS_INITIAL_INC:<br/>
+Tag  CLIENTS_INITIAL_INC:<br/>
 It serves for gradual increase of clients number at the loading initial phase. 
 Use the tag in GENERAL section to specify the number of loading clients to be 
 added each second till the total clients number reaches the number specified by 
 CLIENTS_NUM tag.<br/>
        </p>
+        <p>
+Tag CUSTOM_HEADER is assisting to customize/add/over-write HTTP/FTP headers. 
+Up to 16 custom HTTP/FTP headers are allowed.  If a header already exits by default, 
+the custom header over-writes it. USER_AGENT tag is for User-Agent header only, 
+whereas by CUSTOM_HEADER may be added or over-written any header (including
+User-Agent). An example of batch configuration is ./conf-examples/custom_hdrs.conf.
+       </p>
+        <p>
+Tag LOGIN_CREDENTIALS_FILE specifies the path to the file with
+credentials (full-path or relative to curl-loader). A text file with usernames and passwords 
+with the structure of each string like: &lt;user&gt;&lt;separator&gt;&lt;password&gt;
+ can be used as an input. According to RFC1738, only reserved ':', '@', '/' and 
+probably ' ' (space) are safe to use as separators between username and password. 
+An example of batch configuration is ./conf-examples/credentials_fr_file.conf and an 
+example of credentials is in ./conf-examples/credentials.cred.
+      </p>
         <p>
 Note, that both quotted and non-quotted string are supported as the tags values.<br/>
 <br/>
