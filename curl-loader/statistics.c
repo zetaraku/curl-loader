@@ -498,6 +498,7 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
                    &bctx->https_total);
 
   fprintf(stdout,"=============================================================\n\n");
+  fflush (stdout);
 }
 
 /****************************************************************************************
