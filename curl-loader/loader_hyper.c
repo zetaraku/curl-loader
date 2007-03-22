@@ -167,6 +167,7 @@ int next_load_event_set;
 /* Update the event timer after curl_multi library calls */
 static void update_timeout(batch_context *g)
 {
+#if 0
   long timeout_ms;
   struct timeval timeout;
 
@@ -177,6 +178,7 @@ static void update_timeout(batch_context *g)
   timeout.tv_sec = timeout_ms/1000;
   timeout.tv_usec = (timeout_ms%1000)*1000;
   evtimer_add(&timer_event, &timeout);
+#endif
 }
 
 
@@ -231,19 +233,11 @@ static void event_cb(int fd, short kind, void *userp)
   int st;
 
   PRINTF("event_cb enter\n");
-
-#if 1
+  
   CURLMcode rc;
-
   do {
     rc = curl_multi_socket(g->multiple_handle, fd, &st);
   } while (rc == CURLM_CALL_MULTI_PERFORM);
-#else
-  mperform_smooth (g, &st);
- 
-#endif
-
-
 
   if(st) {
     update_timeout(g);
@@ -306,6 +300,7 @@ static int sock_cb(CURL *e, curl_socket_t s, int what, void *cbp, void *sockp)
   return 0;
 }
 
+#if 0
 /* LIBEVENT CALLBACK: Called by libevent when our timeout expires */
 static void timer_cb(int fd, short kind, void *userp)
 {
@@ -323,7 +318,7 @@ static void timer_cb(int fd, short kind, void *userp)
 
   if ( still_running ) { update_timeout(g); }
 }
-
+#endif
 
 
 #if 0
@@ -372,8 +367,8 @@ int user_activity_hyper (client_context* cctx_array)
   event_init();
   curl_multi_setopt(bctx->multiple_handle, CURLMOPT_SOCKETFUNCTION, sock_cb);
   curl_multi_setopt(bctx->multiple_handle, CURLMOPT_SOCKETDATA, bctx);
+#if 0    
   evtimer_set(&timer_event, timer_cb, bctx);
-#if 0  
   evtimer_set(&timer_next_load_event, next_load_cb, bctx);
 #endif
 
@@ -841,6 +836,7 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
      Schedule virtual clients by adding them to multi-handle, 
      if the clients are not in error or finished final states.
   */
+#if 0
   if (!interleave_waiting_time)
     {
       /* Schedule the client immediately */
@@ -850,7 +846,8 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
           return -1;
         }
     }
-  else
+  elsa
+#endif
     {
       struct timeval timeout;
  
@@ -867,14 +864,6 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
           return -1;
         }
 
-#if 0
-      timeout.tv_sec = (tq_time_to_nearest_timer (bctx->waiting_queue) - get_tick_count()) / 1000 + 1;
-      timeout.tv_usec = 0;
-      evtimer_add(&timer_next_load_event, &timeout);
-
-      PRINTF("load_next_step: next evlib timer %d\n",(int) timeout.tv_sec);
-#endif
-	
       
       //fprintf (stderr, "%s - scheduled client to wq with wtime %ld\n", 
       //				 __func__, interleave_waiting_time);
