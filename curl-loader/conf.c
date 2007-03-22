@@ -150,6 +150,7 @@ int parse_command_line (int argc, char *argv [])
               return -1;
             }
 
+            /*
             if (loading_mode == LOAD_MODE_HYPER)
               {
                 fprintf (stderr, 
@@ -157,6 +158,7 @@ int parse_command_line (int argc, char *argv [])
                        __func__);
               return -1;
               }
+            */
           
           break;
 
