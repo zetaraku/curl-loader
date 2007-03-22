@@ -685,7 +685,7 @@ int client_tracing_function (CURL *handle,
   buf[n] = '\0';
   printf("%s\n",buf);
 #endif  
-  url_logging=verbose_logging=1;
+  // url_logging=verbose_logging=1;
 
   if (url_logging)
     {
