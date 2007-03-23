@@ -267,25 +267,25 @@ static void* batch_function (void * batch_data)
                    __func__, bctx->batch_name, bctx-> batch_logfile, errno);
           return NULL;
         }
-
-      /*
-        Init batch statistics file
-      */
-      sprintf (bctx->batch_statistics, "./%s.txt", bctx->batch_name);
-      
-      if (!(statistics_file = fopen(bctx->batch_statistics, "w")))
-        {
-          fprintf (stderr, 
-                   "%s - \"%s\" - failed to open file \"%s\" with errno %d.\n", 
-                   __func__, bctx->batch_name, bctx->batch_statistics, errno);
-          return NULL;
-        }
-      else
-        {
-          bctx->statistics_file = statistics_file;
-          print_statistics_header (statistics_file);
-        }
     }
+
+  /*
+    Init batch statistics file
+  */
+  sprintf (bctx->batch_statistics, "./%s.txt", bctx->batch_name);
+      
+  if (!(statistics_file = fopen(bctx->batch_statistics, "w")))
+  {
+      fprintf (stderr, 
+               "%s - \"%s\" - failed to open file \"%s\" with errno %d.\n", 
+               __func__, bctx->batch_name, bctx->batch_statistics, errno);
+      return NULL;
+  }
+  else
+  {
+      bctx->statistics_file = statistics_file;
+      print_statistics_header (statistics_file);
+  }
   
   /* 
      Allocate and init objects, containing client-context information.
@@ -299,7 +299,7 @@ static void* batch_function (void * batch_data)
  
   /* 
      Init libcurl MCURL and CURL handles. Setup of the handles is delayed to
-     the later step, depending on whether login, UAS or logoff is required.
+     the later step, depending on whether login, UAS or logoff URL is required.
   */
   if (initial_handles_init (bctx->cctx_array) == -1)
     {
@@ -312,7 +312,7 @@ static void* batch_function (void * batch_data)
      Now run login, user-defined actions, like fetching various urls and and 
      sleeping in between, and logoff.
      Calls user activity loading function corresponding to the loading mode
-     used (user_activity_smooth or user_activity_storm or user_activity_hyper).
+     used (user_activity_smooth () or user_activity_storm () or user_activity_hyper ()).
   */ 
   rval = ua_array[loading_mode] (bctx->cctx_array);
 
@@ -584,7 +584,8 @@ int setup_curl_handle_appl (client_context*const cctx,
     if (url_ctx->url_appl_type == URL_APPL_HTTPS ||
         url_ctx->url_appl_type == URL_APPL_HTTP)
     {
-        /*************** HTTP-specific *************************************/
+        
+         /* HTTP-specific initialization */
         
       /* 
          Follow possible HTTP-redirection from header Location of the 
@@ -599,9 +600,8 @@ int setup_curl_handle_appl (client_context*const cctx,
       curl_easy_setopt (handle, CURLOPT_MAXREDIRS, -1);
 
       /* 
-         TODO: Lets be Explorer-6, but actually User-Agent header 
-         should be configurable. 
-      */
+         Setup the User-Agent header, configured by user. The default is MSIE-6 header.
+       */
       curl_easy_setopt (handle, CURLOPT_USERAGENT, bctx->user_agent);
 
       /*
@@ -955,8 +955,9 @@ static int alloc_init_client_post_buffers (client_context* cctx)
   if (bctx->login_credentials_file)
     {
       /* 
-         If we are loading credentials from a file, thus, the 
-         job has supposed to be done in post_validation ().
+         When we are loading users with passwords credentials from a file
+         (tag LOGIN_CREDENTIALS_FILE, this is done in post_validation () of 
+         parce_conf.c.
       */
       return 0;
     }
@@ -981,15 +982,6 @@ static int alloc_init_client_post_buffers (client_context* cctx)
           fprintf (stderr,
                    "\"%s\" - %s - failed to allocate post login buffer.\n",
                    bctx->batch_name, __func__) ;
-          return -1;
-        }
-      
-      if (! (cctx[i].post_data_logoff = 
-             (char *) calloc(POST_LOGOFF_BUF_SIZE, sizeof (char))))
-        {
-          fprintf (stderr,
-                   "%s - error: %s - failed to allocate post login buffer.\n",
-                   __func__, bctx->batch_name);
           return -1;
         }
 
@@ -1024,10 +1016,19 @@ static int alloc_init_client_post_buffers (client_context* cctx)
       
       if (bctx->logoff_post_str[0])
         {
-          snprintf (cctx[i].post_data_logoff,
-                    POST_LOGOFF_BUF_SIZE,
-                    "%s",
-                    bctx->logoff_post_str);
+            if (! (cctx[i].post_data_logoff = 
+                   (char *) calloc(POST_LOGOFF_BUF_SIZE, sizeof (char))))
+            {
+                fprintf (stderr,
+                         "%s - error: %s - failed to allocate post login buffer.\n",
+                         __func__, bctx->batch_name);
+                return -1;
+            }
+
+            snprintf (cctx[i].post_data_logoff,
+                      POST_LOGOFF_BUF_SIZE,
+                      "%s",
+                      bctx->logoff_post_str);
         }
     }
   return 0;
@@ -1049,7 +1050,9 @@ static int alloc_init_client_contexts (
   int i;
 
   /*
-    Allocate client contexts, if not allocated before 
+    Allocate client contexts, if not allocated before. When users and passwords 
+    are loaded from a credentials files (tag LOGIN_CREDENTIALS_FILE), the array 
+    is allocated already in post_validate () of parse_conf.c.
   */
   if (!bctx->cctx_array)
     {
@@ -1117,7 +1120,7 @@ static void free_batch_data_allocations (batch_context* bctx)
   int i;
 
   /* 
-     Free Client contexts 
+     Free client contexts 
   */
   if (bctx->cctx_array)
     {
@@ -1188,7 +1191,7 @@ static void free_batch_data_allocations (batch_context* bctx)
 ****************************************************************************************/
 static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
 {
-  int bi, cli; /* Batch and client indexes */
+  int batch_index, client_index; /* Batch and client indexes */
   struct in_addr in_address;
   struct in6_addr in6_prev, in6_new;
   char*** ip_addresses =0;
@@ -1202,43 +1205,44 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
       return -1;
     }
   
-  for (bi = 0 ; bi < bctx_num ; bi++) 
+  for (batch_index = 0 ; batch_index < bctx_num ; batch_index++) 
     {
       /* Allocate array of IP-addresses */
-      if (!(ip_addresses[bi] = (char**)calloc (bctx_array[bi].client_num, 
+      if (!(ip_addresses[batch_index] = (char**)calloc (bctx_array[batch_index].client_num, 
                                                sizeof (char *))))
         {
           fprintf (stderr, 
                    "%s - error: failed to allocate array of ip-addresses for batch %d.\n", 
-                   __func__, bi);
+                   __func__, batch_index);
           return -1;
         }
 
       /* Set them to the batch contexts to remember them. */
-      bctx_array[bi].ip_addr_array = ip_addresses[bi]; 
+      bctx_array[batch_index].ip_addr_array = ip_addresses[batch_index]; 
 
       /* Allocate for each client a buffer and snprintf to it the IP-address string.
        */
-      for (cli = 0; cli < bctx_array[bi].client_num; cli++)
+      for (client_index = 0; client_index < bctx_array[batch_index].client_num; client_index++)
         {
-          if (!(ip_addresses[bi][cli] = (char*)calloc (bctx_array[bi].ipv6 ? 
-                                                       INET6_ADDRSTRLEN + 1 : INET_ADDRSTRLEN + 1, sizeof (char))))
+          if (!(ip_addresses[batch_index][client_index] = 
+                (char*)calloc (bctx_array[batch_index].ipv6 ? 
+                               INET6_ADDRSTRLEN + 1 : INET_ADDRSTRLEN + 1, sizeof (char))))
             {
               fprintf (stderr, "%s - allocation of ip_addresses[%d][%d] failed\n", 
-                       __func__, bi, cli) ;
+                       __func__, batch_index, client_index) ;
               return -1;
             }
 
-          if (bctx_array[bi].ipv6 == 0)
+          if (bctx_array[batch_index].ipv6 == 0)
             {
               /* 
                  Advance the IPv4-address, using client index as the offset. 
               */
-              in_address.s_addr = htonl (bctx_array[bi].ip_addr_min + cli);
+              in_address.s_addr = htonl (bctx_array[batch_index].ip_addr_min + client_index);
               if (! (ipv4_string = inet_ntoa (in_address)))
                 {
                   fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses[%d][%d]\n", 
-                           __func__, bi, cli) ;
+                           __func__, batch_index, client_index) ;
                   return -1;
                 }
             }
@@ -1247,17 +1251,17 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
               /* 
                  Advance the IPv6-address by incrementing previous address. 
               */
-              if (cli == 0)
+              if (client_index == 0)
                 {
-                  memcpy (&in6_prev, &bctx_array[bi].ipv6_addr_min, sizeof (in6_prev));
-                  memcpy (&in6_new, &bctx_array[bi].ipv6_addr_min, sizeof (in6_new));
+                  memcpy (&in6_prev, &bctx_array[batch_index].ipv6_addr_min, sizeof (in6_prev));
+                  memcpy (&in6_new, &bctx_array[batch_index].ipv6_addr_min, sizeof (in6_new));
                 }
               else
                 {
                   if (ipv6_increment (&in6_prev, &in6_new) == -1)
                     {
                       fprintf (stderr, "%s - ipv6_increment() failed for ip_addresses[%d][%d]\n", 
-                               __func__, bi, cli) ;
+                               __func__, batch_index, client_index) ;
                       return -1;
                     }
                 }
@@ -1265,7 +1269,7 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
               if (!inet_ntop (AF_INET6, &in6_new, ipv6_string, sizeof (ipv6_string)))
                 {
                   fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses[%d][%d]\n", 
-                           __func__, bi, cli) ;
+                           __func__, batch_index, client_index) ;
                   return -1;
                 }
               else
@@ -1275,25 +1279,25 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
                 }
             }
 
-          snprintf (ip_addresses[bi][cli], 
-                    bctx_array[bi].ipv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN, 
+          snprintf (ip_addresses[batch_index][client_index], 
+                    bctx_array[batch_index].ipv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN, 
                     "%s", 
-                    bctx_array[bi].ipv6 ? ipv6_string : ipv4_string);
+                    bctx_array[batch_index].ipv6 ? ipv6_string : ipv4_string);
         }
 
       /* 
          Add all the addresses to the network interface as the secondary 
          ip-addresses, using netlink userland-kernel interface.
       */
-      if (add_secondary_ip_addrs (bctx_array[bi].net_interface,
-                                  bctx_array[bi].client_num, 
-                                  (const char** const) ip_addresses[bi], 
-                                  bctx_array[bi].cidr_netmask,
-                                  bctx_array[bi].scope) == -1)
+      if (add_secondary_ip_addrs (bctx_array[batch_index].net_interface,
+                                  bctx_array[batch_index].client_num, 
+                                  (const char** const) ip_addresses[batch_index], 
+                                  bctx_array[batch_index].cidr_netmask,
+                                  bctx_array[batch_index].scope) == -1)
         {
           fprintf (stderr, 
                    "%s - error: add_secondary_ip_addrs() - failed for batch = %d\n", 
-                   __func__, bi);
+                   __func__, batch_index);
           return -1;
         }
     }
