@@ -44,9 +44,9 @@ static void dump_statistics (unsigned long period,
                              stat_point *http, 
                              stat_point *https);
 
-static void print_statistics_footer (FILE* file);
+static void print_statistics_footer_to_file (FILE* file);
 
-static void print_statistics_data (FILE* file, 
+static void print_statistics_data_to_file (FILE* file, 
                                    unsigned long timestamp,
                                    char* prot,
                                    long clients_num,
@@ -439,13 +439,13 @@ void dump_final_statistics (client_context* cctx)
   if (bctx->statistics_file)
     {
 
-      print_statistics_footer (bctx->statistics_file);
+      print_statistics_footer_to_file (bctx->statistics_file);
       print_statistics_header (bctx->statistics_file);
 
       const unsigned long loading_time = (now - bctx->start_time > 0) ? 
         (now - bctx->start_time) : 1;
  
-      print_statistics_data (
+      print_statistics_data_to_file (
 				bctx->statistics_file,
 				loading_time/1000,
 				UNSECURE_APPL_STR,
@@ -453,12 +453,12 @@ void dump_final_statistics (client_context* cctx)
 				&bctx->http_total,
 				loading_time);
 			
-      print_statistics_data (
+      print_statistics_data_to_file (
 				bctx->statistics_file, 
 				loading_time/1000,
 				SECURE_APPL_STR,
 				pending_active_and_waiting_clients_num (bctx),
-				&bctx->https_delta,
+				&bctx->https_total,
 				loading_time);
     }
 
@@ -565,7 +565,7 @@ void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
     {
       const unsigned long timestamp_sec =  (now_time - bctx->start_time) / 1000;
 
-      print_statistics_data (
+      print_statistics_data_to_file (
                              bctx->statistics_file,
                              timestamp_sec,
                              UNSECURE_APPL_STR,
@@ -573,7 +573,7 @@ void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
                              &bctx->http_delta,
                              delta_time ? delta_time : 1);
     
-      print_statistics_data (
+      print_statistics_data_to_file (
                              bctx->statistics_file, 
                              timestamp_sec,
                              SECURE_APPL_STR, 
@@ -594,6 +594,16 @@ void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
   bctx->last_measure = now_time;
 }
 
+/****************************************************************************************
+* Function name - dump_statistics
+*
+* Description - Dumps statistics to screen
+* Input -       period - time interval of the statistics collection in msecs. 
+*                   *http - pointer to stat_point structure with HTTP/FTP counters collection
+*                   *https - pointer to stat_point structure with HTTPS/FTPS counters collection
+*
+* Return Code/Output - None
+****************************************************************************************/
 static void dump_statistics (unsigned long period,  
                              stat_point *http, 
                              stat_point *https)
@@ -610,6 +620,17 @@ static void dump_statistics (unsigned long period,
   dump_stat_to_screen (SECURE_APPL_STR, https, period);
 }
 
+
+/****************************************************************************************
+* Function name - dump_stat_to_screen
+*
+* Description - Dumps statistics to screen
+* Input -       *protocol - name of the applications/protocols
+*                   *sd - pointer to statistics data with statistics counters collection
+*                   period - time interval of the statistics collection in msecs. 
+*
+* Return Code/Output - None
+****************************************************************************************/
 static void dump_stat_to_screen (char* protocol, 
                                  stat_point* sd, 
                                  unsigned long period)
@@ -639,20 +660,34 @@ void print_statistics_header (FILE* file)
 }
 
 /****************************************************************************************
-* Function name - print_statistics_footer
+* Function name - print_statistics_footer_to_file
 *
 * Description - Prints to a file separation string between the snapshot_interval statistics and 
 *                     the final statistics number for the total loading process
 * Input -       *file - open file pointer
 * Return Code/Output - None
 ****************************************************************************************/
-static void print_statistics_footer (FILE* file)
+static void print_statistics_footer_to_file (FILE* file)
 {
     fprintf (file, "*, *, *, *, *, *, *, *, *, *, *, *, *\n");
     fflush (file);
 }
 
-static void print_statistics_data (FILE* file, 
+/****************************************************************************************
+* Function name - print_statistics_data_to_file
+*
+* Description - Prints to a file batch statistics. At run time the interval statistics is printed and at
+*                the end of a load - summary statistics.
+* Input -       *file - open file pointer
+*                timestamp - time in seconds since the load started
+*                *protocol - name of the applications/protocols
+*                clients_num - number of active (running + waiting) clients
+*                *sd - pointer to statistics data with statistics counters collection
+*                period - time interval of the statistics collection in msecs. 
+*
+* Return Code/Output - None
+****************************************************************************************/
+static void print_statistics_data_to_file (FILE* file, 
                                    unsigned long timestamp,
                                    char* prot,
                                    long clients_num, 

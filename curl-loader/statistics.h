@@ -79,8 +79,9 @@ typedef struct stat_point
 /*
   op_stat_point
   Operation statistics point: two instances are residing in each batch
-  context - one for the latest snapshot interval and another for the total
-  summary values.
+  context:
+  - one is for the latest snapshot interval;
+ -  another is for the total summary values.
 */
 typedef struct op_stat_point
 {
