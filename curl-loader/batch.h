@@ -39,6 +39,14 @@
 
 #define CUSTOM_HTTP_HDRS_MAX_NUM 16
 
+enum post_str_usertype
+{
+    POST_STR_USERTYPE_NON_VALID = 0,
+    POST_STR_USERTYPE_UNIQUE_USERS_GENERATION,
+    POST_STR_USERTYPE_SINGLE_USER,
+    POST_STR_USERTYPE_LOAD_USERS_FROM_FILE,
+};
+
 struct client_context;
 
 /**********************
@@ -146,6 +154,13 @@ typedef struct batch_context
 
   /* The string to be used as the base for login post message */
   char login_post_str [POST_BUFFER_SIZE + 1];
+
+    /* The type of <login_post_str>. Valid types are: 
+       POST_STR_USERTYPE_UNIQUE_USERS_GENERATION, - like "user=%s%d&password=%s%d"
+       POST_STR_USERTYPE_SINGLE_USER,                            like "user=%s&password=%s"
+       POST_STR_USERTYPE_LOAD_USERS_FROM_FILE, like "user=%s&password=%s" and login_credentials_file defined.
+    */
+  int login_post_str_usertype;
 
   /* 
      The file with strings like "user:password", where separator may be 

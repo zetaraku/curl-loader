@@ -934,8 +934,6 @@ static int alloc_init_client_post_buffers (client_context* cctx)
 {
   int i;
   batch_context* bctx = cctx->bctx;
-  const char percent_symbol = '%';
-  int counter_percent_sym = 0;
 
   if (! bctx->login_post_str[0])
     {
@@ -962,15 +960,6 @@ static int alloc_init_client_post_buffers (client_context* cctx)
       return 0;
     }
 
-  char* pos = bctx->login_post_str;
-
-  /* Calculate number of '%' symbols in post_login_format */
-  while ((pos = strchr (pos, percent_symbol)))
-    {
-      counter_percent_sym++;
-      pos = pos + 1;
-    }
-
   for (i = 0;  i < bctx->client_num; i++)
     {
       /*
@@ -985,12 +974,13 @@ static int alloc_init_client_post_buffers (client_context* cctx)
           return -1;
         }
 
-      if (counter_percent_sym == 4)
+      if (bctx->login_post_str_usertype ==  
+          POST_STR_USERTYPE_UNIQUE_USERS_GENERATION)
         {
           /* 
-             For each client init post buffer, containing username and
-             password with uniqueness added via added to the base 
-             username and password client index.
+             For each client init post buffer, containing username and password 
+             with uniqueness added via added to the base username and password
+             client index.
           */
           snprintf (cctx[i].post_data_login, 
                     POST_LOGIN_BUF_SIZE, 
@@ -1000,7 +990,10 @@ static int alloc_init_client_post_buffers (client_context* cctx)
                     bctx->login_url.password[0] ? bctx->login_url.password : "",
                     i + 1);
         }
-      else if (counter_percent_sym == 2)
+      else if ((bctx->login_post_str_usertype ==  
+                POST_STR_USERTYPE_SINGLE_USER) ||
+               (bctx->login_post_str_usertype ==  
+                POST_STR_USERTYPE_LOAD_USERS_FROM_FILE))
         {
           /* All clients have the same login_username and password.*/
           snprintf (cctx[i].post_data_login, 
@@ -1011,6 +1004,8 @@ static int alloc_init_client_post_buffers (client_context* cctx)
         }
       else
         {
+          fprintf (stderr,
+                   "\"%s\" error: none valid bctx->post_str_usertype.\n", __func__) ;
           return -1;
         }
       

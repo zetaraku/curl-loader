@@ -733,10 +733,55 @@ static int login_req_type_get_parser (batch_context*const bctx, char*const value
 }
 static int login_post_str_parser (batch_context*const bctx, char*const value)
 {
-    // TODO: validate the input. Important !!!.
+    int count_percent_s_percent_d = 0, count_percent_s = 0;
+    char* pos_current = NULL;
+
   if (strcmp (value, NON_APPLICABLE_STR) || strcmp (value, "N/A"))
     {
-      strncpy (bctx->login_post_str, value, sizeof (bctx->login_post_str) - 1);
+        /*count "%s%d" and "%s" sub-stritngs*/
+
+        pos_current = value;
+        while (*pos_current && (pos_current = strstr (pos_current, "%s%d")))
+        {
+            ++count_percent_s_percent_d;
+            ++pos_current;
+        }
+
+        pos_current = value;
+        while (*pos_current && (pos_current = strstr (pos_current, "%s")))
+        {
+            ++count_percent_s;
+            ++pos_current;
+        }
+
+        if (count_percent_s_percent_d == 2 && count_percent_s == 2)
+        {
+            bctx->login_post_str_usertype = POST_STR_USERTYPE_UNIQUE_USERS_GENERATION;
+        }
+        else if (count_percent_s_percent_d == 0 && count_percent_s == 2)
+        {
+            bctx->login_post_str_usertype = POST_STR_USERTYPE_SINGLE_USER;
+
+            /* If login_credentials_file defined, we will re-mark it later in validation as 
+               POST_STR_USERTYPE_LOAD_USERS_FROM_FILE
+            */
+        }
+        else
+        {
+            fprintf (stderr, 
+                     "%s - error: LOGIN_POST_STR (%s) is not valid. \n"
+                     "Please, use for curl-loader:\n"
+                     "- to generate unique passwords something like" 
+                     "\"user=%%s%%d&password=%%s%%d\" \n"
+                     "- to use the same username and passwords for all clients" 
+                     "something like \"user=%%s&password=%%s\" \n"
+                     "- to load user credentials from file something like  "
+                     "\"user=%%s&password=%%s\" \n and LOGIN_CREDENTIALS_FILE defined.\n",
+                     __func__, value);
+            return -1;
+        }
+
+        strncpy (bctx->login_post_str, value, sizeof (bctx->login_post_str) - 1);
     }
     return 0;
 }
@@ -1260,13 +1305,17 @@ static int validate_batch_login (batch_context*const bctx)
                    "LOGIN_CREDENTIALS_FILE or define LOGIN_POST_STR\n", __func__);
           return -1;
         }
-      if (strstr (bctx->login_post_str, "%d"))
+      if (bctx->login_post_str_usertype == POST_STR_USERTYPE_UNIQUE_USERS_GENERATION)
         {
           fprintf (stderr, "%s - error: \"%%d\" symbols in LOGIN_POST_STR, "
                    "when LOGIN_CREDENTIALS_FILE defined.\n Either remove \"%%d\" " 
                    "symbols or disable LOGIN_CREDENTIALS_FILE\n", __func__);
           return -1;
         }
+      else
+      {
+          bctx->login_post_str_usertype = POST_STR_USERTYPE_LOAD_USERS_FROM_FILE;
+      }
     }
     
   if (!bctx->login_url.url_str || !strlen (bctx->login_url.url_str))
