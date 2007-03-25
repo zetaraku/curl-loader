@@ -189,7 +189,12 @@ main (int argc, char *argv [])
       fprintf (stderr, "\nRUNNING WITHOUT THREADS\n\n");
       sleep (1) ;
       batch_function (&bc_arr[0]);
-	 fprintf (stderr, "\n exited batch_function\n\n");
+	 fprintf (stderr, "\nExited batch_function. Look in the files:\n"
+              "- %s.log for errors and traces;\n"
+              "- %s.txt for loading statistics;\n"
+              "- %s.ctx for the virtual client based statistics.\n"
+              "You may add -v and -u options to the command line for more verbouse output to %s.log file.\n",
+              bc_arr[0].batch_name, bc_arr[0].batch_name, bc_arr[0].batch_name, bc_arr[0].batch_name);
     }
   else
     {
