@@ -762,15 +762,16 @@ static int login_post_str_parser (batch_context*const bctx, char*const value)
         {
             bctx->login_post_str_usertype = POST_STR_USERTYPE_SINGLE_USER;
 
-            /* If login_credentials_file defined, we will re-mark it later in validation as 
+            /* 
+               If login_credentials_file defined, we will re-mark it later in validation as 
                POST_STR_USERTYPE_LOAD_USERS_FROM_FILE
             */
         }
         else
         {
             fprintf (stderr, 
-                     "%s - error: LOGIN_POST_STR (%s) is not valid. \n"
-                     "Please, use for curl-loader:\n"
+                     "\n%s - error: LOGIN_POST_STR (%s) is not valid. \n"
+                     "Please, use for curl-loader either both \"%%s%%d\" strings or both\"%%s\":\n"
                      "- to generate unique passwords something like" 
                      "\"user=%%s%%d&password=%%s%%d\" \n"
                      "- to use the same username and passwords for all clients" 
