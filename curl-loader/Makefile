@@ -5,7 +5,8 @@ TAGFILE=.tagfile
 BUILD=$(shell pwd)/build
 
 CURL_BUILD=$(BUILD)/curl
-CURL_VER:=7.16.1
+#CURL_VER:=7.16.1
+CURL_VER:=7.16.2-20070326
 
 LIBEVENT_BUILD=$(BUILD)/libevent
 LIBEVENT_VER:=1.3
@@ -97,11 +98,9 @@ $(LIBEVENT):
 $(LIBCURL):
 	cd ./packages; tar zxf curl-$(CURL_VER).tar.gz; ln -sf curl-$(CURL_VER) curl; \
 	patch -d curl -p1 < ../patches/patch-curl-$(CURL_VER); \
-	patch -d curl -p1 < ../patches/patch-fdset-protection; \
-	patch -d curl -p1 < ../patches/curl-ipv6-bind.patch; \
-	patch -d curl -p0 < ../patches/multi.patch
+	patch -d curl -p1 < ../patches/patch-fdset-protection
 	mkdir -p $(CURL_BUILD);
-	cd $(CURL_BUILD); ../../packages/curl/configure --prefix $(CURL_BUILD) \
+	cd $(CURL_BUILD); ../../packages/curl/configure --prefix=$(CURL_BUILD) \
         --enable-thread \
         --enable-ipv6 \
         --with-random=/dev/urandom \
