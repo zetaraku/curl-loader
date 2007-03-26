@@ -463,6 +463,12 @@ void dump_final_statistics (client_context* cctx)
     }
 
   dump_clients (cctx);
+  fprintf (stderr, "\nExited. For details look in the files:\n"
+           "- %s.log for errors and traces;\n"
+           "- %s.txt for loading statistics;\n"
+           "- %s.ctx for the virtual client based statistics.\n"
+           "You may add -v and -u options to the command line for more verbouse output to %s.log file.\n",
+           bctx->batch_name, bctx->batch_name, bctx->batch_name, bctx->batch_name);
 }
 
 /****************************************************************************************

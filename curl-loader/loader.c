@@ -986,7 +986,7 @@ static int alloc_init_client_post_buffers (client_context* cctx)
         }
 
       if (bctx->login_post_str_usertype ==  
-          POST_STR_USERTYPE_UNIQUE_USERS_GENERATION)
+          POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS)
         {
           /* 
              For each client init post buffer, containing username and password 
@@ -1000,6 +1000,21 @@ static int alloc_init_client_post_buffers (client_context* cctx)
                     i + 1,
                     bctx->login_url.password[0] ? bctx->login_url.password : "",
                     i + 1);
+        }
+      else if (bctx->login_post_str_usertype ==  
+          POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD)
+        {
+          /* 
+             For each client init post buffer, containing username with uniqueness 
+             added via added to the base username client index. Password is kept
+             the same for all users.
+          */
+          snprintf (cctx[i].post_data_login, 
+                    POST_LOGIN_BUF_SIZE, 
+                    bctx->login_post_str,
+                    bctx->login_url.username, 
+                    i + 1,
+                    bctx->login_url.password[0] ? bctx->login_url.password : "");
         }
       else if ((bctx->login_post_str_usertype ==  
                 POST_STR_USERTYPE_SINGLE_USER) ||

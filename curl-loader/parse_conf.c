@@ -731,60 +731,65 @@ static int login_req_type_get_parser (batch_context*const bctx, char*const value
   bctx->login_req_type = LOGIN_REQ_TYPE_GET;
   return 0;
 }
+
 static int login_post_str_parser (batch_context*const bctx, char*const value)
 {
-    int count_percent_s_percent_d = 0, count_percent_s = 0;
-    char* pos_current = NULL;
+  int count_percent_s_percent_d = 0, count_percent_s = 0;
+  char* pos_current = NULL;
 
   if (strcmp (value, NON_APPLICABLE_STR) || strcmp (value, "N/A"))
     {
-        /*count "%s%d" and "%s" sub-stritngs*/
+      /*count "%s%d" and "%s" sub-stritngs*/
 
-        pos_current = value;
-        while (*pos_current && (pos_current = strstr (pos_current, "%s%d")))
+      pos_current = value;
+      while (*pos_current && (pos_current = strstr (pos_current, "%s%d")))
         {
-            ++count_percent_s_percent_d;
-            ++pos_current;
+          ++count_percent_s_percent_d;
+          ++pos_current;
         }
 
-        pos_current = value;
-        while (*pos_current && (pos_current = strstr (pos_current, "%s")))
+      pos_current = value;
+      while (*pos_current && (pos_current = strstr (pos_current, "%s")))
         {
-            ++count_percent_s;
-            ++pos_current;
+          ++count_percent_s;
+          ++pos_current;
         }
 
-        if (count_percent_s_percent_d == 2 && count_percent_s == 2)
+      if (count_percent_s_percent_d == 2 && count_percent_s == 2)
         {
-            bctx->login_post_str_usertype = POST_STR_USERTYPE_UNIQUE_USERS_GENERATION;
+          bctx->login_post_str_usertype = POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS;
         }
-        else if (count_percent_s_percent_d == 0 && count_percent_s == 2)
+      else if (count_percent_s_percent_d == 1 && count_percent_s == 2)
         {
-            bctx->login_post_str_usertype = POST_STR_USERTYPE_SINGLE_USER;
+          bctx->login_post_str_usertype = POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD;
+        }
+      else if (count_percent_s_percent_d == 0 && count_percent_s == 2)
+        {
+          bctx->login_post_str_usertype = POST_STR_USERTYPE_SINGLE_USER;
+            
+          /* 
+             If login_credentials_file defined, we will re-mark it later in validation as 
+             POST_STR_USERTYPE_LOAD_USERS_FROM_FILE
+          */
+        }
+      else
+        {
+          fprintf (stderr, 
+                   "\n%s - error: LOGIN_POST_STR (%s) is not valid. \n"
+                   "Please, use for curl-loader either both \"%%s%%d\" strings or both\"%%s\":\n"
+                   "- to generate unique passwords something like" 
+                   "\"user=%%s%%d&password=%%s%%d\" \n"
+                   "- to use the same username and passwords for all clients" 
+                   "something like \"user=%%s&password=%%s\" \n"
+                   "- to load user credentials from file something like  "
+                   "\"user=%%s&password=%%s\" \n and LOGIN_CREDENTIALS_FILE defined.\n",
+                   __func__, value);
+          return -1;
+        }
 
-            /* 
-               If login_credentials_file defined, we will re-mark it later in validation as 
-               POST_STR_USERTYPE_LOAD_USERS_FROM_FILE
-            */
-        }
-        else
-        {
-            fprintf (stderr, 
-                     "\n%s - error: LOGIN_POST_STR (%s) is not valid. \n"
-                     "Please, use for curl-loader either both \"%%s%%d\" strings or both\"%%s\":\n"
-                     "- to generate unique passwords something like" 
-                     "\"user=%%s%%d&password=%%s%%d\" \n"
-                     "- to use the same username and passwords for all clients" 
-                     "something like \"user=%%s&password=%%s\" \n"
-                     "- to load user credentials from file something like  "
-                     "\"user=%%s&password=%%s\" \n and LOGIN_CREDENTIALS_FILE defined.\n",
-                     __func__, value);
-            return -1;
-        }
-
-        strncpy (bctx->login_post_str, value, sizeof (bctx->login_post_str) - 1);
+      strncpy (bctx->login_post_str, value, sizeof (bctx->login_post_str) - 1);
     }
-    return 0;
+  return 0;
 }
 static int login_credentials_file_parser  (batch_context*const bctx, char*const value)
 {
@@ -1306,11 +1311,16 @@ static int validate_batch_login (batch_context*const bctx)
                    "LOGIN_CREDENTIALS_FILE or define LOGIN_POST_STR\n", __func__);
           return -1;
         }
-      if (bctx->login_post_str_usertype == POST_STR_USERTYPE_UNIQUE_USERS_GENERATION)
+
+      if (
+          bctx->login_post_str_usertype == 
+          POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS ||
+          bctx->login_post_str_usertype == 
+          POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD
+          )
         {
-          fprintf (stderr, "%s - error: \"%%d\" symbols in LOGIN_POST_STR, "
-                   "when LOGIN_CREDENTIALS_FILE defined.\n Either remove \"%%d\" " 
-                   "symbols or disable LOGIN_CREDENTIALS_FILE\n", __func__);
+          fprintf (stderr, "%s - error: \"%%d\" symbols not to present, when LOGIN_POST_STR, "
+                   "when LOGIN_CREDENTIALS_FILE defined.\n It should be two \"%%s\"", __func__);
           return -1;
         }
       else

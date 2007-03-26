@@ -42,7 +42,8 @@
 enum post_str_usertype
 {
     POST_STR_USERTYPE_NON_VALID = 0,
-    POST_STR_USERTYPE_UNIQUE_USERS_GENERATION,
+    POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS,
+    POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD,
     POST_STR_USERTYPE_SINGLE_USER,
     POST_STR_USERTYPE_LOAD_USERS_FROM_FILE,
 };
@@ -156,7 +157,8 @@ typedef struct batch_context
   char login_post_str [POST_BUFFER_SIZE + 1];
 
     /* The type of <login_post_str>. Valid types are: 
-       POST_STR_USERTYPE_UNIQUE_USERS_GENERATION, - like "user=%s%d&password=%s%d"
+       POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS, - like "user=%s%d&password=%s%d"
+       POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD, like "user=%s%d&password=%s"
        POST_STR_USERTYPE_SINGLE_USER,                            like "user=%s&password=%s"
        POST_STR_USERTYPE_LOAD_USERS_FROM_FILE, like "user=%s&password=%s" and login_credentials_file defined.
     */
