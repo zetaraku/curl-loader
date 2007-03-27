@@ -420,15 +420,16 @@ int setup_curl_handle (client_context*const cctx,
   */
 
   /* TODO: check the issue */
-#if 1
-  if ((m_error = curl_multi_remove_handle (bctx->multiple_handle, 
-                                           handle)) != CURLM_OK)
+  if (loading_mode == LOAD_MODE_STORMING)
     {
-      fprintf (stderr,"%s - error: curl_multi_remove_handle () failed with error %d.\n",
-               __func__, m_error);
-      return -1;
+      if ((m_error = curl_multi_remove_handle (bctx->multiple_handle, 
+                                               handle)) != CURLM_OK)
+        {
+          fprintf (stderr,"%s - error: curl_multi_remove_handle () failed with error %d.\n",
+                   __func__, m_error);
+          return -1;
+        }
     }
-#endif
   
   if (setup_curl_handle_init (cctx, url_ctx, cycle_number, post_method) == -1)
   {
@@ -437,14 +438,15 @@ int setup_curl_handle (client_context*const cctx,
   }
      
   /* The handle is supposed to be removed before. */
-#if 1
-  if ((m_error = curl_multi_add_handle(bctx->multiple_handle, handle)) != CURLM_OK)
+  if (loading_mode == LOAD_MODE_STORMING)
     {
-      fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
-               __func__, m_error);
+      if ((m_error = curl_multi_add_handle(bctx->multiple_handle, handle)) != CURLM_OK)
+        {
+          fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
+                   __func__, m_error);
           return -1;
+        }
     }
-#endif
 
   return 0;
 }
