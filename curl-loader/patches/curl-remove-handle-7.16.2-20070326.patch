@@ -1,0 +1,81 @@
+diff -Naru curl-7.16.2-20070326/lib/multi.c curl-7.16.2-20070326-mod/lib/multi.c
+--- curl-7.16.2-20070326/lib/multi.c	2007-03-27 12:51:17.000000000 +0200
++++ curl-7.16.2-20070326-mod/lib/multi.c	2007-03-27 13:27:55.000000000 +0200
+@@ -8,7 +8,7 @@
+  * Copyright (C) 1998 - 2007, Daniel Stenberg, <daniel@haxx.se>, et al.
+  *
+  * This software is licensed as described in the file COPYING, which
+- * you should have received as part of this distribution. The terms
++ * you should have received as part of this distributionCu. The terms
+  * are also available at http://curl.haxx.se/docs/copyright.html.
+  *
+  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
+@@ -413,6 +413,9 @@
+   easy->easy_handle = easy_handle;
+   multistate(easy, CURLM_STATE_INIT);
+ 
++  /* set the back pointer to one_easy to assist in removal */
++  easy->easy_handle->multi_pos =  easy;
++
+   /* for multi interface connections, we share DNS cache automatically if the
+      easy handle's one is currently private. */
+   if (easy->easy_handle->dns.hostcache &&
+@@ -516,13 +519,8 @@
+   if(!GOOD_EASY_HANDLE(curl_handle))
+     return CURLM_BAD_EASY_HANDLE;
+ 
+-  /* scan through the list and remove the 'curl_handle' */
+-  easy = multi->easy.next;
+-  while(easy != &multi->easy) {
+-    if(easy->easy_handle == (struct SessionHandle *)curl_handle)
+-      break;
+-    easy=easy->next;
+-  }
++  /* pick-up from the 'curl_handle' the kept position in the list */
++  easy = ((struct SessionHandle *)curl_handle)->multi_pos;
+ 
+   if(easy) {
+     bool premature = (bool)(easy->state != CURLM_STATE_COMPLETED);
+@@ -626,6 +624,10 @@
+ 
+     easy->easy_handle->set.one_easy = NULL; /* detached */
+ 
++    /* Null the position in the controlling structure */
++    ((struct SessionHandle *)curl_handle)->multi_pos = NULL;
++    
++
+     /* NOTE NOTE NOTE
+        We do not touch the easy handle here! */
+     if (easy->msg)
+@@ -744,6 +746,19 @@
+     for(i=0; i< MAX_SOCKSPEREASYHANDLE; i++) {
+       curl_socket_t s = CURL_SOCKET_BAD;
+ 
++      if (sockbunch[i] < 0 /*|| sockbunch[i] > 65535*/)
++        {
++          break;
++        }
++        
++        //if (sockbunch[i] >= FD_SETSIZE)
++        //{
++        //  fprintf (stderr, "\n\n%s - error: fd (socket) %d more, than FD_SETSIZE (%d)\n", 
++        //           __func__, sockbunch[i], FD_SETSIZE);
++        //  fprintf (stderr, "Edit the Makefile and increase CURL_LOADER_FD_SETSIZE\n");
++        //  break;
++        //}
++
+       if(bitmap & GETSOCK_READSOCK(i)) {
+         FD_SET(sockbunch[i], read_fd_set);
+         s = sockbunch[i];
+diff -Naru curl-7.16.2-20070326/lib/urldata.h curl-7.16.2-20070326-mod/lib/urldata.h
+--- curl-7.16.2-20070326/lib/urldata.h	2007-03-27 12:51:17.000000000 +0200
++++ curl-7.16.2-20070326-mod/lib/urldata.h	2007-03-27 12:43:00.000000000 +0200
+@@ -1342,6 +1342,8 @@
+   struct Names dns;
+   struct Curl_multi *multi;    /* if non-NULL, points to the multi handle
+                                   struct to which this "belongs" */
++  struct Curl_one_easy *multi_pos; /* if non-NULL, points to the its position
++                                     in multi controlling structure to assist in removal. */
+   struct Curl_share *share;    /* Share, handles global variable mutexing */
+   struct HandleData reqdata;   /* Request-specific data */
+   struct UserDefined set;      /* values set by the libcurl user */
