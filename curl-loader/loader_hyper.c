@@ -1,5 +1,5 @@
 /* 
- *     loader_smooth.c
+ *     loader_hyper.c
  *
  * 2006 Copyright (c)
  * Michael Moser, <moser.michael@gmail.com>
