@@ -472,6 +472,7 @@ int setup_curl_handle_init (client_context*const cctx,
 {
   batch_context* bctx = cctx->bctx;
   CURL* handle = cctx->handle;
+    int rc, st;
 
   if (!cctx || !url_ctx)
     {
@@ -528,6 +529,17 @@ int setup_curl_handle_init (client_context*const cctx,
   curl_easy_setopt (handle, CURLOPT_DEBUGFUNCTION, 
                     client_tracing_function);
 
+  /* 
+     This is to return cctx pointer as the void* userp to the 
+     tracing function. 
+  */
+  curl_easy_setopt (handle, CURLOPT_DEBUGDATA, cctx);
+
+#if 0
+  curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, prog_cb);
+  curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, cctx);
+#endif
+
   if (!output_to_stdout)
     {
       curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION,
@@ -543,14 +555,13 @@ int setup_curl_handle_init (client_context*const cctx,
       cctx->cycle_num = cycle_number;
     }
 
-  /* 
-     This is to return cctx pointer as the void* userp to the 
-     tracing function. 
-  */
-  curl_easy_setopt (handle, CURLOPT_DEBUGDATA, cctx);
-
   /* Set the private pointer to be used by the smooth-mode. */
   curl_easy_setopt (handle, CURLOPT_PRIVATE, cctx);
+
+  if (loading_mode == LOAD_MODE_HYPER)
+    {
+      curl_easy_setopt (handle, CURLOPT_WRITEDATA, cctx);
+    }
 
   /* Without the buffer set, we do not get any errors in tracing function. */
   curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer);    
@@ -565,6 +576,16 @@ int setup_curl_handle_init (client_context*const cctx,
                __func__);
       return -1;
     }
+
+  if (loading_mode == LOAD_MODE_HYPER)
+    {
+        do 
+          {
+            rc = curl_multi_socket_all(bctx->multiple_handle, &st);
+          } 
+        while (CURLM_CALL_MULTI_PERFORM == rc);
+    }
+
      
   return 0;
 }
