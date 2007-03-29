@@ -5,9 +5,10 @@
 2. Configuration/making improvements: moving all source-files
     to src directory etc.
 
-3. X.509 client certificates per each https, ftps url. Easy to do.
+3. X.509 client certificates per each https, ftps url. Client certificate
+    for each client?
 
-5. Support for CAPS (calls per second) defined mode. Currently, we are 
+4. Support for CAPS (calls per second) defined mode. Currently, we are 
    supporting only a certain number of virtual clients and CAPS is the derived
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter. 
@@ -27,3 +28,6 @@
 
 9. HTTP GET filled forms for login credentials (they are sent using url). 
       Does somebody really wants it?
+
+10. Dynamic allocation of login and logoff post buffers. Current static
+       allocation uses too much memory reserves.

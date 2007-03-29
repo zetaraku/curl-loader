@@ -1,6 +1,16 @@
-version 0.27 svn 227
+version ?
 
-* 
+* LOGIN_POST_STR added an option to generate unique users
+   with the same password. Thanks to Jeremy Brown 
+   <jbrown_at_novell.com> for motivating this feature.
+
+* Improved validation of LOGIN_POST_STR string and moved
+   to parse_conf.c. Size of the buffer for the string increased from 64,
+   which is not enough to 256. Thanks to Jeremy Brown 
+   <jbrown_at_novell.com> for reporting this bug.
+
+
+version 0.27 svn 227
 
 * Added facility to customize/add/over-write HTTP/FTP headers. 
    Tag CUSTOM_HEADER is serving for this feature. Up to 16 custom 

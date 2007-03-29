@@ -177,6 +177,9 @@ config LOGIN_POST_STR
 
             The option without %d symbols to be used also, when "Login Credentials File" is defined,
             because the credentials uniqueness is ensured by the file content.
+
+            Another valid option supported is to generate unique users with the same password,
+            using template like this: "username=%s%d&password=%s"
             
 comment "Login POST String Matrix - support disabled"
 	depends on !LOGIN
