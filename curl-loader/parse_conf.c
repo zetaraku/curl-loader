@@ -1562,8 +1562,8 @@ int parse_config_file (char* const filename,
 
   while (fgets (fgets_buff, sizeof (fgets_buff) - 1, fp))
     {
-      fprintf (stderr, "%s - processing file string \"%s\n", 
-               __func__, fgets_buff);
+      //fprintf (stderr, "%s - processing file string \"%s\n", 
+      //         __func__, fgets_buff);
 
       char* string_buff = NULL;
       size_t string_len = 0;
@@ -1583,8 +1583,8 @@ int parse_config_file (char* const filename,
           /* Line may be commented out by '#'.*/
           if (fgets_buff[0] == '#')
             {
-              fprintf (stderr, "%s - skipping commented file string \"%s\n", 
-                       __func__, fgets_buff);
+              // fprintf (stderr, "%s - skipping commented file string \"%s\n", 
+              //         __func__, fgets_buff);
               continue;
             }
 
