@@ -72,11 +72,14 @@ static int handle_gradual_increase_clients_num_timer (timer_node* timer_node,
                                                       void* pvoid_param, 
                                                       unsigned long ulong_param);
 
-static int mget_url_smooth (batch_context* bctx);
-static int mperform_smooth (batch_context* bctx, int* still_running);
+static int mget_url_hyper (batch_context* bctx);
+static int mperform_hyper (batch_context* bctx, int* still_running);
 static int dispatch_expired_timers (batch_context* bctx, unsigned long now_time);
 
-static int load_next_step (client_context* cctx, unsigned long now_time);
+static int load_next_step (client_context* cctx,
+                           unsigned long now_time,
+                           int* sched_now);
+
 static int last_cycling_state (batch_context* bctx);
 static int first_cycling_state (batch_context* bctx);
 
@@ -150,102 +153,19 @@ typedef struct
 } sock_info;
 
 
-#define MSG_OUT stdout
-
 int still_running;
 
 static void event_cb(int fd, short kind, void *userp);
+static void update_timeout (batch_context *bctx);
 
 /*--------------------------------------------------------------------------*/
 
 struct event timer_event;
 
-#if 0
+#if 1
 struct event timer_next_load_event;
 int next_load_event_set;
 #endif
-
-
-/* Update the event timer after curl_multi library calls */
-static void update_timeout (batch_context *bctx)
-{
-  (void) bctx;
-#if 0
-  long timeout_ms;
-  struct timeval timeout;
-
-  curl_multi_timeout (bctx->multiple_handle, &timeout_ms);
-
-  if (timeout_ms < 0) 
-    {
-      return;
-    }
-
-  timeout.tv_sec = timeout_ms/1000;
-  timeout.tv_usec = (timeout_ms%1000)*1000;
-  evtimer_add(&timer_event, &timeout);
-#endif
-}
-
-
-
-/* Assign information to a sock_info structure */
-static void setsock(sock_info*sinfo, 
-                    curl_socket_t socket, 
-                    CURL*handle, 
-                    int act, 
-                    batch_context * bctx)
-{
-  int kind = 
-    (act & CURL_POLL_IN ? EV_READ : 0)|
-    (act & CURL_POLL_OUT ? EV_WRITE : 0)|
-    EV_PERSIST;
-
-  (void) handle;
-
-  sinfo->sockfd = socket;
-  sinfo->action = act;
-
-  if (sinfo->evset) 
-    { 
-      event_del(&sinfo->ev); 
-    }
-  event_set( &sinfo->ev, sinfo->sockfd, kind, event_cb, bctx);
-  sinfo->evset=1;
-  event_add(&sinfo->ev, NULL);
-}
-
-/* Initialize a new sock_info structure */
-static void addsock(curl_socket_t socket, 
-                    CURL *easy, 
-                    int action, 
-                    client_context *cctx, 
-                    sock_info *sinfo, 
-                    batch_context *bctx) 
-{
-  setsock (sinfo, socket, easy, action, bctx);
-  curl_multi_assign(bctx->multiple_handle, socket, cctx);
-}
-
-
-/* Clean up the sock_info structure */
-static void remsock(sock_info *sinfo)
-{
-  if (!sinfo) 
-    { 
-      return; 
-    }
-
-  if (sinfo->evset) 
-    { 
-      event_del(&sinfo->ev); 
-    }
-  sinfo->evset = 0;
-}
-
-
-
-/*--------------------------------------------------------------------------*/
 
 /* LIBEVENT CALLBACK: Called by libevent when we get action on a multi socket */
 static void event_cb (int fd, short kind, void *userp)
@@ -278,11 +198,102 @@ static void event_cb (int fd, short kind, void *userp)
   PRINTF("event_cb exit\n");
 }
 
+#if 1
+/* LIBEVENT CALLBACK: Called by libevent when our timeout expires */
+static void timer_cb(int fd, short kind, void *userp)
+{
+  (void)fd;
+  (void)kind;
+  batch_context *bctx = (batch_context *)userp;
+  CURLMcode rc;
+  int st;
+
+  //PRINTF("timer_cb enter\n");
+
+  do 
+    {
+      rc = curl_multi_socket(bctx->multiple_handle, CURL_SOCKET_TIMEOUT, &st);
+    } 
+  while (rc == CURLM_CALL_MULTI_PERFORM);
+    
+  // mperform_hyper (bctx, &st);
+
+  if (still_running ) 
+    { 
+      update_timeout(bctx); 
+    }
+
+  //PRINTF("timer_cb exit\n");
+}
+#endif
+
+/* Clean up the sock_info structure */
+static void remsock(sock_info *sinfo)
+{
+
+    PRINTF("remsock- enter\n");
+
+  if (!sinfo) 
+    { 
+      return; 
+    }
+
+  if (sinfo->evset) 
+    { 
+      event_del(&sinfo->ev); 
+    }
+  sinfo->evset = 0;
+}
+
+/* Assign information to a sock_info structure */
+static void setsock(sock_info*sinfo, 
+                    curl_socket_t socket, 
+                    CURL*handle, 
+                    int act, 
+                    batch_context * bctx)
+{
+  int kind = 
+    (act & CURL_POLL_IN ? EV_READ : 0)|
+    (act & CURL_POLL_OUT ? EV_WRITE : 0)|
+    EV_PERSIST;
+
+  (void) handle;
+
+  PRINTF("setsock- enter\n");
+
+  sinfo->sockfd = socket;
+  sinfo->action = act;
+
+  if (sinfo->evset) 
+    { 
+      event_del(&sinfo->ev); 
+    }
+
+  event_set( &sinfo->ev, sinfo->sockfd, kind, event_cb, bctx);
+  sinfo->evset=1;
+
+  event_add(&sinfo->ev, NULL);
+}
+
+/* Initialize a new sock_info structure */
+static void addsock(curl_socket_t socket, 
+                    CURL *easy, 
+                    int action, 
+                    client_context *cctx, 
+                    sock_info *sinfo, 
+                    batch_context *bctx) 
+{
+  PRINTF("addsock - enter\n");
+  setsock (sinfo, socket, easy, action, bctx);
+
+  curl_multi_assign(bctx->multiple_handle, socket, cctx);
+}
+
 static char *whatstr[]={ "none", "IN", "OUT", "INOUT", "REMOVE" };
 
 
 /* CURL CALLBACK: socket event of multi user handle */
-static int sock_cb (CURL *handle, 
+static int socket_callback (CURL *handle, 
                     curl_socket_t socket, 
                     int what, 
                     void *cbp, 
@@ -291,6 +302,8 @@ static int sock_cb (CURL *handle,
   batch_context* bctx = (batch_context *) cbp;
   client_context* cctx = (client_context *) sockp;
   sock_info *sinfo = (sock_info*) cctx ? cctx->ext_data : 0;
+
+  PRINTF("socket_callback - enter\n");
 
   if (!cctx)
     {
@@ -341,42 +354,48 @@ static int sock_cb (CURL *handle,
   return 0;
 }
 
-#if 0
-/* LIBEVENT CALLBACK: Called by libevent when our timeout expires */
-static void timer_cb(int fd, short kind, void *userp)
+/* Update the event timer after curl_multi library calls */
+static void update_timeout (batch_context *bctx)
 {
-  (void)fd;
-  (void)kind;
-  batch_context *bctx = (batch_context *)userp;
-  CURLMcode rc;
-  int st;
+#if 1
+  long timeout_ms;
+  struct timeval timeout;
 
-  do 
-    {
-      rc = curl_multi_socket(bctx->multiple_handle, CURL_SOCKET_TIMEOUT, &st);
-    } 
-  while (rc == CURLM_CALL_MULTI_PERFORM);
-    
-  mperform_smooth (bctx, &st);
+  //PRINTF("update_timeout - enter\n");
 
-  if (still_running ) 
-    { 
-      update_timeout(bctx); 
-    }
-}
+  curl_multi_timeout (bctx->multiple_handle, &timeout_ms);
+
+  //if (timeout_ms < 0) 
+  // {
+  //   return;
+  // }
+
+  timeout.tv_sec = timeout_ms/1000;
+  timeout.tv_usec = (timeout_ms%1000)*1000;
+  evtimer_add(&timer_event, &timeout);
 #endif
+}
 
 
-#if 0
+
 static void next_load_cb (int fd, short kind, void *userp)
 {
   (void)fd;
   (void)kind;
   batch_context *bctx = (batch_context *)userp;
+  int st;
+
   PRINTF("next_load_cb\n");
-  dispatch_expired_timers (bctx, get_tick_count());
+  //dispatch_expired_timers (bctx, get_tick_count());
+
+  mperform_hyper (bctx, &st);
+
+  struct timeval tv;
+  timerclear(&tv);
+  tv.tv_usec = 10000;
+	
+  event_add(&timer_next_load_event, &tv);  
 }
-#endif
 
 #if 0 
 /* CURLOPT_PROGRESSFUNCTION */
@@ -407,19 +426,16 @@ int user_activity_hyper (client_context* cctx_array)
   long logfile_timer_id = -1;
   long clients_num_inc_id = -1;
   sock_info *sinfo;
-  int k,rc;
-  int st;
+  int k, st;
 
   event_init();
 
-  curl_multi_setopt(bctx->multiple_handle, CURLMOPT_SOCKETFUNCTION, sock_cb);
+  curl_multi_setopt(bctx->multiple_handle, CURLMOPT_SOCKETFUNCTION, socket_callback);
 
   curl_multi_setopt(bctx->multiple_handle, CURLMOPT_SOCKETDATA, bctx);
 
-#if 0    
-  evtimer_set(&timer_event, timer_cb, bctx);
-  evtimer_set(&timer_next_load_event, next_load_cb, bctx);
-#endif
+
+
 
   still_running = 1; 
  
@@ -433,9 +449,14 @@ int user_activity_hyper (client_context* cctx_array)
 
       bctx->cctx_array[k].ext_data = sinfo;
 
-      curl_easy_setopt (bctx->cctx_array[k].handle, CURLOPT_PRIVATE, bctx->cctx_array + k);
+      /*
+      curl_easy_setopt (bctx->cctx_array[k].handle, 
+                        CURLOPT_PRIVATE, 
+                        bctx->cctx_array + k);
+      */
 
-      set_timer_handling_func (&bctx->cctx_array[k], handle_cctx_timer_hyper);
+      set_timer_handling_func (&bctx->cctx_array[k], 
+                               handle_cctx_timer_hyper);
     }
 
   if (!bctx)
@@ -511,13 +532,20 @@ int user_activity_hyper (client_context* cctx_array)
         }
     }
 
-#if 1
-  do 
-    {
-      rc = curl_multi_socket_all(bctx->multiple_handle, &st);
-    } 
-  while (CURLM_CALL_MULTI_PERFORM == rc);
-#endif
+  evtimer_set(&timer_event, timer_cb, bctx);
+
+  evtimer_set(&timer_next_load_event, next_load_cb, bctx);
+
+  struct timeval tv;
+  timerclear(&tv);
+  tv.tv_usec = 10000;	
+  event_add(&timer_next_load_event, &tv);
+
+  while (CURLM_CALL_MULTI_PERFORM == 
+         curl_multi_socket_all(bctx->multiple_handle, &st))
+         ;
+
+
 
   /* 
      ========= Run the loading machinery ================
@@ -526,7 +554,7 @@ int user_activity_hyper (client_context* cctx_array)
   while (still_running) /*(  pending_active_and_waiting_clients_num_hyper (bctx)) ||
          bctx->do_client_num_gradual_increase)*/
     {
-      if (mget_url_smooth (bctx) == -1)
+      if (mget_url_hyper (bctx) == -1)
         {
           fprintf (stderr, "%s error: mget_url () failed.\n", __func__) ;
           return -1;
@@ -567,6 +595,7 @@ int user_activity_hyper (client_context* cctx_array)
  ****************************************************************************************/
 static int add_loading_clients (batch_context* bctx)
 {
+  int scheduled_now = 0;
   /* 
      Return, if initial gradual scheduling of all new clients has been accomplished. 
   */
@@ -581,7 +610,7 @@ static int add_loading_clients (batch_context* bctx)
     min (bctx->clients_initial_inc, bctx->client_num - bctx->clients_initial_running_num) : 
     bctx->client_num; 
 
-  //fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_sched);
+  fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_sched);
 
   /* 
      Schedule new clients by initializing thier CURL handle with
@@ -593,7 +622,9 @@ static int add_loading_clients (batch_context* bctx)
        j++)
 	{
       /* Runs load_init_state () for each newly added client. */
-      if (load_next_step (&bctx->cctx_array[j], bctx->start_time) == -1)
+      if (load_next_step (&bctx->cctx_array[j], 
+                          bctx->start_time,
+                          &scheduled_now) == -1)
         {  
           fprintf(stderr,"%s error: load_next_step() initial failed\n", __func__);
           return -1;
@@ -618,16 +649,16 @@ static int add_loading_clients (batch_context* bctx)
 
 
 /****************************************************************************************
- * Function name - mget_url_smooth
+ * Function name - mget_url_hyper
  *
  * Description - Performs actual fetching of urls for a whole batch. Starts with initial fetch
- *               by mperform_smooth () and further acts using mperform_smooth () on select events
+ *               by mperform_hyper () and further acts using mperform_hyper () on select events
  *
  * Input -       *bctx - pointer to the batch of contexts
  *
  * Return Code/Output - On Success - 0, on Error -1
  ****************************************************************************************/
-static int mget_url_smooth (batch_context* bctx)  		       
+static int mget_url_hyper (batch_context* bctx)		       
 {
   float max_timeout = DEFAULT_SMOOTH_URL_COMPLETION_TIME;
   int st;
@@ -637,15 +668,20 @@ static int mget_url_smooth (batch_context* bctx)
       max_timeout = bctx->uas_url_ctx_array[0].url_completion_time;
     }
  
-   event_dispatch();
+  /* update timeout */
+  update_timeout (bctx);
 
-   mperform_smooth (bctx, &st);
+  event_dispatch();
+
+  fprintf (stderr, "%s - out of event_dispatch () loop.\n", __func__);
+
+  //mperform_hyper (bctx, &st);
 
 
 #if 0
   struct timeval timeout;
 
-  mperform_smooth (bctx, &still_running)
+  mperform_hyper (bctx, &still_running)
 
   do {
     rc = curl_multi_socket_all((bctx->multiple_handle, &still_running);
@@ -670,7 +706,7 @@ static int mget_url_smooth (batch_context* bctx)
           break;
         case 0:
         default: /* timeout or readable/writable sockets */
-          mperform_smooth (bctx, &still_running);            
+          mperform_hyper (bctx, &still_running);            
           break;
         }
     }
@@ -679,7 +715,7 @@ static int mget_url_smooth (batch_context* bctx)
 }
 
 /****************************************************************************************
- * Function name - mperform_smooth
+ * Function name - mperform_hyper
  *
  * Description - Uses curl_multi_perform () for initial url-fetch and to react on socket events.
  *               Uses curl_multi_info_read () to test url-fetch completion events and to proceed
@@ -691,34 +727,23 @@ static int mget_url_smooth (batch_context* bctx)
  *               
  * Return Code/Output - On Success - 0, on Error -1
  ****************************************************************************************/
-static int mperform_smooth (batch_context* bctx, int* still_running)
+static int mperform_hyper (batch_context* bctx, int* still_running)
 {
   CURLM *mhandle =  bctx->multiple_handle;
   int cycle_counter = 0;	
-  int msg_num = 0;
+  int msg_num = 0, rc, st;
   const int snapshot_timeout = snapshot_statistics_timeout*1000;
   unsigned long now_time;
   CURLMsg *msg;
+  int scheduled_now_count = 0;
+  int scheduled_now = 0;
     
-#if 0    
-  while (CURLM_CALL_MULTI_PERFORM == 
-        curl_multi_perform(mhandle, still_running))
-    ;
-#endif
   now_time = get_tick_count ();
 
   if ((long)(now_time - bctx->last_measure) > snapshot_timeout) 
     {
       dump_snapshot_interval (bctx, now_time);
     }
-
-  if (dispatch_expired_timers (bctx, now_time) > 0) {
-
-      while (CURLM_CALL_MULTI_PERFORM == 
-	    curl_multi_perform(mhandle, still_running))
-	;
-
-  }
 
   while( (msg = curl_multi_info_read (mhandle, &msg_num)) != 0)
     {
@@ -752,7 +777,12 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
             }
 
           /*cstate client_state =  */
-          load_next_step (cctx, now_time);
+          load_next_step (cctx, now_time, &scheduled_now);
+
+          if (scheduled_now)
+            {
+              scheduled_now_count++;
+            }
 
           //fprintf (stderr, "%s - after load_next_step client state %d.\n", __func__, client_state);
 
@@ -765,7 +795,14 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
         }
     }
 
- 
+  if (dispatch_expired_timers (bctx, now_time) > 0 || scheduled_now_count)
+    {
+      while (CURLM_CALL_MULTI_PERFORM == 
+               curl_multi_socket_all(bctx->multiple_handle, &st)
+                 )
+          ;
+    }
+
   return 0;
 }
 
@@ -826,16 +863,23 @@ dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
  *               CSTATE_ERROR or CSTATE_FINISHED_OK.
  *
  * Input -       *cctx - pointer to the client context
+ *                   now_time -  current timestamp in msec
+ *
+ *Input/Output -  sched_now - when true, the client is scheduled right now without timer queue.
  *
  * Return Code/Output - CSTATE enumeration with the state of loading
  ****************************************************************************************/
-static int load_next_step (client_context* cctx, unsigned long now_time)
+static int load_next_step (client_context* cctx,
+                           unsigned long now_time,
+                           int* sched_now)
 {
   batch_context* bctx = cctx->bctx;
   int rval_load = CSTATE_ERROR;
   unsigned long interleave_waiting_time = 0;
 
   PRINTF("load_next_step %p state %d\n",cctx, cctx->client_state);
+
+  *sched_now = 0;
 	
   /* Remove handle from the multiple handle, if it was added there before. */
   if (cctx->client_state != CSTATE_INIT)
@@ -889,7 +933,6 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
      Schedule virtual clients by adding them to multi-handle, 
      if the clients are not in error or finished final states.
   */
-#if 0
   if (!interleave_waiting_time)
     {
       /* Schedule the client immediately */
@@ -898,9 +941,12 @@ static int load_next_step (client_context* cctx, unsigned long now_time)
           fprintf (stderr, "%s - error: client_add_to_load () failed .\n", __func__);
           return -1;
         }
+      else
+        {
+            *sched_now = 1;
+        }
     }
   else
-#endif
     {
       PRINTF("load_next_step: ctx %p schedule next load in %d seconds\n", 
              cctx,(int) interleave_waiting_time/1000);
@@ -1116,7 +1162,7 @@ int setup_curl_handle_init_hyper (client_context*const cctx,
 {
   batch_context* bctx = cctx->bctx;
   CURL* handle = cctx->handle;
-  int rc,st;
+  //int rc,st;
 
   if (!cctx || !url_ctx)
     {
@@ -1219,10 +1265,12 @@ int setup_curl_handle_init_hyper (client_context*const cctx,
       return -1;
     }
 
-#if 1 
-  do {
-    rc = curl_multi_socket_all(bctx->multiple_handle, &st);
-  } while (CURLM_CALL_MULTI_PERFORM == rc);
+#if 0
+  do 
+    {
+      rc = curl_multi_socket_all(bctx->multiple_handle, &st);
+    } 
+  while (CURLM_CALL_MULTI_PERFORM == rc);
 #endif
      
   return 0;
