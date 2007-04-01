@@ -33,8 +33,8 @@
 
 #include "statistics.h"
 
-#define SECURE_APPL_STR "HTTPS/FTPS"
-#define UNSECURE_APPL_STR "HTTP/FTP"
+#define SECURE_APPL_STR "HTTPS "
+#define UNSECURE_APPL_STR "HTTP "
 
 static void 
 dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
@@ -472,7 +472,7 @@ void dump_final_statistics (client_context* cctx)
 }
 
 /****************************************************************************************
-* Function name - dump_snapshot_interval and up to the interval time summary statistics
+* Function name - dump_snapshot_interval
 *
 * Description - Dumps summary statistics since the start of load
 * Input -       *bctx - pointer to batch structure
@@ -489,9 +489,11 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
 
   dump_snapshot_interval_and_advance_total_statistics(bctx, now);
 
-  const int seconds_run = (int)(now - bctx->start_time)/ 1000;
+  int seconds_run = (int)(now - bctx->start_time)/ 1000;
   if (!seconds_run)
-    return;
+    {
+      seconds_run = 1;
+    }
 
   fprintf(stdout,"-----------------------------------------------------\n");
   fprintf(stdout,"Summary stats since load start (load runs:%d secs, CAPS-average:%ld):\n", 
@@ -547,7 +549,8 @@ void print_snapshot_interval_statistics (unsigned long period,
 void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
                                                     unsigned long now_time)
 {
-  const unsigned long delta_time = now_time - bctx->last_measure;
+  const unsigned long delta_t = now_time - bctx->last_measure; 
+  const unsigned long delta_time = delta_t ? delta_time : 1;
 
   if (stop_loading)
     {
@@ -641,8 +644,8 @@ static void dump_stat_to_screen (char* protocol,
                                  stat_point* sd, 
                                  unsigned long period)
 {
-  fprintf(stdout, "%s-Req:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,Err:%ld,"
-          "Delay:%ld,Delay-2xx:%ld,Thr-in:%lld(b/s),Thr-out:%lld(b/s)\n",
+  fprintf(stdout, "%sReq:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,Err:%ld,"
+          "D:%ld(ms),D-2xx:%ld(ms),T-in:%lld(B/s),T-out:%lld(B/s)\n",
           protocol, sd->requests, sd->resp_oks, sd->resp_redirs, sd->resp_cl_errs,
           sd->resp_serv_errs, sd->other_errs, sd->appl_delay, sd->appl_delay_2xx,
           sd->data_in/period, sd->data_out/period);

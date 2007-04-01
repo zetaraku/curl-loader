@@ -187,6 +187,8 @@ int user_activity_smooth (client_context* cctx_array)
         }
     }
 
+  dump_snapshot_interval (bctx, now_time);
+
   /* 
      ========= Run the loading machinery ================
   */
