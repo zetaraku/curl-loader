@@ -1496,12 +1496,28 @@ static int post_validate_init (batch_context*const bctx)
   
   if (op_stat_point_init(&bctx->op_total, 
                          (size_t)bctx->do_login, 
-                             bctx->uas_urls_num, 
+                         bctx->uas_urls_num, 
                          (size_t)bctx->do_logoff) == -1)
-        {
-          fprintf (stderr, "%s - error: init of op_total failed.",__func__);
-          return -1;
-        }
+    {
+      fprintf (stderr, "%s - error: init of op_total failed.",__func__);
+      return -1;
+    }
+
+  /* 
+     It should be the last check.
+  */
+  fprintf (stderr, "\nThe configuration has been validated successfully.\n");
+
+  if (!bctx->login_cycling && !bctx->do_uas && !bctx->logoff_cycling)
+    {
+      fprintf (stderr, "\nHowever, the configuration has no cycling defined.\n"
+               "Are you sure, that this is what you are planning to do?\n"
+               "Y may define LOGIN_CYCLING some UAS urls or LOGOFF_CYCLING.\n"
+               " Please, press ENTER to continue.\n");
+             
+      getchar ();
+    }
+  
   return 0;
 }
 
