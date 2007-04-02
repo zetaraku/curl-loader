@@ -1,5 +1,15 @@
 version ?
 
+* Initial release of our hyper mode.
+
+* Improved performance of the smooth (default) and hyper
+   mode by exluding unnecessary remove and add of a handle
+   from/to multihandle in setup_curl_handle () in loader.c.
+
+* Improved preformance of all modes by making patch to libcurl
+   (accepted to the library) changing linear traversal of
+   curl_multi_remove_handle () to the single-step lookup.
+
 * LOGIN_POST_STR added an option to generate unique users
    with the same password. Thanks to Jeremy Brown 
    <jbrown_at_novell.com> for motivating this feature.
