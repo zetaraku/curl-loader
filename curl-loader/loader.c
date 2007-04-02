@@ -84,6 +84,10 @@ static int ipv6_increment(const struct in6_addr *const src,
 
 int stop_loading = 0;
 
+#if 0
+static FILE* acefile = NULL;
+#endif
+
 static void sigint_handler (int signum)
 {
   (void) signum;
@@ -183,6 +187,13 @@ main (int argc, char *argv [])
            __func__);
 
   signal (SIGINT, sigint_handler);
+
+#if 0
+  static const char filename[] = "ace.out";
+  static const char* file_perm = "w";
+
+ acefile = fopen ("ace.out", "w");
+#endif
   
   if (! threads_run)
     {
@@ -1351,6 +1362,9 @@ do_nothing_write_func (void *ptr, size_t size, size_t nmemb, void *stream)
 {
   (void)ptr;
   (void)stream;
+#if 0
+  size_t n = fwrite(ptr, size, nmemb, acefile);
+#endif
 
   /* 
      Overwriting the default behavior to write body bytes to stdout and 

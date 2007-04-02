@@ -48,6 +48,8 @@ static timer_node clients_num_inc_timer_node;
 #define PERIODIC_TIMERS_NUMBER 1
 #define SMOOTH_MODE_LOGFILE_TEST_TIMER 10 /* once in 10 seconds */
 
+#define TIMER_NEXT_LOAD 100000
+
 
 int client_tracing_function (CURL *handle, 
                                     curl_infotype type, 
@@ -138,7 +140,7 @@ int pending_active_and_waiting_clients_num_hyper (batch_context* bctx);
 
 
 
-typedef struct
+typedef struct sock_info
 {
   curl_socket_t sockfd;
 
@@ -155,32 +157,35 @@ typedef struct
 
 int still_running;
 
-static void event_cb(int fd, short kind, void *userp);
+static void event_callback (int fd, short kind, void *userp);
 static void update_timeout (batch_context *bctx);
 
-/*--------------------------------------------------------------------------*/
 
-struct event timer_event;
+static struct event timer_event;
+static struct event timer_next_load_event;
 
-#if 1
-struct event timer_next_load_event;
-int next_load_event_set;
-#endif
-
-/* LIBEVENT CALLBACK: Called by libevent when we get action on a multi socket */
-static void event_cb (int fd, short kind, void *userp)
+/* 
+   LIBEVENT CALLBACK: Called by libevent when we get action on a multi socket 
+*/
+static void event_callback (int fd, short kind, void *userp)
 {
   batch_context *bctx = (batch_context *) userp;
   (void) kind;
   (void) fd;
   int st;
-
-  PRINTF("event_cb enter\n");
-  
   CURLMcode rc;
-  do {
-    rc = curl_multi_socket(bctx->multiple_handle, fd, &st);
-  } while (rc == CURLM_CALL_MULTI_PERFORM);
+
+  PRINTF("event_callback enter\n");
+
+  /* 
+     Tell libcurl to deal with the transfer associated 
+     with this socket 
+  */
+  do 
+    {
+      rc = curl_multi_socket(bctx->multiple_handle, fd, &st);
+    } 
+  while (rc == CURLM_CALL_MULTI_PERFORM);
 
   if(st) 
     {
@@ -195,12 +200,15 @@ static void event_cb (int fd, short kind, void *userp)
       }
 #endif
     }
-  PRINTF("event_cb exit\n");
+  PRINTF("event_callback exit\n");
 }
 
-#if 1
-/* LIBEVENT CALLBACK: Called by libevent when our timeout expires */
-static void timer_cb(int fd, short kind, void *userp)
+
+/* 
+   LIBEVENT CALLBACK: 
+   Called by libevent when our timeout expires 
+*/
+static void timer_callback(int fd, short kind, void *userp)
 {
   (void)fd;
   (void)kind;
@@ -208,7 +216,7 @@ static void timer_cb(int fd, short kind, void *userp)
   CURLMcode rc;
   int st;
 
-  //PRINTF("timer_cb enter\n");
+  //PRINTF("timer_callback enter\n");
 
   do 
     {
@@ -216,22 +224,20 @@ static void timer_cb(int fd, short kind, void *userp)
     } 
   while (rc == CURLM_CALL_MULTI_PERFORM);
     
-  // mperform_hyper (bctx, &st);
-
   if (still_running ) 
     { 
       update_timeout(bctx); 
     }
 
-  //PRINTF("timer_cb exit\n");
+  //PRINTF("timer_callback exit\n");
 }
-#endif
 
-/* Clean up the sock_info structure */
+/* 
+   Clean up the sock_info structure 
+*/
 static void remsock(sock_info *sinfo)
 {
-
-    PRINTF("remsock- enter\n");
+  PRINTF("remsock- enter\n");
 
   if (!sinfo) 
     { 
@@ -245,7 +251,9 @@ static void remsock(sock_info *sinfo)
   sinfo->evset = 0;
 }
 
-/* Assign information to a sock_info structure */
+/* 
+   Assign information to a sock_info structure 
+*/
 static void setsock(sock_info*sinfo, 
                     curl_socket_t socket, 
                     CURL*handle, 
@@ -269,13 +277,15 @@ static void setsock(sock_info*sinfo,
       event_del(&sinfo->ev); 
     }
 
-  event_set( &sinfo->ev, sinfo->sockfd, kind, event_cb, bctx);
+  event_set( &sinfo->ev, sinfo->sockfd, kind, event_callback, bctx);
   sinfo->evset=1;
 
   event_add(&sinfo->ev, NULL);
 }
 
-/* Initialize a new sock_info structure */
+/* 
+   Initialize a new sock_info structure 
+*/
 static void addsock(curl_socket_t socket, 
                     CURL *easy, 
                     int action, 
@@ -284,6 +294,7 @@ static void addsock(curl_socket_t socket,
                     batch_context *bctx) 
 {
   PRINTF("addsock - enter\n");
+
   setsock (sinfo, socket, easy, action, bctx);
 
   curl_multi_assign(bctx->multiple_handle, socket, cctx);
@@ -292,7 +303,10 @@ static void addsock(curl_socket_t socket,
 static char *whatstr[]={ "none", "IN", "OUT", "INOUT", "REMOVE" };
 
 
-/* CURL CALLBACK: socket event of multi user handle */
+/* 
+   CURL CALLBACK: 
+   socket event of multi user handle
+*/
 static int socket_callback (CURL *handle, 
                     curl_socket_t socket, 
                     int what, 
@@ -354,10 +368,12 @@ static int socket_callback (CURL *handle,
   return 0;
 }
 
-/* Update the event timer after curl_multi library calls */
+/* 
+   Update the event timer after curl_multi library calls
+*/
 static void update_timeout (batch_context *bctx)
 {
-#if 1
+#if 0
   long timeout_ms;
   struct timeval timeout;
 
@@ -365,10 +381,10 @@ static void update_timeout (batch_context *bctx)
 
   curl_multi_timeout (bctx->multiple_handle, &timeout_ms);
 
-  //if (timeout_ms < 0) 
-  // {
-  //   return;
-  // }
+  if (timeout_ms < 0) 
+    {
+      return;
+    }
 
   timeout.tv_sec = timeout_ms/1000;
   timeout.tv_usec = (timeout_ms%1000)*1000;
@@ -376,24 +392,27 @@ static void update_timeout (batch_context *bctx)
 #endif
 }
 
-
-
-static void next_load_cb (int fd, short kind, void *userp)
+static void next_load_callback (int fd, short kind, void *userp)
 {
   (void)fd;
   (void)kind;
   batch_context *bctx = (batch_context *)userp;
   int st;
 
-  PRINTF("next_load_cb\n");
-  //dispatch_expired_timers (bctx, get_tick_count());
-
+  PRINTF("next_load_callback\n");
+  
+  /* 
+     1. Checks completion of operations and goes to the next step;
+     2. Dispatches expired timers, adds clients from waiting queue to multihandle;
+     3. Runs multi_socket_all () to open sockets, call event_callback  and add 
+         their the sockets to the epoll.
+  */
   mperform_hyper (bctx, &st);
 
   struct timeval tv;
   timerclear(&tv);
-  tv.tv_usec = 10000;
-	
+  tv.tv_usec = TIMER_NEXT_LOAD;
+  
   event_add(&timer_next_load_event, &tv);  
 }
 
@@ -430,11 +449,11 @@ int user_activity_hyper (client_context* cctx_array)
 
   event_init();
 
-  curl_multi_setopt(bctx->multiple_handle, CURLMOPT_SOCKETFUNCTION, socket_callback);
+  curl_multi_setopt(bctx->multiple_handle, 
+                    CURLMOPT_SOCKETFUNCTION, 
+                    socket_callback);
 
   curl_multi_setopt(bctx->multiple_handle, CURLMOPT_SOCKETDATA, bctx);
-
-
 
 
   still_running = 1; 
@@ -532,20 +551,20 @@ int user_activity_hyper (client_context* cctx_array)
         }
     }
 
-  evtimer_set(&timer_event, timer_cb, bctx);
+  evtimer_set(&timer_event, timer_callback, bctx);
 
-  evtimer_set(&timer_next_load_event, next_load_cb, bctx);
 
-  struct timeval tv;
-  timerclear(&tv);
-  tv.tv_usec = 10000;	
-  event_add(&timer_next_load_event, &tv);
 
   while (CURLM_CALL_MULTI_PERFORM == 
          curl_multi_socket_all(bctx->multiple_handle, &st))
          ;
 
-
+  evtimer_set(&timer_next_load_event, next_load_callback, bctx);
+  
+  struct timeval tv;
+  timerclear(&tv);
+  tv.tv_usec = TIMER_NEXT_LOAD;	
+  event_add(&timer_next_load_event, &tv); 
 
   /* 
      ========= Run the loading machinery ================
@@ -610,7 +629,7 @@ static int add_loading_clients (batch_context* bctx)
     min (bctx->clients_initial_inc, bctx->client_num - bctx->clients_initial_running_num) : 
     bctx->client_num; 
 
-  fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_sched);
+  //fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_sched);
 
   /* 
      Schedule new clients by initializing thier CURL handle with
@@ -661,7 +680,6 @@ static int add_loading_clients (batch_context* bctx)
 static int mget_url_hyper (batch_context* bctx)		       
 {
   float max_timeout = DEFAULT_SMOOTH_URL_COMPLETION_TIME;
-  int st;
 
   if (bctx->uas_url_ctx_array)
     {
@@ -671,46 +689,11 @@ static int mget_url_hyper (batch_context* bctx)
   /* update timeout */
   update_timeout (bctx);
 
+  /* Run the event loop */
   event_dispatch();
 
   fprintf (stderr, "%s - out of event_dispatch () loop.\n", __func__);
 
-  //mperform_hyper (bctx, &st);
-
-
-#if 0
-  struct timeval timeout;
-
-  mperform_hyper (bctx, &still_running)
-
-  do {
-    rc = curl_multi_socket_all((bctx->multiple_handle, &still_running);
-  } while (CURLM_CALL_MULTI_PERFORM == rc);
-  
-  while (still_running && max_timeout > 0.0) 
-    {
-      int rc, maxfd;
-      fd_set fdread, fdwrite, fdexcep;
-
-      FD_ZERO(&fdread); FD_ZERO(&fdwrite); FD_ZERO(&fdexcep);
-      timeout.tv_sec = 0;
-      timeout.tv_usec = 250000;
-
-      max_timeout -= ((float)timeout.tv_sec + (float)timeout.tv_usec/1000000.0) ; 
-      curl_multi_fdset(bctx->multiple_handle, &fdread, &fdwrite, &fdexcep, &maxfd);
-
-      rc = select (maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout) ;
-      switch(rc)
-        {
-        case -1: /* select error */
-          break;
-        case 0:
-        default: /* timeout or readable/writable sockets */
-          mperform_hyper (bctx, &still_running);            
-          break;
-        }
-    }
-#endif    
   return 0;
 }
 
@@ -731,12 +714,13 @@ static int mperform_hyper (batch_context* bctx, int* still_running)
 {
   CURLM *mhandle =  bctx->multiple_handle;
   int cycle_counter = 0;	
-  int msg_num = 0, rc, st;
+  int msg_num = 0, st;
   const int snapshot_timeout = snapshot_statistics_timeout*1000;
   unsigned long now_time;
   CURLMsg *msg;
-  int scheduled_now_count = 0;
-  int scheduled_now = 0;
+  int scheduled_now_count = 0, scheduled_now = 0;
+
+  (void)still_running;
     
   now_time = get_tick_count ();
 
@@ -797,10 +781,14 @@ static int mperform_hyper (batch_context* bctx, int* still_running)
 
   if (dispatch_expired_timers (bctx, now_time) > 0 || scheduled_now_count)
     {
+
+#if 1
       while (CURLM_CALL_MULTI_PERFORM == 
-               curl_multi_socket_all(bctx->multiple_handle, &st)
-                 )
+             curl_multi_socket_all(bctx->multiple_handle, &st))
           ;
+#else
+      curl_multi_socket_all(bctx->multiple_handle, &st);
+#endif 
     }
 
   return 0;
