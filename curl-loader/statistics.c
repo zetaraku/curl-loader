@@ -442,8 +442,8 @@ void dump_final_statistics (client_context* cctx)
       print_statistics_footer_to_file (bctx->statistics_file);
       print_statistics_header (bctx->statistics_file);
 
-      const unsigned long loading_time = (now - bctx->start_time > 0) ? 
-        (now - bctx->start_time) : 1;
+      const unsigned long loading_t = now - bctx->start_time;
+      const unsigned long loading_time = loading_t ? loading_t : 1;
  
       print_statistics_data_to_file (
 				bctx->statistics_file,
@@ -550,7 +550,7 @@ void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
                                                     unsigned long now_time)
 {
   const unsigned long delta_t = now_time - bctx->last_measure; 
-  const unsigned long delta_time = delta_t ? delta_time : 1;
+  const unsigned long delta_time = delta_t ? delta_t : 1;
 
   if (stop_loading)
     {
@@ -560,8 +560,8 @@ void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
 
   fprintf(stdout,"============  loading batch is: %-10.10s ==================\n",
           bctx->batch_name);
-  fprintf(stdout,"Last interval stats (interval:%d sec, clients:%d, CAPS:%ld):\n",
-          (int) delta_time/1000, pending_active_and_waiting_clients_num (bctx),
+  fprintf(stdout,"Last interval stats (interval:%ld sec, clients:%d, CAPS:%ld):\n",
+          (unsigned long ) delta_time/1000, pending_active_and_waiting_clients_num (bctx),
           bctx->op_delta.call_init_count* 1000/delta_time);
 
   print_operational_statistics (&bctx->op_delta);
@@ -580,7 +580,7 @@ void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
                              UNSECURE_APPL_STR,
                              pending_active_and_waiting_clients_num (bctx),
                              &bctx->http_delta,
-                             delta_time ? delta_time : 1);
+                             delta_time);
     
       print_statistics_data_to_file (
                              bctx->statistics_file, 
@@ -588,7 +588,7 @@ void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
                              SECURE_APPL_STR, 
                              pending_active_and_waiting_clients_num (bctx),
                              &bctx->https_delta,
-                             delta_time ? delta_time : 1);
+                             delta_time);
     }
 
   stat_point_add (&bctx->http_total, &bctx->http_delta);
