@@ -241,6 +241,6 @@ extern int stop_loading;
 
 void set_timer_handling_func (client_context* cctx, handle_timer);
 
-int handle_cctx_timer (struct timer_node*, void*, unsigned long);
+
 
 #endif /*   CLIENT_H */

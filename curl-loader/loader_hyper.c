@@ -1,7 +1,7 @@
 /* 
  *     loader_hyper.c
  *
- * 2006 Copyright (c)
+ * 2006-2007 Copyright (c)
  * Michael Moser, <moser.michael@gmail.com>
  * Robert Iakobashvili, <coroberti@gmail.com>
  * All rights reserved.
@@ -20,12 +20,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Cooked from the CURL-project examples with thanks to the 
+ * Cooked using CURL-project example hypev.c with thanks to the 
  * great CURL-project authors and contributors.
  */
-
-// must be first include
-#include "fdsetsize.h"
 
 #include <stdlib.h>
 #include <errno.h>
@@ -43,94 +40,11 @@
 static timer_node logfile_timer_node; 
 static timer_node clients_num_inc_timer_node;
 
-#define DEFAULT_SMOOTH_URL_COMPLETION_TIME 6.0
-#define TIME_RECALCULATION_MSG_NUM 100
-#define PERIODIC_TIMERS_NUMBER 1
-#define SMOOTH_MODE_LOGFILE_TEST_TIMER 10 /* once in 10 seconds */
-
 #define TIMER_NEXT_LOAD 100000
-
-
-int client_tracing_function (CURL *handle, 
-                                    curl_infotype type, 
-                                    unsigned char *data, 
-                                    size_t size, 
-                                    void *userp);
-size_t do_nothing_write_func (void *ptr, 
-                                     size_t size, 
-                                     size_t nmemb, 
-                                     void *stream);
-int setup_curl_handle_appl (struct client_context*const cctx,  
-                                   url_context* url_ctx,
-                                   int post_method);
-
-static int add_loading_clients (batch_context* bctx);
-static int client_add_to_load (batch_context* bctx, client_context* cctx);
-static int client_remove_from_load (batch_context* bctx, client_context* cctx);
-static int handle_logfile_rewinding_timer (timer_node* timer_node, 
-                                           void* pvoid_param, 
-                                           unsigned long ulong_param);
-static int handle_gradual_increase_clients_num_timer (timer_node* timer_node, 
-                                                      void* pvoid_param, 
-                                                      unsigned long ulong_param);
 
 static int mget_url_hyper (batch_context* bctx);
 static int mperform_hyper (batch_context* bctx, int* still_running);
-static int dispatch_expired_timers (batch_context* bctx, unsigned long now_time);
 
-static int load_next_step (client_context* cctx,
-                           unsigned long now_time,
-                           int* sched_now);
-
-static int last_cycling_state (batch_context* bctx);
-static int first_cycling_state (batch_context* bctx);
-
-/*
-  Next step initialization functions relevant the client state.
-*/
-static int load_error_state (client_context* cctx, unsigned long *wait_msec);
-static int load_init_state (client_context* cctx, unsigned long *wait_msec);
-static int load_login_state (client_context* cctx, unsigned long *wait_msec);
-static int load_uas_state (client_context* cctx, unsigned long *wait_msec);
-static int load_logoff_state (client_context* cctx, unsigned long *wait_msec);
-static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec);
-int handle_cctx_timer_hyper (timer_node* timer_node, 
-                       void* pvoid_param,
-                       unsigned long ulong_param);
-
-int setup_curl_handle_init_hyper(client_context*const cctx,
-                         url_context* url_ctx,
-                         long cycle_number,
-                         int post_method);
-
-typedef int (*load_state_func)  (client_context* cctx, unsigned long *wait_msec);
-
-/* 
-   Table of loading functions in order to call an appropiate for 
-   a certain state loading function just by using the state number
-   as an index. As we are starting our states from (-1),
-   the actual call will be with (state + 1) as an index, used 
-   in load_next_step ().
-*/
-static const load_state_func load_state_func_table [] =
-  {
-    load_error_state,
-    load_init_state,
-    load_login_state,
-    load_uas_state,
-    load_logoff_state,
-    load_final_ok_state,
-  };
-
-static int is_last_cycling_state (client_context* cctx);
-static int is_first_cycling_state (client_context* cctx);
-static void advance_cycle_num (client_context* cctx);
-static int on_cycling_completed (client_context* cctx, unsigned long *wait_msec);
-
-static int setup_login_logoff (client_context* cctx, const int login);
-static int setup_uas (client_context* cctx);
-
-int pending_active_and_waiting_clients_num_hyper (batch_context* bctx);
 
 #if 0
 #define PRINTF(args...) fprintf(stdout, ## args);
@@ -157,8 +71,8 @@ typedef struct sock_info
 
 int still_running;
 
-static void event_callback (int fd, short kind, void *userp);
-static void update_timeout (batch_context *bctx);
+static void event_cb_hyper (int fd, short kind, void *userp);
+static void update_timeout_hyper (batch_context *bctx);
 
 
 static struct event timer_event;
@@ -167,7 +81,7 @@ static struct event timer_next_load_event;
 /* 
    LIBEVENT CALLBACK: Called by libevent when we get action on a multi socket 
 */
-static void event_callback (int fd, short kind, void *userp)
+static void event_cb_hyper (int fd, short kind, void *userp)
 {
   batch_context *bctx = (batch_context *) userp;
   (void) kind;
@@ -175,7 +89,7 @@ static void event_callback (int fd, short kind, void *userp)
   int st;
   CURLMcode rc;
 
-  PRINTF("event_callback enter\n");
+  PRINTF("event_cb_hyper enter\n");
 
   /* 
      Tell libcurl to deal with the transfer associated 
@@ -189,7 +103,7 @@ static void event_callback (int fd, short kind, void *userp)
 
   if(st) 
     {
-      update_timeout(bctx);
+      update_timeout_hyper(bctx);
     } 
   else 
     {
@@ -200,7 +114,7 @@ static void event_callback (int fd, short kind, void *userp)
       }
 #endif
     }
-  PRINTF("event_callback exit\n");
+  PRINTF("event_cb_hyper exit\n");
 }
 
 
@@ -208,7 +122,7 @@ static void event_callback (int fd, short kind, void *userp)
    LIBEVENT CALLBACK: 
    Called by libevent when our timeout expires 
 */
-static void timer_callback(int fd, short kind, void *userp)
+static void timer_cb_hyper(int fd, short kind, void *userp)
 {
   (void)fd;
   (void)kind;
@@ -216,7 +130,7 @@ static void timer_callback(int fd, short kind, void *userp)
   CURLMcode rc;
   int st;
 
-  //PRINTF("timer_callback enter\n");
+  //PRINTF("timer_cb_hyper enter\n");
 
   do 
     {
@@ -226,10 +140,10 @@ static void timer_callback(int fd, short kind, void *userp)
     
   if (still_running ) 
     { 
-      update_timeout(bctx); 
+      update_timeout_hyper(bctx); 
     }
 
-  //PRINTF("timer_callback exit\n");
+  //PRINTF("timer_cb_hyper exit\n");
 }
 
 /* 
@@ -254,7 +168,7 @@ static void remsock(sock_info *sinfo)
 /* 
    Assign information to a sock_info structure 
 */
-static void setsock(sock_info*sinfo, 
+static void setsock_hyper(sock_info*sinfo, 
                     curl_socket_t socket, 
                     CURL*handle, 
                     int act, 
@@ -267,7 +181,7 @@ static void setsock(sock_info*sinfo,
 
   (void) handle;
 
-  PRINTF("setsock- enter\n");
+  PRINTF("setsock_hyper- enter\n");
 
   sinfo->sockfd = socket;
   sinfo->action = act;
@@ -277,7 +191,7 @@ static void setsock(sock_info*sinfo,
       event_del(&sinfo->ev); 
     }
 
-  event_set( &sinfo->ev, sinfo->sockfd, kind, event_callback, bctx);
+  event_set( &sinfo->ev, sinfo->sockfd, kind, event_cb_hyper, bctx);
   sinfo->evset=1;
 
   event_add(&sinfo->ev, NULL);
@@ -286,16 +200,16 @@ static void setsock(sock_info*sinfo,
 /* 
    Initialize a new sock_info structure 
 */
-static void addsock(curl_socket_t socket, 
+static void addsock_hyper(curl_socket_t socket, 
                     CURL *easy, 
                     int action, 
                     client_context *cctx, 
                     sock_info *sinfo, 
                     batch_context *bctx) 
 {
-  PRINTF("addsock - enter\n");
+  PRINTF("addsock_hyper - enter\n");
 
-  setsock (sinfo, socket, easy, action, bctx);
+  setsock_hyper (sinfo, socket, easy, action, bctx);
 
   curl_multi_assign(bctx->multiple_handle, socket, cctx);
 }
@@ -357,12 +271,12 @@ static int socket_callback (CURL *handle,
                  what&CURL_POLL_IN?"READ":"",
                  what&CURL_POLL_OUT?"WRITE":"" );
 
-          addsock (socket, handle, what, cctx, sinfo, bctx);
+          addsock_hyper (socket, handle, what, cctx, sinfo, bctx);
         }
       else 
         {
           PRINTF("Changing action from %d to %d\n", sinfo->action, what);
-          setsock(sinfo, socket, handle, what, bctx);
+          setsock_hyper(sinfo, socket, handle, what, bctx);
         }
     }
   return 0;
@@ -371,13 +285,14 @@ static int socket_callback (CURL *handle,
 /* 
    Update the event timer after curl_multi library calls
 */
-static void update_timeout (batch_context *bctx)
+static void update_timeout_hyper (batch_context *bctx)
 {
+    (void) bctx;
 #if 0
   long timeout_ms;
   struct timeval timeout;
 
-  //PRINTF("update_timeout - enter\n");
+  //PRINTF("update_timeout_hyper - enter\n");
 
   curl_multi_timeout (bctx->multiple_handle, &timeout_ms);
 
@@ -392,19 +307,19 @@ static void update_timeout (batch_context *bctx)
 #endif
 }
 
-static void next_load_callback (int fd, short kind, void *userp)
+static void next_load_cb_hyper (int fd, short kind, void *userp)
 {
   (void)fd;
   (void)kind;
   batch_context *bctx = (batch_context *)userp;
   int st;
 
-  PRINTF("next_load_callback\n");
+  PRINTF("next_load_cb_hyper\n");
   
   /* 
      1. Checks completion of operations and goes to the next step;
      2. Dispatches expired timers, adds clients from waiting queue to multihandle;
-     3. Runs multi_socket_all () to open sockets, call event_callback  and add 
+     3. Runs multi_socket_all () to open sockets, call event_cb_hyper  and add 
          their the sockets to the epoll.
   */
   mperform_hyper (bctx, &st);
@@ -428,15 +343,12 @@ int prog_cb (void *p, double dltotal, double dlnow, double ult, double uln)
 #endif
 
 
-
-/*--------------------------------------------------------------------------*/
-
-
 /****************************************************************************************
- * Function name - user_activity_smooth
+ * Function name - user_activity_hyper
  *
- * Description - Simulates user-activities, like login, uas, logoff, using SMOOTH-MODE
+ * Description - Simulates user-activities, like login, uas, logoff, using HYPER mode
  * Input -       *cctx_array - array of client contexts (related to a certain batch of clients)
+ *
  * Return Code/Output - On Success - 0, on Error -1
  ****************************************************************************************/
 int user_activity_hyper (client_context* cctx_array)
@@ -447,8 +359,10 @@ int user_activity_hyper (client_context* cctx_array)
   sock_info *sinfo;
   int k, st;
 
-  event_init();
+  /* Init libevent library */
+  event_init ();
 
+  /* Set the socket callback on multi-handle */ 
   curl_multi_setopt(bctx->multiple_handle, 
                     CURLMOPT_SOCKETFUNCTION, 
                     socket_callback);
@@ -473,9 +387,6 @@ int user_activity_hyper (client_context* cctx_array)
                         CURLOPT_PRIVATE, 
                         bctx->cctx_array + k);
       */
-
-      set_timer_handling_func (&bctx->cctx_array[k], 
-                               handle_cctx_timer_hyper);
     }
 
   if (!bctx)
@@ -484,7 +395,7 @@ int user_activity_hyper (client_context* cctx_array)
       return -1;
     }
 
-  /* ======== Make the smooth-mode specific allocations and initializations =======*/
+  /* ======== Make specific allocations and initializations =======*/
 
   if (! (bctx->waiting_queue = calloc (1, sizeof (heap))))
     {
@@ -551,7 +462,7 @@ int user_activity_hyper (client_context* cctx_array)
         }
     }
 
-  evtimer_set(&timer_event, timer_callback, bctx);
+  evtimer_set(&timer_event, timer_cb_hyper, bctx);
 
 
 
@@ -559,7 +470,7 @@ int user_activity_hyper (client_context* cctx_array)
          curl_multi_socket_all(bctx->multiple_handle, &st))
          ;
 
-  evtimer_set(&timer_next_load_event, next_load_callback, bctx);
+  evtimer_set(&timer_next_load_event, next_load_cb_hyper, bctx);
   
   struct timeval tv;
   timerclear(&tv);
@@ -602,70 +513,6 @@ int user_activity_hyper (client_context* cctx_array)
   return 0;
 }
 
-/****************************************************************************************
- * Function name - add_loading_clients
- *
- * Description - Initialization of our virtual clients (CURL handles)
- *               setting first url to fetch and scheduling them according to 
- *               clients increment for gradual loading.
- *
- * Input -       *bctx - pointer to the batch of contexts
- * Return Code/Output - On Success - 0, on error or request to unreg timer - (-1)
- ****************************************************************************************/
-static int add_loading_clients (batch_context* bctx)
-{
-  int scheduled_now = 0;
-  /* 
-     Return, if initial gradual scheduling of all new clients has been accomplished. 
-  */
-  if (bctx->client_num <= bctx->clients_initial_running_num)
-    {
-      bctx->do_client_num_gradual_increase = 0;
-      return -1;
-    }
-
-  /* Calculate number of the new clients to schedule. */
-  const long clients_sched = bctx->clients_initial_inc ? 
-    min (bctx->clients_initial_inc, bctx->client_num - bctx->clients_initial_running_num) : 
-    bctx->client_num; 
-
-  //fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_sched);
-
-  /* 
-     Schedule new clients by initializing thier CURL handle with
-     URL, etc. parameters and adding it to MCURL multi-handle.
-  */
-  long j;
-  for (j = bctx->clients_initial_running_num; 
-       j < bctx->clients_initial_running_num + clients_sched; 
-       j++)
-	{
-      /* Runs load_init_state () for each newly added client. */
-      if (load_next_step (&bctx->cctx_array[j], 
-                          bctx->start_time,
-                          &scheduled_now) == -1)
-        {  
-          fprintf(stderr,"%s error: load_next_step() initial failed\n", __func__);
-          return -1;
-        }
-    }
-
-  /* 
-     Re-calculate assisting counters and enable do_client_num_gradual_increase 
-     flag, if required.
-  */
-  if (bctx->clients_initial_inc)
-    {
-      bctx->clients_initial_running_num += clients_sched;
-      if (bctx->clients_initial_running_num < bctx->client_num)
-        {
-          bctx->do_client_num_gradual_increase = 1;
-        }
-    }
-	
-  return 0;
-}
-
 
 /****************************************************************************************
  * Function name - mget_url_hyper
@@ -687,7 +534,7 @@ static int mget_url_hyper (batch_context* bctx)
     }
  
   /* update timeout */
-  update_timeout (bctx);
+  update_timeout_hyper (bctx);
 
   /* Run the event loop */
   event_dispatch();
@@ -781,962 +628,11 @@ static int mperform_hyper (batch_context* bctx, int* still_running)
 
   if (dispatch_expired_timers (bctx, now_time) > 0 || scheduled_now_count)
     {
-
-#if 1
       while (CURLM_CALL_MULTI_PERFORM == 
              curl_multi_socket_all(bctx->multiple_handle, &st))
           ;
-#else
-      curl_multi_socket_all(bctx->multiple_handle, &st);
-#endif 
     }
 
   return 0;
 }
 
-/****************************************************************************************
- * Function name - dispatch_expired_timers
- *
- * Description - Fetches from the waiting timer queue timers and dispatches them
- *               by calling timer-node specific handle_timeout () method. Among other expired timers
- *               dispatches waiting clients (kept in timer-queue to respect url interleave timeouts),
- *               where func_timer () function of client timer-node adds the clients to loading machinery.
- *
- * Input -       *bctx - pointer to the batch of contexts;
- *               now_time -  current time passed in msec
- *
- * Return Code/Output - On Success - 0, on Error -1
- ****************************************************************************************/
-static int
-dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
-{
-  timer_queue* tq = bctx->waiting_queue;
-  int dispatched = 0;
-
-  if (!tq)
-    return -1;
-
-  if (tq_empty (tq))
-    return 0;
-
-  while (! tq_empty (tq))
-    {
-      unsigned long time_nearest = tq_time_to_nearest_timer (tq);
-
-      if (time_nearest <= now_time)
-        {
-          if (tq_dispatch_nearest_timer (tq, bctx, now_time) == -1)
-            {
-              //fprintf (stderr, 
-              //         "%s - error: tq_dispatch_nearest_timer () failed or handle_timer () returns (-1).\n", 
-              //         __func__);
-              return -1;
-            }
- 	  dispatched ++; 
-        }
-      else
-        break;
-    }
-
-  return dispatched;
-}
-
-
-/****************************************************************************************
- * Function name - load_next_step
- *
- * Description - Called at initialization and further after url-fetch completion 
- *               indication (that may be an error status as well). Either sets 
- *               to client the next url to load, or marks the being at completion state: 
- *               CSTATE_ERROR or CSTATE_FINISHED_OK.
- *
- * Input -       *cctx - pointer to the client context
- *                   now_time -  current timestamp in msec
- *
- *Input/Output -  sched_now - when true, the client is scheduled right now without timer queue.
- *
- * Return Code/Output - CSTATE enumeration with the state of loading
- ****************************************************************************************/
-static int load_next_step (client_context* cctx,
-                           unsigned long now_time,
-                           int* sched_now)
-{
-  batch_context* bctx = cctx->bctx;
-  int rval_load = CSTATE_ERROR;
-  unsigned long interleave_waiting_time = 0;
-
-  PRINTF("load_next_step %p state %d\n",cctx, cctx->client_state);
-
-  *sched_now = 0;
-	
-  /* Remove handle from the multiple handle, if it was added there before. */
-  if (cctx->client_state != CSTATE_INIT)
-    {
-      if (client_remove_from_load (bctx, cctx) == -1)
-        {
-          fprintf (stderr, "%s - client_remove_from_load () failed.\n", __func__);
-          return -1;
-        }
-    }
- 
-  /* 
-     When load_error_state () gets client (in CSTATE_ERROR) and 
-     <recoverable_error_state> is true (the default), it recovers the 
-     client and sets the first cycling state to it. However, operational
-     statistics should record it as a failed operation in op_stat_update.
-     Therefore, remembering here possible error state.
-  */
-  int recoverable_error_state = cctx->client_state;
-
-  /* 
-     Initialize virtual client's CURL handle for the next step of loading by calling
-     load_<state-name>_state() function relevant for a particular client state.
-  */
-  rval_load = load_state_func_table[cctx->client_state+1](cctx, &interleave_waiting_time);
-
-
-  /* Update operational statistics */
-  op_stat_update (
-                  &bctx->op_delta, 
-                  (recoverable_error_state == CSTATE_ERROR) ? recoverable_error_state : rval_load, 
-                  cctx->preload_state,
-                  cctx->uas_url_curr_index,
-                  cctx->preload_uas_url_curr_index);
-
-  if (is_first_cycling_state (cctx))
-    {
-      op_stat_call_init_count_inc (&bctx->op_delta);
-    }
-
-  /* 
-     Coming to the error or the finished states, just return without more 
-     scheduling the client any more.
-  */
-  if (rval_load == CSTATE_ERROR || rval_load == CSTATE_FINISHED_OK)
-    {
-      return rval_load;
-    } 
-
-  /* 
-     Schedule virtual clients by adding them to multi-handle, 
-     if the clients are not in error or finished final states.
-  */
-  if (!interleave_waiting_time)
-    {
-      /* Schedule the client immediately */
-      if (client_add_to_load (bctx, cctx) == -1)
-        {
-          fprintf (stderr, "%s - error: client_add_to_load () failed .\n", __func__);
-          return -1;
-        }
-      else
-        {
-            *sched_now = 1;
-        }
-    }
-  else
-    {
-      PRINTF("load_next_step: ctx %p schedule next load in %d seconds\n", 
-             cctx,(int) interleave_waiting_time/1000);
-      /* 
-         Postpone client scheduling for the interleave_waiting_time msec by 
-         placing it to the timer queue. 
-      */
-      cctx->tn.next_timer = now_time + interleave_waiting_time;
-		
-      if (tq_schedule_timer (bctx->waiting_queue, (struct timer_node *) cctx) == -1)
-        {
-          fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
-          return -1;
-        }
-
-      //fprintf (stderr, "%s - scheduled client to wq with wtime %ld\n", 
-      //				 __func__, interleave_waiting_time);
-    }
-
-  return rval_load;
-}
-
-
-
-/****************************************************************************************
- * Function name - is_last_cycling_state
- *
- * Description -   Figures out, whether the current state of client is the last cycling state.
- *                 Only in the last cycling state the number of cycles is advanced.
- *
- * Input -         *cctx - pointer to the client context
- *
- * Return Code/Output - true, when the last cycling state, else - false
- ****************************************************************************************/
-static int is_last_cycling_state (client_context* cctx)
-{
-  batch_context* bctx = cctx->bctx;
-
-  int last_cstate = last_cycling_state (bctx);
-
-  if (last_cstate == CSTATE_ERROR || last_cstate == CSTATE_INIT)
-    return 0;
-
-  return (cctx->client_state == last_cstate);
-}
-
-static int is_first_cycling_state (client_context* cctx)
-{
-  batch_context* bctx = cctx->bctx;
-  int first_cstate = first_cycling_state (bctx);
-
-  if (first_cstate == CSTATE_ERROR || first_cstate == CSTATE_INIT)
-    return 0;
-
-  return (cctx->client_state == first_cstate);
-}
-
-static int last_cycling_state (batch_context* bctx)
-{
-  if (bctx->do_logoff && bctx->logoff_cycling)
-    {
-      return CSTATE_LOGOFF;
-    }
-  else if (bctx->do_uas)
-    {
-      return CSTATE_UAS_CYCLING;
-    }
-  else if (bctx->do_login && bctx->login_cycling)
-    {
-      return CSTATE_LOGIN;
-    }
-
-  return CSTATE_ERROR;
-}
-
-static int first_cycling_state (batch_context* bctx)
-{
-  if (bctx->do_login && bctx->login_cycling)
-    {
-      return CSTATE_LOGIN;
-    }
-  else if (bctx->do_uas)
-    {
-      return CSTATE_UAS_CYCLING;
-    }
-  else if (bctx->do_logoff && bctx->logoff_cycling)
-    {
-      return CSTATE_LOGOFF;
-    }
-
-  return CSTATE_ERROR;
-}
-
-/****************************************************************************************
- * Function name - advance_cycle_num
- *
- * Description - Advances number of cycles, when the full cycle is done with all url-fetches
- * Input -       *cctx - pointer to the client context
- *
- * Return Code/Output - None
- ****************************************************************************************/
-static void advance_cycle_num (client_context* cctx)
-{
-  cctx->cycle_num++;
-}
-
-/****************************************************************************************
- * Function name - on_cycling_completed
- *
- * Description - Either goes to the logoff state (logoff-no-cycling) of to CSTATE_FINISHED_OK
- * Input -       *cctx - pointer to the client context
- *
- * Return Code/Output - CSTATE enumeration with client state
- ****************************************************************************************/
-static int on_cycling_completed (client_context* cctx, unsigned long *wait_msec)
-{
-  batch_context* bctx = cctx->bctx;
-
-  PRINTF("on_cycling_completed %p\n",cctx);
-
-  still_running = 0;
-
-  /* 
-     Go to not-cycling logoff, else to the finish-line. 
-  */
-  if (bctx->do_logoff && !bctx->logoff_cycling)
-    return load_logoff_state (cctx, wait_msec);
-
-
-  return (cctx->client_state = CSTATE_FINISHED_OK);
-}
-
-/****************************************************************************************
- * Function name - setup_login_logoff
- *
- * Description - Sets up login or logoff url, depending on flag <login>
- * Input -       *cctx - pointer to the client context
- *               login - when true - login state, when false logoff state is set
- *
- * Return Code/Output - CSTATE enumeration with client state
- ****************************************************************************************/
-static int setup_login_logoff (client_context* cctx, const int login)
-{
-  batch_context* bctx = cctx->bctx;
-  int posting_after_get = 0;
-
-  if ( (login && bctx->login_req_type == LOGIN_REQ_TYPE_GET_AND_POST)  ||
-       (!login && bctx->logoff_req_type == LOGOFF_REQ_TYPE_GET_AND_POST)
-       )
-    {  
-      if (cctx->get_post_count == 0)
-        cctx->get_post_count = 1;
-      else if (cctx->get_post_count == 1)
-        {
-          posting_after_get = 1;
-          cctx->get_post_count = 0;
-        }
-    }
-  
-  if (!posting_after_get)
-    {
-      /* 
-         Three possible cases are treated here:
-         - GET, which is by itself enough, e.g. for logoff using cookies;
-         - GET, which will be later followed by later POST login/logoff;
-         - POST, which is the standalone login/logoff, without any previous GET;
-      */
-      int post_standalone = 0;
-
-      if ((login && bctx->login_req_type == LOGIN_REQ_TYPE_POST) ||
-          (!login && bctx->logoff_req_type == LOGOFF_REQ_TYPE_POST))
-        {
-          post_standalone = 1;
-        }
-
-      if (setup_curl_handle_init_hyper(
-                                  cctx,
-                                  login ? &bctx->login_url : &bctx->logoff_url,
-                                  0, /* Not applicable for smooth mode */
-                                  post_standalone /* If 'true' -POST, else GET */
-                                  ) == -1)
-        {
-          fprintf(stderr,"%s error: setup_curl_handle_init - failed\n", __func__);
-          return -1;
-        }
-    }
-  else
-    {
-      /* 
-         The only case here, is when doing POST after GET. 
-         We should preserve the url kept in CURL handle after GET,
-         which may be the result of redirection/s,  but switch to POST 
-         request method using client-specific POST login/logoff fields. 
-      */
-      CURL* handle = cctx->handle;
-
-      /* 
-         Just add POSTFIELDS. Note, that it should be done on CURL handle 
-         outside (removed) from MCURL handle. Add it back afterwords.
-      */
-      curl_easy_setopt (handle, CURLOPT_POSTFIELDS, 
-                        login ? cctx->post_data_login : cctx->post_data_logoff);
-    }
-
-  return cctx->client_state = login ? CSTATE_LOGIN : CSTATE_LOGOFF;
-}
-
-
-int setup_curl_handle_init_hyper (client_context*const cctx,
-                         url_context* url_ctx,
-                         long cycle_number,
-                         int post_method)
-{
-  batch_context* bctx = cctx->bctx;
-  CURL* handle = cctx->handle;
-  //int rc,st;
-
-  if (!cctx || !url_ctx)
-    {
-      return -1;
-    }
-  
-  PRINTF("init_hyper %p\n",cctx);
-  curl_easy_reset (handle);
-
-  if (bctx->ipv6)
-    curl_easy_setopt (handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
-      
-  /* Bind the handle to a certain IP-address */
-  curl_easy_setopt (handle, CURLOPT_INTERFACE, 
-                    bctx->ip_addr_array [cctx->client_index]);
-
-  curl_easy_setopt (handle, CURLOPT_NOSIGNAL, 1);
-    
-  /* Set the url */
-  if (url_ctx->url_str && url_ctx->url_str[0])
-    {
-      curl_easy_setopt (handle, CURLOPT_URL, url_ctx->url_str);
-    }
-  else
-    {
-      fprintf (stderr,"%s - error: empty url provided.\n",
-                   __func__);
-      exit (-1);
-    }
-  
-  /* Set the index to client for the smooth-mode */
-  if (url_ctx->url_uas_num >= 0)
-    cctx->uas_url_curr_index = url_ctx->url_uas_num;
-  
-  bctx->url_index = url_ctx->url_uas_num;
-
-  curl_easy_setopt (handle, CURLOPT_DNS_CACHE_TIMEOUT, -1);
-
-  /* Set the connection timeout */
-  curl_easy_setopt (handle, CURLOPT_CONNECTTIMEOUT, connect_timeout);
-
-  /* Define the connection re-use policy. When passed 1, dont re-use */
-  curl_easy_setopt (handle, CURLOPT_FRESH_CONNECT, reuse_connection_forbidden);
-
-  /* 
-     If DNS resolving is necesary, global DNS cache is enough,
-     otherwise compile libcurl with ares (cares) library support.
-     Attention: DNS global cache is not thread-safe, therefore use
-     cares for asynchronous DNS lookups.
-
-     curl_easy_setopt (handle, CURLOPT_DNS_USE_GLOBAL_CACHE, 1); 
-  */
-     
-  curl_easy_setopt (handle, CURLOPT_VERBOSE, 1);
-  curl_easy_setopt (handle, CURLOPT_DEBUGFUNCTION, 
-                    client_tracing_function);
-  curl_easy_setopt (handle, CURLOPT_DEBUGDATA, cctx);
-
-#if 0
-  curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, prog_cb);
-  curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, cctx);
-#endif
-
-
-  if (!output_to_stdout)
-    {
-      curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION,
-                        do_nothing_write_func);
-    }
-
-  curl_easy_setopt (handle, CURLOPT_SSL_VERIFYPEER, 0);
-  curl_easy_setopt (handle, CURLOPT_SSL_VERIFYHOST, 0);
-    
-  /* Set current cycle_number in buffer. */
-  if (loading_mode == LOAD_MODE_STORMING)
-    {
-      cctx->cycle_num = cycle_number;
-    }
-
-  /* 
-     This is to return cctx pointer as the void* userp to the 
-     tracing function. 
-  */
-  
-  /* Set the private pointer to be used by the smooth-mode. */
-  curl_easy_setopt (handle, CURLOPT_PRIVATE, cctx);
-  curl_easy_setopt (handle, CURLOPT_WRITEDATA, cctx);
-
-  /* Without the buffer set, we do not get any errors in tracing function. */
-  curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer);    
-
-  /* 
-     Application (url) specific setups, like HTTP-specific, FTP-specific, etc. 
-  */
-  if (setup_curl_handle_appl (cctx, url_ctx, post_method) == -1)
-    {
-      fprintf (stderr,
-               "%s - error: setup_curl_handle_appl () failed .\n",
-               __func__);
-      return -1;
-    }
-
-#if 0
-  do 
-    {
-      rc = curl_multi_socket_all(bctx->multiple_handle, &st);
-    } 
-  while (CURLM_CALL_MULTI_PERFORM == rc);
-#endif
-     
-  return 0;
-}
-/****************************************************************************************
- * Function name - setup_uas
- *
- * Description - Sets UAS state url
- * Input -       *cctx - pointer to the client context
- *
- * Return Code/Output - CSTATE enumeration with client state
- ****************************************************************************************/
-static int setup_uas (client_context* cctx)
-{
-  batch_context* bctx = cctx->bctx;
-
-  if (setup_curl_handle_init_hyper (
-                              cctx,
-                              &bctx->uas_url_ctx_array[cctx->uas_url_curr_index], /* current url */
-                              0, /* Cycle, do we need it? */ 
-                              0 /* GET - zero, unless we'll need to make POST here */
-                              ) == -1)
-    {
-      fprintf(stderr,"%s error: setup_curl_handle_init - failed\n", __func__);
-      return -1;
-    }
-  
-  return cctx->client_state = CSTATE_UAS_CYCLING;
-}
-
-/****************************************************************************************
- * Function name - load_init_state
- *
- * Description - Called by load_next_step () for setting up of the very first url to fetch
- *
- * Input -       *cctx - pointer to the client context
- *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
- *
- * Return Code/Output - CSTATE enumeration with the state of loading
- ****************************************************************************************/
-static int load_init_state (client_context* cctx, unsigned long *wait_msec)
-{
-  PRINTF("->STATE: load_init_state %p\n",cctx);
-
-  batch_context* bctx = cctx->bctx;
-
-  *wait_msec = 0;
-
-  if (bctx->do_login) /* Normally, the very first operation is login, but who is normal? */
-    {
-      return load_login_state (cctx, wait_msec);
-    }
-  else if (bctx->do_uas) /* Sometimes, no login is defined. Just a traffic-gen */
-    {
-      return load_uas_state (cctx, wait_msec);
-    }
-  else if (bctx->do_logoff) /* Logoff only?  If this is what a user wishing ...  */
-    {
-      return load_logoff_state (cctx, wait_msec);
-    }
-
-  return (cctx->client_state = CSTATE_ERROR);
-}
-
-/****************************************************************************************
- * Function name - load_error_state
- *
- * Description - Called by load_next_step () for the client in CSTATE_ERROR. If the global
- *               flag <error_recovery_client> is not false, re-schedules the client for 
- *               next cycle of loading.
- *
- * Input -       *cctx - pointer to the client context
- *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
- *
- * Return Code/Output - CSTATE enumeration with the state of loading
- ****************************************************************************************/
-static int load_error_state (client_context* cctx, unsigned long *wait_msec)
-{
-  batch_context* bctx = cctx->bctx;
-
-  if (error_recovery_client)
-    {
-      advance_cycle_num (cctx);
-		
-      if (cctx->cycle_num >= bctx->cycles_num)
-        {
-          return (cctx->client_state = CSTATE_ERROR);
-        }
-      else
-        {
-          /* first cycling state */
-          int first_cstate = first_cycling_state (bctx);
-
-          if (first_cstate <= 0) /* if CSTATE_ERROR or CSTATE_INIT */
-            return (cctx->client_state = CSTATE_ERROR);
-
-          /* Load the first cycling state url */
-          return load_state_func_table[first_cstate + 1](cctx, wait_msec);
-        }
-    }
- 
-  /* Thus, the client will not be scheduled for load any more. */
-  return (cctx->client_state = CSTATE_ERROR);
-}
-
-/****************************************************************************************
- * Function name - load_login_state
- *
- * Description - Called by load_next_step () for the client in CSTATE_LOGIN 
- *               state to schedule the next loading url.
- *
- * Input -       *cctx - pointer to the client context
- *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
- *
- * Return Code/Output - CSTATE enumeration with the state of loading
- ****************************************************************************************/
-static int load_login_state (client_context* cctx, unsigned long *wait_msec)
-{
-  batch_context* bctx = cctx->bctx;
-
-  PRINTF("->STATE: load_login_state %p\n",cctx);
-
-  /*
-    Test for login state, if a single login operation has been accomplished. 
-    Sometimes, the operation contains two elements: GET and POST.
-  */
-  if (cctx->client_state == CSTATE_LOGIN)
-    {
-      if ((bctx->login_req_type != LOGIN_REQ_TYPE_GET_AND_POST) ||
-          (bctx->login_req_type == LOGIN_REQ_TYPE_GET_AND_POST && !cctx->get_post_count))
-        {
-          /* 
-             Indeed, accomplished a single login operation. 
-          */
-
-          /* Mind the interleave timeout after login */
-          *wait_msec = bctx->login_url.url_interleave_time;
-
-          if (is_last_cycling_state (cctx))
-            {
-              /*
-                If we are login cycling and the last/only cycling state,
-                we are in charge for advancing cycles counter.
-              */
-              advance_cycle_num (cctx);
-
-              if (cctx->cycle_num >= bctx->cycles_num)
-                {
-                  /* Either jump to logoff or to finish_ok. */
-                  return on_cycling_completed (cctx, wait_msec);
-                }
-              else
-                {
-                  /* 
-                     Configured to cycle, but the state is the last cycling state 
-                     and the only cycling state, therefore, continue login. 
-                  */
-                  return setup_login_logoff (cctx, 1); /* 1 - means login */
-                }
-            }
- 
-          if (bctx->do_uas)
-            return load_uas_state (cctx, wait_msec);
-          else if (bctx->do_logoff)
-            return load_logoff_state (cctx, wait_msec);
-          else
-            return (cctx->client_state = CSTATE_FINISHED_OK);
-        }
-    }
-
-  /* Non-LOGIN states are all falling below: */
-  return setup_login_logoff (cctx, 1);
-}
-
-/****************************************************************************************
- * Function name - load_uas_state
- *
- * Description - Called by load_next_step () for the client in CSTATE_UAS state to 
- * 		 schedule the next loading url.
- *
- * Input -       *cctx - pointer to the client context
- *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
- *
- * Return Code/Output - CSTATE enumeration with the state of loading
- ****************************************************************************************/
-static int load_uas_state (client_context* cctx, unsigned long *wait_msec)
-{ 
-  batch_context* bctx = cctx->bctx;
-
-  PRINTF("->STATE: load_uas_state %p\n",cctx);
-
-
-  if (cctx->client_state == CSTATE_UAS_CYCLING)
-    {
-      /* Mind the interleave timeout after each url, if any. */
-      *wait_msec = bctx->uas_url_ctx_array[cctx->uas_url_curr_index].url_interleave_time;
-
-      /* Now, advance the url index */
-      cctx->uas_url_curr_index++;
-
-      if (cctx->uas_url_curr_index >= (size_t)(bctx->uas_urls_num))
-        {
-          /* Finished with all the urls for a single UAS -cycle. */
-
-          cctx->uas_url_curr_index = 0;
- 
-          if (is_last_cycling_state (cctx))
-            {
-              /* If UAS is the last cycling state, advance cycle counter. */
-              advance_cycle_num (cctx);
-
-              if (cctx->cycle_num >= bctx->cycles_num)
-                {
-                  /* Either logoff or finish_ok. */
-                  return on_cycling_completed (cctx, wait_msec);
-                }
-              else
-                {
-                  /* Continue cycling - take another cycle */
-                  if (bctx->do_login && bctx->login_cycling)
-                    return load_login_state  (cctx, wait_msec);
-                  else
-                    return setup_uas (cctx);
-                }
-            }
-
-          /* 
-             We are not the last cycling state. A guess is, that the
-             next state is logoff with cycling.
-          */
-          return load_logoff_state (cctx, wait_msec);
-        }
-    }
-  else
-    {
-      cctx->uas_url_curr_index = 0;
-    }
-
-  /* Non-UAS states are all falling below: */
-  return setup_uas (cctx);
-}
-
-/****************************************************************************************
- * Function name - load_logoff_state
- *
- * Description - Called by load_next_step () for the client in CSTATE_LOGOFF state to 
- *               schedule the next loading url.
- *
- * Input -       *cctx - pointer to the client context
- *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
- *
- * Return Code/Output - CSTATE enumeration with the state of loading
- ****************************************************************************************/
-static int load_logoff_state (client_context* cctx, unsigned long *wait_msec)
-{
-  batch_context* bctx = cctx->bctx;
-
-  /*
-    Test for logoff state, if a single login operation has been accomplished. 
-    Sometimes, the operation contains two elements: GET and POST.
-  */
-  if (cctx->client_state == CSTATE_LOGOFF)
-    {
-      if ((bctx->logoff_req_type != LOGOFF_REQ_TYPE_GET_AND_POST) ||
-          (bctx->logoff_req_type == LOGOFF_REQ_TYPE_GET_AND_POST && !cctx->get_post_count))
-        {
-          /* 
-             Indeed, we have accomplished a single logoff operation. 
-          */
-
-          /* Mind the interleave timeout after login */
-          *wait_msec = bctx->logoff_url.url_interleave_time;
-
-          if (is_last_cycling_state (cctx))
-            {
-              /*
-                If logoff cycling ,we are in charge for advancing cycles counter.
-              */
-              advance_cycle_num (cctx);
-
-              if (cctx->cycle_num >= bctx->cycles_num)
-                {
-                  return on_cycling_completed (cctx, wait_msec); /* Goes to finish-ok */
-                }
-              else
-                {
-                  /*
-                    Continue cycling - take another cycle
-                  */
-                  if (bctx->do_login && bctx->login_cycling)
-                    return load_login_state  (cctx, wait_msec);
-                  else if (bctx->do_uas)
-                    return load_uas_state (cctx, wait_msec);
-                  else /* logoff is the only cycling state? Sounds strange, but allow it */
-                    return setup_login_logoff (cctx, 0); /* 0 - means logoff */
-                }
-            }
- 
-          /* If not doing logoff cycling, means single logoff done - go to finish-ok */
-          return (cctx->client_state = CSTATE_FINISHED_OK);
-        }
-    }
-
-  /* Non-LOGOFF states are all falling below: */
-  return setup_login_logoff (cctx, 0);
-}
-
-static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec)
-{
-  (void) cctx; (void) wait_msec;
-
-  return CSTATE_FINISHED_OK;
-}
-
-/****************************************************************************************
- * Function name - client_add_to_load
- *
- * Description - Adds client context to the batch context multiple handle for loading
- *
- * Input -       *bctx - pointer to the batch context
- *               *cctx - pointer to the client context
- *
- * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
-static int client_add_to_load (batch_context* bctx, client_context* cctx)
-{
-  PRINTF("client_add_to_load %p\n",cctx);
-
-  /* Remember the previous state and UAS index: fur operational statistics */
-  cctx->preload_state = cctx->client_state;
-  cctx->preload_uas_url_curr_index = cctx->uas_url_curr_index;
-
-  /* Schedule the client immediately */
-  if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
-    {
-      bctx->active_clients_count++;
-      //fprintf (stderr, "%s - client added.\n", __func__);
-    }
-  else
-    {
-      fprintf (stderr, "%s - curl_multi_add_handle () failed.\n", __func__);
-      return -1;
-    }
-
-  return 0;
-}
-
-/****************************************************************************************
- * Function name - client_remove_from_load
- *
- * Description - Removes client context to from the kept in batch context multiple handle,
- * 		 thus, removing the client from the loading machinery
- *
- * Input -       *bctx - pointer to the batch context
- *               *cctx - pointer to the client context
- *
- * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
-static int client_remove_from_load (batch_context* bctx, client_context* cctx)
-{
-  PRINTF("client_remove_from_load %p\n",cctx);
-  if (curl_multi_remove_handle (bctx->multiple_handle, cctx->handle) == CURLM_OK)
-    {
-      if (bctx->active_clients_count > 0)
-        {
-          bctx->active_clients_count--;
-        }
-      //fprintf (stderr, "%s - client removed.\n", __func__);
-    }
-  else
-    {
-      fprintf (stderr, "%s - curl_multi_eemove_handle () failed.\n", __func__);
-      return -1;
-    }
-
-  return 0;	
-}
-
-/****************************************************************************************
- * Function name - client_remove_from_load
- *
- * Description - Returns the sum of active and waiting (for load scheduling) clients
- *
- * Input -       *bctx - pointer to the batch context
- *
- * Return Code/Output - Sum of active and waiting (for load scheduling) clients
- ****************************************************************************************/
-int pending_active_and_waiting_clients_num_hyper (batch_context* bctx)
-{
-  return bctx->waiting_queue ? 
-    (bctx->active_clients_count + tq_size (bctx->waiting_queue) - 
-     PERIODIC_TIMERS_NUMBER - bctx->do_client_num_gradual_increase) :
-    bctx->active_clients_count;
-}
-
-/****************************************************************************************
- * Function name - handle_cctx_timer_hyper
- *
- * Description - Handling of timer for a client waiting in the waiting queue to 
- *               respect url interleave timeout. Schedules the client to perform 
- *               the next loading operation.
- *
- * Input -       *timer_node - pointer to timer node structure
- *               *pvoid_param - pointer to some extra data; here batch context
- *               *ulong_param - some extra data.
- *
- * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
-int handle_cctx_timer_hyper (timer_node* timer_node, 
-                       void* pvoid_param,
-                       unsigned long ulong_param)
-{
-  PRINTF("handle_cctx_timer_hyper\n");
-  
-  client_context* cctx = (client_context *) timer_node;
-  batch_context* bctx = cctx->bctx;
-  (void)pvoid_param;
-  (void)ulong_param;
-
-  return client_add_to_load (bctx, cctx);
-}
-
-/****************************************************************************************
- * Function name - handle_logfile_rewinding_timer
- *
- * Description -   Handling of logfile controlling periodic timer
- *
- * Input -        *timer_node - pointer to timer node structure
- *                *pvoid_param - pointer to some extra data; here batch context
- *                *ulong_param - some extra data.
- *
- * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
-static int handle_logfile_rewinding_timer  (timer_node* timer_node, 
-                                            void* pvoid_param, 
-                                            unsigned long ulong_param)
-{
-  batch_context* bctx = (batch_context *) pvoid_param;
-  (void) timer_node;
-  (void) ulong_param;
-
-  if (rewind_logfile_above_maxsize (bctx->cctx_array->file_output) == -1)
-    {
-      fprintf (stderr, "%s - rewind_logfile_above_maxsize() failed .\n", __func__);
-      return -1;
-    }
-  
-  //fprintf (stderr, "%s - runs.\n", __func__);
-
-  return 0;
-}
-
-/****************************************************************************************
- * Function name - handle_gradual_increase_clients_num_timer
- *
- * Description - Handling of one second timer to increase gradually number of 
- *               loading clients.
- *
- * Input -       *timer_node - pointer to timer_node structure
- *               *pvoid_param - pointer to some extra data; here batch context
- *               *ulong_param - some extra data.
- *
- * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
-static int handle_gradual_increase_clients_num_timer  (timer_node* timer_node, 
-                                                       void* pvoid_param, 
-                                                       unsigned long ulong_param)
-{
-  batch_context* bctx = (batch_context *) pvoid_param;
-  (void) timer_node;
-  (void) ulong_param;
-
-  if (add_loading_clients (bctx) == -1)
-    {
-      //fprintf (stderr, "%s add_loading_clients () returns -1.\n", __func__);
-      return -1;
-    }
-
-  //fprintf (stderr, "%s - runs.\n", __func__);
-  return 0;
-}
