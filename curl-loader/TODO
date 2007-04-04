@@ -16,10 +16,8 @@
 5. Load Status GUI. Keyboard input as in SIPP to  increase/decrease load 
    (number of loading clients or CAPS).
 
-6. Future releases will hopefully incorporate libcurl HYPER API, using 
-   curl_multi_socket() approach and epoll support by libevent as in
-   http://curl.haxx.se/lxr/source/hiper/hipev.c Thus, 50000, 100000 clients
-   from a single process can become a reality.
+6. More testing and optimization of the hyper mode. Testbed for 10K, 50K and 100K
+    clients.
 
 7. Testing and better support for FTP and FTPS.
 

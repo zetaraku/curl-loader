@@ -1,22 +1,25 @@
-version ?
+version 0.28 ?
 
-* Initial release of our hyper mode.
+* Initial release of our hyper mode. It is really an experimental mode and 
+   requires more testing and optimization. But this is a good start - 
+   Navigare Nesesse Est. Our goal is to reach 50-100 K of HTTP libcurl
+   working connections from a single thread.
 
 * Improved performance of the smooth (default) and hyper
    mode by exluding unnecessary remove and add of a handle
    from/to multihandle in setup_curl_handle () in loader.c.
 
 * Improved preformance of all modes by making patch to libcurl
-   (accepted to the library) changing linear traversal of
+   (accepted to libcurl mainstream) changing linear traversal of
    curl_multi_remove_handle () to the single-step lookup.
 
 * LOGIN_POST_STR added an option to generate unique users
    with the same password. Thanks to Jeremy Brown 
    <jbrown_at_novell.com> for motivating this feature.
 
-* Improved validation of LOGIN_POST_STR string and moved
+* Improved validation of LOGIN_POST_STR string; the validation moved
    to parse_conf.c. Size of the buffer for the string increased from 64,
-   which is not enough to 256. Thanks to Jeremy Brown 
+   which is not enough,  to 256 bytes. Thanks to Jeremy Brown 
    <jbrown_at_novell.com> for reporting this bug.
 
 

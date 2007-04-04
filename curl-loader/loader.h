@@ -1,7 +1,7 @@
 /* 
 *     loader.c
 *
-* 2006 Copyright (c) 
+* 2006 - 2007 Copyright (c) 
 * Robert Iakobashvili, <coroberti@gmail.com>
 * All rights reserved.
 *
@@ -28,6 +28,11 @@
 
 #define BATCHES_MAX_NUM 64
 
+
+#define DEFAULT_SMOOTH_URL_COMPLETION_TIME 6.0
+#define TIME_RECALCULATION_MSG_NUM 100
+#define PERIODIC_TIMERS_NUMBER 1
+#define SMOOTH_MODE_LOGFILE_TEST_TIMER 10 /* once in 10 seconds */
 
 
 /* forward declarations */
@@ -221,134 +226,6 @@ int client_remove_from_load (struct batch_context* bctx, struct client_context* 
  ****************************************************************************************/
 int client_add_to_load (struct batch_context* bctx, struct client_context* cctx);
 
-int load_final_ok_state (struct client_context* cctx, unsigned long *wait_msec);
-
-
-/****************************************************************************************
- * Function name - load_logoff_state
- *
- * Description - Called by load_next_step () for the client in CSTATE_LOGOFF state to 
- *               schedule the next loading url.
- *
- * Input -       *cctx - pointer to the client context
- *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
- *
- * Return Code/Output - CSTATE enumeration with the state of loading
- ****************************************************************************************/
-int load_logoff_state (struct client_context* cctx, unsigned long *wait_msec);
-
-/****************************************************************************************
- * Function name - load_uas_state
- *
- * Description - Called by load_next_step () for the client in CSTATE_UAS state to 
- * 		 schedule the next loading url.
- *
- * Input -       *cctx - pointer to the client context
- *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
- *
- * Return Code/Output - CSTATE enumeration with the state of loading
- ****************************************************************************************/
-int load_uas_state (struct client_context* cctx, unsigned long *wait_msec);
-
-/****************************************************************************************
- * Function name - load_login_state
- *
- * Description - Called by load_next_step () for the client in CSTATE_LOGIN 
- *               state to schedule the next loading url.
- *
- * Input -       *cctx - pointer to the client context
- *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
- *
- * Return Code/Output - CSTATE enumeration with the state of loading
- ****************************************************************************************/
-int load_login_state (struct client_context* cctx, unsigned long *wait_msec);
-
-/****************************************************************************************
- * Function name - load_error_state
- *
- * Description - Called by load_next_step () for the client in CSTATE_ERROR. If the global
- *               flag <error_recovery_client> is not false, re-schedules the client for 
- *               next cycle of loading.
- *
- * Input -       *cctx - pointer to the client context
- *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
- *
- * Return Code/Output - CSTATE enumeration with the state of loading
- ****************************************************************************************/
-int load_error_state (struct client_context* cctx, unsigned long *wait_msec);
-
-/****************************************************************************************
- * Function name - load_init_state
- *
- * Description - Called by load_next_step () for setting up of the very first url to fetch
- *
- * Input -       *cctx - pointer to the client context
- *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
- *
- * Return Code/Output - CSTATE enumeration with the state of loading
- ****************************************************************************************/
-int load_init_state (struct client_context* cctx, unsigned long *wait_msec);
-
-/****************************************************************************************
- * Function name - setup_uas
- *
- * Description - Sets UAS state url
- * Input -       *cctx - pointer to the client context
- *
- * Return Code/Output - CSTATE enumeration with client state
- ****************************************************************************************/
-int setup_uas (struct client_context* cctx);
-
-
-/****************************************************************************************
- * Function name - setup_login_logoff
- *
- * Description - Sets up login or logoff url, depending on flag <login>
- * Input -       *cctx - pointer to the client context
- *               login - when true - login state, when false logoff state is set
- *
- * Return Code/Output - CSTATE enumeration with client state
- ****************************************************************************************/
-int setup_login_logoff (struct client_context* cctx, const int login);
-
-/****************************************************************************************
- * Function name - is_last_cycling_state
- *
- * Description -   Figures out, whether the current state of client is the last cycling state.
- *                 Only in the last cycling state the number of cycles is advanced.
- *
- * Input -         *cctx - pointer to the client context
- *
- * Return Code/Output - true, when the last cycling state, else - false
- ****************************************************************************************/
-int is_last_cycling_state (struct client_context* cctx);
-
-int is_first_cycling_state (struct client_context* cctx);
-
-int last_cycling_state (struct batch_context* bctx);
-
-int first_cycling_state (struct batch_context* bctx);
-
-/****************************************************************************************
- * Function name - advance_cycle_num
- *
- * Description - Advances number of cycles, when the full cycle is done with all url-fetches
- * Input -       *cctx - pointer to the client context
- *
- * Return Code/Output - None
- ****************************************************************************************/
-void advance_cycle_num (struct client_context* cctx);
-
-
-/****************************************************************************************
- * Function name - on_cycling_completed
- *
- * Description - Either goes to the logoff state (logoff-no-cycling) of to CSTATE_FINISHED_OK
- * Input -       *cctx - pointer to the client context
- *
- * Return Code/Output - CSTATE enumeration with client state
- ****************************************************************************************/
-int on_cycling_completed (struct client_context* cctx, unsigned long *wait_msec);
 
 
 /****************************************************************************************
@@ -384,8 +261,7 @@ int load_next_step (struct client_context* cctx,
  *
  * Return Code/Output - On Success - 0, on Error -1
  ****************************************************************************************/
-int
-dispatch_expired_timers (struct batch_context* bctx, unsigned long now_time);
+int dispatch_expired_timers (struct batch_context* bctx, unsigned long now_time);
 
 /****************************************************************************************
  * Function name - add_loading_clients
@@ -408,20 +284,8 @@ typedef int (*load_state_func)  (struct client_context* cctx, unsigned long *wai
    the actual call will be with (state + 1) as an index, used 
    in load_next_step ().
 */
-static const load_state_func load_state_func_table [] =
-  {
-    load_error_state,
-    load_init_state,
-    load_login_state,
-    load_uas_state,
-    load_logoff_state,
-    load_final_ok_state,
-  };
+extern const load_state_func load_state_func_table [];
 
-#define DEFAULT_SMOOTH_URL_COMPLETION_TIME 6.0
-#define TIME_RECALCULATION_MSG_NUM 100
-#define PERIODIC_TIMERS_NUMBER 1
-#define SMOOTH_MODE_LOGFILE_TEST_TIMER 10 /* once in 10 seconds */
 
 /* ------------- Hyper-mode loading  function ----------------*/
 

@@ -1,9 +1,9 @@
 /* 
  *     loader_smooth.c
  *
- * 2006 Copyright (c)
- * Michael Moser, <moser.michael@gmail.com>
+ * 2006 - 2007 Copyright (c)
  * Robert Iakobashvili, <coroberti@gmail.com>
+ * Michael Moser, <moser.michael@gmail.com>
  * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
