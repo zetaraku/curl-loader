@@ -74,6 +74,8 @@ int still_running;
 static void event_cb_hyper (int fd, short kind, void *userp);
 static void update_timeout_hyper (batch_context *bctx);
 
+static int on_exit_hyper (batch_context* bctx);
+
 
 static struct event timer_event;
 static struct event timer_next_load_event;
@@ -475,23 +477,34 @@ int user_activity_hyper (client_context* cctx_array)
   struct timeval tv;
   timerclear(&tv);
   tv.tv_usec = TIMER_NEXT_LOAD;	
-  event_add(&timer_next_load_event, &tv); 
+  event_add(&timer_next_load_event, &tv);
+
+  dump_snapshot_interval (bctx, now_time);
 
   /* 
      ========= Run the loading machinery ================
   */
 
-  while (still_running) /*(  pending_active_and_waiting_clients_num_hyper (bctx)) ||
-         bctx->do_client_num_gradual_increase)*/
-    {
-      if (mget_url_hyper (bctx) == -1)
-        {
-          fprintf (stderr, "%s error: mget_url () failed.\n", __func__) ;
-          return -1;
-        }
-    }
 
-  dump_final_statistics (cctx_array);
+  if (mget_url_hyper (bctx) == -1)
+  {
+      fprintf (stderr, "%s error: mget_url () failed.\n", __func__) ;
+      return -1;
+  }
+
+
+  on_exit_hyper (bctx);
+
+  return 0;
+}
+
+static int on_exit_hyper (batch_context* bctx)
+{
+    //fprintf (stderr, "%s - entered.\n", __func__);
+
+    still_running =0;
+
+  dump_final_statistics (bctx->cctx_array);
 
   /* 
      ======= Release resources =========================
@@ -499,18 +512,20 @@ int user_activity_hyper (client_context* cctx_array)
   if (bctx->waiting_queue)
     {
         /* Cancel periodic logfile timer */
+/*
       if (logfile_timer_id != -1)
         {
           tq_cancel_timer (bctx->waiting_queue, logfile_timer_id);
           tq_cancel_timer (bctx->waiting_queue, clients_num_inc_id);
         }
+*/
 
       tq_release (bctx->waiting_queue);
       free (bctx->waiting_queue);
       bctx->waiting_queue = 0;
     }
 
-  return 0;
+  exit (0);
 }
 
 
@@ -568,6 +583,12 @@ static int mperform_hyper (batch_context* bctx, int* still_running)
   int scheduled_now_count = 0, scheduled_now = 0;
 
   (void)still_running;
+
+  if (pending_active_and_waiting_clients_num (bctx) == 0 &&
+      bctx->do_client_num_gradual_increase == 0)
+  {
+      return on_exit_hyper (bctx);
+  }
     
   now_time = get_tick_count ();
 
