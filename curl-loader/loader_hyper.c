@@ -40,7 +40,7 @@
 static timer_node logfile_timer_node; 
 static timer_node clients_num_inc_timer_node;
 
-#define TIMER_NEXT_LOAD 100000
+#define TIMER_NEXT_LOAD 20000
 
 static int mget_url_hyper (batch_context* bctx);
 static int mperform_hyper (batch_context* bctx, int* still_running);
@@ -86,11 +86,17 @@ static struct event timer_next_load_event;
 static void event_cb_hyper (int fd, short kind, void *userp)
 {
   batch_context *bctx = (batch_context *) userp;
-  (void) kind;
-  (void) fd;
   int st;
   CURLMcode rc;
-
+  int bitset = 0;
+  
+  if (kind & EV_READ) {
+      bitset |= CSELECT_IN;
+  }
+  if (kind & EV_WRITE) {
+      bitset |= CSELECT_IN;
+  }
+  
   PRINTF("event_cb_hyper enter\n");
 
   /* 
@@ -99,7 +105,7 @@ static void event_cb_hyper (int fd, short kind, void *userp)
   */
   do 
     {
-      rc = curl_multi_socket(bctx->multiple_handle, fd, &st);
+        rc = curl_multi_socket_noselect(bctx->multiple_handle, fd, bitset, &st);
     } 
   while (rc == CURLM_CALL_MULTI_PERFORM);
 
@@ -173,7 +179,7 @@ static void remsock(sock_info *sinfo)
 static void setsock_hyper(sock_info*sinfo, 
                     curl_socket_t socket, 
                     CURL*handle, 
-                    int act, 
+                    int act,
                     batch_context * bctx)
 {
   int kind = 
@@ -190,7 +196,7 @@ static void setsock_hyper(sock_info*sinfo,
 
   if (sinfo->evset) 
     { 
-      event_del(&sinfo->ev); 
+      event_del(&sinfo->ev);
     }
 
   event_set( &sinfo->ev, sinfo->sockfd, kind, event_cb_hyper, bctx);
@@ -650,7 +656,7 @@ static int mperform_hyper (batch_context* bctx, int* still_running)
   if (dispatch_expired_timers (bctx, now_time) > 0 || scheduled_now_count)
     {
       while (CURLM_CALL_MULTI_PERFORM == 
-             curl_multi_socket_all(bctx->multiple_handle, &st))
+             curl_multi_socket_all (bctx->multiple_handle, &st))
           ;
     }
 
