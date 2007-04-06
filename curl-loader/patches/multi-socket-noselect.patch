@@ -1,0 +1,136 @@
+diff -Naru curl-7.16.2-20070326/include/curl/multi.h curl-7.16.2-20070326-corr/include/curl/multi.h
+--- curl-7.16.2-20070326/include/curl/multi.h	2006-10-13 04:00:19.000000000 +0200
++++ curl-7.16.2-20070326-corr/include/curl/multi.h	2007-04-06 22:14:26.000000000 +0300
+@@ -222,8 +222,16 @@
+ #define CURL_POLL_INOUT  3
+ #define CURL_POLL_REMOVE 4
+ 
++
++
+ #define CURL_SOCKET_TIMEOUT CURL_SOCKET_BAD
+ 
++#define CSELECT_IN   0x01
++#define CSELECT_OUT  0x02
++#define CSELECT_ERR  0x04
++
++
++
+ typedef int (*curl_socket_callback)(CURL *easy,      /* easy handle */
+                                     curl_socket_t s, /* socket */
+                                     int what,        /* see above */
+@@ -249,6 +257,9 @@
+ CURL_EXTERN CURLMcode curl_multi_socket(CURLM *multi_handle, curl_socket_t s,
+                                         int *running_handles);
+ 
++CURL_EXTERN CURLMcode curl_multi_socket_noselect(CURLM *multi_handle, curl_socket_t s,
++                                                 int bitset, int *running_handles);
++
+ CURL_EXTERN CURLMcode curl_multi_socket_all(CURLM *multi_handle,
+                                             int *running_handles);
+ 
+diff -Naru curl-7.16.2-20070326/lib/multi.c curl-7.16.2-20070326-corr/lib/multi.c
+--- curl-7.16.2-20070326/lib/multi.c	2007-04-06 22:55:58.000000000 +0300
++++ curl-7.16.2-20070326-corr/lib/multi.c	2007-04-06 22:49:59.000000000 +0300
+@@ -1628,6 +1628,7 @@
+ static CURLMcode multi_socket(struct Curl_multi *multi,
+                               bool checkall,
+                               curl_socket_t s,
++                              int bitmask,
+                               int *running_handles)
+ {
+   CURLMcode result = CURLM_OK;
+@@ -1665,8 +1666,12 @@
+       /* bad bad bad bad bad bad bad */
+       return CURLM_INTERNAL_ERROR;
+ 
++    data->select_bits = bitmask;
++
+     result = multi_runsingle(multi, data->set.one_easy);
+ 
++    data->select_bits = 0;
++
+     if(result == CURLM_OK)
+       /* get the socket(s) and check if the state has been changed since
+          last */
+@@ -1763,7 +1768,17 @@
+                             int *running_handles)
+ {
+   CURLMcode result = multi_socket((struct Curl_multi *)multi_handle, FALSE, s,
+-                                  running_handles);
++                                  0, running_handles);
++  if (CURLM_OK == result)
++    update_timer((struct Curl_multi *)multi_handle);
++  return result;
++}
++
++CURLMcode curl_multi_socket_noselect(CURLM *multi_handle, curl_socket_t s,
++                                     int bitmask, int *running_handles)
++{
++  CURLMcode result = multi_socket((struct Curl_multi *)multi_handle, FALSE, s,
++                                  bitmask, running_handles);
+   if (CURLM_OK == result)
+     update_timer((struct Curl_multi *)multi_handle);
+   return result;
+@@ -1773,7 +1788,7 @@
+ 
+ {
+   CURLMcode result = multi_socket((struct Curl_multi *)multi_handle,
+-                                  TRUE, CURL_SOCKET_BAD, running_handles);
++                                  TRUE, CURL_SOCKET_BAD, 0, running_handles);
+   if (CURLM_OK == result)
+     update_timer((struct Curl_multi *)multi_handle);
+   return result;
+diff -Naru curl-7.16.2-20070326/lib/select.h curl-7.16.2-20070326-corr/lib/select.h
+--- curl-7.16.2-20070326/lib/select.h	2007-03-19 05:00:02.000000000 +0200
++++ curl-7.16.2-20070326-corr/lib/select.h	2007-04-06 22:01:48.000000000 +0300
+@@ -64,10 +64,6 @@
+ 
+ #endif
+ 
+-#define CSELECT_IN   0x01
+-#define CSELECT_OUT  0x02
+-#define CSELECT_ERR  0x04
+-
+ int Curl_select(curl_socket_t readfd, curl_socket_t writefd, int timeout_ms);
+ 
+ int Curl_poll(struct pollfd ufds[], unsigned int nfds, int timeout_ms);
+diff -Naru curl-7.16.2-20070326/lib/transfer.c curl-7.16.2-20070326-corr/lib/transfer.c
+--- curl-7.16.2-20070326/lib/transfer.c	2007-03-12 05:00:09.000000000 +0200
++++ curl-7.16.2-20070326-corr/lib/transfer.c	2007-04-06 22:51:01.000000000 +0300
+@@ -312,9 +312,10 @@
+ 
+   curl_socket_t fd_read;
+   curl_socket_t fd_write;
+-  int select_res;
+-
+   curl_off_t contentlength;
++  int select_res = data->select_bits;
++
++  data->select_bits = 0;
+ 
+   /* only use the proper socket if the *_HOLD bit is not set simultaneously as
+      then we are in rate limiting state in that transfer direction */
+@@ -329,7 +330,11 @@
+   else
+     fd_write = CURL_SOCKET_BAD;
+ 
+-  select_res = Curl_select(fd_read, fd_write, 0);
++  if (!select_res) { /* Call for select()/poll() only, if read/write/error 
++                        status is not known. */
++      select_res = Curl_select(fd_read, fd_write, 0);
++  }
++
+   if(select_res == CSELECT_ERR) {
+     failf(data, "select/poll returned error");
+     return CURLE_SEND_ERROR;
+diff -Naru curl-7.16.2-20070326/lib/urldata.h curl-7.16.2-20070326-corr/lib/urldata.h
+--- curl-7.16.2-20070326/lib/urldata.h	2007-04-06 22:55:58.000000000 +0300
++++ curl-7.16.2-20070326-corr/lib/urldata.h	2007-04-06 22:34:33.000000000 +0300
+@@ -1360,6 +1360,7 @@
+   iconv_t utf8_cd;             /* for translating to UTF8 */
+ #endif /* CURL_DOES_CONVERSIONS && HAVE_ICONV */
+   unsigned int magic;          /* set to a CURLEASY_MAGIC_NUMBER */
++  int select_bits; /* read, write or error bits */
+ };
+ 
+ #define LIBCURL_NAME "libcurl"
