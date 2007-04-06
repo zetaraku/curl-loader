@@ -1,0 +1,160 @@
+diff -Naru curl-7.16.2-20070326/include/curl/multi.h curl-7.16.2-20070326-mod/include/curl/multi.h
+--- curl-7.16.2-20070326/include/curl/multi.h	2006-10-13 04:00:19.000000000 +0200
++++ curl-7.16.2-20070326-mod/include/curl/multi.h	2007-04-06 16:04:18.000000000 +0300
+@@ -90,6 +90,13 @@
+ };
+ typedef struct CURLMsg CURLMsg;
+ 
++typedef enum
++{
++    SOCKET_CHECK_SINGLE = 0,
++    SOCKET_CHECK_ALL = 1,
++    SOCKET_CHECK_ALL_INIT = 2,
++} CURLMsocketCheckType;
++
+ /*
+  * Name:    curl_multi_init()
+  *
+@@ -153,6 +160,21 @@
+ CURL_EXTERN CURLMcode curl_multi_perform(CURLM *multi_handle,
+                                          int *running_handles);
+ 
++/*
++  * Name:    curl_multi_perform_init()
++  *
++  * Desc:    Same as curl_multi_perform() but runs on only freshly placed handles
++  *              in initial state. It is designed to be further de-multiplexed by external
++  *              , e.g. epoll() API.
++  *
++  * Returns: CURLMcode type, general multi error code. *NOTE* that this only
++  *          returns errors etc regarding the whole multi stack. There might
++  *          still have occurred problems on invidual transfers even when this
++  *          returns OK.
++  */
++CURL_EXTERN CURLMcode curl_multi_perform_init(CURLM *multi_handle,
++                                         int *running_handles);
++
+  /*
+   * Name:    curl_multi_cleanup()
+   *
+@@ -252,6 +274,9 @@
+ CURL_EXTERN CURLMcode curl_multi_socket_all(CURLM *multi_handle,
+                                             int *running_handles);
+ 
++CURL_EXTERN CURLMcode curl_multi_socket_all_init(CURLM *multi_handle,
++                                            int *running_handles);
++
+ /*
+  * Name:    curl_multi_timeout()
+  *
+diff -Naru curl-7.16.2-20070326/lib/multi.c curl-7.16.2-20070326-mod/lib/multi.c
+--- curl-7.16.2-20070326/lib/multi.c	2007-04-06 16:27:48.000000000 +0300
++++ curl-7.16.2-20070326-mod/lib/multi.c	2007-04-06 16:24:43.000000000 +0300
+@@ -8,7 +8,7 @@
+  * Copyright (C) 1998 - 2007, Daniel Stenberg, <daniel@haxx.se>, et al.
+  *
+  * This software is licensed as described in the file COPYING, which
+- * you should have received as part of this distributionCu. The terms
++ * you should have received as part of this distribution. The terms
+  * are also available at http://curl.haxx.se/docs/copyright.html.
+  *
+  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
+@@ -1355,8 +1355,7 @@
+   return result;
+ }
+ 
+-
+-CURLMcode curl_multi_perform(CURLM *multi_handle, int *running_handles)
++CURLMcode curl_multi_pf(CURLM *multi_handle, bool init_only, int *running_handles)
+ {
+   struct Curl_multi *multi=(struct Curl_multi *)multi_handle;
+   struct Curl_one_easy *easy;
+@@ -1379,6 +1378,13 @@
+       continue;
+     }
+ 
++    if (init_only) {
++        if (easy->state != CURLM_STATE_INIT) {
++            easy = easy->next; /* operate on next handle */
++            continue;
++        }
++    }
++
+     result = multi_runsingle(multi, easy);
+     if(result)
+       returncode = result;
+@@ -1415,6 +1421,16 @@
+   return returncode;
+ }
+ 
++CURLMcode curl_multi_perform(CURLM *multi_handle, int *running_handles)
++{
++    return curl_multi_pf(multi_handle, FALSE, running_handles);
++}
++
++CURLMcode curl_multi_perform_init(CURLM *multi_handle, int *running_handles)
++{
++    return curl_multi_pf(multi_handle, TRUE, running_handles);
++}
++
+ /* This is called when an easy handle is cleanup'ed that is part of a multi
+    handle */
+ void Curl_multi_rmeasy(void *multi_handle, CURL *easy_handle)
+@@ -1626,7 +1642,7 @@
+ }
+ 
+ static CURLMcode multi_socket(struct Curl_multi *multi,
+-                              bool checkall,
++                              CURLMsocketCheckType check_what,
+                               curl_socket_t s,
+                               int *running_handles)
+ {
+@@ -1634,10 +1650,16 @@
+   struct SessionHandle *data = NULL;
+   struct Curl_tree *t;
+ 
+-  if(checkall) {
++  if(check_what) {
+     struct Curl_one_easy *easyp;
++
+     /* *perform() deals with running_handles on its own */
+-    result = curl_multi_perform(multi, running_handles);
++    if (check_what == SOCKET_CHECK_ALL) {
++        result = curl_multi_perform(multi, running_handles);
++    }
++    else {
++        result = curl_multi_perform_init(multi, running_handles);
++    }
+ 
+     /* walk through each easy handle and do the socket state change magic
+        and callbacks */
+@@ -1762,8 +1784,8 @@
+ CURLMcode curl_multi_socket(CURLM *multi_handle, curl_socket_t s,
+                             int *running_handles)
+ {
+-  CURLMcode result = multi_socket((struct Curl_multi *)multi_handle, FALSE, s,
+-                                  running_handles);
++  CURLMcode result = multi_socket((struct Curl_multi *)multi_handle, 
++                                  SOCKET_CHECK_SINGLE, s, running_handles);
+   if (CURLM_OK == result)
+     update_timer((struct Curl_multi *)multi_handle);
+   return result;
+@@ -1773,7 +1795,17 @@
+ 
+ {
+   CURLMcode result = multi_socket((struct Curl_multi *)multi_handle,
+-                                  TRUE, CURL_SOCKET_BAD, running_handles);
++                                  SOCKET_CHECK_ALL, CURL_SOCKET_BAD, running_handles);
++  if (CURLM_OK == result)
++    update_timer((struct Curl_multi *)multi_handle);
++  return result;
++}
++
++CURLMcode curl_multi_socket_all_init(CURLM *multi_handle, int *running_handles)
++
++{
++  CURLMcode result = multi_socket((struct Curl_multi *)multi_handle,
++                                  SOCKET_CHECK_ALL_INIT, CURL_SOCKET_BAD, running_handles);
+   if (CURLM_OK == result)
+     update_timer((struct Curl_multi *)multi_handle);
+   return result;
