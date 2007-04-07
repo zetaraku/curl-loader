@@ -1506,11 +1506,11 @@ static int post_validate_init (batch_context*const bctx)
   /* 
      It should be the last check.
   */
-  fprintf (stderr, "\nThe configuration has been validated successfully.\n");
+  fprintf (stderr, "\nThe configuration has been validated successfully.\n\n");
 
   if (!bctx->login_cycling && !bctx->do_uas && !bctx->logoff_cycling)
     {
-      fprintf (stderr, "\nHowever, the configuration has no cycling defined.\n"
+      fprintf (stderr, "However, the configuration has no cycling defined.\n"
                "Are you sure, that this is what you are planning to do?\n"
                "Y may define LOGIN_CYCLING some UAS urls or LOGOFF_CYCLING.\n"
                " Please, press ENTER to continue.\n");

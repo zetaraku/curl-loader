@@ -58,9 +58,6 @@
 #include "ssl_thr_lock.h"
 
 
-#define OPEN_FDS_SUGGESTION 10000
-
-
 static int create_ip_addrs (batch_context* bctx, int bctx_num);
 int client_tracing_function (CURL *handle, 
                                     curl_infotype type, 
@@ -114,11 +111,7 @@ main (int argc, char *argv [])
   pthread_t tid[BATCHES_MAX_NUM];
   int batches_num = 0; 
   int i = 0, error = 0;
-  struct rlimit file_limit;
-  int ret;
 
-  fprintf(stderr, " __FD_SETSIZE %d  FD_SETSIZE %d __NFDBITS %d  \n",
-          __FD_SETSIZE,  FD_SETSIZE, __NFDBITS );
 
   signal (SIGPIPE, SIG_IGN);
 
@@ -138,40 +131,22 @@ main (int argc, char *argv [])
   
    memset(bc_arr, 0, sizeof(bc_arr));
 
-  
-  ret = getrlimit(RLIMIT_NOFILE, &file_limit);
-
-  if (!ret && file_limit.rlim_cur < OPEN_FDS_SUGGESTION)
-    {
-      fprintf(stderr, 
-              " %s - WARNING: the current limit of open descriptors for a process is below %d."
-              "Consider, increase of the limit in your shell, e.g. using ulimit -n %d command\n",
-              __func__, OPEN_FDS_SUGGESTION, OPEN_FDS_SUGGESTION);
-      sleep (3);
-    }
-
-  if (!ret && file_limit.rlim_cur > CURL_LOADER_FD_SETSIZE)
-    {
-      fprintf(stderr, 
-              " %s - ERROR: The current open descriptors limit in your shell is larger then this program allows for.\n"
-              "This program allows for maximum of %d file descriptors, whereas the current shell limit is %d\n"
-              "If you will get notifications, like \"fd (socket) <num> is less than FD_SETSIZE\" increase\n" 
-              "CURL_LOADER_FD_SETSIZE in Makefile and recompile.\n"
-              "Alternatively, decrease the shell limit by e.g. #ulimit -n %d .\n",
-              __func__ , CURL_LOADER_FD_SETSIZE, (int) file_limit.rlim_cur,
-              CURL_LOADER_FD_SETSIZE - 1);   
-    exit (-1);
-  }
-
  /* 
      Parse the configuration file. 
   */
   if ((batches_num = parse_config_file (config_file, bc_arr, 
                                         sizeof(bc_arr)/sizeof(*bc_arr))) <= 0)
     {
-      fprintf (stderr, "%s - error: parse_config_file () - error.\n", __func__);
+      fprintf (stderr, "%s - error: parse_config_file () failed.\n", __func__);
       return -1;
     }
+
+
+   if (test_environment (&bc_arr[0]) == -1)
+   {
+       fprintf (stderr, "%s - error: test_environment () - error.\n", __func__);
+      return -1;
+   }
    
   /* 
      Add ip-addresses to the loading network interfaces

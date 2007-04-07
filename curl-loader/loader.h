@@ -44,6 +44,8 @@ struct timer_node;
 
 /*---------  Common loading functions ----------------*/
 
+int test_environment (struct batch_context* bctx);
+
 /****************************************************************************************
 * Function name - setup_curl_handle
 *
