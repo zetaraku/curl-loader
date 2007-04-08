@@ -11,7 +11,7 @@
       </question>
       <answer>
       Batch is a group of clients with the same characteristics and 
-      loading behavior. Configuration file has one or more batches.
+      loading behavior. Configuration file has one (normally) or more batches.
        </answer>
     </faq>
    <faq id="uas">
@@ -31,7 +31,7 @@
         Which operating systems are supported by curl-loader?
       </question>
       <answer>
-        You can use any operating system of your choice, providing that it is linux with 2.4 and 2.6 kernels.
+        You can use any operating system of your choice, providing that it is linux with kernel 2.4 or 2.6.
        </answer>
     </faq>
     <faq id="pre-requirements">
@@ -42,16 +42,16 @@
         General C development environment with bash, gcc, make, etc on a linux machine
         is required.<br/>
         <br/>
-        Building pre-requirements are including:<br/>
+        Building pre-requirements are:<br/>
           1. openssl binaries;<br/>
-          2. openssl development package with include files (on debian package libssl-dev);<br/>
-          3. ncurses development package.<br/>
+          2. openssl development package with include files (on debian libssl-dev);<br/>
+          3. ncurses development package(on debian e.g. libncurses5-dev).<br/>
          <br/>
          Adjust Makefile variables to point to the openssl headers and libraries. 
-         If you want to specify an openssl development directory with include 
-         files (e.g. crypto.h), export environment variable OPENSSLDIR with 
-         the value of that directory.<br/>
-         For example: $export OPENSSLDIR=the-full-path-to-the-directory<br/>
+         To specify an openssl development directory with include files (e.g. crypto.h), 
+         export environment variable OPENSSLDIR with the value of that directory.<br/>
+         For example:<br/>
+         $export OPENSSLDIR=the-full-path-to-the-directory<br/>
          <br/>
          Another known issue is libidn.so, which means, that some linux distributions 
          do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink. <br/>
@@ -65,7 +65,7 @@
         How to make (build) curl-loader?
       </question>
       <answer>
-          Run the following commands from your (hopefully) bash linux shell:<br/>
+          Run the following commands from your bash linux shell:<br/>
          $tar zxfv curl-loader-&lt;version&gt;.tar.gz<br/>
          $cd curl-loader-&lt;version&gt;<br/>
          $make<br/>
@@ -74,8 +74,8 @@
          debugging -g option. To build with optimization and without debugging, please, run:<br/>
          $make cleanall<br/>
          $make optimize=1 debug=0<br/>
-         If still any building issues, please, fill you free to contact us for assistance using placed in tarball
-         PROBLEM-REPORTING form and its instructions.<br/>
+         If still any building issues, please, fill you free to contact us for assistance using placed in 
+         download tarball PROBLEM-REPORTING form and its instructions.<br/>
        </answer>
     </faq>
     <!-- More faqs or parts here -->
@@ -88,8 +88,8 @@
       </question>
       <answer>
         <p>
-        To run your load, you need to create your configuration file to be passed to
-         curl-loader by the -f commmand line option, e.g.<br/>
+        To run a load create your configuration file to be passed to
+         curl-loader using -f commmand line option, e.g.<br/>
          <br/>
          #curl-loader -f ./conf-user/user_batch.conf<br/>
         <br/>
@@ -97,10 +97,9 @@
         copy an example file and edit it by using the next FAQ guidelines.
         </p>
          <p>
-        You may start with running "$make menuconfig" configuration GUI, which 
-        requires ncurses development package on your system. The dialog window 
-        will guide you and create your configuration file in conf-user directory. 
-        The current limitation of the menu-guided configuration, is that it enables 
+        Yet another option to start is by running "$make menuconfig" configuration GUI. 
+        The dialog window will guide you and create your configuration file in conf-user directory. 
+        A limitation of the menu-guided configuration, is that it enables 
         to create only a single UAS URL.<br/>
         If you need more that a single UAS url, copy your batch file from the conf-user
         directory  to some other place and  edit it by adding as much url tag series 
@@ -212,7 +211,7 @@ is not applicable). <br/>
 <br/>
 In the case, that LOGIN, UAS or LOGOFF section tag is 
 disabled by setting 'n' (no) value, thus, all the tags of the disabled section 
-may appear with with empty strings "", without values or just may be
+may appear with with empty strings "", without values or may be
 commented out by '#'.
         </p>
         <p>
@@ -227,23 +226,24 @@ used for the client number 1, will be  "user=robert1 password;=stam1".<br/>
 <br/>
 In this case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just <br/>
 as base-words for generating unique user credentials by appending an number.<br/>
-To use the username and password 'as as', just provide LOGIN_POST_STR without <br/>
+To use the username and password 'as as', provide LOGIN_POST_STR without <br/>
 %d symbols, e.g. "user=%s&amp;secret=%s". Thus, all clients will have the same<br/>
 POST credentials with the string looking like "user=robert&amp; secret=stam".<br/>
 <br/>
 The option without %d symbols to be used also, when LOGIN_CREDENTIALS_FILE is defined,<br/>
 because the credentials uniqueness is ensured by the file content.<br/>
 Another allowed syntax serves to generate unique user, all using with the same password:
-"user=%s%d&amp;secret=%s"
+"user=%s%d&amp;secret=%s".<br/>
 <br/>
 Note, that the words like 'username', 'user', 'password', 'secret', etc are<br/> 
 those fields, that login users are required to fill in their POST page.<br/>
+<br/>
        </p>
         <p>
 Tag  CLIENTS_INITIAL_INC:<br/>
-serves for gradual increase of clients number at the loading initial phase. 
-Use the tag in GENERAL section to specify the number of loading clients to be 
-added each second till the total clients number reaches the number specified by 
+serves to increase clients number gradually at the initial phase of loading. 
+Use the tag in GENERAL section to specify number of loading clients to be 
+added each second till the total number reaches the number specified by 
 CLIENTS_NUM tag.<br/>
        </p>
         <p>
@@ -287,9 +287,11 @@ For more examples, please, look at the files in "conf-examples" directory.<br/>
            and password. The difference is that for UAS only GET method is currently allowed in 
            and username&amp;password are intended to support Web or Proxy Authentication 
            (see below). <br/>
-           Login url uniquely allows POSTing user credentials via configurable POST forms as 
+           Login and Logoff urls allow POSTing user credentials via configurable POST forms as 
            well as configuring a unique username and password for each virtual client by appending 
-           a sequence number to the username and password basewords.<br/>
+           a sequence number to the username and password basewords. When Login url fetching is 
+           challenged by Web or Proxy Authentication it will use user credentials specified/generated
+           as described. <br/>
            <br/>
           Does somebody really needs PUT or POST methods as an option for UAS urls? <br/>
           If yes, please, signal it to us.<br/>
@@ -311,10 +313,10 @@ For more examples, please, look at the files in "conf-examples" directory.<br/>
         Login and Logoff section enable usage of POST-ed credentials, whereas UAS urls are 
         using only GET method.<br/>
         <br/>
-        Another business case for Login url is that it may be either used in a cycle or in a 
+        Another business case for Login url is that it may be either used in a cycling or in a 
         non-cycling mode, whereas UAS urls are always cycled.<br/>
         When e.g. proxy authentication is the first operation to be performed and only once,
-        non-cycling Login url is useful.<br/>
+        non-cycling Login url seems to be useful.<br/>
         <br/>
      </answer>
      </faq>
@@ -347,7 +349,7 @@ Please, look at conf-examples/ftp.conf<br/>
            #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;<br/>
        <br/>
      In some cases you may need to increase the system limits for open
-     descriptors (sockets).<br/>
+     descriptors (sockets). See linux FAQs for that.<br/>
        </answer>
        </faq>
 
@@ -387,7 +389,7 @@ Please, look at conf-examples/ftp.conf<br/>
        on your server support of Keep-Alive and the purpose of your testing.
        Try with and without -r and see, what you get.<br/>
 
-      Connection reuse (the default, without -r option) has advantages due to the 
+      Connection reuse (which is the default, without -r option) has advantages due to the 
       decreased consumption of opened descriptors (sockets) and ports.<br/>
        </answer>
        </faq>
@@ -573,21 +575,19 @@ error state will not be scheduled for load any more. <br/>
      What about performance?
       </question>
       <answer>
-The limit of no more than 1000 virtual clients per batch (due to syscall 
-select () FD_SETSIZE) has been lifted, so you can try now 2000 and may be 
-more number of clients from the single thread. <br/>
+You can try now 2000-6000 and may be more number of clients from a single curl-loader process
+(which normally has a single batch and runs as a single thread). <br/>
 Please, care, however, about available sockets and limits. Note, that the system 
 call select () does not scale well with a big number of sockets, therefore, 
 you can try a script, which runs several instances of curl_loader each with 
-1000-2000 clients.<br/>
+2000-3000 clients.<br/>
 <br/>
 Running several batches with threads (option -t), each thread with 1000-2000 clients is 
 another valid option, whereas it may be less stable - try it.<br/>
 <br/>
-A future release will incorporate libcurl HYPER API to support tens of thousand 
-of virtual clients from a single curl-loader process, using curl_multi_socket() 
-approach and epoll API support by libevent as in
-http://curl.haxx.se/lxr/source/hiper/hipev.c<br/>
+Recent release has a new experimental option HYPER (-m 0 command line option). 
+The mode uses epoll() syscall (via libevent library) for demultiplexing. Y may try it
+as well, noting that it is still experimental. 
        </answer>
     </faq>
 
@@ -598,7 +598,7 @@ http://curl.haxx.se/lxr/source/hiper/hipev.c<br/>
       <answer>
 0. Try the default Smooth and Hyper (experimental) modes and see, what is 
 more appropriate for you. Smooth mode is stable and tested well. Hyper is less 
-restrictive about allowed number of clients, but still requires more developement 
+restrictive about allowed number of clients, but still requires more development 
 and optimization.<br/>
 <br/>
 1. Compile with optimization;<br/>
@@ -622,7 +622,8 @@ time in the time-wait state), by setting, optionally, something like this:<br/>
       #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;<br/>
 <br/>
 Correct, if required, the value of CURL_LOADER_FD_SETSIZE (set to 20000 in 
-Makefile) to control the maximum fd, that may be used for select.<br/>
+Makefile) to control the maximum fd, that may be used for select. This is not required
+to be cared about for hyper mode.<br/>
 <br/>
 Increase the maximum number of open descriptors in your linux system, if required,
 using linux HOWTOS.<br/>
@@ -657,7 +658,8 @@ in logs). Grep to look for the errors and their reasons. If an error is
 "Connection timeout", you may try to increase the connection establishment
 timeout (the default is 5 seconds - huge, but "ih veis"), using -c command-line
 option.<br/>
-If any assistance required, please, don't hesitate to contact us.<br/>
+If any assistance required, please, don't hesitate to contact us using 
+PROBLEM-REPORTING form in the download tarball.<br/>
 <br/>
 7. Logs and statistics.<br/>
 <br/>
@@ -679,7 +681,7 @@ performance issues.<br/>
      How to calculate CAPS numbers for a load?
       </question>
       <answer>
-When number of clients is defined by CLIENTS_NUM tag, the number of
+When number of clients is defined by CLIENTS_NUM tag, number of
 CAPS (call attempts per seconds) is resulting from the clients number and 
 load duration for each cycle, comprising from:<br/>
 - login time with possible redirections and sleeping after login interval;<br/>
@@ -693,8 +695,8 @@ to predict. The result is that number of clients/requests is a known parameter,
 and number of CAPS is something to be estimated from the time of test and
 number of requests.<br/>
 <br/>
-Smooth mode presents at the LOAD STATUS GUI the output of calculated current 
-and average CAPS.<br/>
+Smooth and hyper modes are presenting at the LOAD STATUS GUI the output 
+of calculated current and average CAPS.<br/>
        </answer>
     </faq>
 </faqsection>
