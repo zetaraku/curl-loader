@@ -1,4 +1,9 @@
-version 0.28 ?
+version 0.28 08/04/2007, svn- 270
+
+* Improved validation of environment issue (allowed number of open
+   sockets), which are separated to a new file environment.c
+
+* Added PROBLEM-REPORTING file.
 
 * Initial release of our hyper mode. It is really an experimental mode and 
    requires more testing and optimization. But this is a good start - 
