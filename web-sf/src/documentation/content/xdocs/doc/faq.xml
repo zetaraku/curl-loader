@@ -31,7 +31,7 @@
         Which operating systems are supported by curl-loader?
       </question>
       <answer>
-        curl-loader supposed to work on linux with 2.4 and 2.6 kernels.
+        You can use any operating system of your choice, providing that it is linux with 2.4 and 2.6 kernels.
        </answer>
     </faq>
     <faq id="pre-requirements">
@@ -45,7 +45,7 @@
         Building pre-requirements are including:<br/>
           1. openssl binaries;<br/>
           2. openssl development package with include files (on debian package libssl-dev);<br/>
-          3. ncurses development package to run 'make menuconfig' with dialog GUI.<br/>
+          3. ncurses development package.<br/>
          <br/>
          Adjust Makefile variables to point to the openssl headers and libraries. 
          If you want to specify an openssl development directory with include 
@@ -66,15 +66,16 @@
       </question>
       <answer>
           Run the following commands from your (hopefully) bash linux shell:<br/>
-         %tar zxfv curl-loader-&lt;version&gt;.tar.gz<br/>
-         %cd curl-loader-&lt;version&gt;<br/>
-         %make<br/>
+         $tar zxfv curl-loader-&lt;version&gt;.tar.gz<br/>
+         $cd curl-loader-&lt;version&gt;<br/>
+         $make<br/>
          <br/>
          By default, we are building both libcurl and curl-loader without optimization and with
          debugging -g option. To build with optimization and without debugging, please, run:<br/>
-         %make cleanall<br/>
-         %make optimize=1 debug=0<br/>
-         If still any building issues, please, fill you free to contact us for assistance.<br/>
+         $make cleanall<br/>
+         $make optimize=1 debug=0<br/>
+         If still any building issues, please, fill you free to contact us for assistance using placed in tarball
+         PROBLEM-REPORTING form and its instructions.<br/>
        </answer>
     </faq>
     <!-- More faqs or parts here -->
@@ -96,7 +97,7 @@
         copy an example file and edit it by using the next FAQ guidelines.
         </p>
          <p>
-        You may start with running "%make menuconfig" configuration GUI, which 
+        You may start with running "$make menuconfig" configuration GUI, which 
         requires ncurses development package on your system. The dialog window 
         will guide you and create your configuration file in conf-user directory. 
         The current limitation of the menu-guided configuration, is that it enables 
@@ -123,10 +124,10 @@
         <p>
 Configuration file or "batch configuration file" consists from tag=value
 strings, groupped into 4 sections:<br/>
-- general;<br/>
-- login;<br/>
+- General;<br/>
+- Login;<br/>
 - UAS (user activity simulation by fetching urls and waiting for timeouts);<br/>
-- logoff;<br/>
+- Logoff;<br/>
 <br/>
 Configuration file should possess at least one client batch defined
 with the following params in each batch:<br/>
@@ -156,27 +157,7 @@ LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the <br/>
                        # or LOGIN_REQ_TYPE_GET tags by using tag=y to enable <br/> 
 #<br/>
 #LOGIN_CREDENTIALS_FILE=""# A file with strings &lt;user&gt;&lt;separator&gt;&lt;password&gt;<br/> 
-#LOGIN_POST_STR=  # POST string matrix. See below:<br/>
-#<br/>
-# To generate multiple unique users with unique passwords, use the string like<br/>
-# "user=%s%d&amp;password=%s%d". First '%s' will be substituted by the <br/>
-# value of LOGIN_USERNAME tag and '%d' by the client number. Second '%s' will<br/>
-# be substituted by LOGIN_PASSWORD tag value and second '%d' by the same client<br/>
-# number. For example, if LOGIN_USERNAME=robert, LOGIN_PASSWORD=stam<br/>
-# and LOGIN_POST_STR "user=%s%d&amp;password=%s%d", the final POST string, <br/>
-# used for the client number 1, will be  "user=robert1 password;=stam1".<br/>
-#<br/>
-# In this case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just <br/>
-# as base-words for generating unique user credentials by appending an number.<br/>
-#
-# To use the username and password 'as as', just provide LOGIN_POST_STR without <br/>
-# %d symbols, e.g. "user=%s&amp;secret=%s". Thus, all clients will have the same<br/>
-# POST credentials with the string looking like "user=robert&amp; secret=stam".<br/>
-#The option without %d symbols to be used also, when LOGIN_CREDENTIALS_FILE is defined,<br/>
-#because the credentials uniqueness is ensured by the file content.<br/>
-#<br/>
-# Note, that the words like 'username', 'user', 'password', 'secret', etc are<br/> 
-# those fields, that login users are required to fill in their POST page.<br/>
+#LOGIN_POST_STR=  # POST string matrix. See below.<br/>
 <br/>
 #LOGIN_URL=                 # A valid http or https url to be used for login<br/>
 #LOGIN_URL_USERNAME="" # Username for login url<br/>
@@ -235,27 +216,53 @@ may appear with with empty strings "", without values or just may be
 commented out by '#'.
         </p>
         <p>
+Tag LOGIN_POST_STR:<br/>
+To generate multiple unique users with unique passwords, use the string like<br/>
+"user=%s%d&amp;password=%s%d". First '%s' will be substituted by the <br/>
+value of LOGIN_USERNAME tag and '%d' by the client number. Second '%s' will<br/>
+be substituted by LOGIN_PASSWORD tag value and second '%d' by the same client<br/>
+number. For example, if LOGIN_USERNAME=robert, LOGIN_PASSWORD=stam<br/>
+and LOGIN_POST_STR "user=%s%d&amp;password=%s%d", the final POST string, <br/>
+used for the client number 1, will be  "user=robert1 password;=stam1".<br/>
+<br/>
+In this case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just <br/>
+as base-words for generating unique user credentials by appending an number.<br/>
+To use the username and password 'as as', just provide LOGIN_POST_STR without <br/>
+%d symbols, e.g. "user=%s&amp;secret=%s". Thus, all clients will have the same<br/>
+POST credentials with the string looking like "user=robert&amp; secret=stam".<br/>
+<br/>
+The option without %d symbols to be used also, when LOGIN_CREDENTIALS_FILE is defined,<br/>
+because the credentials uniqueness is ensured by the file content.<br/>
+Another allowed syntax serves to generate unique user, all using with the same password:
+"user=%s%d&amp;secret=%s"
+<br/>
+Note, that the words like 'username', 'user', 'password', 'secret', etc are<br/> 
+those fields, that login users are required to fill in their POST page.<br/>
+       </p>
+        <p>
 Tag  CLIENTS_INITIAL_INC:<br/>
-It serves for gradual increase of clients number at the loading initial phase. 
+serves for gradual increase of clients number at the loading initial phase. 
 Use the tag in GENERAL section to specify the number of loading clients to be 
 added each second till the total clients number reaches the number specified by 
 CLIENTS_NUM tag.<br/>
        </p>
         <p>
-Tag CUSTOM_HEADER is assisting to customize/add/over-write HTTP/FTP headers. 
+Tag CUSTOM_HEADER:<br/>
+is assisting to customize/add/over-write HTTP/FTP headers. 
 Up to 16 custom HTTP/FTP headers are allowed.  If a header already exits by default, 
 the custom header over-writes it. USER_AGENT tag is for User-Agent header only, 
 whereas by CUSTOM_HEADER may be added or over-written any header (including
 User-Agent). An example of batch configuration is ./conf-examples/custom_hdrs.conf.
        </p>
         <p>
-Tag LOGIN_CREDENTIALS_FILE specifies the path to the file with
-credentials (full-path or relative to curl-loader). A text file with usernames and passwords 
-with the structure of each string like: &lt;user&gt;&lt;separator&gt;&lt;password&gt;
- can be used as an input. According to RFC1738, only reserved ':', '@', '/' and 
-probably ' ' (space) are safe to use as separators between username and password. 
-An example of batch configuration is ./conf-examples/credentials_fr_file.conf and an 
-example of credentials is in ./conf-examples/credentials.cred.
+Tag LOGIN_CREDENTIALS_FILE: <br/>
+specifies the path to the file with credentials (full-path or relative to curl-loader). 
+A text file with usernames and passwords with the structure of each string like: 
+&lt;user&gt;&lt;separator&gt;&lt;password&gt;can be used as an input. 
+According to RFC1738, only reserved ':', '@', '/' and probably ' ' (space) are safe to 
+use as separators between username and password. An example of batch configuration 
+is ./conf-examples/credentials_fr_file.conf and an example of credentials is in 
+./conf-examples/credentials.cred.
       </p>
         <p>
 Note, that both quotted and non-quotted string are supported as the tags values.<br/>
@@ -285,7 +292,7 @@ For more examples, please, look at the files in "conf-examples" directory.<br/>
            a sequence number to the username and password basewords.<br/>
            <br/>
           Does somebody really needs PUT or POST methods as an option for UAS urls? <br/>
-          If yes, please, signal us.<br/>
+          If yes, please, signal it to us.<br/>
           <br/>
          The loader supports HTTP Web Authentication and Proxy Authentication.
          The supported authentication methods are Basic, Digest (RFC2617) and NTLM.
@@ -332,9 +339,9 @@ Please, look at conf-examples/ftp.conf<br/>
      What are the running environment requirements?
       </question>
       <answer>
-      Running hundreds and thousands of clients, please, do not forget:<br/>
+      Running hundred and thousand of clients, please, do not forget:<br/>
         - to increase limit of descriptors (sockets) by running e.g. <br/>
-           #ulimit -n 10000;<br/>
+           #ulimit -n 19999;<br/>
         - optionally, to set reuse of sockets in time-wait state: by setting <br/>
             #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or<br/> 
            #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;<br/>
@@ -401,20 +408,18 @@ in the logfile for errors, and when connection timeout error appears, adjust the
 connection timeout using -c command line option. Note, that the smooth mode
 is suitable for login-logoff cycles of load.<br/>
 <br/>
+Hyper-mode (command line -m0) is currently experimental. The mode is basically
+the same as the smooth mode, but is using for event demultiplexing epoll() or
+/dev/epoll instead of poll(). The mode is promising to deliver more loading clients from a 
+single thread.<br/>
+<br/>
 Another loading mode is called "storming" (-m1 command line), where all clients 
 of a batch are starting together. They are expected to finish their job within
 a certain timeout. After the timeout the clients either accomplished fetching url, 
 or are cutted and disconnected; thus, a new loading cycle begins. Storming mode 
 is better to use, when login operation is done once and not in cycles, or when the 
-tool is used just as a traffic generator. <br/>
+tool is used just as a traffic generator or to generate "storming" bursts of requests.<br/>
 <br/>
-
-<br/>
-A combination of the both modes (two separate instances of the program)
-can provide somehow realistic behavior with a "smooth" load plus
-"storming" bursts of requests.<br/>
-<br/>
-Hyper-mode (option -m0) is currently "under construction".<br/>
        </answer>
        </faq>
 
@@ -434,16 +439,16 @@ Last interval stats (interval:3 sec, clients:10, CAPS:3):<br/>
  LOGIN:         4               1<br/>
  UAS-0:         3               0<br/>
  LOGOFF:        2               0<br/>
-HTTP/FTP-Req:10,2xx:5,3xx:4,4xx:0,5xx:1,Err:0,Delay:20,Delay-2xx:12,Thr-in:12015(b/s),Thr-out:35511(b/s)<br/>
-HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,Delay:0,Delay-2xx:0,Thr-in:0(b/s),Thr-out:0(b/s)<br/>
+HTTP/FTP-Req:10,2xx:5,3xx:4,4xx:0,5xx:1,Err:0,D:20(ms),D-2xx:12(ms),T-in:12015(B/s),T-out:35511(B/s)<br/>
+HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,D:0(ms),D-2xx:0(ms),T-in:0(B/s),T-out:0(B/s)<br/>
 -----------------------------------------------------<br/>
 Summary stats since load start (load runs:24 secs, CAPS-average:4):<br/>
  Operations:    Success         Failed<br/>
  LOGIN:         0               32<br/>
  UAS-0:         0               0<br/>
  LOGOFF:        0               0<br/>
-HTTP/FTP-Req:95,2xx:47,3xx:48,4xx:0,5xx:3,Err:1,Delay:31,Delay-2xx:15,Thr-in:113921(b/s),Thr-out:330215(b/s)<br/>
-HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,Delay:0,Delay-2xx:0,Thr-in:0(b/s),Thr-out:0(b/s)<br/>
+HTTP/FTP-Req:95,2xx:47,3xx:48,4xx:0,5xx:3,Err:1,D:31(ms),D-2xx:15(ms),T-in:113921(B/s),T-out:330215(B/s)<br/>
+HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,D:0(ms),D-2xx:0(ms),T-in:0(B/s),T-out:0(B/s)<br/>
 =====================================================<br/>
 <!-- </pre> -->
 A copy of the output is also saved in the file &lt;batch-name&gt;.txt<br/>
@@ -490,10 +495,10 @@ Currently HTTP/HTTPS statistics includes the following counters:<br/>
    - server 5xx errors num;<br/>
    - other errors num, like resolving, tcp-connect, server closing or 
      empty responses number;<br/>
-   - average application server delay (msec), estimated as the time between 
+   - average application server Delay (msec), estimated as the time between 
      HTTP request and HTTP response without taking into the account network
      latency (RTT);<br/>
-   - average application server delay for 2xx (success) HTTP-responses, as above,
+   - average application server Delay for 2xx (success) HTTP-responses, as above,
      but only for 2xx responses. The motivation for that is that 3xx redirections
      and 5xx server errors/rejects may not necessarily provide a true indication
      of a testing server working functionality.<br/>
@@ -591,15 +596,15 @@ http://curl.haxx.se/lxr/source/hiper/hipev.c<br/>
      How to run a really big load?
       </question>
       <answer>
-These are the temporary instructions till we hopefully migrate
-to epoll-based I/O demultiplexing (or even kevent based?),
-supporting tens of thousand of clients in one thread without select/poll
-limitations.<br/>
+0. Try the default Smooth and Hyper (experimental) modes and see, what is 
+more appropriate for you. Smooth mode is stable and tested well. Hyper is less 
+restrictive about allowed number of clients, but still requires more developement 
+and optimization.<br/>
 <br/>
 1. Compile with optimization;<br/>
 Since you need performance compile with optimization and without debugging.<br/>
-%make cleanall <br/>
-%make optimize=1 debug=0<br/>
+$make cleanall <br/>
+$make optimize=1 debug=0<br/>
 Y may add to Makefile optimization for your particular processor by 
 -match /-mcpu gcc option directives to OPT_FLAGS.<br/>
 <br/>

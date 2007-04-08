@@ -11,6 +11,7 @@ The links, that you can find useful:<br/>
       <p>
 Good news, jobs, etc:<br/>
 <link href="http://lwn.net/">LWN</link> - linux news;<br/>
+<link href="http://kerneltrap.org/">Kernel Trap</link> - linux news and forums;<br/>
 <link href="http://www.cji.co.il">Computer Jobs Israel</link> - good news and jobs.<br/>
      <br/>
       </p>
@@ -28,11 +29,12 @@ Security:<br/>
      <br/>
       </p>
       <p>
-RFCs, Standards, Patents:<br/>
+RFCs, Standards, Patents, Papers:<br/>
 <link href="http://www.zvon.org/">Zvon RFCs</link> -  browsable RFCs;<br/>
 <link href="http://www.tech-invite/index.html">SIP Tech Invite</link> - everything about SIP;<br/>
 <link href="http://www.uspto.gov/patft/">USPTO Search</link> - US patent search;<br/>
 <link href="http://gb.espacenet.com/search97cgi/s97_cgi.exe?Action=FormGen&amp;Template=gb/en/advanced.hts">European Patent Search</link> - search for all patents: EU, US, PCTs, etc.<br/>
+<link href="http://citeseer.ist.psu.edu/">Search for Computer Science Papers</link> - better than google.<br/>
      <br/>
       </p>
       <p>
@@ -49,6 +51,14 @@ Interesting Software People:<br/>
 <link href="http://people.redhat.com/mingo/">Ingo Molnar</link> -  linux RT related patches;<br/>
 <link href="http://www.kegel.com/">Dan Kegel</link> -  a great collection of linux communication links, including "10K problem" page.<br/>
      <br/>
+      </p>
+      <p>
+Algorithms, data structures:<br/>
+<link href="http://en.wikipedia.org/wiki/List_of_algorithms">Wikipedia Algorithms</link> - wikipedia list of articles on algorithms;<br/>
+<link href="http://en.wikipedia.org/wiki/List_of_data_structures">Wikipedia Data Structures</link> - wikipedia list of articles on data structures;<br/>
+<link href="http://www.nist.gov/dads/terms.html">NIST Algorithms and Data Structures one</link> - NIST list of algorithms and data structures;<br/>
+<link href="http://www.nist.gov/dads/termsType.html">NIST Algorithms and Data Structures two</link> - NIST list of algorithms and data structures;<br/>
+      <br/>
       </p>
   </body>
 </document>

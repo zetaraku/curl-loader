@@ -11,7 +11,7 @@ Thanks to the creators and maintainers of the packages, we are using:<br/>
 the HTTP 1.1, FTP, telnet, ldap, etc client stacks;<br/>
 - <link href="http://www.openssl.org">openssl</link> for the TLS/SSL stack;<br/>
 - <link href="http://hightek.org/dialog/">dialog</link> package for the console dialog menu;<br/>
-- <link href="http://monkey.org/~provos/libevent/h">libevent</link> (Niels Provos) for the 
+- <link href="http://monkey.org/~provos/libevent/">libevent</link> (Niels Provos) for the 
 I/O event demultiplexing framework;<br/>
 - <link href="http://linux-net.osdl.org/index.php/Iproute2">iprouted2</link>, 
 <link href="http://linux-net.osdl.org/index.php/Netlink">netlink</link> and the whole 

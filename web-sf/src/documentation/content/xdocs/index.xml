@@ -39,7 +39,7 @@
              received/sent, errors from network, TLS/SSL and application (HTTP, FTP) levels.
   </p>
       <p> Virtual clients are grouped to the so-called batches of clients, performing
-              the same sort of activities. Configurable activities for the simulated clients are:
+              the same sort of activities, like:
   </p>
        <p>     - authentication login;  </p>
        <p>     - user activity simulation (UAS) by fetching several urls and timeouts in between; </p>
@@ -52,13 +52,12 @@
     <section id="features">
       <title>Features List</title>
       <p>
-          Virtual clients -  up to 2000-3000 clients from every running curl-loader 
-          process (future hyper mode will enable tens of thousand). Each client performs
-          loading from its own IP-address;
+          Virtual clients -  up to 3000-6000 clients from every running curl-loader 
+          process. Each client performs loading from its own IP-address;
       </p>
       <p>
-          Loading modes: smooth and storming. Gradual increase of virtual clients
-          number at loading start is an option for the smooth mode;
+          Loading modes: smooth, hyper and storming. Gradual increase of virtual clients
+          number at loading start is an option for smooth and hyper modes;
       </p>
       <p>
            IPv4 and IPv6 addresses and URIs;
@@ -105,7 +104,7 @@
             configurable size to prevent disk crashes;
       </p>
       <p>
-            File with Status and Statistics per each virtual client;
+            File with status and statistics per each virtual client;
       </p>
       <p>
             Dialog GUI guided creation of configuration files and well as pre-cooked 
