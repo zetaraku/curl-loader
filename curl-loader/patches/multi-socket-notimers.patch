@@ -1,0 +1,86 @@
+diff -Naru curl-7.16.2-20070326/lib/multi.c curl-7.16.2-20070326-corr/lib/multi.c
+--- curl-7.16.2-20070326/lib/multi.c	2007-04-07 13:33:34.000000000 +0300
++++ curl-7.16.2-20070326-corr/lib/multi.c	2007-04-07 20:23:32.000000000 +0300
+@@ -1685,43 +1685,45 @@
+                     in case there's no need to */
+   }
+ 
+-  /*
+-   * The loop following here will go on as long as there are expire-times left
+-   * to process in the splay and 'data' will be re-assigned for every expired
+-   * handle we deal with.
+-   */
+-  do {
+-    int key;
+-    struct timeval now;
+-
+-    /* the first loop lap 'data' can be NULL */
+-    if(data) {
+-      result = multi_runsingle(multi, data->set.one_easy);
+-
+-      if(result == CURLM_OK)
+-        /* get the socket(s) and check if the state has been changed since
+-           last */
+-        singlesocket(multi, data->set.one_easy);
+-    }
+-
+-    /* Check if there's one (more) expired timer to deal with! This function
+-       extracts a matching node if there is one */
+-
+-    now = Curl_tvnow();
+-    key = now.tv_sec; /* drop the usec part */
+-
+-    multi->timetree = Curl_splaygetbest(key, multi->timetree, &t);
+-    if(t) {
+-      /* assign 'data' to be the easy handle we just removed from the splay
+-         tree */
+-      data = t->payload;
+-      /* clear the expire time within the handle we removed from the
+-         splay tree */
+-      data->state.expiretime.tv_sec = 0;
+-      data->state.expiretime.tv_usec = 0;
+-    }
+-
+-  } while(t);
++  if (!bitmask) {
++      /*
++       * The loop following here will go on as long as there are expire-times left
++       * to process in the splay and 'data' will be re-assigned for every expired
++       * handle we deal with.
++       */
++      do {
++          int key;
++          struct timeval now;
++          
++          /* the first loop lap 'data' can be NULL */
++          if(data) {
++              result = multi_runsingle(multi, data->set.one_easy);
++              
++              if(result == CURLM_OK)
++                  /* get the socket(s) and check if the state has been changed since
++                     last */
++                  singlesocket(multi, data->set.one_easy);
++          }
++          
++          /* Check if there's one (more) expired timer to deal with! This function
++             extracts a matching node if there is one */
++          
++          now = Curl_tvnow();
++          key = now.tv_sec; /* drop the usec part */
++          
++          multi->timetree = Curl_splaygetbest(key, multi->timetree, &t);
++          if(t) {
++              /* assign 'data' to be the easy handle we just removed from the splay
++                 tree */
++              data = t->payload;
++              /* clear the expire time within the handle we removed from the
++                 splay tree */
++              data->state.expiretime.tv_sec = 0;
++              data->state.expiretime.tv_usec = 0;
++          }
++          
++      } while(t);
++  }
+ 
+   *running_handles = multi->num_alive;
+   return result;
