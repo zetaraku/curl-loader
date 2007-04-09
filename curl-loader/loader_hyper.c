@@ -40,7 +40,7 @@
 static timer_node logfile_timer_node; 
 static timer_node clients_num_inc_timer_node;
 
-#define TIMER_NEXT_LOAD 20000
+#define TIMER_NEXT_LOAD 50000
 
 static int mget_url_hyper (batch_context* bctx);
 static int mperform_hyper (batch_context* bctx, int* still_running);

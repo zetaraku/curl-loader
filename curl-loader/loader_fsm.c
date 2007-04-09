@@ -261,12 +261,13 @@ int add_loading_clients (batch_context* bctx)
  * Input -       *bctx - pointer to the batch of contexts;
  *               now_time -  current time passed in msec
  *
- * Return Code/Output - On Success - 0, on Error -1
+ * Return Code/Output - On Success - 0 or positive number eq to the num of scheduled timers, on Error -1
  ****************************************************************************************/
 int
 dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
 {
   timer_queue* tq = bctx->waiting_queue;
+  int count =0;
 
   if (!tq)
     return -1;
@@ -287,12 +288,16 @@ dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
               //         __func__);
               return -1;
             }
+          else
+          {
+              count++;
+          }
         }
       else
         break;
     }
 
-  return 0;
+  return count;
 }
 
 /****************************************************************************************
