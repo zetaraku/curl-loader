@@ -19,6 +19,7 @@ OBJ:=$(patsubst %.$(SRC_SUFFIX), $(OBJ_DIR)/$(basename %).o, $(wildcard *.$(SRC_
 
 debug ?= 1
 optimize ?= 0
+profile ?= 0
 
 # C compiler
 CC=gcc
@@ -31,7 +32,9 @@ ifeq ($(debug),1)
 DEBUG_FLAGS+= -g
 else
 DEBUG_FLAGS=
+ifeq ($(profile),0)
 OPT_FLAGS+=-fomit-frame-pointer
+endif
 endif
 
 OPENSSLDIR=$(shell $(CURDIR)/openssldir.sh)
@@ -44,7 +47,13 @@ else
 OPT_FLAGS=
 endif
 
-#OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
+ifeq ($(profile),1)
+PROF_FLAG=-pg
+else
+PROF_FLAG=
+endif
+
+OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
 
 
 #Linker mapping
@@ -66,10 +75,10 @@ LIBEVENT=./lib/libevent.a
 all: $(TARGET)
 
 $(TARGET): $(LIBCURL) $(LIBEVENT) $(OBJ)
-	$(LD) $(DEBUG_FLAGS) $(OPT_FLAGS) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
+	$(LD) $(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
 
 nobuildcurl: $(OBJ)
-	$(LD) $(DEBUG_FLAGS) $(OPT_FLAGS) -o $(TARGET) $(OBJ) $(LIBS)
+	$(LD) $(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS) -o $(TARGET) $(OBJ) $(LIBS)
 
 clean:
 	rm -f $(OBJ_DIR)/*.o $(TARGET) core*
@@ -91,7 +100,7 @@ $(LIBEVENT):
 	mkdir -p $(LIBEVENT_BUILD)
 	cd $(LIBEVENT_BUILD); tar zxfv ../../packages/libevent-$(LIBEVENT_VER).tar.gz;
 	cd $(LIBEVENT_MAKE_DIR); ./configure --prefix $(LIBEVENT_BUILD) \
-		CFLAGS="$(DEBUG_FLAGS) $(OPT_FLAGS)"
+		CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS)"
 	make -C $(LIBEVENT_MAKE_DIR); make -C $(LIBEVENT_MAKE_DIR) install
 	cp -pf $(LIBEVENT_BUILD)/include/*.h ./inc
 	cp -pf $(LIBEVENT_BUILD)/lib/libevent.a ./lib
@@ -101,7 +110,8 @@ $(LIBCURL):
 	cd ./packages; tar zxf curl-$(CURL_VER).tar.gz; ln -sf curl-$(CURL_VER) curl; \
 	patch -d curl -p1 < ../patches/curl-trace-info-error.patch; \
 	patch -d curl -p1 < ../patches/curl-remove-handle-7.16.2-20070326.patch; \
-	patch -d curl -p1 < ../patches/multi-socket-noselect.patch
+	patch -d curl -p1 < ../patches/multi-socket-noselect.patch; \
+	patch -d curl -p1 < ../patches/multi-socket-notimers.patch
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix=$(CURL_BUILD) \
         --enable-thread \
@@ -109,7 +119,7 @@ $(LIBCURL):
         --with-random=/dev/urandom \
         --with-ssl=/usr/include/openssl \
         --enable-shared=no \
-        CFLAGS="$(DEBUG_FLAGS) $(OPT_FLAGS)"
+        CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS)"
 	make -C $(CURL_BUILD); make -C $(CURL_BUILD) install;
 	mkdir -p ./inc; mkdir -p ./lib
 	cp -a $(CURL_BUILD)/include/curl ./inc/curl
@@ -122,4 +132,4 @@ $(LIBCURL):
 *.o: *.h
 
 $(OBJ_DIR)/%.o: %.c
-	$(CC) $(CFLAGS) $(OPT_FLAGS) $(DEBUG_FLAGS) $(INCDIR) -c -o $(OBJ_DIR)/$*.o $<
+	$(CC) $(CFLAGS) $(PROF_FLAG) $(OPT_FLAGS) $(DEBUG_FLAGS) $(INCDIR) -c -o $(OBJ_DIR)/$*.o $<
