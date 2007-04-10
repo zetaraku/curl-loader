@@ -88,15 +88,16 @@ static void event_cb_hyper (int fd, short kind, void *userp)
   batch_context *bctx = (batch_context *) userp;
   int st;
   CURLMcode rc;
+
   int bitset = 0;
   
   if (kind & EV_READ) {
       bitset |= CSELECT_IN;
   }
   if (kind & EV_WRITE) {
-      bitset |= CSELECT_IN;
+      bitset |= CSELECT_OUT;
   }
-  
+
   PRINTF("event_cb_hyper enter\n");
 
   /* 
@@ -105,7 +106,8 @@ static void event_cb_hyper (int fd, short kind, void *userp)
   */
   do 
     {
-        rc = curl_multi_socket_noselect(bctx->multiple_handle, fd, bitset, &st);
+      rc = curl_multi_socket_noselect(bctx->multiple_handle, fd, bitset, &st);
+      //rc = curl_multi_socket(bctx->multiple_handle, fd, &st);
     } 
   while (rc == CURLM_CALL_MULTI_PERFORM);
 
@@ -296,7 +298,7 @@ static int socket_callback (CURL *handle,
 static void update_timeout_hyper (batch_context *bctx)
 {
     (void) bctx;
-#if 0
+#if 1
   long timeout_ms;
   struct timeval timeout;
 
