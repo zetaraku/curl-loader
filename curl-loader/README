@@ -21,7 +21,7 @@ Activities of each virtual client are logged and statistics provided: resolving,
 establishment, sending of requests, receiving responses, headers and data 
 received/sent, errors from network, TLS/SSL and application (HTTP, FTP) levels.
   
-Virtual clients are grouped to the so-called batches of clients, performing
+Virtual clients are groupped to the so-called batches of clients, performing
  the same sort of activities. Configurable activities for the simulated clients are:
             - authentication login;  
             - user activity simulation (UAS) by fetching several urls and timeouts in between; 
