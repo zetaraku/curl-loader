@@ -64,7 +64,7 @@ typedef struct sock_info
 
   struct event ev;
 
-  int evset;       /* is ev currently in use ? */
+  int evset;
 
 } sock_info;
 
@@ -80,9 +80,16 @@ static int on_exit_hyper (batch_context* bctx);
 static struct event timer_event;
 static struct event timer_next_load_event;
 
-/* 
-   LIBEVENT CALLBACK: Called by libevent when we get action on a multi socket 
-*/
+
+/************************************************************************
+ * Function name - event_cb_hyper
+ *
+ * Description - A libevent callback. Called by libevent when we get action on a socket.
+ * Input -       fd - descriptor (socket)
+ *                   kind -  a bitmask of events from libevent
+ *                   *userp - user pointer, we pass pointer to batch-context structure
+ * Return Code/Output - None
+ *************************************************************************/
 static void event_cb_hyper (int fd, short kind, void *userp)
 {
   batch_context *bctx = (batch_context *) userp;
@@ -91,18 +98,19 @@ static void event_cb_hyper (int fd, short kind, void *userp)
 
   int bitset = 0;
   
-  if (kind & EV_READ) {
+  if (kind & EV_READ) 
+    {
       bitset |= CSELECT_IN;
-  }
-  if (kind & EV_WRITE) {
+    }
+  if (kind & EV_WRITE) 
+    {
       bitset |= CSELECT_OUT;
-  }
-
+    }
+  
   PRINTF("event_cb_hyper enter\n");
-
+  
   /* 
-     Tell libcurl to deal with the transfer associated 
-     with this socket 
+     Tell libcurl to deal with the transfer associated with this socket 
   */
   do 
     {
@@ -127,12 +135,16 @@ static void event_cb_hyper (int fd, short kind, void *userp)
   PRINTF("event_cb_hyper exit\n");
 }
 
-
-/* 
-   LIBEVENT CALLBACK: 
-   Called by libevent when our timeout expires 
-*/
-static void timer_cb_hyper(int fd, short kind, void *userp)
+/************************************************************************
+ * Function name - timer_cb_hyper
+ *
+ * Description - A libevent callback. Called by libevent when timeout expires
+ * Input -       fd - descriptor (socket)
+ *                   kind -  a bitmask of events from libevent
+ *                   *userp - user pointer, we pass pointer to batch-context structure
+ * Return Code/Output - None
+ *************************************************************************/
+static void timer_cb_hyper (int fd, short kind, void *userp)
 {
   (void)fd;
   (void)kind;
@@ -156,9 +168,13 @@ static void timer_cb_hyper(int fd, short kind, void *userp)
   //PRINTF("timer_cb_hyper exit\n");
 }
 
-/* 
-   Clean up the sock_info structure 
-*/
+/************************************************************************
+ * Function name - remsock
+ *
+ * Description - Clean up the sock_info structure
+ * Input -      *sinfo - pointer to sinfo structure 
+ * Return Code/Output - None
+ *************************************************************************/
 static void remsock(sock_info *sinfo)
 {
   PRINTF("remsock- enter\n");
@@ -175,18 +191,26 @@ static void remsock(sock_info *sinfo)
   sinfo->evset = 0;
 }
 
-/* 
-   Assign information to a sock_info structure 
-*/
+/************************************************************************
+ * Function name - setsock_hyper
+ *
+ * Description - Assign information to a sock_info structure
+ * Input -      *sinfo - pointer to sinfo structure to fill
+ *               socket - socket descriptor
+ *               *handle -  pointer to CURL library handle
+ *               action - bitmask of events from curl library
+ *               *bctx - pointer to batch context
+ * Return Code/Output - None
+ *************************************************************************/
 static void setsock_hyper(sock_info*sinfo, 
                     curl_socket_t socket, 
-                    CURL*handle, 
-                    int act,
-                    batch_context * bctx)
+                    CURL* handle, 
+                    int action,
+                    batch_context* bctx)
 {
   int kind = 
-    (act & CURL_POLL_IN ? EV_READ : 0)|
-    (act & CURL_POLL_OUT ? EV_WRITE : 0)|
+    (action & CURL_POLL_IN ? EV_READ : 0)|
+    (action & CURL_POLL_OUT ? EV_WRITE : 0)|
     EV_PERSIST;
 
   (void) handle;
@@ -194,7 +218,7 @@ static void setsock_hyper(sock_info*sinfo,
   PRINTF("setsock_hyper- enter\n");
 
   sinfo->sockfd = socket;
-  sinfo->action = act;
+  sinfo->action = action;
 
   if (sinfo->evset) 
     { 
@@ -207,30 +231,48 @@ static void setsock_hyper(sock_info*sinfo,
   event_add(&sinfo->ev, NULL);
 }
 
-/* 
-   Initialize a new sock_info structure 
-*/
+/************************************************************************
+ * Function name - setsock_hyper
+ *
+ * Description - Initialize a new sock_info structure
+ *
+ * Input -   socket - socket descriptor   
+ *               *handle -  pointer to CURL library handle
+ *               action - bitmask of events from curl library
+ *               *cctx - pointer to client context
+ *               *sinfo - pointer to sinfo structure to fill
+ *               *bctx - pointer to batch context
+ * Return Code/Output - None
+ *************************************************************************/
 static void addsock_hyper(curl_socket_t socket, 
-                    CURL *easy, 
-                    int action, 
+                    CURL *handle, 
+                    int action,
                     client_context *cctx, 
                     sock_info *sinfo, 
                     batch_context *bctx) 
 {
   PRINTF("addsock_hyper - enter\n");
 
-  setsock_hyper (sinfo, socket, easy, action, bctx);
+  setsock_hyper (sinfo, socket, handle, action, bctx);
 
-  curl_multi_assign(bctx->multiple_handle, socket, cctx);
+  curl_multi_assign (bctx->multiple_handle, socket, cctx);
 }
 
 static char *whatstr[]={ "none", "IN", "OUT", "INOUT", "REMOVE" };
 
-
-/* 
-   CURL CALLBACK: 
-   socket event of multi user handle
-*/
+/************************************************************************
+ * Function name - socket_callback
+ *
+ * Description - A libcurl socket callback. Called by libcurl, when there is an
+ *                    event on socket. Unfortunately, it is called only for the trasfer stage.
+ *
+ * Input -       *handle - pointer to CURL handle
+ *                   socket - socket descriptor
+ *                  what - libcurl event bitmask
+ *                  *cbp - libcurl callback pointer; we pass batch context here
+ *                   *sockp - pointer to the handle user-assigned private data, here client-context 
+ * Return Code/Output - On Success - 0, on Error -1
+ *************************************************************************/
 static int socket_callback (CURL *handle, 
                     curl_socket_t socket, 
                     int what, 
@@ -278,8 +320,8 @@ static int socket_callback (CURL *handle,
       if (!sinfo->evset) 
         {
           PRINTF("Adding data: %s%s\n",
-                 what&CURL_POLL_IN?"READ":"",
-                 what&CURL_POLL_OUT?"WRITE":"" );
+                 what & CURL_POLL_IN ? "READ":"",
+                 what & CURL_POLL_OUT ? "WRITE":"" );
 
           addsock_hyper (socket, handle, what, cctx, sinfo, bctx);
         }
@@ -292,9 +334,15 @@ static int socket_callback (CURL *handle,
   return 0;
 }
 
-/* 
-   Update the event timer after curl_multi library calls
-*/
+/****************************************************************************************
+ * Function name - update_timeout_hyper
+ *
+ * Description - Unclear, whether we need it? Update the event timer 
+ *                     after curl_multi library calls?
+ *
+ * Input -       *bctx - pointer to the batch of contexts
+ * Return Code/Output - None
+ ****************************************************************************************/
 static void update_timeout_hyper (batch_context *bctx)
 {
     (void) bctx;
@@ -317,6 +365,18 @@ static void update_timeout_hyper (batch_context *bctx)
 #endif
 }
 
+
+/************************************************************************
+ * Function name - setsock_hyper
+ *
+ * Description - Called on timer. Makes next load actions and dispatches
+ *                  expired timers on the waiting queue.
+ *
+ * Input -   fd - socket descriptor   
+ *               kind - bitmask of events from libevent
+ *               *userp - libevent passed pointer to user data; here is batch context
+ * Return Code/Output - None
+ *************************************************************************/
 static void next_load_cb_hyper (int fd, short kind, void *userp)
 {
   (void)fd;
@@ -341,18 +401,6 @@ static void next_load_cb_hyper (int fd, short kind, void *userp)
   event_add(&timer_next_load_event, &tv);  
 }
 
-#if 0 
-/* CURLOPT_PROGRESSFUNCTION */
-int prog_cb (void *p, double dltotal, double dlnow, double ult, double uln)
-{
-  (void) ult;
-  (void) uln;
-  PRINTF("Progress: ctx %p (%g/%g)\n", p, dlnow, dltotal);
-  return 0;
-}
-#endif
-
-
 /****************************************************************************************
  * Function name - user_activity_hyper
  *
@@ -368,6 +416,12 @@ int user_activity_hyper (client_context* cctx_array)
   long clients_num_inc_id = -1;
   sock_info *sinfo;
   int k, st;
+
+  if (!bctx)
+    {
+      fprintf (stderr, "%s - error: bctx is a NULL pointer.\n", __func__);
+      return -1;
+    }
 
   /* Init libevent library */
   event_init ();
@@ -387,22 +441,11 @@ int user_activity_hyper (client_context* cctx_array)
       sinfo = calloc (1, sizeof (sock_info));
       if (!sinfo)
         {
+           fprintf (stderr, "%s - error: allocation of sock_info failed.\n", __func__);
           return -1;
         }
 
       bctx->cctx_array[k].ext_data = sinfo;
-
-      /*
-      curl_easy_setopt (bctx->cctx_array[k].handle, 
-                        CURLOPT_PRIVATE, 
-                        bctx->cctx_array + k);
-      */
-    }
-
-  if (!bctx)
-    {
-      fprintf (stderr, "%s - error: bctx is a NULL pointer.\n", __func__);
-      return -1;
     }
 
   /* ======== Make specific allocations and initializations =======*/
@@ -474,8 +517,6 @@ int user_activity_hyper (client_context* cctx_array)
 
   evtimer_set(&timer_event, timer_cb_hyper, bctx);
 
-
-
   while (CURLM_CALL_MULTI_PERFORM == 
          curl_multi_socket_all(bctx->multiple_handle, &st))
          ;
@@ -492,8 +533,6 @@ int user_activity_hyper (client_context* cctx_array)
   /* 
      ========= Run the loading machinery ================
   */
-
-
   if (mget_url_hyper (bctx) == -1)
   {
       fprintf (stderr, "%s error: mget_url () failed.\n", __func__) ;

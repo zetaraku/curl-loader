@@ -110,8 +110,7 @@ $(LIBCURL):
 	cd ./packages; tar zxf curl-$(CURL_VER).tar.gz; ln -sf curl-$(CURL_VER) curl; \
 	patch -d curl -p1 < ../patches/curl-trace-info-error.patch; \
 	patch -d curl -p1 < ../patches/curl-remove-handle-7.16.2-20070326.patch; \
-	patch -d curl -p1 < ../patches/multi-socket-noselect.patch; \
-	patch -d curl -p1 < ../patches/multi-socket-notimers.patch
+	patch -d curl -p1 < ../patches/multi-socket-noselect.patch
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix=$(CURL_BUILD) \
         --enable-thread \
