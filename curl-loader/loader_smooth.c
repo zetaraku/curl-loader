@@ -42,7 +42,9 @@ static timer_node logfile_timer_node;
 static timer_node clients_num_inc_timer_node;
 
 static int mget_url_smooth (batch_context* bctx);
-static int mperform_smooth (batch_context* bctx, int* still_running);
+static int mperform_smooth (batch_context* bctx,
+                            unsigned long* now_time,
+                            int* still_running);
 
 /****************************************************************************************
  * Function name - user_activity_smooth
@@ -181,19 +183,22 @@ int user_activity_smooth (client_context* cctx_array)
  ****************************************************************************************/
 static int mget_url_smooth (batch_context* bctx)  		       
 {
-  float max_timeout = DEFAULT_SMOOTH_URL_COMPLETION_TIME;
+  int max_timeout_msec = 1000;
+    //    DEFAULT_SMOOTH_URL_COMPLETION_TIME*1000;
+  unsigned long now_time = get_tick_count ();
+  int cycle_counter = 0;
     
-  if (bctx->uas_url_ctx_array)
-    {
-      max_timeout = bctx->uas_url_ctx_array[0].url_completion_time;
-    }
+  //if (bctx->uas_url_ctx_array)
+  //  {
+  //   max_timeout_msec = bctx->uas_url_ctx_array[0].url_completion_time*1000;
+  // }
  
   int still_running = 0;
   struct timeval timeout;
 
-  mperform_smooth (bctx, &still_running);
+  mperform_smooth (bctx, &now_time, &still_running);
 
-  while (still_running && max_timeout > 0.0) 
+  while (max_timeout_msec > 0) 
     {
       int rc, maxfd;
       fd_set fdread, fdwrite, fdexcep;
@@ -202,23 +207,38 @@ static int mget_url_smooth (batch_context* bctx)
       timeout.tv_sec = 0;
       timeout.tv_usec = 250000;
 
-      max_timeout -= ((float)timeout.tv_sec + (float)timeout.tv_usec/1000000.0) ; 
+      max_timeout_msec -= timeout.tv_sec*1000 + timeout.tv_usec * 0.001;
+
       curl_multi_fdset(bctx->multiple_handle, &fdread, &fdwrite, &fdexcep, &maxfd);
 
       //fprintf (stderr, "%s - Waiting for %d clients with seconds %f.\n", 
       //name, still_running, max_timeout);
 
-      rc = select (maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout) ;
+      rc = select (maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout);
+
       switch(rc)
         {
         case -1: /* select error */
           break;
-        case 0:
+
+        case 0: /* timeout */
+          now_time = get_tick_count ();
         default: /* timeout or readable/writable sockets */
-          mperform_smooth (bctx, &still_running);            
+          mperform_smooth (bctx, &now_time, &still_running);            
           break;
         }
-    }	 
+          
+      if (! (++cycle_counter % TIME_RECALCULATION_CYCLES_NUM))
+        {
+          now_time = get_tick_count ();
+          dispatch_expired_timers (bctx, now_time);
+        }
+
+      if (!rc)
+        {
+          dispatch_expired_timers (bctx, now_time);
+        }
+    } 
   return 0;
 }
 
@@ -235,13 +255,14 @@ static int mget_url_smooth (batch_context* bctx)
  *               
  * Return Code/Output - On Success - 0, on Error -1
  ****************************************************************************************/
-static int mperform_smooth (batch_context* bctx, int* still_running)
+static int mperform_smooth (batch_context* bctx, 
+                            unsigned long* now_time, 
+                            int* still_running)
 {
   CURLM *mhandle =  bctx->multiple_handle;
   int cycle_counter = 0;	
   int msg_num = 0;
   const int snapshot_timeout = snapshot_statistics_timeout*1000;
-  unsigned long now_time;
   CURLMsg *msg;
   int sched_now = 0; 
     
@@ -249,11 +270,9 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
         curl_multi_perform(mhandle, still_running))
     ;
 
-  now_time = get_tick_count ();
-
-  if ((long)(now_time - bctx->last_measure) > snapshot_timeout) 
+  if ((long)(*now_time - bctx->last_measure) > snapshot_timeout) 
     {
-      dump_snapshot_interval (bctx, now_time);
+      dump_snapshot_interval (bctx, *now_time);
     }
 
   while( (msg = curl_multi_info_read (mhandle, &msg_num)) != 0)
@@ -284,11 +303,11 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
 
           if (! (++cycle_counter % TIME_RECALCULATION_MSG_NUM))
             {
-              now_time = get_tick_count ();
+              *now_time = get_tick_count ();
             }
 
           /*cstate client_state =  */
-          load_next_step (cctx, now_time, &sched_now);
+          load_next_step (cctx, *now_time, &sched_now);
 
           //fprintf (stderr, "%s - after load_next_step client state %d.\n", __func__, client_state);
 
@@ -300,8 +319,6 @@ static int mperform_smooth (batch_context* bctx, int* still_running)
           cycle_counter++;
         }
     }
-
-  dispatch_expired_timers (bctx, now_time);
 
   return 0;
 }
