@@ -231,13 +231,9 @@ static int mget_url_smooth (batch_context* bctx)
       if (! (++cycle_counter % TIME_RECALCULATION_CYCLES_NUM))
         {
           now_time = get_tick_count ();
-          dispatch_expired_timers (bctx, now_time);
         }
 
-      if (!rc)
-        {
-          dispatch_expired_timers (bctx, now_time);
-        }
+      dispatch_expired_timers (bctx, now_time);
     } 
   return 0;
 }
