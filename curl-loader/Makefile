@@ -53,7 +53,7 @@ else
 PROF_FLAG=
 endif
 
-OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
+#OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
 
 
 #Linker mapping
