@@ -111,13 +111,13 @@ diff -Naru curl-7.16.2/lib/multi.c curl-7.16.2-mod/lib/multi.c
        /* bad bad bad bad bad bad bad */
        return CURLM_INTERNAL_ERROR;
  
-+    /* set socket event bitmask */
-+    data->set.one_easy->easy_conn->cselect_bits = ev_bitmask;
++    if (data->set.one_easy->easy_conn)  /* set socket event bitmask */
++      data->set.one_easy->easy_conn->cselect_bits = ev_bitmask;
 +
      result = multi_runsingle(multi, data->set.one_easy);
  
-+    data->set.one_easy->easy_conn->cselect_bits = 0;
-+
++    if (data->set.one_easy->easy_conn)
++      data->set.one_easy->easy_conn->cselect_bits = 0;
      if(result == CURLM_OK)
        /* get the socket(s) and check if the state has been changed since
           last */
