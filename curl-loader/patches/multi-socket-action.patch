@@ -1,0 +1,300 @@
+diff -Naru curl-7.16.2/docs/libcurl/curl_multi_socket.3 curl-7.16.2-mod/docs/libcurl/curl_multi_socket.3
+--- curl-7.16.2/docs/libcurl/curl_multi_socket.3	2006-08-02 21:08:06.000000000 +0300
++++ curl-7.16.2-mod/docs/libcurl/curl_multi_socket.3	2007-04-13 15:36:26.000000000 +0300
+@@ -6,6 +6,9 @@
+ .SH SYNOPSIS
+ #include <curl/curl.h>
+ 
++CURLMcode curl_multi_socket_action(CURLM * multi_handle, 
++                        curl_socket_t sockfd, int ev_bitmask, int *running_handles);
++
+ CURLMcode curl_multi_socket(CURLM * multi_handle, curl_socket_t sockfd,
+                             int *running_handles);
+ 
+@@ -17,13 +20,19 @@
+ detected to have \&"action" on them and let libcurl perform. This allows
+ libcurl to not have to scan through all possible file descriptors to check for
+ action. When the application has detected action on a socket handled by
+-libcurl, it should call \fIcurl_multi_socket(3)\fP with the \fBsockfd\fP
+-argument set to the socket with the action.
++libcurl, it should call \fIcurl_multi_socket_action(3)\fP with the \fBsockfd\fP
++argument set to the socket with the action. When the events on a socket 
++are known, they can be passed as an events bitmask \fBev_bitmask\fP by
++first setting \fBev_bitmask\fP to 0, and then adding using bitwise OR (|)
++any combination of events to be choosen from CURL_CSELECT_IN,
++CURL_CSELECT_OUT or CURL_CSELECT_ERR. When the events on
++a socket are unknown, pass 0 instead, and libcurl will test the descriptor
++internally.  
+ 
+ At return, the int \fBrunning_handles\fP points to will contain the number of
+ still running easy handles within the multi handle. When this number reaches
+ zero, all transfers are complete/done. Note that when you call
+-\fIcurl_multi_socket(3)\fP on a specific socket and the counter decreases by
++\fIcurl_multi_socket_action(3)\fP on a specific socket and the counter decreases by
+ one, it DOES NOT necessarily mean that this exact socket/transfer is the one
+ that completed. Use \fIcurl_multi_info_read(3)\fP to figure out which easy
+ handle that completed.
+@@ -44,6 +53,10 @@
+ the \fBcurl_multi_socket(3)\fP function with the \fBsockfd\fP argument set to
+ CURL_SOCKET_TIMEOUT.
+ 
++Usage of \fIcurl_multi_socket(3)\fP is depricated, whereas the function is
++equivalent to \fIcurl_multi_socket_action(3)\fP, when \fBev_bitmask\fP is set 
++to 0.
++
+ .SH "CALLBACK DETAILS"
+ 
+ The socket \fBcallback\fP function uses a prototype like this
+@@ -115,7 +128,7 @@
+ 
+ 7. Wait for action on any of libcurl's sockets
+ 
+-8, When action happens, call curl_multi_socket() for the socket(s) that got
++8, When action happens, call curl_multi_socket_action() for the socket(s) that got
+ action.
+ 
+ 9. Go back to step 6.
+diff -Naru curl-7.16.2/include/curl/multi.h curl-7.16.2-mod/include/curl/multi.h
+--- curl-7.16.2/include/curl/multi.h	2006-10-12 10:36:50.000000000 +0200
++++ curl-7.16.2-mod/include/curl/multi.h	2007-04-13 15:45:02.000000000 +0300
+@@ -222,8 +222,16 @@
+ #define CURL_POLL_INOUT  3
+ #define CURL_POLL_REMOVE 4
+ 
++
++
+ #define CURL_SOCKET_TIMEOUT CURL_SOCKET_BAD
+ 
++#define CURL_CSELECT_IN   0x01
++#define CURL_CSELECT_OUT  0x02
++#define CURL_CSELECT_ERR  0x04
++
++
++
+ typedef int (*curl_socket_callback)(CURL *easy,      /* easy handle */
+                                     curl_socket_t s, /* socket */
+                                     int what,        /* see above */
+@@ -249,6 +257,9 @@
+ CURL_EXTERN CURLMcode curl_multi_socket(CURLM *multi_handle, curl_socket_t s,
+                                         int *running_handles);
+ 
++CURL_EXTERN CURLMcode curl_multi_socket_action(CURLM *multi_handle, curl_socket_t s,
++                                                 int ev_bitmask, int *running_handles);
++
+ CURL_EXTERN CURLMcode curl_multi_socket_all(CURLM *multi_handle,
+                                             int *running_handles);
+ 
+diff -Naru curl-7.16.2/lib/connect.c curl-7.16.2-mod/lib/connect.c
+--- curl-7.16.2/lib/connect.c	2007-03-27 23:14:07.000000000 +0200
++++ curl-7.16.2-mod/lib/connect.c	2007-04-13 15:38:41.000000000 +0300
+@@ -206,7 +206,7 @@
+     /* timeout, no connect today */
+     return WAITCONN_TIMEOUT;
+ 
+-  if(rc & CSELECT_ERR)
++  if(rc & CURL_CSELECT_ERR)
+     /* error condition caught */
+     return WAITCONN_FDSET_ERROR;
+ 
+diff -Naru curl-7.16.2/lib/multi.c curl-7.16.2-mod/lib/multi.c
+--- curl-7.16.2/lib/multi.c	2007-04-10 23:46:40.000000000 +0300
++++ curl-7.16.2-mod/lib/multi.c	2007-04-13 16:09:43.000000000 +0300
+@@ -1661,6 +1661,7 @@
+ static CURLMcode multi_socket(struct Curl_multi *multi,
+                               bool checkall,
+                               curl_socket_t s,
++                              int ev_bitmask,
+                               int *running_handles)
+ {
+   CURLMcode result = CURLM_OK;
+@@ -1698,8 +1699,13 @@
+       /* bad bad bad bad bad bad bad */
+       return CURLM_INTERNAL_ERROR;
+ 
++    /* set socket event bitmask */
++    data->set.one_easy->easy_conn->cselect_bits = ev_bitmask;
++
+     result = multi_runsingle(multi, data->set.one_easy);
+ 
++    data->set.one_easy->easy_conn->cselect_bits = 0;
++
+     if(result == CURLM_OK)
+       /* get the socket(s) and check if the state has been changed since
+          last */
+@@ -1796,7 +1802,17 @@
+                             int *running_handles)
+ {
+   CURLMcode result = multi_socket((struct Curl_multi *)multi_handle, FALSE, s,
+-                                  running_handles);
++                                  0, running_handles);
++  if (CURLM_OK == result)
++    update_timer((struct Curl_multi *)multi_handle);
++  return result;
++}
++
++CURLMcode curl_multi_socket_action(CURLM *multi_handle, curl_socket_t s,
++                                     int ev_bitmask, int *running_handles)
++{
++  CURLMcode result = multi_socket((struct Curl_multi *)multi_handle, FALSE, s,
++                                  ev_bitmask, running_handles);
+   if (CURLM_OK == result)
+     update_timer((struct Curl_multi *)multi_handle);
+   return result;
+@@ -1806,7 +1822,7 @@
+ 
+ {
+   CURLMcode result = multi_socket((struct Curl_multi *)multi_handle,
+-                                  TRUE, CURL_SOCKET_BAD, running_handles);
++                                  TRUE, CURL_SOCKET_BAD, 0, running_handles);
+   if (CURLM_OK == result)
+     update_timer((struct Curl_multi *)multi_handle);
+   return result;
+diff -Naru curl-7.16.2/lib/select.c curl-7.16.2-mod/lib/select.c
+--- curl-7.16.2/lib/select.c	2007-04-04 23:10:24.000000000 +0300
++++ curl-7.16.2-mod/lib/select.c	2007-04-13 15:39:28.000000000 +0300
+@@ -161,7 +161,7 @@
+  * Return values:
+  *   -1 = system call error or fd >= FD_SETSIZE
+  *    0 = timeout
+- *    CSELECT_IN | CSELECT_OUT | CSELECT_ERR
++ *    CURL_CSELECT_IN | CURL_CSELECT_OUT | CURL_CSELECT_ERR
+  */
+ int Curl_socket_ready(curl_socket_t readfd, curl_socket_t writefd, int timeout_ms)
+ {
+@@ -223,16 +223,16 @@
+   num = 0;
+   if (readfd != CURL_SOCKET_BAD) {
+     if (pfd[num].revents & (POLLRDNORM|POLLIN|POLLERR|POLLHUP))
+-      ret |= CSELECT_IN;
++      ret |= CURL_CSELECT_IN;
+     if (pfd[num].revents & (POLLRDBAND|POLLPRI|POLLNVAL))
+-      ret |= CSELECT_ERR;
++      ret |= CURL_CSELECT_ERR;
+     num++;
+   }
+   if (writefd != CURL_SOCKET_BAD) {
+     if (pfd[num].revents & (POLLWRNORM|POLLOUT))
+-      ret |= CSELECT_OUT;
++      ret |= CURL_CSELECT_OUT;
+     if (pfd[num].revents & (POLLERR|POLLHUP|POLLNVAL))
+-      ret |= CSELECT_ERR;
++      ret |= CURL_CSELECT_ERR;
+   }
+ 
+   return ret;
+@@ -279,15 +279,15 @@
+   ret = 0;
+   if (readfd != CURL_SOCKET_BAD) {
+     if (FD_ISSET(readfd, &fds_read))
+-      ret |= CSELECT_IN;
++      ret |= CURL_CSELECT_IN;
+     if (FD_ISSET(readfd, &fds_err))
+-      ret |= CSELECT_ERR;
++      ret |= CURL_CSELECT_ERR;
+   }
+   if (writefd != CURL_SOCKET_BAD) {
+     if (FD_ISSET(writefd, &fds_write))
+-      ret |= CSELECT_OUT;
++      ret |= CURL_CSELECT_OUT;
+     if (FD_ISSET(writefd, &fds_err))
+-      ret |= CSELECT_ERR;
++      ret |= CURL_CSELECT_ERR;
+   }
+ 
+   return ret;
+diff -Naru curl-7.16.2/lib/select.h curl-7.16.2-mod/lib/select.h
+--- curl-7.16.2/lib/select.h	2007-03-27 23:14:07.000000000 +0200
++++ curl-7.16.2-mod/lib/select.h	2007-04-13 12:20:55.000000000 +0300
+@@ -76,10 +76,6 @@
+ #define POLLRDBAND POLLPRI
+ #endif
+ 
+-#define CSELECT_IN   0x01
+-#define CSELECT_OUT  0x02
+-#define CSELECT_ERR  0x04
+-
+ int Curl_socket_ready(curl_socket_t readfd, curl_socket_t writefd, int timeout_ms);
+ 
+ int Curl_poll(struct pollfd ufds[], unsigned int nfds, int timeout_ms);
+diff -Naru curl-7.16.2/lib/socks.c curl-7.16.2-mod/lib/socks.c
+--- curl-7.16.2/lib/socks.c	2007-03-30 21:59:15.000000000 +0200
++++ curl-7.16.2-mod/lib/socks.c	2007-04-13 15:40:14.000000000 +0300
+@@ -383,7 +383,7 @@
+     return CURLE_OPERATION_TIMEDOUT;
+   }
+ 
+-  if(result & CSELECT_ERR) {
++  if(result & CURL_CSELECT_ERR) {
+     failf(conn->data, "SOCKS5: error occured during connection");
+     return CURLE_COULDNT_CONNECT;
+   }
+@@ -415,7 +415,7 @@
+     return CURLE_OPERATION_TIMEDOUT;
+   }
+ 
+-  if(result & CSELECT_ERR) {
++  if(result & CURL_CSELECT_ERR) {
+     failf(conn->data, "SOCKS5 read error occured");
+     return CURLE_RECV_ERROR;
+   }
+diff -Naru curl-7.16.2/lib/transfer.c curl-7.16.2-mod/lib/transfer.c
+--- curl-7.16.2/lib/transfer.c	2007-04-10 23:46:40.000000000 +0300
++++ curl-7.16.2-mod/lib/transfer.c	2007-04-13 16:11:38.000000000 +0300
+@@ -314,9 +314,10 @@
+ 
+   curl_socket_t fd_read;
+   curl_socket_t fd_write;
+-  int select_res;
+-
+   curl_off_t contentlength;
++  int select_res = conn->cselect_bits;
++
++  conn->cselect_bits = 0;
+ 
+   /* only use the proper socket if the *_HOLD bit is not set simultaneously as
+      then we are in rate limiting state in that transfer direction */
+@@ -331,8 +332,12 @@
+   else
+     fd_write = CURL_SOCKET_BAD;
+ 
+-  select_res = Curl_socket_ready(fd_read, fd_write, 0);
+-  if(select_res == CSELECT_ERR) {
++   if (!select_res) { /* Call for select()/poll() only, if read/write/error 
++                         status is not known. */
++       select_res = Curl_socket_ready(fd_read, fd_write, 0);
++   }
++ 
++  if(select_res == CURL_CSELECT_ERR) {
+     failf(data, "select/poll returned error");
+     return CURLE_SEND_ERROR;
+   }
+@@ -342,7 +347,7 @@
+        the stream was rewound (in which case we have data in a
+        buffer) */
+     if((k->keepon & KEEP_READ) &&
+-       ((select_res & CSELECT_IN) || conn->bits.stream_was_rewound)) {
++       ((select_res & CURL_CSELECT_IN) || conn->bits.stream_was_rewound)) {
+       /* read */
+       bool is_empty_data = FALSE;
+ 
+@@ -1350,7 +1355,7 @@
+ 
+     /* If we still have writing to do, we check if we have a writable
+        socket. */
+-    if((k->keepon & KEEP_WRITE) && (select_res & CSELECT_OUT)) {
++    if((k->keepon & KEEP_WRITE) && (select_res & CURL_CSELECT_OUT)) {
+       /* write */
+ 
+       int i, si;
+diff -Naru curl-7.16.2/lib/urldata.h curl-7.16.2-mod/lib/urldata.h
+--- curl-7.16.2/lib/urldata.h	2007-04-10 23:46:40.000000000 +0300
++++ curl-7.16.2-mod/lib/urldata.h	2007-04-13 16:03:14.000000000 +0300
+@@ -900,6 +900,8 @@
+   union {
+     struct ftp_conn ftpc;
+   } proto;
++
++  int cselect_bits; /* bitmask of socket events */
+ };
+ 
+ /* The end of connectdata. */

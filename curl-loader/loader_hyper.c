@@ -100,11 +100,11 @@ static void event_cb_hyper (int fd, short kind, void *userp)
   
   if (kind & EV_READ) 
     {
-      bitset |= CSELECT_IN;
+      bitset |= CURL_CSELECT_IN;
     }
   if (kind & EV_WRITE) 
     {
-      bitset |= CSELECT_OUT;
+      bitset |= CURL_CSELECT_OUT;
     }
   
   PRINTF("event_cb_hyper enter\n");
