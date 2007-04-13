@@ -40,7 +40,7 @@
 static timer_node logfile_timer_node; 
 static timer_node clients_num_inc_timer_node;
 
-#define TIMER_NEXT_LOAD 50000
+#define TIMER_NEXT_LOAD 10000
 
 static int mget_url_hyper (batch_context* bctx);
 static int mperform_hyper (batch_context* bctx, int* still_running);
@@ -114,8 +114,8 @@ static void event_cb_hyper (int fd, short kind, void *userp)
   */
   do 
     {
-      rc = curl_multi_socket_noselect(bctx->multiple_handle, fd, bitset, &st);
-      //rc = curl_multi_socket(bctx->multiple_handle, fd, &st);
+      rc = curl_multi_socket_action (bctx->multiple_handle, fd, bitset, &st);
+      //rc = curl_multi_socket (bctx->multiple_handle, fd, &st);
     } 
   while (rc == CURLM_CALL_MULTI_PERFORM);
 

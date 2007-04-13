@@ -4,28 +4,33 @@ TAGFILE=.tagfile
 
 BUILD=$(shell pwd)/build
 
-CURL_BUILD=$(BUILD)/curlcurl-remove-handle-7.16.2-20070326.patch
-#CURL_VER:=7.16.1
-CURL_VER:=7.16.2-20070326
+CURL_BUILD=$(BUILD)/curl
+CURL_VER:=7.16.2
 
 LIBEVENT_BUILD=$(BUILD)/libevent
 LIBEVENT_VER:=1.3
 LIBEVENT_MAKE_DIR=$(LIBEVENT_BUILD)/libevent-$(LIBEVENT_VER)
 
-
 OBJ_DIR:=obj
 SRC_SUFFIX:=c
 OBJ:=$(patsubst %.$(SRC_SUFFIX), $(OBJ_DIR)/$(basename %).o, $(wildcard *.$(SRC_SUFFIX)))
 
-debug ?= 1
-optimize ?= 0
-profile ?= 0
+OPENSSLDIR=$(shell $(CURDIR)/openssldir.sh)
 
 # C compiler
 CC=gcc
 
 #C Compiler Flags
 CFLAGS= -W -Wall -Wpointer-arith -pipe -DCURL_LOADER_FD_SETSIZE=20000
+
+
+
+#
+# Making options: e.g. $make optimize=1 debug=0 profile=1 
+#
+debug ?= 1
+optimize ?= 0
+profile ?= 0
 
 #Debug flags
 ifeq ($(debug),1)
@@ -37,8 +42,6 @@ OPT_FLAGS+=-fomit-frame-pointer
 endif
 endif
 
-OPENSSLDIR=$(shell $(CURDIR)/openssldir.sh)
-
 #Optimization flags
 ifeq ($(optimize),1)
 OPT_FLAGS+= -O3 -ffast-math -finline-functions -funroll-all-loops \
@@ -47,13 +50,17 @@ else
 OPT_FLAGS=
 endif
 
+# CPU tuning flags
+#OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
+
+#Profiling flags
 ifeq ($(profile),1)
 PROF_FLAG=-pg
 else
 PROF_FLAG=
 endif
 
-#OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
+
 
 
 #Linker mapping
@@ -68,7 +75,7 @@ LIBS= -ldl -lpthread -lrt -lncurses -lidn -lcurl -levent -lz -lssl -lcrypto
 # Include directories
 INCDIR=-I. -I./inc -I$(OPENSSLDIR)/include
 
-# 
+# Targets
 LIBCURL=./lib/libcurl.a
 LIBEVENT=./lib/libevent.a
 
@@ -108,9 +115,8 @@ $(LIBEVENT):
 
 $(LIBCURL):
 	cd ./packages; tar zxf curl-$(CURL_VER).tar.gz; ln -sf curl-$(CURL_VER) curl; \
-	patch -d curl -p1 < ../patches/curl-trace-info-error.patch; \
-	patch -d curl -p1 < ../patches/curl-remove-handle-7.16.2-20070326.patch; \
-	patch -d curl -p1 < ../patches/multi-socket-noselect.patch
+	patch -d curl -p1 < ../patches/multi-socket-noselect.patch; \
+	patch -d curl -p1 < ../patches/curl-trace-info-error.patch
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix=$(CURL_BUILD) \
         --enable-thread \
