@@ -1,5 +1,9 @@
 version 0.29 ?
 
+* Fixed bug with sprintf overflow of statistics and logs filenames.
+   Thanks to Alexandre Bezroutchko <abb@scanit.be> for pointing
+   this issue.
+
 * Usage of get_time_tick () with gettimeofday () inside has been 
    decreased by calling it in cycles only for each
    TIME_RECALCULATION_MSG_NUM (10) cycle.

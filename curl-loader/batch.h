@@ -34,7 +34,8 @@
 #include "url.h"
 #include "statistics.h"
 
-#define BATCH_NAME_SIZE 32
+#define BATCH_NAME_SIZE 64
+#define BATCH_NAME_EXTRA_SIZE 6
 #define POST_BUFFER_SIZE 256
 
 #define CUSTOM_HTTP_HDRS_MAX_NUM 16
@@ -69,10 +70,10 @@ typedef struct batch_context
   char batch_name[BATCH_NAME_SIZE];
 
   /* Logfile <batch-name>.log */
-  char batch_logfile[BATCH_NAME_SIZE+4];
+  char batch_logfile[BATCH_NAME_SIZE+BATCH_NAME_EXTRA_SIZE];
 
   /* Statistics file <batch-name>.txt */
-  char batch_statistics[BATCH_NAME_SIZE+4];
+  char batch_statistics[BATCH_NAME_SIZE+BATCH_NAME_EXTRA_SIZE];
 
   /* Number of clients (each client with its own IP-address) in the batch */
   int client_num;
