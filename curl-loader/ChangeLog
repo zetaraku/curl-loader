@@ -1,3 +1,18 @@
+version 0.29 ?
+
+* Usage of get_time_tick () with gettimeofday () inside has been 
+   decreased by calling it in cycles only for each
+   TIME_RECALCULATION_MSG_NUM (10) cycle.
+	
+* Busy-looping for the default smooth mode has been fixed.
+	
+* Hyper-mode bug fixed, when CSELECT_IN even was used, when
+   CSELECT_OUT was appropriate.
+
+* Hyper-mode bug fixed with no clients scheduling for load, when
+   CLIENT_INITIAL_INC=0 or the tag is not defined.
+
+
 version 0.28 08/04/2007, svn- 270
 
 * Improved validation of environment issue (allowed number of open
