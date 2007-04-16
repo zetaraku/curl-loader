@@ -56,7 +56,7 @@ int test_environment (batch_context* bctx)
       fprintf(stderr,
               "%s - ERROR: the current limit of open descriptors for the shell (%d) \n"
               "is below the number of clients in the batch (%d).\n"
-              "Please, increase the limit, e.g. by running #ulimit -n %d\n",
+              "Please, increase the limit, e.g. by running    ulimit -n %d\n",
               __func__, (int)(file_limit.rlim_cur), bctx->client_num, OPEN_FDS_SUGGESTION);
       return -1;
     }
@@ -72,9 +72,9 @@ int test_environment (batch_context* bctx)
 
       if (file_limit.rlim_cur > 5000)
       {
-          fprintf(stderr, "and/or chaging temporarily TCP stack defaults by running:\n"
-                  "#echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or\n"
-                  "#echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse\n");
+          fprintf(stderr, "and/or chaging temporarily TCP stack defaults by running as a su:\n"
+                  "echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or\n"
+                  "echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse\n");
       }
 
       fprintf (stderr, " Please, press ENTER to continue.\n");
@@ -93,7 +93,7 @@ int test_environment (batch_context* bctx)
                   "larger than allowed for modes using poll/select (to prevent fd_set smashing).\n"
                   "The limit for non-Hyper modes is %d fdescriptors, whereas the current shell limit is %d\n"
                   "Edit CURL_LOADER_FD_SETSIZE value in Makefile and recompile the program.\n"
-                  "Alternatively, decrease the shell limit by e.g. #ulimit -n %d  or "
+                  "Alternatively, decrease the shell limit by e.g.      ulimit -n %d  or "
                   "use epoll-based hyper-mode (add \"-m 0\" to your command line).\n",
                   __func__ , CURL_LOADER_FD_SETSIZE, (int) file_limit.rlim_cur,
                   CURL_LOADER_FD_SETSIZE - 1);   

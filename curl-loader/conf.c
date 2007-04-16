@@ -210,7 +210,7 @@ void print_help ()
 {
   fprintf (stderr, "Note, to run your load, create your batch configuration file.\n\n");
   fprintf (stderr, "usage: run as a root:\n");
-  fprintf (stderr, "#./curl-loader -f <configuration file name> with [other options below]:\n");
+  fprintf (stderr, "./curl-loader -f <configuration file name> with [other options below]:\n");
   fprintf (stderr, " -c[onnection establishment timeout, seconds]\n");
   fprintf (stderr, " -e[rror drop client (smooth mode). Client on error doesn't attempt next cycle]\n");
   fprintf (stderr, " -i[ntermediate (snapshot) statistics time interval (default 3 sec)]\n");
@@ -231,11 +231,11 @@ void print_help ()
   fprintf (stderr, "\n");
   fprintf (stderr, "Note, that there is no any more limit of 1000 sockets per batch of clients.\n");
   fprintf (stderr, "Running thousands and more clients, please do not forget to consider the options:\n");
-  fprintf (stderr, "- to increase limit of open descriptors in shell by running e.g. #ulimit -n 20000:\n");
+  fprintf (stderr, "- to increase limit of open descriptors in shell by running e.g.    ulimit -n 19999:\n");
   fprintf (stderr, "- to increase total limit of  open descriptors in systeme somewhere in /proc\n");
-  fprintf (stderr, "- to consider reusing sockets in time-wait state: by #echo 1 > \n");
+  fprintf (stderr, "- to consider reusing sockets in time-wait state: by     echo 1 > \n");
   fprintf (stderr, " /proc/sys/net/ipv4/tcp_tw_recycle\n");
-  fprintf (stderr, "- and/or  #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse\n");
+  fprintf (stderr, "- and/or    echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse\n");
   fprintf (stderr, "\n");
   fprintf (stderr, "\n");
 }
