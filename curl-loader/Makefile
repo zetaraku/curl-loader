@@ -50,7 +50,7 @@ else
 OPT_FLAGS=
 endif
 
-# CPU tuning flags
+# CPU-tuning flags
 #OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
 
 #Profiling flags

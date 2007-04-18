@@ -1,10 +1,14 @@
 version 0.29 ?
+
+* Placed suggestions for tcp kernel memory tuning to environment.c
+   Fixed the bug with not-blocking smashing of fd_set.
+	
 * FAST-START file renamed to QUICK-START
 
 * Migration to curl-7.16.2. Patch rename curl_multi_noselect ()
    to curl_multi_action ()
 
-* Fixed bug with sprintf overflow of statistics and logs filenames.
+* Fixed the bug with sprintf overflow of statistics and logs filenames.
    Thanks to Alexandre Bezroutchko <abb@scanit.be> for pointing
    this issue.
 
@@ -19,6 +23,10 @@ version 0.29 ?
 
 * Hyper-mode bug fixed with no clients scheduling for load, when
    CLIENT_INITIAL_INC=0 or the tag is not defined.
+
+* Profiling option (-pg) added to the making line. Run, e.g.
+   make optimize=1 debug=1 profile=1
+
 
 
 version 0.28 08/04/2007, svn- 270
