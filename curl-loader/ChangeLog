@@ -1,4 +1,4 @@
-version 0.29 ?
+version 0.29 18/04/2007, svn-299
 
 * Placed suggestions for tcp kernel memory tuning to environment.c
    Fixed the bug with not-blocking smashing of fd_set.
