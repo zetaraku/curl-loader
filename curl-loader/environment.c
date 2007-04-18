@@ -51,6 +51,9 @@ int test_environment (batch_context* bctx)
   
   ret = getrlimit(RLIMIT_NOFILE, &file_limit);
 
+  /* 
+     Limit of descriptor is less, than number of clients.
+  */
   if (!ret && file_limit.rlim_cur <= (unsigned int) bctx->client_num)
     {
       fprintf(stderr,
@@ -61,29 +64,9 @@ int test_environment (batch_context* bctx)
       return -1;
     }
 
-  if (!ret && file_limit.rlim_cur <= (unsigned int) (3*bctx->client_num))
-  {
-      fprintf(stderr,
-              "%s - NOTE: the current limit of open descriptors for the shell (%d) is higher \n"
-              "than number of clients in the batch (%d).\n"
-              "Still, due to time-waiting state of TCP sockets, the number of the sockets may be not enough.\n"
-              "Consider, increasing the limit, e.g. by running #ulimit -n %d\n",
-              __func__, (int)(file_limit.rlim_cur), bctx->client_num, OPEN_FDS_SUGGESTION);
-
-      if (file_limit.rlim_cur > 5000)
-      {
-          fprintf(stderr, "and/or chaging temporarily TCP stack defaults by running as a su:\n"
-                  "echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or\n"
-                  "echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse\n");
-      }
-
-      fprintf (stderr, " Please, press ENTER to continue.\n");
-             
-      getchar ();
-
-      return 0;
-  }
-
+  /* 
+     Smooth and storm modes protection from fd_set smashing.
+  */
   if (loading_mode != LOAD_MODE_HYPER)
   {
       if (!ret && file_limit.rlim_cur > CURL_LOADER_FD_SETSIZE)
@@ -100,6 +83,48 @@ int test_environment (batch_context* bctx)
           return -1;
       }
   }
+
+  /* 
+     Suggestion to increase the current descriptor limit
+     and/or recycle sockets
+  */
+  if (!ret && file_limit.rlim_cur <= (unsigned int) (2*bctx->client_num))
+  {
+      fprintf(stderr,
+              "WARNING - NOTE: the current limit of open descriptors \n" 
+              "for the shell (%d) is higher than number of clients in the batch (%d).\n"
+              "Still, due to time-waiting state of TCP sockets, the number \n"
+              "of the sockets may be not enough.\n"
+              "Consider, increasing the limit, e.g. by running   ulimit -n %d\n",
+              (int)(file_limit.rlim_cur), bctx->client_num, OPEN_FDS_SUGGESTION);
+
+      if (file_limit.rlim_cur > 5000)
+      {
+          fprintf(stderr, "and/or changing temporarily TCP stack defaults by running as a su:\n"
+                  "echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or\n"
+                  "echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse\n");
+      }
+
+      fprintf (stderr, " Please, press Cntl-C to stop running or ENTER to continue.\n");      
+      getchar ();
+  }
+
+    /* 
+     Suggestion to increase kernel memory for tcp.
+  */
+  if (bctx->client_num > 2000)
+    {
+      fprintf(stderr,
+              "SUGGESTION-1: to allocate more kernel memory for TCP \n" 
+              "read the maximum available TCP memory and sysctl as a root\n"
+              "the number to the kernel tcp, e.g.:\n"
+              "cat /proc/sys/net/core/wmem_max - 109568\n"
+              "/sbin/sysctl net.ipv4.tcp_mem=\"109568 109568 109568\"\n\n"
+              "SUGGESTION-2: relax routing checks for your loading network interface, e.g.: \n"
+              "if \"eth0\" used for loading  run   echo 0 > /proc/sys/net/ipv4/conf/eth0/rp_filter\n");
+      fprintf (stderr, " Please, press Cntl-C to stop running or ENTER to continue.\n");      
+      getchar ();
+    }
 
   return 0;
 }
