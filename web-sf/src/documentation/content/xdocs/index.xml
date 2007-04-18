@@ -52,12 +52,12 @@
     <section id="features">
       <title>Features List</title>
       <p>
-          Virtual clients -  up to 3000-6000 clients from every running curl-loader 
-          process. Each client performs loading from its own source IP-address;
+Virtual clients -  depending on your HW up to 5000-15000 clients from every 
+running curl-loader process. Each client performs loading from its own source IP-address;
       </p>
       <p>
-          Loading modes: smooth, hyper and storming. Gradual increase of virtual clients
-          number at loading start is an option for smooth and hyper modes;
+Loading modes: smooth, hyper and storming. Gradual increase of virtual clients
+number at loading start is an option for the smooth and hyper modes;
       </p>
       <p>
            IPv4 and IPv6 addresses and URIs;

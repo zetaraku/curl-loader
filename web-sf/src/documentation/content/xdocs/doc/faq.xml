@@ -31,7 +31,7 @@
         Which operating systems are supported by curl-loader?
       </question>
       <answer>
-        You can use any operating system of your choice, providing that it is linux with kernel 2.4 or 2.6.
+        You can use any operating system of your choice, providing this it is linux with kernel 2.4 or 2.6.
        </answer>
     </faq>
     <faq id="pre-requirements">
@@ -410,7 +410,8 @@ in the logfile for errors, and when connection timeout error appears, adjust the
 connection timeout using -c command line option. Note, that the smooth mode
 is suitable for login-logoff cycles of load.<br/>
 <br/>
-Hyper-mode (command line -m0) is currently experimental. The mode is basically
+Hyper-mode (command line -m0) is currently consider as an experimental, but 
+steadily finds more and more usage, particularly for heavy loads. The mode is basically
 the same as the smooth mode, but is using for event demultiplexing epoll() or
 /dev/epoll instead of poll(). The mode is promising to deliver more loading clients from a 
 single thread.<br/>
@@ -585,7 +586,8 @@ you can try a script, which runs several instances of curl_loader each with
 Running several batches with threads (option -t), each thread with 1000-2000 clients is 
 another valid option, whereas it may be less stable - try it.<br/>
 <br/>
-Recent release has a new experimental option HYPER (-m 0 command line option). 
+HYPER mode (-m 0 command line option) was already used for loads with up to 10000 clients,
+whereas HW issues, like CPU and memory resource, start to be counting.
 The mode uses epoll() syscall (via libevent library) for demultiplexing. Y may try it
 as well, noting that it is still experimental. 
        </answer>
@@ -628,7 +630,18 @@ to be cared about for hyper mode.<br/>
 Increase the maximum number of open descriptors in your linux system, if required,
 using linux HOWTOS.<br/>
 <br/>
-4. Create configuration files for each instance of curl-loader to run.<br/>
+4. Relax routing checks;<br/>
+<br/>
+Relax routing checks for your loading network interface. When "eth0" used for loading  run:<br/>
+echo 0 > /proc/sys/net/ipv4/conf/eth0/rp_filter<br/>
+<br/>
+5. Increase memory available for kernel tcp;<br/>
+Read the maximum available TCP memory and sysctl as a root
+the number to the kernel tcp, e.g.:<br/>
+cat /proc/sys/net/core/wmem_max - the output is 109568.<br/>
+/sbin/sysctl net.ipv4.tcp_mem="109568 109568 109568"<br/>
+<br/>
+6. Create configuration files for each instance of curl-loader to run.<br/>
 <br/>
 What is important is to give a unique value for tag BATCH_NAME,
 which is in use by a separate instance of curl-loader. Logfile, report file, etc 
@@ -641,7 +654,7 @@ will compete for the IP-addresses to bind to.<br/>
 Use CLIENTS_INITIAL_INC tag in smooth mode to increase number of your 
 clients gradually at start-up in order not boom the server.<br/>
 <br/>
-5. Connections re-use.<br/>
+7. Connections re-use.<br/>
 <br/>
 The default behavior of curl-loader now is after HTTP response to re-use 
 the tcp-connection for the next request-response. 
@@ -651,7 +664,7 @@ re-opened for the next request. Whether it is appropriate for you to work with
 of your testing.<br/>
 Try with and without -r and see, what you get.<br/>
 <br/>
-6. Troubleshooting.<br/>
+8. Troubleshooting.<br/>
 <br/>
 Run the first loading attempt using command-line options -v (verbose) and -u (url
 in logs). Grep to look for the errors and their reasons. If an error is
@@ -661,7 +674,7 @@ option.<br/>
 If any assistance required, please, don't hesitate to contact us using 
 PROBLEM-REPORTING form in the download tarball.<br/>
 <br/>
-7. Logs and statistics.<br/>
+9. Logs and statistics.<br/>
 <br/>
 After end of a run, or after SIGINT (Cntl-C), the final results are calculated
 and printed to the console as well as to the file &lt;batch-name&gt;.txt.
