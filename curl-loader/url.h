@@ -27,11 +27,11 @@
 #include <stddef.h>
 #define URL_AUTH_STR_LEN 64
 
-  /* 
-     Current loading step: login, uas, logoff. If we are in the loading step 
-     login - take login url, logoff - take logoff url. For UAS step - take the 
-     next url according to <url_uas_num>. 
-  */
+/* 
+   Current loading step: login, uas, logoff. If we are in the loading step 
+   login - take login url, logoff - take logoff url. For UAS step - take the 
+   next url according to <url_uas_num>. 
+*/
 typedef enum url_load_step
   {
     URL_LOAD_UNDEF = 0, /*calloc sets it */

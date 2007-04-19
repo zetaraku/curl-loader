@@ -1,7 +1,7 @@
 /*
 *     client.h
 *
-* 2006 Copyright (c) 
+* 2006-2007 Copyright (c) 
 * Robert Iakobashvili, <coroberti@gmail.com>
 * Michael Moser,  <moser.michael@gmail.com>                 
 * All rights reserved.
@@ -76,14 +76,14 @@ struct batch_context;
   back to the tracing function for output to logfile.
 
   Client context is also heavily used for login/logoff operations, keeping
-  client-specific POST-buffers, is a placeholder for loading statistics and counters,
-  assisting to collect such statistics.
+  client-specific POST-buffers, is a placeholder for loading statistics and 
+  counters, assisting to collect such statistics.
   
-  Client context keeps client specific context for loading, e.g. pointer to libcurl handle
-  CURL* handle, number of cycles done, etc.
+  Client context keeps client specific context for loading, e.g. pointer to 
+  libcurl handle (CURL* handle), number of cycles done, etc.
 
-  client_context inherits from timer_node (the first field) to enable usage of client_context
-  in timer-queue
+  client_context inherits from timer_node (the first field) to enable usage of 
+  client_context in timer-queue.
 */
 typedef struct client_context
 {

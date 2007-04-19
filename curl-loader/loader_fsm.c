@@ -81,15 +81,14 @@ static int setup_uas (client_context* cctx);
  *               CSTATE_ERROR or CSTATE_FINISHED_OK.
  *
  * Input -       *cctx - pointer to the client context
- *                   now_time -  current timestamp in msec
- *
- *Input/Output -  sched_now - when true, the client is scheduled right now without timer queue.
+ *               now_time -  current timestamp in msec
+ *Input/Output   sched_now - when true, the client is scheduled right now without timer queue.
  *
  * Return Code/Output - CSTATE enumeration with the state of loading
  ****************************************************************************************/
 int load_next_step (client_context* cctx,
-                           unsigned long now_time,
-                           int* sched_now)
+                    unsigned long now_time,
+                    int* sched_now)
 {
   batch_context* bctx = cctx->bctx;
   int rval_load = CSTATE_ERROR;
@@ -650,8 +649,8 @@ static int setup_login_logoff (client_context* cctx, const int login)
 /****************************************************************************************
  * Function name - setup_uas
  *
- * Description - Sets UAS state url
- * Input -       *cctx - pointer to the client context
+ * Description -   Sets UAS state url
+ * Input -         *cctx - pointer to the client context
  *
  * Return Code/Output - CSTATE enumeration with client state
  ****************************************************************************************/

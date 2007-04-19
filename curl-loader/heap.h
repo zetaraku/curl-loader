@@ -120,7 +120,6 @@ typedef struct heap
 *               Attention!!! Use this function and not memset.
 *
 * Input -       *node - pointer to an hnode object
-*
 * Return Code/Output - none
 ****************************************************************************************/
 void node_reset (hnode*const node);
@@ -136,7 +135,6 @@ void node_reset (hnode*const node);
 *               comparator -  user-function, that compares user-objects, kept by the heap
 *               dumper -  user-function, that dumps user-objects, kept by the heap
 *               nodes_prealloc -  number of hnodes to be pre-allocated at initialization
-*
 * Return Code/Output - On success - 0, on error -1
 ****************************************************************************************/
 int heap_init (heap*const h,
@@ -154,7 +152,6 @@ int heap_init (heap*const h,
 *               but does not deallocate the heap itself.
 *
 * Input -       *h - pointer to an initialized heap
-*
 * Return Code/Output - none
 ****************************************************************************************/
 void heap_reset (heap*const h);
@@ -166,7 +163,6 @@ void heap_reset (heap*const h);
 * Description -  Dumps heap fields. Uses user-provided function to dump user objects
 *
 * Input -        *h - pointer to an initialized heap
-*
 * Return Code/Output - none
 ****************************************************************************************/
 void heap_dump (heap*const h);
@@ -178,7 +174,6 @@ void heap_dump (heap*const h);
 *
 * Input -       *h - pointer to an initialized heap
 *                     nodes_prealloc -  number of hnodes to be pre-allocated at initialization
-*
 * Return Code/Output - On success - 0, on error -1
 ****************************************************************************************/
 int heap_prealloc (heap*const h, size_t nodes_prealloc);
@@ -189,7 +184,6 @@ int heap_prealloc (heap*const h, size_t nodes_prealloc);
 * Description - Takes the root node out of the heap and restores heap structure
 *
 * Input -       *h - pointer to an initialized heap
-*
 * Return Code/Output - On success - pointer to hnode, on error - NULL
 ****************************************************************************************/
 hnode* heap_pop (heap*const h);
@@ -204,7 +198,6 @@ hnode* heap_pop (heap*const h);
 *               *node - pointer to an initialized heap
 *               keep_node_id - flag, whether to respect the <node-id> from the node
 *                              (support for periodical timer)
-*
 * Return Code/Output - On success - 0 or positive node-id, on error - (-1)
 ****************************************************************************************/
 long heap_push (heap* const h, hnode* const node, int keep_node_id);
@@ -215,7 +208,6 @@ long heap_push (heap* const h, hnode* const node, int keep_node_id);
 * Description -  Returns the topest node
 *
 * Input -       *h - pointer to an initialized heap
-*
 * Return Code/Output - On success -  pointer to the topest node, on error - NULL
 ****************************************************************************************/
 hnode* heap_top_node (heap*const h);
@@ -226,7 +218,6 @@ hnode* heap_top_node (heap*const h);
 * Description -  Removes node from a certain slot and restores heap structure
 *
 * Input -       *h - pointer to an initialized heap
-*
 * Return Code/Output - On success -  pointer to the removed node, on error - NULL
 ****************************************************************************************/
 hnode* heap_remove_node (heap*const h, const size_t slot);
@@ -237,7 +228,6 @@ hnode* heap_remove_node (heap*const h, const size_t slot);
 * Description -  Tests, whether a heap is empty
 *
 * Input -        *h - pointer to an initialized heap
-*
 * Return Code/Output - Positive number, if empty, zero- if non-empty
 ****************************************************************************************/
 int heap_empty (heap*const h);
@@ -248,7 +238,6 @@ int heap_empty (heap*const h);
 * Description -  Returns current size of a heap
 *
 * Input -        *h - pointer to an initialized heap
-*
 * Return Code/Output - On Success - zero or positive number, on error - (-1)
 ****************************************************************************************/
 int heap_size (heap*const h);

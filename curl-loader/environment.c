@@ -52,7 +52,7 @@ int test_environment (batch_context* bctx)
   ret = getrlimit(RLIMIT_NOFILE, &file_limit);
 
   /* 
-     Limit of descriptor is less, than number of clients.
+     Limit of descriptors is less, than the number of clients.
   */
   if (!ret && file_limit.rlim_cur <= (unsigned int) bctx->client_num)
     {
@@ -65,7 +65,7 @@ int test_environment (batch_context* bctx)
     }
 
   /* 
-     Smooth and storm modes protection from fd_set smashing.
+     Protection of the smooth and storm modes from select fd_set smashing.
   */
   if (loading_mode != LOAD_MODE_HYPER)
   {

@@ -209,9 +209,8 @@ main (int argc, char *argv [])
 * Function name - batch_function
 * Description -   Runs the batch test either within the main-thread or in a separate thread.
 *
-* Input -         *batch_data contains loading configuration and active entities for a 
-*                  particular batch of clients.
-*
+* Input -         *batch_data - contains loading configuration and active entities for a 
+*                               particular batch of clients.
 * Return Code/Output - NULL in all cases
 ****************************************************************************************/
 static void* batch_function (void * batch_data)
@@ -320,7 +319,6 @@ static void* batch_function (void * batch_data)
 * Description - Libcurl initialization of curl multi-handle and the curl handles (clients), 
 *               used in the batch
 * Input -       *ctx_array - array of clients for a particular batch of clients
-*
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 static int initial_handles_init (client_context*const ctx_array)
@@ -568,8 +566,8 @@ int setup_curl_handle_init (client_context*const cctx,
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int setup_curl_handle_appl (client_context*const cctx,  
-                                   url_context* url_ctx,
-                                   int post_method)
+                            url_context* url_ctx,
+                            int post_method)
 {
     batch_context* bctx = cctx->bctx;
     CURL* handle = cctx->handle;
@@ -665,10 +663,10 @@ int setup_curl_handle_appl (client_context*const cctx,
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int client_tracing_function (CURL *handle, 
-                                    curl_infotype type, 
-                                    unsigned char *data, 
-                                    size_t size, 
-                                    void *userp)
+                             curl_infotype type, 
+                             unsigned char *data, 
+                             size_t size, 
+                             void *userp)
 {
   client_context* cctx = (client_context*) userp;
   char*url_target = NULL, *url_effective = NULL;
@@ -1365,11 +1363,10 @@ int rewind_logfile_above_maxsize (FILE* filepointer)
 *
 * Description - Increments the source IPv6 address to provide the next
 * Input -       *src - pointer to the IPv6 address to be used as the source
-* Input/Output    *dest - pointer to the resulted incremented address
+* Input/Output  *dest - pointer to the resulted incremented address
 *
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-/* store 'src + 1' in dest, and check that dest remains in the same scope as src */
 static int ipv6_increment(const struct in6_addr *const src, 
                           struct in6_addr *const dest)
 {

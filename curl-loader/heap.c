@@ -159,7 +159,6 @@ int heap_init (heap*const h,
 *               not deallocate the heap itself.
 *
 * Input -       *h - pointer to an initialized heap
-*
 * Return Code/Output - none
 ****************************************************************************************/
 void heap_reset (heap*const h)
@@ -186,7 +185,6 @@ void heap_reset (heap*const h)
 * Description - Dumps heap fields. Uses user-provided function to dump user object content
 *
 * Input -       *h - pointer to an initialized heap
-*
 * Return Code/Output - none
 ****************************************************************************************/
 void heap_dump (heap*const h)
@@ -220,7 +218,6 @@ void heap_dump (heap*const h)
 *
 * Input -       *h - pointer to an initialized heap
 *               nodes_prealloc -  number of hnodes to be pre-allocated at initialization
-*
 * Return Code/Output - On success - 0, on error -1
 ****************************************************************************************/
 int heap_prealloc (heap*const h, size_t nodes_prealloc)
@@ -252,7 +249,6 @@ int heap_prealloc (heap*const h, size_t nodes_prealloc)
 * Description - Takes the root node out of the heap and restores heap structure
 *
 * Input -       *h - pointer to an initialized heap
-*
 * Return Code/Output - On success - pointer to hnode, on error - NULL
 ****************************************************************************************/
 hnode* heap_pop (heap*const h)
@@ -272,7 +268,6 @@ hnode* heap_pop (heap*const h)
 * Description -  Provides access to the topest node
 *
 * Input -        *h - pointer to an initialized heap
-*
 * Return Code/Output - On success -  pointer to the topest node, on error - NULL
 ****************************************************************************************/
 hnode*  heap_top_node (heap*const h)
@@ -291,7 +286,6 @@ hnode*  heap_top_node (heap*const h)
 * Description -  Tests, whether a heap is empty
 *
 * Input -        *h - pointer to an initialized heap
-*
 * Return Code/Output - Positive number, if empty, zero- if non-empty
 ****************************************************************************************/
 int heap_empty (heap*const h)
@@ -305,7 +299,6 @@ int heap_empty (heap*const h)
 * Description - Increases size of the heap adding <heap_increase_step> hnodes
 *
 * Input -       *h - pointer to an initialized heap
-*
 * Return Code/Output - On success - 0, on error -1
 ****************************************************************************************/
 int heap_increase (heap*const h)
@@ -369,7 +362,6 @@ int heap_increase (heap*const h)
 *               *nd - pointer to node
 *               keep_node_id - flag, whether to respect the <node-id> from the node
 *                              (support for periodical timer)
-*
 * Return Code/Output - On success - 0 or positive node-id, on error - (-1)
 ****************************************************************************************/
 long heap_push (heap* const h, hnode* const nd, int keep_node_id)
@@ -427,7 +419,6 @@ long heap_push (heap* const h, hnode* const nd, int keep_node_id)
 * Description -  Provides a "free" id
 *
 * Input -        *h - pointer to an initialized heap
-*
 * Return Code/Output - node-id
 ****************************************************************************************/
 long heap_get_node_id (heap*const h)
@@ -452,7 +443,6 @@ long heap_get_node_id (heap*const h)
 * Input -        *h - pointer to an initialized heap
 *                slot - index of the heap-array (slot) to be used for hnode
 *                *nd - pointer to hnode
-*
 * Return Code/Output - none
 ****************************************************************************************/
 void heap_put_node_to_slot (heap*const h, size_t slot, hnode*const nd)
@@ -472,7 +462,6 @@ void heap_put_node_to_slot (heap*const h, size_t slot, hnode*const nd)
 *
 * Input -       *h - pointer to an initialized heap
 *               slot - index of the heap-array (slot), where to remove hnode
-*
 * Return Code/Output - On success - a valid hnode, on error - 0
 ****************************************************************************************/
 hnode* heap_remove_node (heap*const h, const size_t slot)
@@ -539,7 +528,6 @@ hnode* heap_remove_node (heap*const h, const size_t slot)
 *
 * Input -       *h - pointer to an initialized heap
 *               index - position, from which to start
-*
 * Return Code/Output - none
 ****************************************************************************************/
 void filter_up (heap*const h, size_t index)
@@ -579,7 +567,6 @@ void filter_up (heap*const h, size_t index)
 *
 * Input -       *h - pointer to an initialized heap
 *               index - position, from which to start
-*
 * Return Code/Output - none
 ****************************************************************************************/
 void filter_down (heap*const h, size_t index)
@@ -636,7 +623,6 @@ void filter_down (heap*const h, size_t index)
 * Description -  Returns current size of heap
 *
 * Input -        *h - pointer to an initialized heap
-*
 * Return Code/Output - On Success - zero or positive number, on error - (-1)
 ****************************************************************************************/
 int heap_size (heap*const h)

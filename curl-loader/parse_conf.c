@@ -226,10 +226,10 @@ static fparser find_tag_parser (const char* tag)
 *                    loading batch configuration parameters from it.
 * 
 * Input -       *str_buff - pointer to the configuration file string of the form TAG = value
-*                    str_len - length of the <str_buff> string
-*                    *bctx_array - array of the batch contexts
-* Input/Output - batch_num - index of the batch to fill and advance, when required.
-*                                                      Supporting multiple batches in one batch file.
+*               str_len -   length of the <str_buff> string
+*               *bctx_array - array of the batch contexts
+* Input/Output  batch_num - index of the batch to fill and advance, when required.
+*                           Supporting multiple batches in one batch file.
 *
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
@@ -335,13 +335,13 @@ static int add_param_to_batch (
 * Function name - init_post_buffer
 *
 * Description - Parses string with credentials <user>SP<password>, allocates at virtual client
-*                      memory and keeps the credentials with the virtual client in the post form buffer
+*               memory and keeps the credentials with the virtual client in the post form buffer
 * 
 * Input -       *input - pointer to the credentials file string
-*                    input_len - length of the <input> string
-*                    *bctx - batch context to which the initia
-* Input/Output - *client_num - index of the client in the array
-*                        *separator - the separating symbol initialized by the first string and further used.
+*               input_len - length of the <input> string
+*               *bctx - batch context to which the initia
+* Input/Output  *client_num - index of the client in the array
+*               *separator - the separating symbol initialized by the first string and further used.
 *
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
@@ -455,10 +455,10 @@ static int init_post_buffer (char*const input,
 * Function name - pre_parser
 *
 * Description - Prepares value token from the configuration file to parsing. Removes LWS,
-*                    cuts off comments, removes TWS or after quotes closing, removes quotes
+*               cuts off comments, removes TWS or after quotes closing, removes quotes
 * 
 * Input/Output - **ptr - second pointer to value string
-*                        *len - pointer to the length of the value string
+*                *len - pointer to the length of the value string
 *
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
@@ -1145,7 +1145,6 @@ static int is_non_ws (char*const ptr)
 * Description - Validates all parameters in the batch. Calls validation functions for all sections.
 * 
 * Input -       *bctx - pointer to the initialized batch context to validate
-*
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
 static int validate_batch (batch_context*const bctx)
@@ -1186,7 +1185,6 @@ static int validate_batch (batch_context*const bctx)
 * Description - Validates section general parameters
 * 
 * Input -       *bctx - pointer to the initialized batch context to validate
-*
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
 static int validate_batch_general (batch_context*const bctx)
@@ -1266,7 +1264,6 @@ static int validate_batch_general (batch_context*const bctx)
 * Description - Validates section login parameters
 * 
 * Input -       *bctx - pointer to the initialized batch context to validate
-*
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
 static int validate_batch_login (batch_context*const bctx)
@@ -1353,7 +1350,6 @@ static int validate_batch_login (batch_context*const bctx)
 * Description - Validates section UAS parameters
 * 
 * Input -       *bctx - pointer to the initialized batch context to validate
-*
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
 static int validate_batch_uas (batch_context*const bctx)
@@ -1407,7 +1403,6 @@ static int validate_batch_uas (batch_context*const bctx)
 * Description - Validates section logoff parameters
 * 
 * Input -       *bctx - pointer to the initialized batch context to validate
-*
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
 static int validate_batch_logoff (batch_context*const bctx)
@@ -1469,7 +1464,6 @@ static int validate_batch_logoff (batch_context*const bctx)
 * Description - Performs post validate initializations of a batch context.
 * 
 * Input -       *bctx - pointer to the initialized batch context to validate
-*
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
 static int post_validate_init (batch_context*const bctx)
@@ -1526,9 +1520,9 @@ static int post_validate_init (batch_context*const bctx)
 *
 * Description - Parses configuration file and fills loading batch contexts in array
 *
-* Input -          *filename - name of the configuration file to parse.
-* Output -       *bctx_array - array of batch contexts to be filled on parsing
-* Input-              bctx_array_size - number of bctx contexts in <bctx_array>
+* Input -       *filename - name of the configuration file to parse.
+* Output -      *bctx_array - array of batch contexts to be filled on parsing
+* Input-        bctx_array_size - number of bctx contexts in <bctx_array>
 *                          
 * Return Code/Output - On Success - number of batches >=1, on Error -1
 ********************************************************************************/
@@ -1643,9 +1637,9 @@ int parse_config_file (char* const filename,
 * Function name - init_client_post_buffers_from_file
 *
 * Description - Itializes client post form buffers, using credentials loaded from file.
-*                     To be called after batch context validation.
+*               To be called after batch context validation.
 *
-* Input -          *bctx - pointer to the batch context
+* Input -       *bctx - pointer to the batch context
 *                          
 * Return Code/Output - On Success - number of batches >=1, on Error -1
 ********************************************************************************/
@@ -1740,10 +1734,9 @@ static int init_client_post_buffers_from_file (batch_context*const bctx)
 * Function name - netmask_to_cidr
 *
 * Description - Converts quad-dotted IPv4 address string to the CIDR number
-*                      from 0 to 32.
+*               from 0 to 32.
 *
-* Input -          *dotted_ipv4 - quad-dotted IPv4 address string
-*                          
+* Input -       *dotted_ipv4 - quad-dotted IPv4 address string
 * Return Code/Output - On Success - CIDR number from 0 to 32, on Error - (-1)
 ********************************************************************************/
 static int netmask_to_cidr (char *dotted_ipv4)

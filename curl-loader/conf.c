@@ -1,7 +1,7 @@
 /*
 *     conf.c
 *
-* 2006 Copyright (c) 
+* 2006-2007 Copyright (c) 
 * Robert Iakobashvili, <coroberti@gmail.com>
 * All rights reserved.
 *
@@ -52,7 +52,7 @@ long snapshot_statistics_timeout = 3; /* Seconds */
 */
 long logfile_rewind_size = 1024;
 
- /* Non-zero - dont reuse connections */
+/* Non-zero - dont reuse connections */
 int reuse_connection_forbidden = 0;
 
 /* Whether to stdout the downloaded file body */

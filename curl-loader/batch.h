@@ -66,7 +66,7 @@ typedef struct batch_context
 
   /*------------------------ GENERAL SECTION ------------------------------ */
 
-   /* Some non-empty name of a batch load without empty spaces, tabs, etc */
+  /* Some non-empty name of a batch load without empty spaces, tabs, etc */
   char batch_name[BATCH_NAME_SIZE];
 
   /* Logfile <batch-name>.log */
@@ -127,7 +127,7 @@ typedef struct batch_context
   */
   size_t custom_http_hdrs_num;
 
-    /* 
+   /* 
       The list of custom  HTTP headers.
   */
   struct curl_slist *custom_http_hdrs;
@@ -157,15 +157,16 @@ typedef struct batch_context
   /* The string to be used as the base for login post message */
   char login_post_str [POST_BUFFER_SIZE + 1];
 
-    /* The type of <login_post_str>. Valid types are: 
-       POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS, - like "user=%s%d&password=%s%d"
-       POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD, like "user=%s%d&password=%s"
-       POST_STR_USERTYPE_SINGLE_USER,                            like "user=%s&password=%s"
-       POST_STR_USERTYPE_LOAD_USERS_FROM_FILE, like "user=%s&password=%s" and login_credentials_file defined.
-    */
+   /* The type of <login_post_str>. Valid types are: 
+     POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS, - like "user=%s%d&password=%s%d"
+     POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD, - like "user=%s%d&password=%s"
+     POST_STR_USERTYPE_SINGLE_USER,                - like "user=%s&password=%s"
+     POST_STR_USERTYPE_LOAD_USERS_FROM_FILE,       - like "user=%s&password=%s" and 
+                                                           login_credentials_file defined.
+   */
   int login_post_str_usertype;
 
-  /* 
+  /*
      The file with strings like "user:password", where separator may be 
      ':', '@', '/' and ' ' (space) in line with RFC1738. The file may be created
      as a dump of DB tables of users and passwords.
@@ -226,7 +227,6 @@ typedef struct batch_context
 
 
 
-
   /*------------------------- ASSISTING SECTION ----------------------------*/
 
   /* Multiple handle for curl. Contains all curl handles of a batch */
@@ -254,8 +254,8 @@ typedef struct batch_context
   int do_client_num_gradual_increase;
 
   /* 
-	 Number of already scheduled clients. Used to schedule new
-	 clients in a gradual fashion, when <clients_initial_inc> is positive. 
+     Number of already scheduled clients. Used to schedule new
+     clients in a gradual fashion, when <clients_initial_inc> is positive. 
   */
   int clients_initial_running_num;
 

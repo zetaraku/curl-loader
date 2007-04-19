@@ -81,7 +81,7 @@ typedef struct stat_point
   Operation statistics point: two instances are residing in each batch
   context:
   - one is for the latest snapshot interval;
- -  another is for the total summary values.
+  - another is for the total summary values.
 */
 typedef struct op_stat_point
 {
@@ -156,14 +156,14 @@ void op_stat_point_reset (op_stat_point* point);
 * Function name - op_stat_point_init
 *
 * Description - Initializes an allocated op_stat_point by allocating relevant fields for counters
+*
 * Input -       *point -  pointer to the op_stat_point, where counter will be added
 *               login -  boolean flag, whether login is relevant (1) or not (0)
 *               uas_url_num -  number of UAS urls, which can be 0, if UAS is not relevant
 *               logoff -  boolean flag, whether login is relevant (1) or not (0)
 * Return Code/Output - None
 ****************************************************************************************/
-int op_stat_point_init (
-                        op_stat_point* point, 
+int op_stat_point_init (op_stat_point* point, 
                         size_t login, 
                         size_t uas_url_num, 
                         size_t logoff);
@@ -183,9 +183,10 @@ void op_stat_point_release (op_stat_point* point);
 * Function name -  op_stat_update
 *
 * Description - Updates operation statistics using information from client context
-* Input -       *point -  pointer to the op_stat_point, where counters to be updated
+*
+* Input -       *point -        pointer to the op_stat_point, where counters to be updated
 *               current_state - current state of a client
-*               prev_state -  previous state of a client
+*               prev_state -    previous state of a client
 *               current_uas_url_index -  current uas url index of a the client
 *               prev_uas_url_index -  previous uas url index of a the client
 *
@@ -206,10 +207,11 @@ struct batch_context;
 * Function name - dump_final_statistics
 *
 * Description - Dumps final statistics counters to stderr and statistics file using 
-*                     print_snapshot_interval_statistics and print_statistics_* functions as well as calls
-*                     dump_clients () to dump the clients table.
+*               print_snapshot_interval_statistics and print_statistics_* functions as 
+*               well as calls dump_clients () to dump the clients table.
+*
 * Input -       *cctx - pointer to client context, where the decision to complete loading 
-*                     (and dump) has been made. 
+*                       (and dump) has been made. 
 * Return Code/Output - None
 ****************************************************************************************/
 void dump_final_statistics (struct client_context* cctx);
@@ -218,9 +220,9 @@ void dump_final_statistics (struct client_context* cctx);
 * Function name - dump_snapshot_interval and up to the interval time summary statistics
 *
 * Description - Dumps summary statistics since the start of load
+*
 * Input -       *bctx - pointer to batch structure
 *               now -  current time in msec since epoch
-*
 * Return Code/Output - None
 ****************************************************************************************/
 void dump_snapshot_interval (struct batch_context* bctx, unsigned long now);
@@ -230,8 +232,8 @@ void dump_snapshot_interval (struct batch_context* bctx, unsigned long now);
 * Function name - print_snapshot_interval_statistics
 *
 * Description - Dumps final statistics counters to stderr and statistics file using 
-*                     print_snapshot_interval_statistics and print_statistics_* functions 
-*                     as well as calls dump_clients () to dump the clients table.
+*               print_snapshot_interval_statistics and print_statistics_* functions 
+*               as well as calls dump_clients () to dump the clients table.
 *                     
 * Input -       clients - number of active clients
 *               period - latest time period in milliseconds
@@ -239,13 +241,15 @@ void dump_snapshot_interval (struct batch_context* bctx, unsigned long now);
 *               *https - pointer to the HTTPS collected statistics to output
 * Return Code/Output - None
 ****************************************************************************************/
-void print_snapshot_interval_statistics (unsigned long period,  stat_point *http,
-                                   stat_point *https);
+void print_snapshot_interval_statistics (unsigned long period,  
+					 stat_point *http,
+                                         stat_point *https);
 
 /****************************************************************************************
 * Function name - print_statistics_header
 *
 * Description - Prints to a file header for statistics numbers, describing counters
+*
 * Input -       *file - open file pointer
 * Return Code/Output - None
 ****************************************************************************************/
