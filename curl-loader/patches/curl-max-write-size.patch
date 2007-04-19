@@ -1,0 +1,12 @@
+--- curl/include/curl/curl.h	2007-04-19 12:25:22.000000000 +0300
++++ curl/include/curl/curl.h.mod	2007-04-19 21:06:18.000000000 +0300
+@@ -212,7 +212,9 @@
+ 
+   /* Tests have proven that 20K is a very bad buffer size for uploads on
+      Windows, while 16K for some odd reason performed a lot better. */
++#ifndef CURL_MAX_WRITE_SIZE
+ #define CURL_MAX_WRITE_SIZE 16384
++#endif
+ 
+ typedef size_t (*curl_write_callback)(char *buffer,
+                                       size_t size,

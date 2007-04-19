@@ -116,6 +116,7 @@ $(LIBEVENT):
 $(LIBCURL):
 	cd ./packages; tar zxf curl-$(CURL_VER).tar.gz; ln -sf curl-$(CURL_VER) curl; \
 	patch -d curl -p1 < ../patches/multi-socket-action.patch; \
+	patch -d curl -p1 < ../patches/curl-max-write-size.patch; \
 	patch -d curl -p1 < ../patches/curl-trace-info-error.patch
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix=$(CURL_BUILD) \
@@ -124,7 +125,7 @@ $(LIBCURL):
         --with-random=/dev/urandom \
         --with-ssl=/usr/include/openssl \
         --enable-shared=no \
-        CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS)"
+        CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS) -DCURL_MAX_WRITE_SIZE=8192"
 	make -C $(CURL_BUILD); make -C $(CURL_BUILD) install;
 	mkdir -p ./inc; mkdir -p ./lib
 	cp -a $(CURL_BUILD)/include/curl ./inc/curl
