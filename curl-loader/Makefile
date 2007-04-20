@@ -117,8 +117,7 @@ $(LIBCURL):
 	cd ./packages; tar zxf curl-$(CURL_VER).tar.gz; ln -sf curl-$(CURL_VER) curl; \
 	patch -d curl -p1 < ../patches/multi-socket-action.patch; \
 	patch -d curl -p1 < ../patches/curl-max-write-size.patch; \
-	patch -d curl -p1 < ../patches/curl-trace-info-error.patch; \
-	patch -d curl -p1 < ../patches/curl-alloc-master-buffer.patch
+	patch -d curl -p1 < ../patches/curl-trace-info-error.patch
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix=$(CURL_BUILD) \
         --enable-thread \
