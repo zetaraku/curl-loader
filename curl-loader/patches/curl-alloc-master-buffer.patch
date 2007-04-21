@@ -54,7 +54,7 @@ diff -Naru curl-7.16.2/lib/url.c curl-7.16.2-mod/lib/url.c
       any failure */
    *in_connect = conn;
  
-+  if (data->multi && data->multi->pipelining_enabled) {
++  if (data->multi && Curl_multi_canPipeline(data->multi)) {
 +      /* Allocate master_buffer to be used for pipelining */
 +      if (!conn->master_buffer) {
 +          if (!(conn->master_buffer = calloc(BUFSIZE, sizeof (char)))) {
