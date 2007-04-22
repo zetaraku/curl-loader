@@ -24,14 +24,47 @@
        </answer>
     </faq>
   </faqsection>
+
+  <faqsection id="Hardware">
+    <title>Hardware Requirements</title>
+    <faq id="MinHW">
+      <question>
+     What are the minimal HW requirements?
+      </question>
+      <answer>
+A PC with Pentium-III and 200 MB may be used for loads with hundreds simultaneous
+loading clients.
+       </answer>
+    </faq>
+   <faq id="RecHW">
+      <question>
+What is the recommended HW configuration?
+      </question>
+      <answer>
+Note, that a virtual client takes about 30-35 K memory in user-space plus some none-pageble 
+memory in kernel for sockets, TCP structures, but mainly for send and recv buffers. <br/>
+<br/>
+Our PC with Pentium 2.4 GHz and 480 MB memory is capable to support 3000-4000 simultaneously
+loading clients. To reach 10K simultaneously loading clients a PC with dual 3.0 GHz Intel or 2.2 GHz 
+AMD and 1-1,5 GB memory is recommended, but for some configuration a single high-end CPU may
+be enough.<br/>
+<br/>
+When loading from a multi-CPU (or multi-core) systems, a loading model with the same number of
+curl-loader processes as the number of CPUs may be most effective and deliver even higher
+numbers (than 10K) of simultaneously loading clients. If you are thinking, tuning, optimizing and 
+getting our advise, thus, the sky is the limit.
+       </answer>
+    </faq>
+  </faqsection>
+
   <faqsection id="building">
     <title>Building curl-loader</title>
     <faq id="platform">
       <question>
-        Which operating systems are supported by curl-loader?
+Which operating systems are supported by curl-loader?
       </question>
       <answer>
-        You can use any operating system of your choice, providing this it is linux with kernel 2.4 or 2.6.
+You can use any operating system of your choice, providing this it is linux with kernel 2.4 or 2.6.
        </answer>
     </faq>
     <faq id="pre-requirements">
@@ -43,9 +76,8 @@
         is required.<br/>
         <br/>
         Building pre-requirements are:<br/>
-          1. openssl binaries;<br/>
-          2. openssl development package with include files (on debian libssl-dev);<br/>
-          3. ncurses development package(on debian e.g. libncurses5-dev).<br/>
+          1. openssl binaries and openssl development package with include files (on debian libssl-dev);<br/>
+          2. ncurses binaries and development package (on debian e.g. libncurses5-dev).<br/>
          <br/>
          Adjust Makefile variables to point to the openssl headers and libraries. 
          To specify an openssl development directory with include files (e.g. crypto.h), 
@@ -576,20 +608,11 @@ error state will not be scheduled for load any more. <br/>
      What about performance?
       </question>
       <answer>
-You can try now 2000-6000 and may be more number of clients from a single curl-loader process
-(which normally has a single batch and runs as a single thread). <br/>
-Please, care, however, about available sockets and limits. Note, that the system 
-call select () does not scale well with a big number of sockets, therefore, 
-you can try a script, which runs several instances of curl_loader each with 
-2000-3000 clients.<br/>
-<br/>
-Running several batches with threads (option -t), each thread with 1000-2000 clients is 
-another valid option, whereas it may be less stable - try it.<br/>
-<br/>
 HYPER mode (-m 0 command line option) was already used for loads with up to 10000 clients,
 whereas HW issues, like CPU and memory resource, start to be counting.
 The mode uses epoll() syscall (via libevent library) for demultiplexing. Y may try it
-as well, noting that it is still experimental. 
+as well, noting that it is still experimental. <br/>
+<br/>
        </answer>
     </faq>
 
@@ -602,6 +625,11 @@ as well, noting that it is still experimental.
 more appropriate for you. Smooth mode is stable and tested well. Hyper is less 
 restrictive about allowed number of clients, but still requires more development 
 and optimization.<br/>
+Every big load starts with a small load. First, see, that you have a working 
+configuration file. Run it with a 1-2-3 clients and commandline option -v, and
+look into the l&lt;batch-name&gt;.log logfile.<br/>
+Look into the HW issues, duscussed in the FAQs above and mind, that
+each client requires 30-35 K of memory.
 <br/>
 1. Compile with optimization;<br/>
 Since you need performance compile with optimization and without debugging.<br/>
@@ -633,6 +661,7 @@ using linux HOWTOS.<br/>
 4. Relax routing checks;<br/>
 <br/>
 Relax routing checks for your loading network interface. When "eth0" used for loading  run:<br/>
+echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter<br/>
 echo 0 > /proc/sys/net/ipv4/conf/eth0/rp_filter<br/>
 <br/>
 5. Increase memory available for kernel tcp;<br/>
@@ -651,24 +680,24 @@ this is not helpful and may be even "crashful". Please, use in your configuratio
 batch files non-overlapping ranges of IP-addresses, else libcurl virtual clients 
 will compete for the IP-addresses to bind to.<br/>
 <br/>
-Use CLIENTS_INITIAL_INC tag in smooth mode to increase number of your 
-clients gradually at start-up in order not boom the server.<br/>
+Use CLIENTS_INITIAL_INC tag in smooth or hyper mode to increase number of your 
+clients gradually at start-up in order not boom the server and not to burn out the CPU
+at your loading machine. Addition of new clients is a CPU-expensive operation, therefore
+keep CLIENTS_INITIAL_INC below 100-200 clients per second.<br/>
 <br/>
 7. Connections re-use.<br/>
 <br/>
 The default behavior of curl-loader now is after HTTP response to re-use 
-the tcp-connection for the next request-response. 
+the tcp-connection for the next request-response. The default decreases consumption
+of CPU and open sockets, therefore use it.
 If you are specifying -r command-line option, the connection will be closed and 
-re-opened for the next request. Whether it is appropriate for you to work with
--r or without depends on your server support of Keep-Alive and the purpose 
-of your testing.<br/>
-Try with and without -r and see, what you get.<br/>
+re-opened for the next request. 
 <br/>
 8. Troubleshooting.<br/>
 <br/>
-Run the first loading attempt using command-line options -v (verbose) and -u (url
-in logs). Grep to look for the errors and their reasons. If an error is
-"Connection timeout", you may try to increase the connection establishment
+Run the first loading attempt with a small number of clients using command-line 
+options -v (verbose) and -u (url in logs). Grep to look for the errors and their reasons. 
+If an error is "Connection timeout", you may try to increase the connection establishment
 timeout (the default is 5 seconds - huge, but "ih veis"), using -c command-line
 option.<br/>
 If any assistance required, please, don't hesitate to contact us using 
