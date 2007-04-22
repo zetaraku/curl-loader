@@ -10,18 +10,6 @@ diff -Naru curl-7.16.2/lib/sendf.c curl-7.16.2-mod/lib/sendf.c
      buffertofill = conn->master_buffer;
    }
    else {
-diff -Naru curl-7.16.2/lib/sendf.c.orig curl-7.16.2-mod/lib/sendf.c.orig
---- curl-7.16.2/lib/sendf.c.orig	2007-04-22 16:56:46.000000000 +0300
-+++ curl-7.16.2-mod/lib/sendf.c.orig	2007-03-21 23:29:13.000000000 +0200
-@@ -495,7 +495,7 @@
-     }
-     /* If we come here, it means that there is no data to read from the buffer,
-      * so we read from the socket */
--    bytesfromsocket = MIN(sizerequested, BUFSIZE * sizeof (char));
-+    bytesfromsocket = MIN(sizerequested, sizeof(conn->master_buffer));
-     buffertofill = conn->master_buffer;
-   }
-   else {
 diff -Naru curl-7.16.2/lib/transfer.c curl-7.16.2-mod/lib/transfer.c
 --- curl-7.16.2/lib/transfer.c	2007-04-22 17:00:20.000000000 +0300
 +++ curl-7.16.2-mod/lib/transfer.c	2007-04-22 16:56:11.000000000 +0300

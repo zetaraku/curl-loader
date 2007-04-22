@@ -1,0 +1,79 @@
+Index: curl/lib/connect.c
+===================================================================
+RCS file: /cvsroot/curl/curl/lib/connect.c,v
+retrieving revision 1.170
+diff -u -r1.170 connect.c
+--- curl/lib/connect.c	19 Apr 2007 20:16:28 -0000	1.170
++++ curl/lib/connect.c	21 Apr 2007 17:04:40 -0000
+@@ -781,6 +781,8 @@
+   int num_addr;
+   Curl_addrinfo *ai;
+   Curl_addrinfo *curr_addr;
++  long has_passed;
++  int timeout_sel = 0;
+ 
+   struct timeval after;
+   struct timeval before = Curl_tvnow();
+@@ -793,27 +795,36 @@
+ 
+   *connected = FALSE; /* default to not connected */
+ 
+-  if(data->set.timeout || data->set.connecttimeout) {
+-    long has_passed;
+-
+-    /* Evaluate in milliseconds how much time that has passed */
+-    has_passed = Curl_tvdiff(Curl_tvnow(), data->progress.t_startsingle);
+-
+-#ifndef min
+-#define min(a, b)   ((a) < (b) ? (a) : (b))
+-#endif
+-
+-    /* get the most strict timeout of the ones converted to milliseconds */
+-    if(data->set.timeout && data->set.connecttimeout) {
+-      if (data->set.timeout < data->set.connecttimeout)
+-        timeout_ms = data->set.timeout;
+-      else
+-        timeout_ms = data->set.connecttimeout;
+-    }
+-    else if(data->set.timeout)
++  /* if a timeout was already set, use the most strict one converted to ms */
++  
++  if (data->set.timeout)
++    timeout_sel += 1;
++  if (data->set.connecttimeout)
++    timeout_sel += 2;
++
++  switch (timeout_sel) {
++  case 1:
++    timeout_ms = data->set.timeout;
++    break;
++  case 2:
++    timeout_ms = data->set.connecttimeout;
++    break;
++  case 3:
++    if (data->set.timeout < data->set.connecttimeout)
+       timeout_ms = data->set.timeout;
+     else
+       timeout_ms = data->set.connecttimeout;
++    break;
++  default:
++    break;
++  }
++
++  /* if a timeout was already set, substract elapsed time */
++
++  if (timeout_sel > 0) {
++
++    /* Evaluate in milliseconds how much time that has passed */
++    has_passed = Curl_tvdiff(before, data->progress.t_startsingle);
+ 
+     /* subtract the passed time */
+     timeout_ms -= has_passed;
+@@ -823,6 +834,7 @@
+       failf(data, "Connection time-out");
+       return CURLE_OPERATION_TIMEOUTED;
+     }
++
+   }
+   Curl_expire(data, timeout_ms);
+ 
