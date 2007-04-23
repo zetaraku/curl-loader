@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta content="Apache Forrest" name="Generator">
+<meta name="Forrest-version" content="0.7">
+<meta name="Forrest-skin-name" content="pelt">
+<title>Fast Start Instructions.</title>
+<link type="text/css" href="../skin/basic.css" rel="stylesheet">
+<link media="screen" type="text/css" href="../skin/screen.css" rel="stylesheet">
+<link media="print" type="text/css" href="../skin/print.css" rel="stylesheet">
+<link type="text/css" href="../skin/profile.css" rel="stylesheet">
+<script src="../skin/getBlank.js" language="javascript" type="text/javascript"></script><script src="../skin/getMenu.js" language="javascript" type="text/javascript"></script><script src="../skin/fontsize.js" language="javascript" type="text/javascript"></script>
+<link rel="shortcut icon" href="../">
+</head>
+<body onload="init()">
+<script type="text/javascript">ndeSetTextSize();</script>
+<div id="top">
+<div class="breadtrail">
+<script src="../skin/breadcrumbs.js" language="JavaScript" type="text/javascript"></script>
+</div>
+<div class="header">
+<div class="grouplogo">
+<a href="http://curl-loader.sourceforge.net"><img class="logoImage" alt="curl-loader" src="../images/group.png" title="curl-loader application loading performance testing tool"></a>
+</div>
+<div class="projectlogoA1">
+<a href="http://curl-loader.sourceforge.net"><img class="logoImage" alt="curl-loader" src="../images/project.png" title="curl-loader application loading performance testing tool"></a>
+</div>
+<ul id="tabs">
+<li>
+<a class="base-not-selected" href="../index.html">Home</a>
+</li>
+<li>
+<a class="base-not-selected" href="../doc/index.html">HOW-TOs</a>
+</li>
+</ul>
+</div>
+</div>
+<div id="main">
+<div id="publishedStrip">
+<div id="level2tabs"></div>
+<script type="text/javascript"><!--
+document.write("<text>Last Published:</text> " + document.lastModified);
+//  --></script>
+</div>
+<div class="breadtrail">
+             
+             &nbsp;
+           </div>
+<div id="menu">
+<div onclick="SwitchMenu('menu_selected_1.1', '../skin/')" id="menu_selected_1.1Title" class="menutitle" style="background-image: url('../skin/images/chapter_open.gif');">Doc</div>
+<div id="menu_selected_1.1" class="selectedmenuitemgroup" style="display: block;">
+<div class="menupage">
+<div class="menupagetitle">FAST START</div>
+</div>
+<div class="menuitem">
+<a href="../doc/faq.html">FAQ</a>
+</div>
+<div class="menuitem">
+<a href="../doc/thanks.html">THANKS</a>
+</div>
+</div>
+<div onclick="SwitchMenu('menu_1.2', '../skin/')" id="menu_1.2Title" class="menutitle">Useful Links</div>
+<div id="menu_1.2" class="menuitemgroup">
+<div class="menuitem">
+<a href="../doc/links.html">Links</a>
+</div>
+<div class="menuitem">
+<a href="../doc/tools.html">Tools</a>
+</div>
+</div>
+<div id="credit"></div>
+<div id="roundbottom">
+<img style="display: none" class="corner" height="15" width="15" alt="" src="../skin/images/rc-b-l-15-1body-2menu-3menu.png"></div>
+<div id="credit2"></div>
+</div>
+<div id="content">
+<script language="Javascript" type="text/javascript">
+function printit() {
+  if (window.print) {
+    window.focus();
+    window.print();
+  }
+}
+        </script><script language="Javascript" type="text/javascript">
+var NS = (navigator.appName == "Netscape");
+var VERSION = parseInt(navigator.appVersion);
+if (VERSION > 3) {
+  document.write('<div title="Print this Page" class="printlink">');
+  document.write('  <a class="dida" href="javascript:printit()">');
+  document.write('    <img alt="print - icon" src="../skin/images/printer.gif" class="skin">');
+  document.write('    <br>');
+  document.write('  PRINT</a>');
+  document.write('</div>');
+}
+        </script>
+<div title="Portable Document Format" class="pdflink">
+<a class="dida" href="fast.pdf"><img alt="PDF -icon" src="../skin/images/pdfdoc.gif" class="skin"><br>
+        PDF</a>
+</div>
+<div class="trail">
+<text>Font size:</text> 
+	          &nbsp;<input value="Reset" class="resetfont" title="Reset text" onclick="ndeSetTextSize('reset'); return false;" type="button">      
+	          &nbsp;<input value="-a" class="smallerfont" title="Shrink text" onclick="ndeSetTextSize('decr'); return false;" type="button">
+	          &nbsp;<input value="+a" class="biggerfont" title="Enlarge text" onclick="ndeSetTextSize('incr'); return false;" type="button">
+</div>
+<h1>Fast Start Instructions.</h1> 
+  
+<p>
+    BUILDING CURL-LOADER.
+  </p>
+        Build it using general C development environment with bash, 
+        gcc (3 or 4 series), make, etc on a linux machine.<br>
+        
+<br>
+        Building pre-requirements are:<br>
+          1. openssl binaries;<br>
+          2. openssl development package with include files (on debian package libssl-dev);<br>
+          3. ncurses development package.<br>
+         
+<br>
+         Adjust Makefile variables to point to the openssl headers and libraries. 
+         If you want to specify an openssl development directory with include 
+         files (e.g. crypto.h), export environment variable OPENSSLDIR with 
+         the value of that directory.<br>
+         For example: $export OPENSSLDIR=the-full-path-to-the-directory<br>
+         
+<br>
+         Another known issue is libidn.so, which means, that some linux distributions 
+         do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink. <br>
+        
+<br>
+          Run the following commands from your (hopefully) bash linux shell:<br>
+         $tar zxfv curl-loader-&lt;version&gt;.tar.gz<br>
+         $cd curl-loader-&lt;version&gt;<br>
+         $make<br>
+         
+<br>
+         By default, we are building both libcurl and curl-loader without optimization and with
+         debugging -g option. To build with optimization and without debugging, please, run:<br>
+         $make cleanall<br>
+         $make optimize=1 debug=0<br>
+         If still any building issues, please, fill you free to contact us for assistance.<br>
+         
+<br>
+      
+<p>
+       LOADING CONFIGURATION.
+      </p>
+        To run the load create a configuration file to be passed to
+         curl-loader by the -f commmand line option, e.g.<br>
+         #curl-loader -f ./conf-user/user_batch.conf<br>
+        
+<br>
+        For more examples, please, look at the files in "conf-examples" directory. You may 
+        copy an example file and edit it.<br>
+        
+<br>
+        Another option is to start with running "$make menuconfig" configuration GUI, which 
+        requires ncurses development package on your system. The dialog window 
+        will guide you and create your configuration file in conf-user directory. 
+        A limitation of the menu-guided configuration, is that it enables 
+        to create only a single UAS URL.<br>
+        
+<br>
+       
+<p>
+    ENVIRONMENT AND SYSTEM.
+      </p>
+      Running hundreds and thousands of clients, please, do not forget:<br>
+        - to increase limit of descriptors (sockets) by running e.g. <br>
+           #ulimit -n 10000;<br>
+        - optionally, to set reuse of sockets in time-wait state: by setting <br>
+            #echo 1 &gt; /proc/sys/net/ipv4/tcp_tw_recycle and/or<br> 
+           #echo 1 &gt; /proc/sys/net/ipv4/tcp_tw_reuse;<br>
+       
+<br>
+     In some cases you may need to increase the system limits for open
+     descriptors (sockets).<br>
+       
+<br>
+       
+<p>
+         USAGE:
+      </p>
+        run as a root user:<br>
+        #./curl-loader -f &lt;configuration filename&gt; [other options]<br>
+         For the details about [other options], please see FAQs.<br>
+        
+<br>
+        If curl-loader on start reports any problems your configuration file,
+        please, "don't panic" - just fix it.<br>
+        For more details, please, look into the FAQs page.<br>
+       
+<br>
+  
+</div>
+<div class="clearboth">&nbsp;</div>
+</div>
+<div id="footer">
+<div class="lastmodified">
+<script type="text/javascript"><!--
+document.write("<text>Last Published:</text> " + document.lastModified);
+//  --></script>
+</div>
+<div class="copyright">
+        Copyright &copy;
+         2007 The Authors.</div>
+</div>
+</body>
+</html>
