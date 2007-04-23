@@ -41,18 +41,18 @@ loading clients.
 What is the recommended HW configuration?
       </question>
       <answer>
-Note, that a virtual client takes about 30-35 K memory in user-space plus some none-pageble 
-memory in kernel for sockets, TCP structures, but mainly for send and recv buffers. <br/>
+Note, that each virtual client takes about 30-35 K memory in user-space plus some none-pageable 
+memory in kernel mainly for send and recv buffers. <br/>
 <br/>
-Our PC with Pentium 2.4 GHz and 480 MB memory is capable to support 3000-4000 simultaneously
+Our PC with Pentium-4 2.4 GHz and 480 MB memory is capable to support 3000-4000 simultaneously
 loading clients. To reach 10K simultaneously loading clients a PC with dual 3.0 GHz Intel or 2.2 GHz 
-AMD and 1-1,5 GB memory is recommended, but for some configuration a single high-end CPU may
-be enough.<br/>
+AMD and 1-2 GB memory is recommended, but for some configurations a single high-end CPU like
+Xeon or Opteron could be enough.<br/>
 <br/>
-When loading from a multi-CPU (or multi-core) systems, a loading model with the same number of
-curl-loader processes as the number of CPUs may be most effective and deliver even higher
-numbers (than 10K) of simultaneously loading clients. If you are thinking, tuning, optimizing and 
-getting our advise, thus, the sky is the limit.
+When loading from a multi-CPU (or multi-core) systems, a loading model with the number of
+curl-loader processes equal to the number of CPUs may be most effective and deliver even higher
+numbers (than 10K) of simultaneously loading clients from a single PC. If you are thinking, 
+tuning, optimizing and getting our advise - the sky is the limit.
        </answer>
     </faq>
   </faqsection>
@@ -116,12 +116,12 @@ You can use any operating system of your choice, providing this it is linux with
     <title>Creating Loading Configuration </title>
     <faq id="conf-file-general">
       <question>
-        How can I create loading configuration file?
+How can I create loading configuration file?
       </question>
       <answer>
         <p>
-        To run a load create your configuration file to be passed to
-         curl-loader using -f commmand line option, e.g.<br/>
+To run a load create your configuration file to be passed to
+curl-loader using -f commmand line option, e.g.<br/>
          <br/>
          #curl-loader -f ./conf-user/user_batch.conf<br/>
         <br/>
@@ -380,8 +380,11 @@ Please, look at conf-examples/ftp.conf<br/>
             #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or<br/> 
            #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;<br/>
        <br/>
-     In some cases you may need to increase the system limits for open
-     descriptors (sockets). See linux FAQs for that.<br/>
+In some cases you may need to increase the system limits for open
+descriptors (sockets):<br/>
+echo 65535 > /proc/sys/fs/file-max <br/>
+Note, that your linux distribution may require editing of some other files
+like /etc/security/limits.conf, etc
        </answer>
        </faq>
 
@@ -610,8 +613,7 @@ error state will not be scheduled for load any more. <br/>
       <answer>
 HYPER mode (-m 0 command line option) was already used for loads with up to 10000 clients,
 whereas HW issues, like CPU and memory resource, start to be counting.
-The mode uses epoll() syscall (via libevent library) for demultiplexing. Y may try it
-as well, noting that it is still experimental. <br/>
+The mode uses epoll() syscall (via libevent library) for demultiplexing. <br/>
 <br/>
        </answer>
     </faq>
@@ -657,6 +659,9 @@ to be cared about for hyper mode.<br/>
 <br/>
 Increase the maximum number of open descriptors in your linux system, if required,
 using linux HOWTOS.<br/>
+echo 65535 > /proc/sys/fs/file-max <br/>
+Note, that your linux distribution may require editing of some other files
+like /etc/security/limits.conf, etc<br/>
 <br/>
 4. Relax routing checks;<br/>
 <br/>
@@ -665,10 +670,11 @@ echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter<br/>
 echo 0 > /proc/sys/net/ipv4/conf/eth0/rp_filter<br/>
 <br/>
 5. Increase memory available for kernel tcp;<br/>
-Read the maximum available TCP memory and sysctl as a root
+Read the maximum available TCP memory and sysctl or echo as a root
 the number to the kernel tcp, e.g.:<br/>
 cat /proc/sys/net/core/wmem_max - the output is 109568.<br/>
-/sbin/sysctl net.ipv4.tcp_mem="109568 109568 109568"<br/>
+/sbin/sysctl net.ipv4.tcp_mem="109568 109568 109568" or <br/>
+echo "109568 109568 109568" > /proc/sys/net/ipv4/tcp_mem
 <br/>
 6. Create configuration files for each instance of curl-loader to run.<br/>
 <br/>
@@ -698,8 +704,7 @@ re-opened for the next request.
 Run the first loading attempt with a small number of clients using command-line 
 options -v (verbose) and -u (url in logs). Grep to look for the errors and their reasons. 
 If an error is "Connection timeout", you may try to increase the connection establishment
-timeout (the default is 5 seconds - huge, but "ih veis"), using -c command-line
-option.<br/>
+timeout (the default is 5 seconds), using -c command-line option.<br/>
 If any assistance required, please, don't hesitate to contact us using 
 PROBLEM-REPORTING form in the download tarball.<br/>
 <br/>
@@ -715,12 +720,26 @@ when using verbose output (-v -u). Command-line option -l &lt;maxsize in MB&gt; 
 be useful, whereas the default policy is to rewind the logfile (writing from the 
 file start), when it reaches 1 GB. Do not use -v and -u options, when you have 
 performance issues.<br/>
+<br/>
+10. Monitoring of the loading PC.<br/>
+<br/>
+Please, use top or vmstat commands to monitor the memory usage, swapping and CPU.
+Intensive swapping is a good indication, that your PC is short in user-space memory.
+If you see "memory pressure" counters in netstat -s output, this is a good indication,
+that you are short in kernel memory for TCP.<br/>
+Zero idle CPU is not the show stopper, but when you see, that Load Status GUI on 
+your console prints its output with delays higher than it should be 
+(the default is 3 seconds and may be adjusted by -i command-line option), you need
+stronger CPU or run several curl-loader processes on a multi-CPU machine. Note, that 
+for a load with several curl-loader precesses you need to arrange different
+configuration files with different batch-names and not overlapping ranges of IP-addresses 
+for each curl-loader process.<br/>
        </answer>
     </faq>
 
    <faq id="caps">
       <question>
-     How to calculate CAPS numbers for a load?
+How to calculate CAPS numbers for a load?
       </question>
       <answer>
 When number of clients is defined by CLIENTS_NUM tag, number of
