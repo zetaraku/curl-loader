@@ -26,6 +26,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include "timer_queue.h"
+
 #define BATCHES_MAX_NUM 64
 
 
@@ -288,6 +290,31 @@ typedef int (*load_state_func)  (struct client_context* cctx, unsigned long *wai
    in load_next_step ().
 */
 extern const load_state_func load_state_func_table [];
+
+/****************************************************************************************
+ * Function name - alloc_init_timer_waiting_queue
+ *
+ * Description - Allocates and initializes timer waiting queue
+ *
+ *Input               size -  maximum possible size of the queue
+ *Input/Output   **wq - waiting queue to be allocated, initialized and returned back
+ *
+ * Return Code/Output - On success -0, on error -1
+ ****************************************************************************************/
+int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq);
+
+/*****************************************************************************
+ * Function name - init_timers_and_add_initial_clients_to_load
+ *
+ * Description - Really inits timers and adds initial clients to load
+ *
+ *Input               *bctx - pointer to a batch context
+ *                   now-time  - current timestamp
+ *
+ * Return Code/Output - On success -0, on error -1
+ ******************************************************************************/
+int init_timers_and_add_initial_clients_to_load (struct batch_context* bctx,
+                                                 unsigned long now_time);
 
 
 /* ------------- Hyper-mode loading  function ----------------*/

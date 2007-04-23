@@ -35,12 +35,10 @@
 #include "batch.h"
 #include "client.h"
 #include "conf.h"
-#include "heap.h"
+//#include "heap.h"
 
-static timer_node logfile_timer_node; 
-static timer_node clients_num_inc_timer_node;
 
-#define TIMER_NEXT_LOAD 10000
+#define TIMER_NEXT_LOAD 20000
 
 static int mget_url_hyper (batch_context* bctx);
 static int mperform_hyper (batch_context* bctx, int* still_running);
@@ -412,8 +410,6 @@ static void next_load_cb_hyper (int fd, short kind, void *userp)
 int user_activity_hyper (client_context* cctx_array)
 {
   batch_context* bctx = cctx_array->bctx;
-  long logfile_timer_id = -1;
-  long clients_num_inc_id = -1;
   sock_info *sinfo;
   int k, st;
 
@@ -448,71 +444,23 @@ int user_activity_hyper (client_context* cctx_array)
       bctx->cctx_array[k].ext_data = sinfo;
     }
 
-  /* ======== Make specific allocations and initializations =======*/
-
-  if (! (bctx->waiting_queue = calloc (1, sizeof (heap))))
+  if (alloc_init_timer_waiting_queue (
+                                      bctx->client_num + PERIODIC_TIMERS_NUMBER + 1,
+                                      &bctx->waiting_queue) == -1)
     {
-      fprintf (stderr, "%s - error: failed to allocate queue.\n", __func__);
-      return -1;
-    }
-  
-  if (tq_init (bctx->waiting_queue,
-               bctx->client_num,               /* tq size */
-               10,                             /* tq increase step; 0 - means don't increase */
-               bctx->client_num + PERIODIC_TIMERS_NUMBER + 1 /* number of nodes to prealloc */
-               ) == -1)
-    {
-      fprintf (stderr, "%s - error: failed to initialize waiting queue.\n", __func__);
+      fprintf (stderr, "%s - error: failed to alloc or init timer waiting queue.\n", __func__);
       return -1;
     }
 
   const unsigned long now_time = get_tick_count ();
   
-  /* 
-     Init logfile rewinding timer and schedule it.
-  */
-  const unsigned long logfile_timer_msec  = 1000*SMOOTH_MODE_LOGFILE_TEST_TIMER;
-
-  logfile_timer_node.next_timer = now_time + logfile_timer_msec;
-  logfile_timer_node.period = logfile_timer_msec;
-  logfile_timer_node.func_timer = handle_logfile_rewinding_timer;
-
-  if ((logfile_timer_id = tq_schedule_timer (bctx->waiting_queue, 
-                                             &logfile_timer_node)) == -1)
+  if (init_timers_and_add_initial_clients_to_load (bctx,
+                                                   now_time) == -1)
     {
-      fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
+      fprintf (stderr, 
+               "%s - error: init_timers_and_add_initial_clients_to_load () failed.\n", 
+               __func__);
       return -1;
-    }
-  
-
-  bctx->start_time = bctx->last_measure = now_time;
-  bctx->active_clients_count = 0;
-  
-  if (add_loading_clients (bctx) == -1)
-    {
-      fprintf (stderr, "%s error: add_loading_clients () failed.\n", __func__);
-      return -1;
-    }
-
-  if (bctx->do_client_num_gradual_increase)
-    {
-      /* 
-         Schedule the gradual loading clients increase timer 
-      */
-      
-      clients_num_inc_timer_node.next_timer = now_time + 1000;
-      clients_num_inc_timer_node.period = 1000;
-      clients_num_inc_timer_node.func_timer = 
-      
-      handle_gradual_increase_clients_num_timer;
-
-      if ((clients_num_inc_id = tq_schedule_timer (
-                                                   bctx->waiting_queue, 
-                                                   &clients_num_inc_timer_node)) == -1)
-        {
-          fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
-          return -1;
-        }
     }
 
   evtimer_set(&timer_event, timer_cb_hyper, bctx);

@@ -56,6 +56,7 @@
 #include "loader.h"
 #include "conf.h"
 #include "ssl_thr_lock.h"
+#include "screen.h"
 
 
 static int create_ip_addrs (batch_context* bctx, int bctx_num);
@@ -160,6 +161,7 @@ main (int argc, char *argv [])
 
   signal (SIGINT, sigint_handler);
 
+  //  screen_init ();
   
   if (! threads_run)
     {

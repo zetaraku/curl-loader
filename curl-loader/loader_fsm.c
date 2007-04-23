@@ -23,12 +23,17 @@
 // must be the first include
 #include "fdsetsize.h"
 
+#include <stdlib.h>
+
 #include "loader.h"
 #include "client.h"
 #include "batch.h"
 #include "conf.h"
+#include "heap.h"
 
-
+static timer_node logfile_timer_node;
+static timer_node screen_input_timer_node;
+static timer_node clients_num_inc_timer_node;
 
 static int load_error_state (client_context* cctx, unsigned long *wait_msec);
 static int load_init_state (client_context* cctx, unsigned long *wait_msec);
@@ -55,8 +60,6 @@ const load_state_func load_state_func_table [] =
     load_final_ok_state,
   };
 
-
-
 static int is_last_cycling_state (client_context* cctx);
 static int is_first_cycling_state (client_context* cctx);
 static int last_cycling_state (batch_context* bctx);
@@ -68,7 +71,126 @@ static int on_cycling_completed (client_context* cctx, unsigned long *wait_msec)
 static int setup_login_logoff (client_context* cctx, const int login);
 static int setup_uas (client_context* cctx);
 
+/*****************************************************************************
+ * Function name - alloc_init_timer_waiting_queue
+ *
+ * Description - Allocates and initializes timer waiting queue
+ *
+ *Input               size -  maximum possible size of the queue
+ *Input/Output   **wq - waiting queue to be allocated, initialized and returned back
+ *
+ * Return Code/Output - On success -0, on error -1
+ ******************************************************************************/
+int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq)
+{
+  timer_queue* tq = NULL;
 
+  *wq = NULL;
+
+  if (! (tq = calloc (1, sizeof (heap))))
+    {
+      fprintf (stderr, "%s - error: failed to allocate queue.\n", __func__);
+      return -1;
+    }
+  
+  if (tq_init (tq,
+               size,               /* tq size */
+               10,                             /* tq increase step; 0 - means don't increase */
+               size /* number of nodes to prealloc */
+               ) == -1)
+    {
+      fprintf (stderr, "%s - error: failed to initialize waiting queue.\n", __func__);
+      free (tq);
+      return -1;
+    }
+
+  *wq = tq;
+
+  return 0;
+}
+
+
+/*****************************************************************************
+ * Function name - init_timers_and_add_initial_clients_to_load
+ *
+ * Description - Really inits timers and adds initial clients to load
+ *
+ *Input               *bctx - pointer to a batch context
+ *                   now-time  - current timestamp
+ *
+ * Return Code/Output - On success -0, on error -1
+ ******************************************************************************/
+int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
+                                                 unsigned long now_time)
+{
+    long logfile_timer_id = -1;
+    long clients_num_inc_id = -1;
+
+    /* 
+     Init logfile rewinding timer and schedule it.
+  */
+  const unsigned long logfile_timer_msec  = 
+    1000*SMOOTH_MODE_LOGFILE_TEST_TIMER;
+
+  logfile_timer_node.next_timer = now_time + logfile_timer_msec;
+  logfile_timer_node.period = logfile_timer_msec;
+  logfile_timer_node.func_timer = handle_logfile_rewinding_timer;
+
+  if ((logfile_timer_id = tq_schedule_timer (bctx->waiting_queue, 
+                                             &logfile_timer_node)) == -1)
+    {
+      fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
+      return -1;
+    }
+
+  /* 
+     Init screen input testing timer and schedule it.
+  */
+  /*
+  screen_input_timer_node.next_timer = now_time + 3000;
+  screen_input_timer_node.period = 1000; 
+  screen_input_timer_node.func_timer = handle_screen_input_timer;
+
+  if ((screen_input_timer_id = tq_schedule_timer (bctx->waiting_queue, 
+                                             &screen_input_timer_node)) == -1)
+    {
+      fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
+      return -1;
+    }
+  */
+
+  bctx->start_time = bctx->last_measure = now_time;
+  bctx->active_clients_count = 0;
+  
+
+  if (add_loading_clients (bctx) == -1)
+    {
+      fprintf (stderr, "%s error: add_loading_clients () failed.\n", __func__);
+      return -1;
+    }
+
+  if (bctx->do_client_num_gradual_increase)
+    {
+      /* 
+         Schedule the gradual loading clients increase timer 
+      */
+      
+      clients_num_inc_timer_node.next_timer = now_time + 1000;
+      clients_num_inc_timer_node.period = 1000;
+      clients_num_inc_timer_node.func_timer = 
+        handle_gradual_increase_clients_num_timer;
+
+      if ((clients_num_inc_id = tq_schedule_timer (
+                                                   bctx->waiting_queue, 
+                                                   &clients_num_inc_timer_node)) == -1)
+        {
+          fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
+          return -1;
+        }
+    }
+  
+  return 0;
+}
 
 
 

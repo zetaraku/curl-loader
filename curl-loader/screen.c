@@ -41,7 +41,7 @@ void screen_init ()
   noecho();
 }
 
-int keyboard_input ()
+int screen_test_keyboard_input ()
 {
   int rval_input = -1;
 
@@ -94,6 +94,7 @@ int on_keybord_input (int key)
          break;
        }
 
+     fprintf(stderr, "%s - got %c\n", __func__, key);
      return 0;
 }
 

@@ -36,28 +36,24 @@
 #include "batch.h"
 #include "client.h"
 #include "conf.h"
-#include "heap.h"
+//#include "heap.h"
 
-static timer_node logfile_timer_node; 
-static timer_node clients_num_inc_timer_node;
 
 static int mget_url_smooth (batch_context* bctx);
 static int mperform_smooth (batch_context* bctx,
                             unsigned long* now_time,
                             int* still_running);
 
-/****************************************************************************************
+/******************************************************************************
  * Function name - user_activity_smooth
  *
  * Description - Simulates user-activities, like login, uas, logoff, using SMOOTH-MODE
  * Input -       *cctx_array - array of client contexts (related to a certain batch of clients)
  * Return Code/Output - On Success - 0, on Error -1
- ****************************************************************************************/
+ *******************************************************************************/
 int user_activity_smooth (client_context* cctx_array)
 {
   batch_context* bctx = cctx_array->bctx;
-  long logfile_timer_id = -1;
-  long clients_num_inc_id = -1;
 
   if (!bctx)
     {
@@ -65,72 +61,27 @@ int user_activity_smooth (client_context* cctx_array)
       return -1;
     }
 
-  /* ======== Make the smooth-mode specific allocations and initializations =======*/
-
-  if (! (bctx->waiting_queue = calloc (1, sizeof (heap))))
+  if (alloc_init_timer_waiting_queue (
+                                      bctx->client_num + PERIODIC_TIMERS_NUMBER + 1,
+                                      &bctx->waiting_queue) == -1)
     {
-      fprintf (stderr, "%s - error: failed to allocate queue.\n", __func__);
-      return -1;
-    }
-  
-  if (tq_init (bctx->waiting_queue,
-               bctx->client_num,               /* tq size */
-               10,                             /* tq increase step; 0 - means don't increase */
-               bctx->client_num + PERIODIC_TIMERS_NUMBER + 1 /* number of nodes to prealloc */
-               ) == -1)
-    {
-      fprintf (stderr, "%s - error: failed to initialize waiting queue.\n", __func__);
+      fprintf (stderr, 
+               "%s - error: failed to alloc or init timer waiting queue.\n", 
+               __func__);
       return -1;
     }
 
   const unsigned long now_time = get_tick_count ();
   
-  /* 
-     Init logfile rewinding timer and schedule it.
-  */
-  const unsigned long logfile_timer_msec  = 1000*SMOOTH_MODE_LOGFILE_TEST_TIMER;
-
-  logfile_timer_node.next_timer = now_time + logfile_timer_msec;
-  logfile_timer_node.period = logfile_timer_msec;
-  logfile_timer_node.func_timer = handle_logfile_rewinding_timer;
-
-  if ((logfile_timer_id = tq_schedule_timer (bctx->waiting_queue, 
-                                             &logfile_timer_node)) == -1)
+  if (init_timers_and_add_initial_clients_to_load (bctx,
+                                                   now_time) == -1)
     {
-      fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
-      return -1;
-    }
-  
-
-  bctx->start_time = bctx->last_measure = now_time;
-  bctx->active_clients_count = 0;
-  
-
-  if (add_loading_clients (bctx) == -1)
-    {
-      fprintf (stderr, "%s error: add_loading_clients () failed.\n", __func__);
+      fprintf (stderr, 
+               "%s - error: init_timers_and_add_initial_clients_to_load () failed.\n", 
+               __func__);
       return -1;
     }
 
-  if (bctx->do_client_num_gradual_increase)
-    {
-      /* 
-         Schedule the gradual loading clients increase timer 
-      */
-      
-      clients_num_inc_timer_node.next_timer = now_time + 1000;
-      clients_num_inc_timer_node.period = 1000;
-      clients_num_inc_timer_node.func_timer = 
-        handle_gradual_increase_clients_num_timer;
-
-      if ((clients_num_inc_id = tq_schedule_timer (
-                                                   bctx->waiting_queue, 
-                                                   &clients_num_inc_timer_node)) == -1)
-        {
-          fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
-          return -1;
-        }
-    }
 
   dump_snapshot_interval (bctx, now_time);
 
@@ -154,13 +105,9 @@ int user_activity_smooth (client_context* cctx_array)
   */
   if (bctx->waiting_queue)
     {
-        /* Cancel periodic logfile timer */
-      if (logfile_timer_id != -1)
-        {
-          tq_cancel_timer (bctx->waiting_queue, logfile_timer_id);
-          tq_cancel_timer (bctx->waiting_queue, clients_num_inc_id);
-        }
-
+        /* 
+           TODO: cancel here all timers 
+         */
       tq_release (bctx->waiting_queue);
       free (bctx->waiting_queue);
       bctx->waiting_queue = 0;
@@ -184,15 +131,9 @@ int user_activity_smooth (client_context* cctx_array)
 static int mget_url_smooth (batch_context* bctx)  		       
 {
   int max_timeout_msec = 1000;
-    //    DEFAULT_SMOOTH_URL_COMPLETION_TIME*1000;
   unsigned long now_time = get_tick_count ();
   int cycle_counter = 0;
     
-  //if (bctx->uas_url_ctx_array)
-  //  {
-  //   max_timeout_msec = bctx->uas_url_ctx_array[0].url_completion_time*1000;
-  // }
- 
   int still_running = 0;
   struct timeval timeout;
 
