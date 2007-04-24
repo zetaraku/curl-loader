@@ -70,7 +70,7 @@ diff -Naru curl-7.16.2/lib/url.c curl-7.16.2-mod/lib/url.c
      Curl_safefree(old_conn->proxypasswd);
      Curl_llist_destroy(old_conn->send_pipe, NULL);
      Curl_llist_destroy(old_conn->recv_pipe, NULL);
-+    Curl_safefree(conn->master_buffer);
++    Curl_safefree(old_conn->master_buffer);
  
      free(old_conn);          /* we don't need this anymore */
  
