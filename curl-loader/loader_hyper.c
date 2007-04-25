@@ -506,14 +506,8 @@ static int on_exit_hyper (batch_context* bctx)
   */
   if (bctx->waiting_queue)
     {
-        /* Cancel periodic logfile timer */
-/*
-      if (logfile_timer_id != -1)
-        {
-          tq_cancel_timer (bctx->waiting_queue, logfile_timer_id);
-          tq_cancel_timer (bctx->waiting_queue, clients_num_inc_id);
-        }
-*/
+        /* Cancel periodic timers */
+      cancel_periodic_timers (bctx->waiting_queue);
 
       tq_release (bctx->waiting_queue);
       free (bctx->waiting_queue);

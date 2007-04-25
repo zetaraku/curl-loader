@@ -63,6 +63,7 @@ typedef struct tag_parser_pair
 
 static int batch_name_parser (batch_context*const bctx, char*const value);
 static int clients_num_parser (batch_context*const bctx, char*const value);
+static int clients_num_start_parser (batch_context*const bctx, char*const value);
 static int interface_parser (batch_context*const bctx, char*const value);
 static int netmask_parser (batch_context*const bctx, char*const value);
 static int ip_addr_min_parser (batch_context*const bctx, char*const value);
@@ -115,6 +116,8 @@ static const tag_parser_pair tp_map [] =
     /*------------------------ GENERAL SECTION ------------------------------ */
     {"BATCH_NAME", batch_name_parser},
     {"CLIENTS_NUM", clients_num_parser},
+    {"CLIENTS_NUM_MAX", clients_num_parser},
+    {"CLIENTS_NUM_START", clients_num_start_parser},
     {"INTERFACE", interface_parser},
     {"NETMASK", netmask_parser},
     {"IP_ADDR_MIN", ip_addr_min_parser},
@@ -541,6 +544,20 @@ static int clients_num_parser (batch_context*const bctx, char*const value)
     {
         fprintf (stderr, "%s - error: clients number (%d) is out of the range\n", 
                  __func__, bctx->client_num);
+        return -1;
+    }
+    return 0;
+}
+static int clients_num_start_parser (batch_context*const bctx, char*const value)
+{
+    bctx->client_num_start = 0;
+    bctx->client_num_start = atoi (value);
+    
+    /* fprintf (stderr, "\nclients number is %d\n", bctx->client_num_start); */
+    if (bctx->client_num_start < 0)
+    {
+        fprintf (stderr, "%s - error: clients starting number (%d) is out of the range\n", 
+                 __func__, bctx->client_num_start);
         return -1;
     }
     return 0;
@@ -1197,6 +1214,11 @@ static int validate_batch_general (batch_context*const bctx)
     if (bctx->client_num < 1)
     {
         fprintf (stderr, "%s - error: CLIENT_NUM is less than 1.\n", __func__);
+        return -1;
+    }
+    if (bctx->client_num_start < 0)
+    {
+        fprintf (stderr, "%s - error: CLIENT_NUM_START is less than 0.\n", __func__);
         return -1;
     }
     if (bctx->clients_initial_inc < 0)

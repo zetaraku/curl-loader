@@ -70,7 +70,7 @@ LD=gcc
 LDFLAGS=-L./lib -L$(OPENSSLDIR)/lib
 
 # Link Libraries. RedHat/FC require sometimes lidn
-LIBS= -ldl -lpthread -lrt -lncurses -lidn -lcurl -levent -lz -lssl -lcrypto 
+LIBS= -ldl -lpthread -lrt -lidn -lcurl -levent -lz -lssl -lcrypto 
 
 # Include directories
 INCDIR=-I. -I./inc -I$(OPENSSLDIR)/include

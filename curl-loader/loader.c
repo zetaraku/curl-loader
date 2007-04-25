@@ -89,6 +89,10 @@ static void sigint_handler (int signum)
 
   stop_loading = 1;
 
+  screen_release ();
+
+  close (STDIN_FILENO);
+
   fprintf (stderr, "\n\n======= SIGINT Received ============.\n");
 }
 
@@ -161,7 +165,7 @@ main (int argc, char *argv [])
 
   signal (SIGINT, sigint_handler);
 
-  //  screen_init ();
+  screen_init ();
   
   if (! threads_run)
     {

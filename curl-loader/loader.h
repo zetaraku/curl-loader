@@ -34,8 +34,8 @@
 #define DEFAULT_SMOOTH_URL_COMPLETION_TIME 6.0
 #define TIME_RECALCULATION_CYCLES_NUM 10
 #define TIME_RECALCULATION_MSG_NUM 100
-#define PERIODIC_TIMERS_NUMBER 1
-#define SMOOTH_MODE_LOGFILE_TEST_TIMER 10 /* once in 10 seconds */
+#define PERIODIC_TIMERS_NUMBER 2
+#define LOGFILE_TEST_TIMER_PERIOD 10 /* once in 10 seconds */
 
 
 /* forward declarations */
@@ -177,6 +177,21 @@ int handle_logfile_rewinding_timer  (struct timer_node* timer_node,
                                      unsigned long ulong_param);
 
 /****************************************************************************************
+ * Function name - handle_screen_input_timer
+ *
+ * Description -   Handling of screen imput
+ *
+ * Input -        *timer_node - pointer to timer node structure
+ *                *pvoid_param - pointer to some extra data; here batch context
+ *                *ulong_param - some extra data.
+ *
+ * Return Code/Output - On success -0, on error - (-1)
+ ****************************************************************************************/
+int handle_screen_input_timer  (struct timer_node* timer_node, 
+                                void* pvoid_param, 
+                                unsigned long ulong_param);
+
+/****************************************************************************************
  * Function name - handle_cctx_timer
  *
  * Description - Handling of timer for a client waiting in the waiting queue to 
@@ -280,6 +295,17 @@ int dispatch_expired_timers (struct batch_context* bctx, unsigned long now_time)
  ****************************************************************************************/
 int add_loading_clients (struct batch_context* bctx);
 
+/****************************************************************************************
+ * Function name - add_loading_clients_num
+ *
+ * Description - Adding a number of clients to load
+ *
+ * Input -       *bctx - pointer to the batch of contexts
+ *                  add_number - number of clients to add to load
+ * Return Code/Output - On Success - 0, on error  - (-1)
+ ****************************************************************************************/
+int add_loading_clients_num (struct batch_context* bctx, int add_number);
+
 typedef int (*load_state_func)  (struct client_context* cctx, unsigned long *wait_msec);
 
 /* 
@@ -302,6 +328,16 @@ extern const load_state_func load_state_func_table [];
  * Return Code/Output - On success -0, on error -1
  ****************************************************************************************/
 int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq);
+
+/***************************************************************************
+ * Function name - cancel_periodic_timers
+ *
+ * Description - Cancels scheduled periodic timers
+ *
+ *Input               *twq - pointer to timer waiting queue
+ * Return Code/Output - On success -0, on error -1
+ ****************************************************************************/
+int cancel_periodic_timers (timer_queue* twq);
 
 /*****************************************************************************
  * Function name - init_timers_and_add_initial_clients_to_load

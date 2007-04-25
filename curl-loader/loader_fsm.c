@@ -30,10 +30,15 @@
 #include "batch.h"
 #include "conf.h"
 #include "heap.h"
+#include "screen.h"
 
 static timer_node logfile_timer_node;
-static timer_node screen_input_timer_node;
 static timer_node clients_num_inc_timer_node;
+static timer_node screen_input_timer_node;
+
+static long logfile_timer_id = -1;
+static long clients_num_inc_id = -1;
+static long screen_input_timer_id = -1;
 
 static int load_error_state (client_context* cctx, unsigned long *wait_msec);
 static int load_init_state (client_context* cctx, unsigned long *wait_msec);
@@ -41,7 +46,6 @@ static int load_login_state (client_context* cctx, unsigned long *wait_msec);
 static int load_uas_state (client_context* cctx, unsigned long *wait_msec);
 static int load_logoff_state (client_context* cctx, unsigned long *wait_msec);
 static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec);
-
 
 /* 
    Table of loading functions in order to call an appropiate for 
@@ -109,7 +113,6 @@ int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq)
   return 0;
 }
 
-
 /*****************************************************************************
  * Function name - init_timers_and_add_initial_clients_to_load
  *
@@ -123,14 +126,11 @@ int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq)
 int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
                                                  unsigned long now_time)
 {
-    long logfile_timer_id = -1;
-    long clients_num_inc_id = -1;
-
     /* 
      Init logfile rewinding timer and schedule it.
   */
   const unsigned long logfile_timer_msec  = 
-    1000*SMOOTH_MODE_LOGFILE_TEST_TIMER;
+    1000*LOGFILE_TEST_TIMER_PERIOD;
 
   logfile_timer_node.next_timer = now_time + logfile_timer_msec;
   logfile_timer_node.period = logfile_timer_msec;
@@ -146,9 +146,8 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
   /* 
      Init screen input testing timer and schedule it.
   */
-  /*
   screen_input_timer_node.next_timer = now_time + 3000;
-  screen_input_timer_node.period = 1000; 
+  screen_input_timer_node.period = 1000;
   screen_input_timer_node.func_timer = handle_screen_input_timer;
 
   if ((screen_input_timer_id = tq_schedule_timer (bctx->waiting_queue, 
@@ -157,7 +156,6 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
       fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
       return -1;
     }
-  */
 
   bctx->start_time = bctx->last_measure = now_time;
   bctx->active_clients_count = 0;
@@ -192,6 +190,36 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
   return 0;
 }
 
+/**************************************************************************
+ * Function name - cancel_periodic_timers
+ *
+ * Description - Cancels scheduled periodic timers
+ *
+ *Input               *twq - pointer to timer waiting queue
+ * Return Code/Output - On success -0, on error -1
+ ***************************************************************************/
+int cancel_periodic_timers (timer_queue* twq)
+{
+  if (logfile_timer_id != -1)
+    {
+      tq_cancel_timer (twq, logfile_timer_id);
+      logfile_timer_id = -1;
+    }
+
+  if (clients_num_inc_id != -1)
+    {
+      tq_cancel_timer (twq, clients_num_inc_id);
+      clients_num_inc_id = -1;
+    }
+
+  if (screen_input_timer_id != -1)
+    {
+      tq_cancel_timer (twq, screen_input_timer_id);
+      screen_input_timer_id = -1;
+    }
+
+  return 0;
+}
 
 
 /****************************************************************************************
@@ -318,30 +346,49 @@ int load_next_step (client_context* cctx,
  ****************************************************************************************/
 int add_loading_clients (batch_context* bctx)
 {
-    int scheduled_now = 0;
+  long clients_to_sched = 0;
+  int scheduled_now = 0;
+  
+  /* 
+     Return, if initial gradual scheduling of all new clients has been stopped
+  */
+  if (bctx->stop_client_num_gradual_increase)
+    {
+      return 0; // Returning 0 means do not stop the timer
+    }
+  
   /* 
      Return, if initial gradual scheduling of all new clients has been accomplished. 
   */
-  if (bctx->client_num <= bctx->clients_initial_running_num)
+  if (bctx->client_num <= bctx->clients_current_sched_num)
     {
       bctx->do_client_num_gradual_increase = 0;
-      return -1;
+      return -1; // Returning -1 means - stop the timer
+      }
+  
+  /* Calculate number of the new clients to schedule. */
+  if (!bctx->clients_current_sched_num && bctx->client_num_start)
+    {
+      /* first time scheduling */
+      clients_to_sched = bctx->client_num_start;
+    }
+  else 
+    {
+      clients_to_sched = bctx->clients_initial_inc ?
+        min (bctx->clients_initial_inc, bctx->client_num - bctx->clients_current_sched_num) :
+        bctx->client_num;
     }
 
-  /* Calculate number of the new clients to schedule. */
-  const long clients_sched = bctx->clients_initial_inc ? 
-    min (bctx->clients_initial_inc, bctx->client_num - bctx->clients_initial_running_num) : 
-    bctx->client_num; 
 
-  //fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_sched);
+  //fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_to_sched);
 
   /* 
      Schedule new clients by initializing thier CURL handle with
      URL, etc. parameters and adding it to MCURL multi-handle.
   */
   long j;
-  for (j = bctx->clients_initial_running_num; 
-       j < bctx->clients_initial_running_num + clients_sched; 
+  for (j = bctx->clients_current_sched_num; 
+       j < bctx->clients_current_sched_num + clients_to_sched; 
        j++)
 	{
       /* Runs load_init_state () for each newly added client. */
@@ -358,14 +405,69 @@ int add_loading_clients (batch_context* bctx)
      Re-calculate assisting counters and enable do_client_num_gradual_increase 
      flag, if required.
   */
+
+  bctx->clients_current_sched_num += clients_to_sched;
+
   if (bctx->clients_initial_inc)
     {
-      bctx->clients_initial_running_num += clients_sched;
-      if (bctx->clients_initial_running_num < bctx->client_num)
+      if (bctx->clients_current_sched_num < bctx->client_num)
         {
           bctx->do_client_num_gradual_increase = 1;
         }
     }
+	
+  return 0;
+}
+
+/****************************************************************************************
+ * Function name - add_loading_clients_num
+ *
+ * Description - Adding a number of clients to load
+ *
+ * Input -       *bctx - pointer to the batch of contexts
+ *                  add_number - number of clients to add to load
+ * Return Code/Output - On Success - 0, on error  (-1)
+ ****************************************************************************************/
+int add_loading_clients_num (batch_context* bctx, int add_number)
+{
+  int scheduled_now = 0;
+
+  if (add_number <= 0)
+    {
+      return -1;
+    }
+  
+  if (bctx->client_num <= bctx->clients_current_sched_num)
+    {
+      return -1; // No room to add more
+    }
+  
+  /* Calculate number of the new clients to schedule. */
+  const long clients_to_sched = min (add_number, 
+                                  bctx->client_num - bctx->clients_current_sched_num); 
+
+  //fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_to_sched);
+
+  /* 
+     Schedule new clients by initializing thier CURL handle with
+     URL, etc. parameters and adding it to MCURL multi-handle.
+  */
+  long j;
+  for (j = bctx->clients_current_sched_num; 
+       j < bctx->clients_current_sched_num + clients_to_sched; 
+       j++)
+	{
+      /* Runs load_init_state () for each newly added client. */
+      if (load_next_step (&bctx->cctx_array[j], 
+                          bctx->start_time,
+                          &scheduled_now) == -1)
+        {  
+          fprintf(stderr,"%s error: load_next_step() initial failed\n", __func__);
+          return -1;
+        }
+    }
+  
+  bctx->clients_current_sched_num += clients_to_sched;
 	
   return 0;
 }
@@ -540,6 +642,33 @@ int handle_logfile_rewinding_timer  (timer_node* timer_node,
     }
   
   //fprintf (stderr, "%s - runs.\n", __func__);
+
+  return 0;
+}
+
+/****************************************************************************************
+ * Function name - handle_screen_input_timer
+ *
+ * Description -   Handling of screen imput
+ *
+ * Input -        *timer_node - pointer to timer node structure
+ *                *pvoid_param - pointer to some extra data; here batch context
+ *                *ulong_param - some extra data.
+ *
+ * Return Code/Output - On success -0, on error - (-1)
+ ****************************************************************************************/
+int handle_screen_input_timer  (timer_node* timer_node, 
+                                     void* pvoid_param, 
+                                     unsigned long ulong_param)
+{
+  batch_context* bctx = (batch_context *) pvoid_param;
+  (void) timer_node;
+  (void) ulong_param;
+
+  screen_test_keyboard_input (bctx);
+
+  //fprintf (stderr, "%s - runs.\n", __func__);
+  
 
   return 0;
 }

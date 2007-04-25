@@ -75,8 +75,10 @@ typedef struct batch_context
   /* Statistics file <batch-name>.txt */
   char batch_statistics[BATCH_NAME_SIZE+BATCH_NAME_EXTRA_SIZE];
 
-  /* Number of clients (each client with its own IP-address) in the batch */
+  /* Maximum number of clients (each client with its own IP-address) in the batch */
   int client_num;
+
+  int client_num_start;
   
    /* Name of the network interface to be used for loading, e.g. "eth0", "eth1:16" */
   char net_interface[16];
@@ -253,11 +255,13 @@ typedef struct batch_context
   */
   int do_client_num_gradual_increase;
 
+  int stop_client_num_gradual_increase;
+
   /* 
      Number of already scheduled clients. Used to schedule new
      clients in a gradual fashion, when <clients_initial_inc> is positive. 
   */
-  int clients_initial_running_num;
+  int clients_current_sched_num;
 
   /*  Waiting queue to keep interleev timeouts in smooth mode */
   timer_queue* waiting_queue;

@@ -32,11 +32,12 @@
 #include "client.h"
 
 #include "statistics.h"
+#include "screen.h"
 
 #define SECURE_APPL_STR "HTTPS "
 #define UNSECURE_APPL_STR "HTTP "
 
-static void 
+static void
 dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
                                                      unsigned long now_time);
 
@@ -470,6 +471,8 @@ void dump_final_statistics (client_context* cctx)
            "- %s.ctx for the virtual client based statistics.\n"
            "You may add -v and -u options to the command line for more verbouse output to %s.log file.\n",
            bctx->batch_name, bctx->batch_name, bctx->batch_name, bctx->batch_name);
+
+  screen_release ();
 }
 
 /****************************************************************************************
@@ -505,8 +508,26 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
                    &bctx->http_total,  
                    &bctx->https_total);
 
+  fprintf(stdout,"=============================================================\n");
+
+  if (bctx->do_client_num_gradual_increase && 
+      (bctx->stop_client_num_gradual_increase == 0))
+    {
+      fprintf(stdout," Automatic: adding %ld clients/sec. Press M for manual control.\n",
+              bctx->clients_initial_inc);
+    }
+  else
+    {
+      fprintf(stdout," Manual: clients:max-[%d],curr-[%d]. Inc clients num: [+|*].\n",
+              bctx->client_num, pending_active_and_waiting_clients_num (bctx));
+    }
+
   fprintf(stdout,"=============================================================\n\n");
   fflush (stdout);
+  
+  //fprintf (stderr, "%s do_client %d, stop_client %d.\n", 
+  //         __func__, bctx->do_client_num_gradual_increase,
+  //         bctx->stop_client_num_gradual_increase);
 }
 
 /****************************************************************************************
