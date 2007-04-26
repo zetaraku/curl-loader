@@ -1,4 +1,4 @@
-version 0.30, ?
+version 0.30 "stable", 26/04/2007, svn-325
 
 * Memory consumption per virtial client decreased from 60-65 K
    to 30-35 K by patching and configuring libcurl.
