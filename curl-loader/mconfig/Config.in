@@ -12,26 +12,38 @@ config BATCH_NAME
             batches, because logfiles and statistics files names are derived
             from the batch name + extension.
 
-config CLIENTS_NUM
-	int " Virtual Clients Number"
+config CLIENTS_NUM_MAX
+	int " Virtual Clients Maximum Number"
 	default 1
-	range 1 2000
+	range 1 32000
 	help
 	  Number of virtual clients used for loading. This is the maximum number
             to be used. You may wish to start with a lower number and gradually 
             increase you load. This is the place, where the next option "Virtual Clients 
             Number Increment at Startup" comes to your assistance.
 
+config CLIENTS_NUM_START
+	int " Virtual Clients Number for Start"
+	default 0
+	range 0 10000
+	help
+	  Number of virtual clients used for loading start. When zero and 
+            "Virtual Clients Number Increment at Startup" is not, the later
+            is taken as the number to start. When both numbers zero, 
+            CLIENTS_NUM_MAX all clients will be used from the very
+            beginning of the load.
+
 config CLIENTS_INITIAL_INC
 	int " Virtual Clients Number Increment at Startup"
 	default 0
-	range 0 2000
+	range 0 200
 	help
 	  Specify the number of loading clients to be added each second till the 
-            total clients number reaches the number, specified by CLIENTS_NUM.
-            Zero number means, that use for loading all CLIENTS_NUM from the 
-            very beginning, instead of gradual increase of clients number at loading 
-            start.
+            total clients number reaches the number, specified by CLIENTS_NUM_MAX,
+            starting from CLIENTS_NUM_START.
+            When this number is zero and CLIENTS_NUM_START is also zero mean, 
+            that use for loading CLIENTS_NUM_MAX from the very beginning, 
+            instead of gradual increase of clients number at loading start.
 
 config INTERFACE
 	string " Network Interface for Loading"
