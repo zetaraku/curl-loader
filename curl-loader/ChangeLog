@@ -1,3 +1,16 @@
+version 0.30, ?
+
+* Memory consumption per virtial client decreased from 60-65 K
+   to 30-35 K by patching and configuring libcurl.
+
+* Load Status GUI enhanced by added +|- options to increase
+   number of clients for 1 or 10, respectively. Added an option to
+   switch back and forth between Automatic and Manual mode
+   of increasing the number of loading clients.
+
+* Load Status GUI strings shorten for a easier fit to a screen.
+
+
 version 0.29 18/04/2007, svn-299
 
 * Placed suggestions for tcp kernel memory tuning to environment.c
