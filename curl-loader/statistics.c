@@ -34,8 +34,8 @@
 #include "statistics.h"
 #include "screen.h"
 
-#define SECURE_APPL_STR "HTTPS "
-#define UNSECURE_APPL_STR "HTTP "
+#define SECURE_APPL_STR "S "
+#define UNSECURE_APPL_STR "  "
 
 static void
 dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
@@ -468,7 +468,7 @@ void dump_final_statistics (client_context* cctx)
   fprintf (stderr, "\nExited. For details look in the files:\n"
            "- %s.log for errors and traces;\n"
            "- %s.txt for loading statistics;\n"
-           "- %s.ctx for the virtual client based statistics.\n"
+           "- %s.ctx for virtual client based statistics.\n"
            "You may add -v and -u options to the command line for more verbouse output to %s.log file.\n",
            bctx->batch_name, bctx->batch_name, bctx->batch_name, bctx->batch_name);
 
@@ -513,16 +513,29 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
   if (bctx->do_client_num_gradual_increase && 
       (bctx->stop_client_num_gradual_increase == 0))
     {
-      fprintf(stdout," Automatic: adding %ld clients/sec. Press M for manual control.\n",
+      fprintf(stdout," Automatic: adding %ld clients/sec. Stop inc and manual [M].\n",
               bctx->clients_initial_inc);
     }
   else
     {
-      fprintf(stdout," Manual: clients:max-[%d],curr-[%d]. Inc clients num: [+|*].\n",
-              bctx->client_num, pending_active_and_waiting_clients_num (bctx));
+      const int current_clients = pending_active_and_waiting_clients_num (bctx);
+
+      fprintf(stdout," Manual: clients:max[%d],curr[%d]. Inc num: [+|*].",
+              bctx->client_num, current_clients);
+
+      if (bctx->stop_client_num_gradual_increase && 
+          bctx->clients_initial_inc &&
+          current_clients < bctx->client_num)
+        {
+          fprintf(stdout," Automatic: [A].\n");
+        }
+      else
+        {
+          fprintf(stdout,"\n");
+        }
     }
 
-  fprintf(stdout,"=============================================================\n\n");
+  fprintf(stdout,"=============================================================\n");
   fflush (stdout);
   
   //fprintf (stderr, "%s do_client %d, stop_client %d.\n", 
@@ -669,7 +682,7 @@ static void dump_stat_to_screen (char* protocol,
                                  unsigned long period)
 {
   fprintf(stdout, "%sReq:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,Err:%ld,"
-          "D:%ld(ms),D-2xx:%ld(ms),T-in:%lld(B/s),T-out:%lld(B/s)\n",
+          "D:%ldms,D-2xx:%ldms,T-i:%lldB/s,T-o:%lldB/s\n",
           protocol, sd->requests, sd->resp_oks, sd->resp_redirs, sd->resp_cl_errs,
           sd->resp_serv_errs, sd->other_errs, sd->appl_delay, sd->appl_delay_2xx,
           sd->data_in/period, sd->data_out/period);
