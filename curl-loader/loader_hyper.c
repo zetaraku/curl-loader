@@ -256,7 +256,9 @@ static void addsock_hyper(curl_socket_t socket,
   curl_multi_assign (bctx->multiple_handle, socket, cctx);
 }
 
+#if 0
 static char *whatstr[]={ "none", "IN", "OUT", "INOUT", "REMOVE" };
+#endif
 
 /************************************************************************
  * Function name - socket_callback
