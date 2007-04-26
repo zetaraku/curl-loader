@@ -10,6 +10,9 @@ version 0.30, ?
 
 * Load Status GUI strings shorten for a easier fit to a screen.
 
+* Added a new command-line option "-w" to skip out all warnings
+  and suggestions by the loader.
+
 
 version 0.29 18/04/2007, svn-299
 

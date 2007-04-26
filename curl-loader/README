@@ -2,7 +2,8 @@
     Robert Iakobashvili, Ashdod, Israel, coroberti@gmail.com
     Michael Moser, Modiin, Israel, moser.michael@gmail.com
 
-To skip bla-bla, please, refer to the QUICK-START file.
+To skip bla-bla, please, refer to the QUICK-START file,
+but mind, that tuning for a high load still is in the FAQs.
 
 
 
@@ -26,60 +27,58 @@ same sort of activities, like:
 - user activity simulation (UAS) by fetching several urls and timeouts in 
 between; 
 - logoff. 
+The tool can be easily extended to generate sftp, telnet, tftp, ldap, ssh, scp 
+etc other application protocols, supported by the great libcurl library. 
 
-The tool can be easily extended to generate telnet, tftp, ldap, ssh, scp etc 
-other application protocols, supported by the great libcurl library. 
 
 
 FEATURES LIST
 
-- Virtual clients - depending on your HW up to 5000-15000 clients from every 
-running curl-loader process. Each client performs loading from its own source 
-IP-address;
-
+- Virtual clients number. The tools runs depending on your HW and scenario up to 
+5000-15000 simultaneously loading clients, all from a single curl-loader 
+process. Actual number of clients may be several times (if not tens) higher than 
+the number of simultaneously loading clients and is limited only by memory. Each 
+client performs loading from its own source IP-address; 
 - Loading modes: smooth, hyper and storming. Gradual increase of virtual clients 
 number at loading start is an option for the smooth and hyper modes; 
 - IPv4 and IPv6 addresses and URIs; 
-
 - HTTP 1.1, HTTPS, FTP, FTPS, TLS/SSL; 
-
 - HTTP authentication login with POST or GET+POST methods. Unique configurable 
 username and password for each virtual client as well as configurable posted 
 string (post-forms) are the options. Another option is loading of users with 
-passwords from a text file; 
-
+credentials from a text file; 
 - HTTP logooff with POST, GET+POST, or GET (cookies); POST logoff with 
 configurable posted string (post-forms); 
-
 - HTTP Web and Proxy Authentication (HTTP 401 and 407 responses) with Basic, 
 Digest (RFC2617) and NTLM supported; 
-
 - HTTP 3xx redirections with unlimited number of redirections; 
-
 - HTTP cookies and DNS caches; 
-
-- Full customization of HTTP/FTP headers;
-
+- Full customization of HTTP/FTP headers; 
 - TCP connections reuse or re-establishment is configurable; 
-
 - Unlimited configurable number of UAS URLs and inter-URL waiting time for the 
-smooth mode; 
-
+smooth and hyper mode; 
 - Mixing of HTTP, HTTPS, FTP and FTPS urls in a single batch of client 
 configuration; 
-
 - Logfile with configurable verbousness of tracing with output for each virtual 
 client. The logfile is atomatically rewinded, when reaching configurable size to 
 prevent disk crashes; 
-
 - File with status and statistics per each virtual client; 
-
 - Dialog GUI guided creation of configuration files and well as pre-cooked 
 configuration examples; 
-
-- Load Status GUI and load status output to file;
-
+- Load Status GUI and load status output to file; 
 - Detailed loading statistics at Load Status GUI and to file;
+
+
+LICENSE
+Actually it is GPL2 due to the code from iprouted2. If required, we can also 
+consider GPL-compartible BSD-like license, and/or make it configurable. 
+
+AUTHORS
+Robert Iakobashvili (coroberti et gmail.com) and Michael Moser (moser.michael et 
+gmail.com), both from Israel.
+
+
+
 
 
 FREQUENTLY ASKED QUESTIONS
@@ -88,29 +87,32 @@ FREQUENTLY ASKED QUESTIONS
     1. Basic Terminology 
       1.1. What is the batch? 
       1.2. What means UAS? 
-    2. Building curl-loader 
-      2.1. Which operating systems are supported by curl-loader? 
-      2.2. What are the building pre-requirements? 
-      2.3. How to make (build) curl-loader? 
-    3. Creating Loading Configuration 
-      3.1. How can I create loading configuration file? 
-      3.2. What are the loading configuration file tags and semantics? 
-      3.3. How does the configuration support login, logoff and authentication 
+    2. Hardware Requirements 
+      2.1. What are the minimal HW requirements? 
+      2.2. What is the recommended HW configuration? 
+    3. Building curl-loader 
+      3.1. Which operating systems are supported by curl-loader? 
+      3.2. What are the building pre-requirements? 
+      3.3. How to make (build) curl-loader? 
+    4. Creating Loading Configuration 
+      4.1. How can I create loading configuration file? 
+      4.2. What are the loading configuration file tags and semantics? 
+      4.3. How does the configuration support login, logoff and authentication 
       flavors? 
-      3.4. When is better to use Login/Logoff section and when UAS? 
-    4. What about FTP load? 
-    5. Running Load 
-      5.1. What are the running environment requirements? 
-      5.2. How I can run the load? 
-      5.3. Which loading modes are supported? 
-      5.4. How I can monitor loading progress status? 
-      5.5. Where is the detaled log of all virtual clients activities and how to 
+      4.4. When is better to use Login/Logoff section and when UAS? 
+    5. What about FTP load? 
+    6. Running Load 
+      6.1. What are the running environment requirements? 
+      6.2. How I can run the load? 
+      6.3. Which loading modes are supported? 
+      6.4. How I can monitor loading progress status? 
+      6.5. Where is the detaled log of all virtual clients activities and how to 
       read it? 
-      5.6. Which statistics is collected and how to get to it? 
-    6. Advanced Issues 
-      6.1. What about performance? 
-      6.2. How to run a really big load? 
-      6.3. How to calculate CAPS numbers for a load? 
+      6.6. Which statistics is collected and how to get to it? 
+    7. Advanced Issues 
+      7.1. What about performance? 
+      7.2. How to run a really big load? 
+      7.3. How to calculate CAPS numbers for a load? 
 Questions
 1. Basic Terminology
 1.1. What is the batch? 
@@ -121,20 +123,40 @@ Configuration file has one (normally) or more batches.
 ^ 
 UAS - user activity simulation - fetching url, sleeping, another url -sleeping 
 cycles, simulating actual user activity. 
-2. Building curl-loader
-2.1. Which operating systems are supported by curl-loader? 
+2. Hardware Requirements
+2.1. What are the minimal HW requirements? 
+^ 
+A PC with Pentium-III and 200 MB may be used for loads with hundreds 
+simultaneous loading clients. 
+2.2. What is the recommended HW configuration? 
+^ 
+Note, that each virtual client takes about 30-35 K memory in user-space plus 
+some none-pageable memory in kernel mainly for send and recv buffers. 
+
+Our PC with Pentium-4 2.4 GHz and 480 MB memory is capable to support 3000-4000 
+simultaneously loading clients. To reach 10K simultaneously loading clients a PC 
+with dual 3.0 GHz Intel or 2.2 GHz AMD and 1-2 GB memory is recommended, but for 
+some configurations a single high-end CPU like Xeon or Opteron could be enough.
+
+When loading from a multi-CPU (or multi-core) systems, a loading model with the 
+number of curl-loader processes equal to the number of CPUs may be most 
+effective and deliver even higher numbers (than 10K) of simultaneously loading 
+clients from a single PC. If you are thinking, tuning, optimizing and getting 
+our advise - the sky is the limit. 
+3. Building curl-loader
+3.1. Which operating systems are supported by curl-loader? 
 ^ 
 You can use any operating system of your choice, providing this it is linux with 
 kernel 2.4 or 2.6. 
-2.2. What are the building pre-requirements? 
+3.2. What are the building pre-requirements? 
 ^ 
 General C development environment with bash, gcc, make, etc on a linux machine 
 is required.
 
 Building pre-requirements are:
-1. openssl binaries;
-2. openssl development package with include files (on debian libssl-dev);
-3. ncurses development package(on debian e.g. libncurses5-dev).
+1. openssl binaries and openssl development package with include files (on 
+debian libssl-dev);
+2. ncurses binaries and development package (on debian e.g. libncurses5-dev).
 
 Adjust Makefile variables to point to the openssl headers and libraries. To 
 specify an openssl development directory with include files (e.g. crypto.h), 
@@ -147,7 +169,7 @@ have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink.
 
 Tarball of curl is included to the current release. When libcurl or curl-loader 
 have building issues, correct them in the Makefile. 
-2.3. How to make (build) curl-loader? 
+3.3. How to make (build) curl-loader? 
 ^ 
 Run the following commands from your bash linux shell:
 $tar zxfv curl-loader-<version>.tar.gz
@@ -162,8 +184,8 @@ $make optimize=1 debug=0
 If still any building issues, please, fill you free to contact us for assistance 
 using placed in download tarball PROBLEM-REPORTING form and its instructions.
 
-3. Creating Loading Configuration 
-3.1. How can I create loading configuration file? 
+4. Creating Loading Configuration 
+4.1. How can I create loading configuration file? 
 ^ 
 To run a load create your configuration file to be passed to curl-loader using 
 -f commmand line option, e.g.
@@ -187,7 +209,7 @@ UAS_URL_MAX_TIME =
 UAS_URL_INTERLEAVE_TIME =
 
 For more details you may look at the next FAQ guidelines. 
-3.2. What are the loading configuration file tags and semantics? 
+4.2. What are the loading configuration file tags and semantics? 
 ^ 
 Configuration file or "batch configuration file" consists from tag=value 
 strings, groupped into 4 sections:
@@ -202,8 +224,9 @@ following params in each batch:
 ----------------------------------------------------------------------------
 ########### GENERAL SECTION ################################
 BATCH_NAME= bulk_batch # The name of the batch. Logfile - bulk_batch.log
-CLIENTS_NUM=300 # Number of clients in the batch
-CLIENTS_INITIAL_INC=30 # Clients to be added each second till CLIENTS_NUM
+CLIENTS_NUM_MAX=300 # Max number of clients, same as CLIENTS_NUM
+CLIENTS_NUM_START=100 # Number of clients to start with.
+CLIENTS_INITIAL_INC=5 # Clients to be added each second till CLIENTS_NUM_MAX
 INTERFACE = eth0 # Name of the network interface from which to load 
 NETMASK=255.255.240.0 # Netmask either as an IPv4 dotted string or as a CIDR 
 number
@@ -330,7 +353,7 @@ Note, that both quotted and non-quotted string are supported as the tags values.
 
 For more examples, please, look at the files in "conf-examples" directory.
 
-3.3. How does the configuration support login, logoff and authentication 
+4.3. How does the configuration support login, logoff and authentication 
 flavors? 
 ^ 
 curl-loader performs login and logoff operations using the following HTTP 
@@ -360,25 +383,25 @@ supported by the server.
 To support GSS Web-Authentication, add in Makefile building of libcurl against 
 appropriate GSS library, see libcurl pages for detailed instructions.
 
-3.4. When is better to use Login/Logoff section and when UAS? 
+4.4. When is better to use Login/Logoff section and when UAS? 
 ^ 
 Login and Logoff section enable usage of POST-ed credentials, whereas UAS urls 
 are using only GET method.
 
-Another business case for Login url is that it may be either used in a cycling 
-or in a non-cycling mode, whereas UAS urls are always cycled.
+Another business case for Login url is that it may be either used either in 
+cycling or in non-cycling mode, whereas UAS urls are always cycled.
 When e.g. proxy authentication is the first operation to be performed and only 
-once, non-cycling Login url seems to be useful.
+once, non-cycling Login url may be useful.
 
 
-4. What about FTP load? 
+5. What about FTP load? 
 To generate FTP/FTPS load, please, use UAS section and pass user credentials via 
 ftp-url according to the RFC 1738 like:
 ftp://username:password@hostname:port/etc-str
 Please, look at conf-examples/ftp.conf
 
-5. Running Load
-5.1. What are the running environment requirements? 
+6. Running Load
+6.1. What are the running environment requirements? 
 ^ 
 Running hundred and thousand of clients, please, do not forget:
 - to increase limit of descriptors (sockets) by running e.g. 
@@ -388,23 +411,25 @@ Running hundred and thousand of clients, please, do not forget:
 #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;
 
 In some cases you may need to increase the system limits for open descriptors 
-(sockets). See linux FAQs for that.
-
-5.2. How I can run the load? 
+(sockets):
+echo 65535 > /proc/sys/fs/file-max 
+Note, that your linux distribution may require editing of some other files like 
+/etc/security/limits.conf, etc 
+6.2. How I can run the load? 
 ^ 
 Usage: run as a root user:
 #./curl-loader -f <configuration filename> [other options]
 
 Other possible options are:
 -c[onnection establishment timeout, seconds]
--e[rror drop client (smooth mode). Client on error doesn't attempt loading any 
-more]
+-e[rror drop client. Client on error doesn't attempt loading any more]
 -h[elp]
 -i[ntermediate (snapshot) statistics time interval (default 3 sec)]
 -f[ilename of configuration to run (batches of clients)]
--l[ogfile max size in MB (default 1024). On the size reached, file pointer 
+-l[ogfile max size in MB (default 1024). On the size reached, file pointer is 
 rewinded]
--m[ode of loading, 0 - hyper, 1 - storming, 2 - smooth (the default)]
+-m[ode of loading, 0 - hyper (heavy loads), 1 - storming, 2 - smooth (the 
+default)]
 -o[utput to stdout bodies of downloaded files - attn!- bulky]
 -r[euse connections disabled. Closes TCP-connections and re-open them. Try with 
 and without]
@@ -428,7 +453,7 @@ and without -r and see, what you get.
 Connection reuse (which is the default, without -r option) has advantages due to 
 the decreased consumption of opened descriptors (sockets) and ports.
 
-5.3. Which loading modes are supported? 
+6.3. Which loading modes are supported? 
 ^ 
 The default loading mode is a so-called "smooth" (by default or -m2 command 
 line), where each client spends as much time as wishes and starts another url or 
@@ -441,11 +466,11 @@ the logfile for errors, and when connection timeout error appears, adjust the
 connection timeout using -c command line option. Note, that the smooth mode is 
 suitable for login-logoff cycles of load.
 
-Hyper-mode (command line -m0) is currently consider as an experimental, but 
+Hyper-mode (command line -m0) is currently considered as an experimental, but 
 steadily finds more and more usage, particularly for heavy loads. The mode is 
 basically the same as the smooth mode, but is using for event demultiplexing 
 epoll() or /dev/epoll instead of poll(). The mode is promising to deliver more 
-loading clients from a single thread.
+loading clients from a single process/thread.
 
 Another loading mode is called "storming" (-m1 command line), where all clients 
 of a batch are starting together. They are expected to finish their job within a 
@@ -456,7 +481,7 @@ the tool is used just as a traffic generator or to generate "storming" bursts of
 requests.
 
 
-5.4. How I can monitor loading progress status? 
+6.4. How I can monitor loading progress status? 
 ^ 
 curl-loader outputs to the console loading status and statistics as the 
 "standing" ouput, where the upper part is for the latest interval and below is 
@@ -468,20 +493,20 @@ Operations: Success Failed
 LOGIN: 4 1
 UAS-0: 3 0
 LOGOFF: 2 0
-HTTP/FTP-Req:10,2xx:5,3xx:4,4xx:0,5xx:1,Err:0,D:20(ms),D-2xx:12(ms),T-in:12015(B/s),T-out:35511(B/s)
-HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,D:0(ms),D-2xx:0(ms),T-in:0(B/s),T-out:0(B/s)
+AppReq:10,2xx:5,3xx:4,4xx:0,5xx:1,Err:0,D:20ms,D-2xx:12ms,T-i:12015B/s,T-o:35511B/s
+Sec-AppReq:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,D:0ms,D-2xx:0ms,T-i:0B/s,T-o:0B/s
 -----------------------------------------------------
 Summary stats since load start (load runs:24 secs, CAPS-average:4):
 Operations: Success Failed
 LOGIN: 0 32
 UAS-0: 0 0
 LOGOFF: 0 0
-HTTP/FTP-Req:95,2xx:47,3xx:48,4xx:0,5xx:3,Err:1,D:31(ms),D-2xx:15(ms),T-in:113921(B/s),T-out:330215(B/s)
-HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,D:0(ms),D-2xx:0(ms),T-in:0(B/s),T-out:0(B/s)
+AppReq:95,2xx:47,3xx:48,4xx:0,5xx:3,Err:1,D:31ms,D-2xx:15ms,T-i:113921B/s,T-o:330215B/s
+Sec-AppReq:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,D:0ms,D-2xx:0ms,T-in:0B/s,T-out:0B/s
 =====================================================
 A copy of the output is also saved in the file <batch-name>.txt
 
-5.5. Where is the detaled log of all virtual clients activities and how to read 
+6.5. Where is the detaled log of all virtual clients activities and how to read 
 it? 
 ^ 
 DETAILED LOGFILE is written to the file named:
@@ -506,7 +531,7 @@ and starts to overwrite it from the beginning. Y may tune the rewinding file
 size by using command line option:
 -l <log-filesize-in-MB>
 
-5.6. Which statistics is collected and how to get to it? 
+6.6. Which statistics is collected and how to get to it? 
 ^ 
 Currently HTTP/HTTPS statistics includes the following counters:
 - requests num;
@@ -534,21 +559,21 @@ statistics file.
 Some strings from the file:
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out
-2, HTTP/FTP, 100, 155, 0, 96, 0, 0, 1154, 1154, 2108414, 15538
-2, HTTPS/FTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
-4, HTTP/FTP, 100, 75, 32, 69, 0, 0, 1267, 1559, 1634656, 8181
-4, HTTPS/FTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
+2, Appl , 100, 155, 0, 96, 0, 0, 1154, 1154, 2108414, 15538
+2, Sec-Appl, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
+4, Appl, 100, 75, 32, 69, 0, 0, 1267, 1559, 1634656, 8181
+4, Sec-Appl, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 Cutted here
 
-36, HTTP/FTP, 39, 98, 35, 58, 0, 0, 869, 851, 1339168, 11392
-36, HTTPS/FTPS, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0
-38, HTTP/FTP, 3, 91, 44, 62, 0, 0, 530, 587, 1353899, 10136
-38, HTTPS/FTPS, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0
+36, Appl , 39, 98, 35, 58, 0, 0, 869, 851, 1339168, 11392
+36, Sec-Appl, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0
+38, Appl , 3, 91, 44, 62, 0, 0, 530, 587, 1353899, 10136
+38, Sec-Appl, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0
 *, *, *, *, *, *, *, *, *, *, *, *
 Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out
-38, HTTP/FTP, 0, 2050, 643, 1407, 0, 213, 725, 812, 1610688, 11706
-38, HTTPS/FTPS, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+38, Appl , 0, 2050, 643, 1407, 0, 213, 725, 812, 1610688, 11706
+38, Sec-Appl, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 The bottom strings after asterisks are for final averages.
 
@@ -584,30 +609,27 @@ starting from the first operation of the cycle. You may use command line option
 error state will not be scheduled for load any more. 
 
 
-6. Advanced Issues
-6.1. What about performance? 
+7. Advanced Issues
+7.1. What about performance? 
 ^ 
-You can try now 2000-6000 and may be more number of clients from a single 
-curl-loader process (which normally has a single batch and runs as a single 
-thread). 
-Please, care, however, about available sockets and limits. Note, that the system 
-call select () does not scale well with a big number of sockets, therefore, you 
-can try a script, which runs several instances of curl_loader each with 
-2000-3000 clients.
-
-Running several batches with threads (option -t), each thread with 1000-2000 
-clients is another valid option, whereas it may be less stable - try it.
-
 HYPER mode (-m 0 command line option) was already used for loads with up to 
 10000 clients, whereas HW issues, like CPU and memory resource, start to be 
 counting. The mode uses epoll() syscall (via libevent library) for 
-demultiplexing. Y may try it as well, noting that it is still experimental. 
-6.2. How to run a really big load? 
+demultiplexing. 
+
+
+7.2. How to run a really big load? 
 ^ 
-0. Try the default Smooth and Hyper (experimental) modes and see, what is more 
+0. Try the default smooth and hyper (experimental) modes and see, what is more 
 appropriate for you. Smooth mode is stable and tested well. Hyper is less 
-restrictive about allowed number of clients, but still requires more development 
-and optimization.
+restrictive about the allowed number of clients, but still requires more 
+development and optimization.
+
+Every big load starts with a small load. First, see, that you have a working 
+configuration file. Run it with a 1-2-3 clients and commandline option -v, and 
+look into the l<batch-name>.log logfile.
+Look into the HW issues, duscussed in the FAQs and mind, that each client 
+requires 30-35 K of memory.
 
 1. Compile with optimization;
 Since you need performance compile with optimization and without debugging.
@@ -635,18 +657,23 @@ required to be cared about for hyper mode.
 
 Increase the maximum number of open descriptors in your linux system, if 
 required, using linux HOWTOS.
+echo 65535 > /proc/sys/fs/file-max 
+Note, that your linux distribution may require editing of some other files like 
+/etc/security/limits.conf, etc
 
 4. Relax routing checks;
 
 Relax routing checks for your loading network interface. When "eth0" used for 
 loading run:
+echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter
 echo 0 > /proc/sys/net/ipv4/conf/eth0/rp_filter
 
 5. Increase memory available for kernel tcp;
-Read the maximum available TCP memory and sysctl as a root the number to the 
-kernel tcp, e.g.:
+Read the maximum available TCP memory and sysctl or echo as a root the number to 
+the kernel tcp, e.g.:
 cat /proc/sys/net/core/wmem_max - the output is 109568.
-/sbin/sysctl net.ipv4.tcp_mem="109568 109568 109568"
+/sbin/sysctl net.ipv4.tcp_mem="109568 109568 109568" or 
+echo "109568 109568 109568" > /proc/sys/net/ipv4/tcp_mem
 
 6. Create configuration files for each instance of curl-loader to run.
 
@@ -658,25 +685,25 @@ may be even "crashful". Please, use in your configuration batch files
 non-overlapping ranges of IP-addresses, else libcurl virtual clients will 
 compete for the IP-addresses to bind to.
 
-Use CLIENTS_INITIAL_INC tag in smooth mode to increase number of your clients 
-gradually at start-up in order not boom the server.
+Use CLIENTS_INITIAL_INC tag in smooth or hyper mode to increase number of your 
+clients gradually at start-up in order not boom the server and not to burn out 
+the CPU at your loading machine. Addition of new clients is a CPU-expensive 
+operation, therefore keep CLIENTS_INITIAL_INC below 100-200 clients per second.
 
 7. Connections re-use.
 
-The default behavior of curl-loader now is after HTTP response to re-use the 
-tcp-connection for the next request-response. If you are specifying -r 
-command-line option, the connection will be closed and re-opened for the next 
-request. Whether it is appropriate for you to work with -r or without depends on 
-your server support of Keep-Alive and the purpose of your testing.
-Try with and without -r and see, what you get.
+The default behavior of curl-loader now is to re-use the tcp-connection for the 
+next request. This default decreases consumption of CPU and open sockets. If you 
+are specifying -r command-line option, the connection will be closed and 
+re-opened for the next request. 
 
 8. Troubleshooting.
 
-Run the first loading attempt using command-line options -v (verbose) and -u 
-(url in logs). Grep to look for the errors and their reasons. If an error is 
-"Connection timeout", you may try to increase the connection establishment 
-timeout (the default is 5 seconds - huge, but "ih veis"), using -c command-line 
-option.
+Run the first loading attempt with a small number of clients using command-line 
+options -v (verbose) and -u (url in logs). Grep to look for the errors and their 
+reasons. If an error is "Connection timeout", you may try to increase the 
+connection establishment timeout (the default is 5 seconds), using -c 
+command-line option.
 If any assistance required, please, don't hesitate to contact us using 
 PROBLEM-REPORTING form in the download tarball.
 
@@ -693,7 +720,21 @@ useful, whereas the default policy is to rewind the logfile (writing from the
 file start), when it reaches 1 GB. Do not use -v and -u options, when you have 
 performance issues.
 
-6.3. How to calculate CAPS numbers for a load? 
+10. Monitoring of the loading PC.
+
+Please, use top or vmstat commands to monitor the memory usage, swapping and 
+CPU. Intensive swapping is a good indication, that your PC is short in 
+user-space memory. If you see "memory pressure" counters in netstat -s output, 
+this is a good indication, that the PC is short in kernel memory for TCP.
+Zero idle CPU is not the show stopper, but when you see, that Load Status GUI on 
+your console prints its output with delays higher than it should be (the default 
+is 3 seconds and may be adjusted by -i command-line option), you need stronger 
+CPU or run several curl-loader processes on a multi-CPU machine. Note, that for 
+a load with several curl-loader precesses you need to arrange different 
+configuration files with different batch-names and not overlapping ranges of 
+IP-addresses for each curl-loader process.
+
+7.3. How to calculate CAPS numbers for a load? 
 ^ 
 When number of clients is defined by CLIENTS_NUM tag, number of CAPS (call 
 attempts per seconds) is resulting from the clients number and load duration for 
@@ -719,4 +760,4 @@ Note, that IPv6 addresses, when used as hostnames in URI
 should be inclosed in brackets.
 
 LIMITATIONS:
-Please, see the TODO file for some of them.
+Please, see our TODO file for some of them.

@@ -34,8 +34,8 @@
 #include "statistics.h"
 #include "screen.h"
 
-#define SECURE_APPL_STR "S "
-#define UNSECURE_APPL_STR "  "
+#define SECURE_APPL_STR "Sec-Appl"
+#define UNSECURE_APPL_STR "Appl"
 
 static void
 dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,

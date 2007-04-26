@@ -13,11 +13,9 @@
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter. 
 
-5. Load Status GUI. Keyboard input as in SIPP to  increase/decrease load 
-   (number of loading clients or CAPS).
+5. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like.
 
-6. More testing and optimization of the hyper mode. Testbed for 10K, 50K and 100K
-    clients.
+6. Testbed for 20K, 50K and 100K clients. We need more powerful HW.
 
 7. Testing and better support for FTP and FTPS.
 
@@ -29,3 +27,5 @@
 
 10. Dynamic allocation of login and logoff post buffers. Current static
        allocation uses too much memory reserves.
+
+11. Template-guided output of statistics to statistics file.
