@@ -109,6 +109,8 @@ extern int loading_mode;
 */
 extern int url_logging;
 
+extern int warnings_skip;
+
 /*
    Name of the configuration file. 
 */

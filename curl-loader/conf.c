@@ -67,6 +67,8 @@ int loading_mode = LOAD_MODE_DEFAULT;
  /* Whether to include url to all log outputs. */
 int url_logging = 0;
 
+int warnings_skip = 0;
+
 /* Name of the configuration file */
 char config_file[PATH_MAX + 1];
 
@@ -82,7 +84,7 @@ int parse_command_line (int argc, char *argv [])
 {
   int rget_opt = 0;
 
-    while ((rget_opt = getopt (argc, argv, "c:ehf:i:l:m:op:rstvu")) != EOF) 
+    while ((rget_opt = getopt (argc, argv, "c:ehf:i:l:m:op:rstvuw")) != EOF) 
     {
       switch (rget_opt) 
         {
@@ -186,6 +188,10 @@ int parse_command_line (int argc, char *argv [])
           url_logging = 1; 
           break;
 
+        case 'w':
+          warnings_skip = 1; 
+          break;
+
         default: 
             fprintf (stderr, "%s error: not supported option\n", __func__);
           print_help ();
@@ -222,6 +228,7 @@ void print_help ()
   fprintf (stderr, " -t[hreads enable - enables threads, each runs a batch of clients]\n");
   fprintf (stderr, " -v[erbose output to the logfiles; includes info about headers sent/received]\n");
   fprintf (stderr, " -u[rl logging - logs url names to logfile, when -v verbose option is used]\n");
+  fprintf (stderr, " -w[arnings skip]\n");
   fprintf (stderr, "\n");
 
   fprintf (stderr, "Use \"make menuconfig\" after reading HOWTOS-CONFIG-FILE\n" 
@@ -229,7 +236,6 @@ void print_help ()
 
   fprintf (stderr, "For more examples of configuration files please, look at \"conf-examples\" directory.\n");
   fprintf (stderr, "\n");
-  fprintf (stderr, "Note, that there is no any more limit of 1000 sockets per batch of clients.\n");
   fprintf (stderr, "Running thousands and more clients, please do not forget to consider the options:\n");
   fprintf (stderr, "- to increase limit of open descriptors in shell by running e.g.    ulimit -n 19999:\n");
   fprintf (stderr, "- to increase total limit of  open descriptors in systeme somewhere in /proc\n");

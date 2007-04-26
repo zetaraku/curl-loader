@@ -90,23 +90,27 @@ int test_environment (batch_context* bctx)
   */
   if (!ret && file_limit.rlim_cur <= (unsigned int) (2*bctx->client_num))
   {
-      fprintf(stderr,
-              "WARNING - NOTE: the current limit of open descriptors \n" 
-              "for the shell (%d) is higher than number of clients in the batch (%d).\n"
-              "Still, due to time-waiting state of TCP sockets, the number \n"
-              "of the sockets may be not enough.\n"
-              "Consider, increasing the limit, e.g. by running   ulimit -n %d\n",
-              (int)(file_limit.rlim_cur), bctx->client_num, OPEN_FDS_SUGGESTION);
-
-      if (file_limit.rlim_cur > 5000)
+    if (!warnings_skip)
       {
-          fprintf(stderr, "and/or changing temporarily TCP stack defaults by running as a su:\n"
-                  "echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or\n"
-                  "echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse\n");
+        fprintf(stderr,
+                "WARNING - NOTE: the current limit of open descriptors \n" 
+                "for the shell (%d) is higher than number of clients in the batch (%d).\n"
+                "Still, due to time-waiting state of TCP sockets, the number \n"
+                "of the sockets may be not enough.\n"
+                "Consider, increasing the limit, e.g. by running   ulimit -n %d\n",
+                (int)(file_limit.rlim_cur), bctx->client_num, OPEN_FDS_SUGGESTION);
+        
+        if (file_limit.rlim_cur > 5000)
+          {
+            fprintf(stderr, "and/or changing temporarily TCP stack defaults by running as a su:\n"
+                    "echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or\n"
+                    "echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse\n");
+          }
+        
+        fprintf (stderr, "Skip all warnings and suggestions by adding -w to command line.\n"
+                 " Please, press Cntl-C to stop running or ENTER to continue.\n");      
+        getchar ();
       }
-
-      fprintf (stderr, " Please, press Cntl-C to stop running or ENTER to continue.\n");      
-      getchar ();
   }
 
     /* 
@@ -114,16 +118,21 @@ int test_environment (batch_context* bctx)
   */
   if (bctx->client_num > 2000)
     {
-      fprintf(stderr,
-              "SUGGESTION-1: to allocate more kernel memory for TCP \n" 
-              "read the maximum available TCP memory and sysctl as a root\n"
-              "the number to the kernel tcp, e.g.:\n"
-              "cat /proc/sys/net/core/wmem_max - 109568\n"
-              "/sbin/sysctl net.ipv4.tcp_mem=\"109568 109568 109568\"\n\n"
-              "SUGGESTION-2: relax routing checks for your loading network interface, e.g.: \n"
-              "if \"eth0\" used for loading  run   echo 0 > /proc/sys/net/ipv4/conf/eth0/rp_filter\n");
-      fprintf (stderr, " Please, press Cntl-C to stop running or ENTER to continue.\n");      
-      getchar ();
+      if (!warnings_skip)
+      {
+        fprintf(stderr,
+                "SUGGESTION-1: to allocate more kernel memory for TCP \n" 
+                "read the maximum available TCP memory and sysctl as a root\n"
+                "the number to the kernel tcp, e.g.:\n"
+                "cat /proc/sys/net/core/wmem_max - 109568\n"
+                "/sbin/sysctl net.ipv4.tcp_mem=\"109568 109568 109568\"\n\n"
+                "SUGGESTION-2: relax routing checks for your loading network interface, e.g.: \n"
+                "if \"eth0\" used for loading  run   echo 0 > /proc/sys/net/ipv4/conf/eth0/rp_filter\n");
+
+        fprintf (stderr, "Skip all warnings and suggestions by adding -w to command line.\n"
+                 " Please, press Cntl-C to stop running or ENTER to continue.\n");      
+        getchar ();
+      }
     }
 
   return 0;
