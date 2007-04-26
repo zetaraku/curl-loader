@@ -166,8 +166,9 @@ with the following params in each batch:<br/>
 ----------------------------------------------------------------------------<br/>
 ########### GENERAL SECTION ################################<br/>
 BATCH_NAME= bulk_batch     # The name of the batch. Logfile - bulk_batch.log<br/>
-CLIENTS_NUM=300                 # Number of clients in the batch<br/>
-CLIENTS_INITIAL_INC=30 # Clients to be added each second till CLIENTS_NUM<br/>
+CLIENTS_NUM_MAX=300                 # Max number of clients, same as CLIENTS_NUM<br/>
+CLIENTS_NUM_START=100              # Number of clients to start with.<br/>
+CLIENTS_INITIAL_INC=5 # Clients to be added each second till CLIENTS_NUM_MAX<br/>
 INTERFACE = eth0           # Name of the network interface from which to load <br/>
 NETMASK=255.255.240.0       # Netmask either as an IPv4 dotted string or as a CIDR number<br/>
 IP_ADDR_MIN= 192.168.1.1   # Client addresses range starting address<br/>
@@ -345,10 +346,10 @@ For more examples, please, look at the files in "conf-examples" directory.<br/>
         Login and Logoff section enable usage of POST-ed credentials, whereas UAS urls are 
         using only GET method.<br/>
         <br/>
-        Another business case for Login url is that it may be either used in a cycling or in a 
+        Another business case for Login url is that it may be either used either in cycling or in
         non-cycling mode, whereas UAS urls are always cycled.<br/>
         When e.g. proxy authentication is the first operation to be performed and only once,
-        non-cycling Login url seems to be useful.<br/>
+        non-cycling Login url may be useful.<br/>
         <br/>
      </answer>
      </faq>
@@ -398,12 +399,12 @@ like /etc/security/limits.conf, etc
          <br/>
          Other possible options are:<br/>
         -c[onnection establishment timeout, seconds]<br/>
-        -e[rror drop client (smooth mode). Client on error doesn't attempt loading any more]<br/>
+        -e[rror drop client. Client on error doesn't attempt loading any more]<br/>
         -h[elp]<br/>
         -i[ntermediate (snapshot) statistics time interval (default 3 sec)]<br/>
         -f[ilename of configuration to run (batches of clients)]<br/>
-        -l[ogfile max size in MB (default 1024). On the size reached, file pointer rewinded]<br/>
-        -m[ode of loading, 0 - hyper, 1 - storming, 2 - smooth (the default)]<br/>
+        -l[ogfile max size in MB (default 1024). On the size reached, file pointer is rewinded]<br/>
+        -m[ode of loading, 0 - hyper (heavy loads), 1 - storming, 2 - smooth (the default)]<br/>
         -o[utput to stdout bodies of downloaded files - attn!- bulky]<br/>
         -r[euse connections disabled. Closes TCP-connections and re-open them. Try with and without]<br/>
         -s[tderr printout of client messages instead of to logfile - attn!- bulky]<br/>
@@ -445,11 +446,11 @@ in the logfile for errors, and when connection timeout error appears, adjust the
 connection timeout using -c command line option. Note, that the smooth mode
 is suitable for login-logoff cycles of load.<br/>
 <br/>
-Hyper-mode (command line -m0) is currently consider as an experimental, but 
+Hyper-mode (command line -m0) is currently considered as an experimental, but 
 steadily finds more and more usage, particularly for heavy loads. The mode is basically
 the same as the smooth mode, but is using for event demultiplexing epoll() or
 /dev/epoll instead of poll(). The mode is promising to deliver more loading clients from a 
-single thread.<br/>
+single process/thread.<br/>
 <br/>
 Another loading mode is called "storming" (-m1 command line), where all clients 
 of a batch are starting together. They are expected to finish their job within
@@ -477,16 +478,16 @@ Last interval stats (interval:3 sec, clients:10, CAPS:3):<br/>
  LOGIN:         4               1<br/>
  UAS-0:         3               0<br/>
  LOGOFF:        2               0<br/>
-HTTP/FTP-Req:10,2xx:5,3xx:4,4xx:0,5xx:1,Err:0,D:20(ms),D-2xx:12(ms),T-in:12015(B/s),T-out:35511(B/s)<br/>
-HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,D:0(ms),D-2xx:0(ms),T-in:0(B/s),T-out:0(B/s)<br/>
+AppReq:10,2xx:5,3xx:4,4xx:0,5xx:1,Err:0,D:20ms,D-2xx:12ms,T-i:12015B/s,T-o:35511B/s<br/>
+Sec-AppReq:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,D:0ms,D-2xx:0ms,T-i:0B/s,T-o:0B/s<br/>
 -----------------------------------------------------<br/>
 Summary stats since load start (load runs:24 secs, CAPS-average:4):<br/>
  Operations:    Success         Failed<br/>
  LOGIN:         0               32<br/>
  UAS-0:         0               0<br/>
  LOGOFF:        0               0<br/>
-HTTP/FTP-Req:95,2xx:47,3xx:48,4xx:0,5xx:3,Err:1,D:31(ms),D-2xx:15(ms),T-in:113921(B/s),T-out:330215(B/s)<br/>
-HTTPS/FTPS-Req:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,D:0(ms),D-2xx:0(ms),T-in:0(B/s),T-out:0(B/s)<br/>
+AppReq:95,2xx:47,3xx:48,4xx:0,5xx:3,Err:1,D:31ms,D-2xx:15ms,T-i:113921B/s,T-o:330215B/s<br/>
+Sec-AppReq:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,D:0ms,D-2xx:0ms,T-in:0B/s,T-out:0B/s<br/>
 =====================================================<br/>
 <!-- </pre> -->
 A copy of the output is also saved in the file &lt;batch-name&gt;.txt<br/>
@@ -552,21 +553,21 @@ file.<br/>
 Some strings from the file:<br/>
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------<br/>
 Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out<br/>
-2, HTTP/FTP, 100, 155, 0, 96, 0, 0, 1154, 1154, 2108414, 15538<br/>
-2, HTTPS/FTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
-4, HTTP/FTP, 100, 75, 32, 69, 0, 0, 1267, 1559, 1634656, 8181<br/>
-4, HTTPS/FTPS, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+2, Appl , 100, 155, 0, 96, 0, 0, 1154, 1154, 2108414, 15538<br/>
+2, Sec-Appl, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+4, Appl, 100, 75, 32, 69, 0, 0, 1267, 1559, 1634656, 8181<br/>
+4, Sec-Appl, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
 <br/>
 Cutted here<br/>
 <br/>
-36, HTTP/FTP, 39, 98, 35, 58, 0, 0, 869, 851, 1339168, 11392<br/>
-36, HTTPS/FTPS, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
-38, HTTP/FTP, 3, 91, 44, 62, 0, 0, 530, 587, 1353899, 10136<br/>
-38, HTTPS/FTPS, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+36, Appl , 39, 98, 35, 58, 0, 0, 869, 851, 1339168, 11392<br/>
+36, Sec-Appl, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+38, Appl , 3, 91, 44, 62, 0, 0, 530, 587, 1353899, 10136<br/>
+38, Sec-Appl, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
 *, *, *, *, *, *, *, *, *, *, *, *<br/>
 Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out<br/>
-38, HTTP/FTP, 0, 2050, 643, 1407, 0, 213, 725, 812, 1610688, 11706<br/>
-38, HTTPS/FTPS, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+38, Appl , 0, 2050, 643, 1407, 0, 213, 725, 812, 1610688, 11706<br/>
+38, Sec-Appl, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------<br/>
 The bottom strings after asterisks are for final averages.<br/>
 <br/>
@@ -623,15 +624,16 @@ The mode uses epoll() syscall (via libevent library) for demultiplexing. <br/>
      How to run a really big load?
       </question>
       <answer>
-0. Try the default Smooth and Hyper (experimental) modes and see, what is 
+0. Try the default smooth and hyper (experimental) modes and see, what is 
 more appropriate for you. Smooth mode is stable and tested well. Hyper is less 
-restrictive about allowed number of clients, but still requires more development 
+restrictive about the allowed number of clients, but still requires more development 
 and optimization.<br/>
+<br/>
 Every big load starts with a small load. First, see, that you have a working 
 configuration file. Run it with a 1-2-3 clients and commandline option -v, and
 look into the l&lt;batch-name&gt;.log logfile.<br/>
-Look into the HW issues, duscussed in the FAQs above and mind, that
-each client requires 30-35 K of memory.
+Look into the HW issues, duscussed in the FAQs and mind, that
+each client requires 30-35 K of memory.<br/>
 <br/>
 1. Compile with optimization;<br/>
 Since you need performance compile with optimization and without debugging.<br/>
@@ -674,7 +676,7 @@ Read the maximum available TCP memory and sysctl or echo as a root
 the number to the kernel tcp, e.g.:<br/>
 cat /proc/sys/net/core/wmem_max - the output is 109568.<br/>
 /sbin/sysctl net.ipv4.tcp_mem="109568 109568 109568" or <br/>
-echo "109568 109568 109568" > /proc/sys/net/ipv4/tcp_mem
+echo "109568 109568 109568" > /proc/sys/net/ipv4/tcp_mem<br/>
 <br/>
 6. Create configuration files for each instance of curl-loader to run.<br/>
 <br/>
@@ -693,11 +695,10 @@ keep CLIENTS_INITIAL_INC below 100-200 clients per second.<br/>
 <br/>
 7. Connections re-use.<br/>
 <br/>
-The default behavior of curl-loader now is after HTTP response to re-use 
-the tcp-connection for the next request-response. The default decreases consumption
-of CPU and open sockets, therefore use it.
+The default behavior of curl-loader now is to re-use the tcp-connection for the next 
+request. This default decreases consumption of CPU and open sockets.
 If you are specifying -r command-line option, the connection will be closed and 
-re-opened for the next request. 
+re-opened for the next request. <br/>
 <br/>
 8. Troubleshooting.<br/>
 <br/>
@@ -726,7 +727,7 @@ performance issues.<br/>
 Please, use top or vmstat commands to monitor the memory usage, swapping and CPU.
 Intensive swapping is a good indication, that your PC is short in user-space memory.
 If you see "memory pressure" counters in netstat -s output, this is a good indication,
-that you are short in kernel memory for TCP.<br/>
+that the PC is short in kernel memory for TCP.<br/>
 Zero idle CPU is not the show stopper, but when you see, that Load Status GUI on 
 your console prints its output with delays higher than it should be 
 (the default is 3 seconds and may be adjusted by -i command-line option), you need

@@ -44,7 +44,7 @@
        <p>     - authentication login;  </p>
        <p>     - user activity simulation (UAS) by fetching several urls and timeouts in between; </p>
        <p>     - logoff. </p>
-      <p> The tool can be easily extended to generate telnet, tftp, ldap, ssh, scp etc other 
+      <p> The tool can be easily extended to generate sftp, telnet, tftp, ldap, ssh, scp etc other 
               application protocols, supported by the great libcurl library.
   </p>
     </section>
@@ -71,7 +71,7 @@ number at loading start is an option for the smooth and hyper modes;
       <p>
 - HTTP authentication login with POST or GET+POST methods. Unique configurable 
 username and password for each virtual client as well as configurable posted 
-string (post-forms) are the options. Another option is loading of users with passwords 
+string (post-forms) are the options. Another option is loading of users with credentials 
 from a text file;
       </p>
       <p>
