@@ -34,11 +34,10 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 
-//#include <curses.h>
-
 #include "screen.h"
 #include "batch.h"
 #include "client.h"
+#include "loader.h"
 
 //static int test_fd_readable (int fd);
 static int on_keybord_input (int key, batch_context* bctx);
@@ -169,8 +168,13 @@ int on_keybord_input (int key, batch_context* bctx)
        case 'm':
        case 'M':
          bctx->stop_client_num_gradual_increase = 1;
-         fprintf(stderr, "%s - stop_inc %d\n", 
-                 __func__, bctx->stop_client_num_gradual_increase);
+         //fprintf(stderr, "%s - stop_inc %d\n", 
+         //        __func__, bctx->stop_client_num_gradual_increase);
+         break;
+
+       case 'a':
+       case 'A':
+         bctx->stop_client_num_gradual_increase = 0;
          break;
 
        case '+':
