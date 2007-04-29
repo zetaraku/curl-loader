@@ -61,6 +61,13 @@ typedef struct tag_parser_pair
     fparser parser;
 } tag_parser_pair;
 
+/* 
+ * Declarations of tag parsing functions.
+*/
+
+/*
+ * GENERAL section tag parsers. 
+*/
 static int batch_name_parser (batch_context*const bctx, char*const value);
 static int clients_num_parser (batch_context*const bctx, char*const value);
 static int clients_num_start_parser (batch_context*const bctx, char*const value);
@@ -73,6 +80,9 @@ static int clients_initial_inc_parser (batch_context*const bctx, char*const valu
 static int user_agent_parser (batch_context*const bctx, char*const value);
 static int custom_header_parser (batch_context*const bctx, char*const value);
 
+/*
+ * LOGIN section tag parsers. 
+*/
 static int login_parser (batch_context*const bctx, char*const value);
 static int login_cycling_parser (batch_context*const bctx, char*const value);
 static int login_req_type_parser (batch_context*const bctx, char*const value);
@@ -88,6 +98,9 @@ static int login_url_max_time_parser (batch_context*const bctx, char*const value
 static int login_url_interleave_time_parser (batch_context*const bctx, char*const value);
 
 
+/*
+ * UAS section tag parsers. 
+*/
 static int uas_parser (batch_context*const bctx, char*const value);
 static int uas_urls_num_parser (batch_context*const bctx, char*const value);
 static int uas_url_parser (batch_context*const bctx, char*const value);
@@ -96,6 +109,9 @@ static int uas_url_password_parser (batch_context*const bctx, char*const value);
 static int uas_url_max_time_parser (batch_context*const bctx, char*const value);
 static int uas_url_interleave_time_parser (batch_context*const bctx, char*const value);
 
+/*
+ * LOGOFF section tag parsers. 
+*/
 static int logoff_parser (batch_context*const bctx, char*const value);
 static int logoff_cycling_parser (batch_context*const bctx, char*const value);
 static int logoff_req_type_parser (batch_context*const bctx, char*const value);
@@ -111,11 +127,14 @@ static int logoff_url_interleave_time_parser (batch_context*const bctx, char*con
 
 static fparser find_tag_parser (const char* tag);
 
+/*
+ * The mapping between tag strings and parsing functions.
+ */
 static const tag_parser_pair tp_map [] =
 {
     /*------------------------ GENERAL SECTION ------------------------------ */
     {"BATCH_NAME", batch_name_parser},
-    {"CLIENTS_NUM", clients_num_parser},
+    {"CLIENTS_NUM", clients_num_parser}, /* depricated, use CLIENTS_NUM_MAX */
     {"CLIENTS_NUM_MAX", clients_num_parser},
     {"CLIENTS_NUM_START", clients_num_start_parser},
     {"INTERFACE", interface_parser},
@@ -194,6 +213,7 @@ static int add_param_to_batch (char*const input,
                                size_t input_length,
                                batch_context*const bctx, 
                                int*const batch_num);
+
 static int pre_parser (char** ptr, size_t* len);
 static url_appl_type url_schema_classification (const char* const url);
 static char* skip_non_ws (char*ptr, size_t*const len);
@@ -207,6 +227,7 @@ static int netmask_to_cidr (char *dotted_ipv4);
 * Function name - find_tag_parser
 *
 * Description - Makes a look-up of a tag value parser function for an input tag-string 
+* 
 * Input -       *tag - pointer to the tag string, coming from the configuration file
 * Return Code/Output - On success - parser function, on failure - NULL
 ****************************************************************************************/
@@ -226,13 +247,13 @@ static fparser find_tag_parser (const char* tag)
 * Function name - add_param_to_batch
 *
 * Description - Takes configuration file string of the form TAG = value and extacts
-*                    loading batch configuration parameters from it.
+*               loading batch configuration parameters from it.
 * 
-* Input -       *str_buff - pointer to the configuration file string of the form TAG = value
-*               str_len -   length of the <str_buff> string
+* Input -       *str_buff   - pointer to the configuration file string of the form TAG = value
+*               str_len     - length of the <str_buff> string
 *               *bctx_array - array of the batch contexts
-* Input/Output  batch_num - index of the batch to fill and advance, when required.
-*                           Supporting multiple batches in one batch file.
+* Input/Output  batch_num   - index of the batch to fill and advance, when required.
+*                             Still supporting multiple batches in one batch file.
 *
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
@@ -337,15 +358,16 @@ static int add_param_to_batch (
 /****************************************************************************************
 * Function name - init_post_buffer
 *
-* Description - Parses string with credentials <user>SP<password>, allocates at virtual client
-*               memory and keeps the credentials with the virtual client in the post form buffer
+* Description - Parses string with credentials <user>SP<password>, allocates at virtual 
+*               client memory and keeps the credentials with the virtual client in the 
+*               post form buffer
 * 
-* Input -       *input - pointer to the credentials file string
-*               input_len - length of the <input> string
-*               *bctx - batch context to which the initia
-* Input/Output  *client_num - index of the client in the array
-*               *separator - the separating symbol initialized by the first string and further used.
-*
+* Input -       *input        - pointer to the credentials file string
+*               input_len     - length of the <input> string
+*               *bctx         - batch context to which the initia
+* Input/Output  *client_num   - index of the client in the array
+*               *separator    - the separating symbol initialized by the first string and 
+*                               further used.
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
 static int init_post_buffer (char*const input, 
@@ -458,11 +480,10 @@ static int init_post_buffer (char*const input,
 * Function name - pre_parser
 *
 * Description - Prepares value token from the configuration file to parsing. Removes LWS,
-*               cuts off comments, removes TWS or after quotes closing, removes quotes
+*               cuts off comments, removes TWS or after quotes closing, removes quotes.
 * 
 * Input/Output - **ptr - second pointer to value string
-*                *len - pointer to the length of the value string
-*
+*                *len  - pointer to the length of the value string
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
 static int pre_parser (char** ptr, size_t* len)
@@ -526,7 +547,7 @@ static int pre_parser (char** ptr, size_t* len)
 
 /**
 **
-** TAG PARSERS
+** TAG PARSERS IMPLEMENTATION
 **
 */
 static int batch_name_parser (batch_context*const bctx, char*const value)
@@ -716,11 +737,17 @@ static int login_parser (batch_context*const bctx, char*const value)
 static int login_req_type_parser (batch_context*const bctx, char*const value)
 {
     if (!strcmp (value, REQ_GET_POST))
+    {
         bctx->login_req_type = LOGIN_REQ_TYPE_GET_AND_POST;
+    }
     else if (!strcmp (value, REQ_POST))
+    {
         bctx->login_req_type = LOGIN_REQ_TYPE_POST;
+    }
     else if (!strcmp (value, REQ_GET))
+    {
         bctx->login_req_type = LOGIN_REQ_TYPE_GET;
+    }
     else
     {
         fprintf (stderr, 
@@ -1000,11 +1027,17 @@ static int logoff_parser (batch_context*const bctx, char*const value)
 static int logoff_req_type_parser (batch_context*const bctx, char*const value)
 {
     if (!strcmp (value, REQ_GET_POST)) 
+    {
         bctx->logoff_req_type = LOGOFF_REQ_TYPE_GET_AND_POST;
+    }
     else if (!strcmp (value, REQ_GET))
+    {
         bctx->logoff_req_type = LOGOFF_REQ_TYPE_GET;
+    }
     else if (!strcmp (value, REQ_POST))
+    {
         bctx->logoff_req_type = LOGOFF_REQ_TYPE_POST;
+    }
     else
     {
         fprintf (stderr, 
@@ -1058,6 +1091,7 @@ static int logoff_url_parser (batch_context*const bctx, char*const value)
                  __func__, value);
         return -1;
     }
+
     strcpy(bctx->logoff_url.url_str, value);
     bctx->logoff_url.url_lstep = URL_LOAD_LOGOFF;
     bctx->logoff_url.url_appl_type = url_schema_classification (value);
@@ -1109,13 +1143,21 @@ url_schema_classification (const char* const url)
 #define FTP_SCHEMA_STR "ftp://"
 
   if (strstr (url, HTTPS_SCHEMA_STR))
+  {
       return URL_APPL_HTTPS;
+  }
   else if (strstr (url, HTTP_SCHEMA_STR))
+  {
     return URL_APPL_HTTP;
+  }
   else if (strstr (url, FTPS_SCHEMA_STR))
+  {
     return URL_APPL_FTPS;
+  }
   else if (strstr (url, FTP_SCHEMA_STR))
+  {
     return URL_APPL_FTP;
+  }
 
   return  URL_APPL_UNDEF;
 }
@@ -1161,7 +1203,7 @@ static int is_non_ws (char*const ptr)
 *
 * Description - Validates all parameters in the batch. Calls validation functions for all sections.
 * 
-* Input -       *bctx - pointer to the initialized batch context to validate
+* Input -      *bctx - pointer to the initialized batch context to validate
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
 static int validate_batch (batch_context*const bctx)
@@ -1283,7 +1325,7 @@ static int validate_batch_general (batch_context*const bctx)
 /****************************************************************************************
 * Function name - validate_batch_login
 *
-* Description - Validates section login parameters
+* Description -  Validates section LOGIN parameters
 * 
 * Input -       *bctx - pointer to the initialized batch context to validate
 * Return Code/Output - On success - 0, on failure - (-1)
@@ -1542,9 +1584,9 @@ static int post_validate_init (batch_context*const bctx)
 *
 * Description - Parses configuration file and fills loading batch contexts in array
 *
-* Input -       *filename - name of the configuration file to parse.
-* Output -      *bctx_array - array of batch contexts to be filled on parsing
-* Input-        bctx_array_size - number of bctx contexts in <bctx_array>
+* Input -      *filename       - name of the configuration file to parse.
+* Output -     *bctx_array     - array of batch contexts to be filled on parsing
+* Input-       bctx_array_size - number of bctx contexts in <bctx_array>
 *                          
 * Return Code/Output - On Success - number of batches >=1, on Error -1
 ********************************************************************************/

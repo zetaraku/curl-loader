@@ -11,37 +11,37 @@ version 0.30 "stable", 26/04/2007, svn-325
 * Load Status GUI strings shorten for a easier fit to a screen.
 
 * Added a new command-line option "-w" to skip out all warnings
-  and suggestions by the loader.
+  and suggestions by curl-loader.
 
 
 version 0.29 18/04/2007, svn-299
 
 * Placed suggestions for tcp kernel memory tuning to environment.c
-   Fixed the bug with not-blocking smashing of fd_set.
+  Fixed the bug with not-blocking smashing of fd_set.
 	
 * FAST-START file renamed to QUICK-START
 
 * Migration to curl-7.16.2. Patch rename curl_multi_noselect ()
-   to curl_multi_action ()
+  to curl_multi_action ()
 
 * Fixed the bug with sprintf overflow of statistics and logs filenames.
-   Thanks to Alexandre Bezroutchko <abb@scanit.be> for pointing
-   this issue.
+  Thanks to Alexandre Bezroutchko <abb@scanit.be> for pointing
+  this issue.
 
 * Usage of get_time_tick () with gettimeofday () inside has been 
-   decreased by calling it in cycles only for each
-   TIME_RECALCULATION_MSG_NUM (10) cycle.
+  decreased by calling it in cycles only for each
+  TIME_RECALCULATION_MSG_NUM (10) cycle.
 	
 * Busy-looping for the default smooth mode has been fixed.
 	
-* Hyper-mode bug fixed, when CSELECT_IN even was used, when
-   CSELECT_OUT was appropriate.
+* Hyper-mode bug fixed with CSELECT_IN event mistakenly used in the
+  instead of CSELECT_OUT.
 
 * Hyper-mode bug fixed with no clients scheduling for load, when
-   CLIENT_INITIAL_INC=0 or the tag is not defined.
+  CLIENT_INITIAL_INC=0 or the tag is not defined.
 
 * Profiling option (-pg) added to the making line. Run, e.g.
-   make optimize=1 debug=1 profile=1
+  make optimize=1 debug=1 profile=1
 
 
 

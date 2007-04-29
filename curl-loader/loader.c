@@ -61,19 +61,22 @@
 
 static int create_ip_addrs (batch_context* bctx, int bctx_num);
 int client_tracing_function (CURL *handle, 
-                                    curl_infotype type, 
-                                    unsigned char *data, 
-                                    size_t size, 
-                                    void *userp);
+                             curl_infotype type, 
+                             unsigned char *data, 
+                             size_t size, 
+                             void *userp);
+
 size_t do_nothing_write_func (void *ptr, 
-                                     size_t size, 
-                                     size_t nmemb, 
-                                     void *stream);
+                              size_t size, 
+                              size_t nmemb, 
+                              void *stream);
+
 static void* batch_function (void *batch_data);
 static int initial_handles_init (struct client_context*const cdata);
 int setup_curl_handle_appl (struct client_context*const cctx,  
-                                   url_context* url_ctx,
-                                   int post_method);
+                            url_context* url_ctx,
+                            int post_method);
+
 static int alloc_init_client_post_buffers (struct client_context* cctx);
 static int alloc_init_client_contexts (batch_context* bctx, FILE* output_file);
 static void free_batch_data_allocations (struct batch_context* bctx);
@@ -98,6 +101,9 @@ static void sigint_handler (int signum)
 
 typedef int (*pf_user_activity) (struct client_context*const);
 
+/*
+ * Batch functions for the 3 modes.
+*/
 static pf_user_activity ua_array[3] = 
 { 
   user_activity_hyper,
@@ -133,7 +139,7 @@ main (int argc, char *argv [])
   
    memset(bc_arr, 0, sizeof(bc_arr));
 
- /* 
+  /* 
      Parse the configuration file. 
   */
   if ((batches_num = parse_config_file (config_file, bc_arr, 
@@ -144,6 +150,10 @@ main (int argc, char *argv [])
     }
 
 
+   /*
+    * De-facto in full we are supporting only a single batch.
+    * TODO: test env for all batches.
+    */
    if (test_environment (&bc_arr[0]) == -1)
    {
        fprintf (stderr, "%s - error: test_environment () - error.\n", __func__);
@@ -324,6 +334,7 @@ static void* batch_function (void * batch_data)
 *
 * Description - Libcurl initialization of curl multi-handle and the curl handles (clients), 
 *               used in the batch
+*
 * Input -       *ctx_array - array of clients for a particular batch of clients
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
@@ -351,7 +362,7 @@ static int initial_handles_init (client_context*const ctx_array)
         }
     }
 
-  /* Initialize all the CURL handlers */
+  /* Initialize all CURL handles */
   for (k = 0 ; k < bctx->client_num ; k++)
     {
       if (!(bctx->cctx_array[k].handle = curl_easy_init ()))
@@ -374,17 +385,17 @@ static int initial_handles_init (client_context*const ctx_array)
 *               inits it, using setup_curl_handle_init () function, and adds the
 *               handle back to the multi-handle.
 *
-* Input -       *cctx - pointer to client context, containing CURL handle pointer;
-*               *url_ctx - pointer to url-context, containing all url-related information;
+* Input -       *cctx        - pointer to client context, containing CURL handle pointer;
+*               *url_ctx     - pointer to url-context, containing all url-related information;
 *               cycle_number - current number of loading cycle, passed here for storming mode;
-*               post_method - when 'true', POST method is used instead of the default GET
+*               post_method  - when 'true', POST method is used instead of the default GET
 *
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int setup_curl_handle (client_context*const cctx,
-                         url_context* url_ctx,
-                         long cycle_number,
-                         int post_method)
+                       url_context* url_ctx,
+                       long cycle_number,
+                       int post_method)
 {
   batch_context* bctx = cctx->bctx;
   CURL* handle = cctx->handle;
@@ -439,17 +450,17 @@ int setup_curl_handle (client_context*const cctx,
 *               setup_curl_handle_appl () function for the application-specific 
 *               (HTTP/FTP) initialization.
 *
-* Input -       *cctx - pointer to client context, containing CURL handle pointer;
-*               *url_ctx - pointer to url-context, containing all url-related information;
+* Input -       *cctx        - pointer to client context, containing CURL handle pointer;
+*               *url_ctx     - pointer to url-context, containing all url-related information;
 *               cycle_number - current number of loading cycle, passed here for storming mode;
-*               post_method - when 'true', POST method is used instead of the default GET
+*               post_method  - when 'true', POST method is used instead of the default GET
 *
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int setup_curl_handle_init (client_context*const cctx,
-                         url_context* url_ctx,
-                         long cycle_number,
-                         int post_method)
+                            url_context* url_ctx,
+                            long cycle_number,
+                            int post_method)
 {
   batch_context* bctx = cctx->bctx;
   CURL* handle = cctx->handle;
@@ -565,8 +576,8 @@ int setup_curl_handle_init (client_context*const cctx,
 *
 * Description - Application/url-type specific setup for a single curl handle (client)
 *
-* Input -       *cctx - pointer to client context, containing CURL handle pointer;
-*               *url_ctx - pointer to url-context, containing all url-related information;
+* Input -       *cctx       - pointer to client context, containing CURL handle pointer;
+*               *url_ctx    - pointer to url-context, containing all url-related information;
 *               post_method - when 'true', POST method is used instead of the default GET
 *
 * Return Code/Output - On Success - 0, on Error -1
@@ -660,11 +671,11 @@ int setup_curl_handle_appl (client_context*const cctx,
 * Description - Used to log activities of each client to the <batch_name>.log file
 *
 * Input -       *handle - pointer to CURL handle;
-*               type - type of libcurl information passed, like headers, data, info, etc
-*               *data- pointer to data, like headers, etc
-*               size - number of bytes passed with <data> pointer
-*               *userp - pointer to user-specific data, which in our case is the 
-*                        client_context structure
+*               type    - type of libcurl information passed, like headers, data, info, etc
+*               *data   - pointer to data, like headers, etc
+*               size    - number of bytes passed with <data> pointer
+*               *userp  - pointer to user-specific data, which in our case is the 
+*                         client_context structure
 *
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
@@ -926,8 +937,8 @@ int client_tracing_function (CURL *handle,
 * Function name - alloc_init_client_post_buffers
 *
 * Description - Allocate and initialize post form buffers to be used for POST-ing
+* 
 * Input -       *cctx - pointer to client context
-*
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 static int alloc_init_client_post_buffers (client_context* cctx)
@@ -1048,13 +1059,13 @@ static int alloc_init_client_post_buffers (client_context* cctx)
 * Function name - alloc_init_client_contexts
 *
 * Description - Allocate and initialize client contexts
-* Input -       *bctx - pointer to batch context to be set to all clients  of the batch
+* 
+* Input -       *bctx     - pointer to batch context to be set to all clients  of the batch
 *               *log_file - output file to be used by all clients of the batch
 *
 * Return Code -  On Success - 0, on Error -1
 ****************************************************************************************/
-static int alloc_init_client_contexts (
-                                       batch_context* bctx,
+static int alloc_init_client_contexts (batch_context* bctx,
                                        FILE* log_file)
 {
   int i;
@@ -1121,7 +1132,7 @@ static int alloc_init_client_contexts (
 /****************************************************************************************
 * Function name - free_batch_data_allocations
 *
-* Description - Deallocates all batch allocations
+* Description - Deallocates all  the kings batch allocations
 * Input -       *bctx - pointer to batch context to release its allocations
 * Return Code/Output - None
 ****************************************************************************************/
@@ -1368,6 +1379,7 @@ int rewind_logfile_above_maxsize (FILE* filepointer)
 * Function name - ipv6_increment
 *
 * Description - Increments the source IPv6 address to provide the next
+* 
 * Input -       *src - pointer to the IPv6 address to be used as the source
 * Input/Output  *dest - pointer to the resulted incremented address
 *
@@ -1389,7 +1401,7 @@ static int ipv6_increment(const struct in6_addr *const src,
   if (temp != 0)
     {
       fprintf (stderr, "%s - error: passing the scope.\n "
-               "Check you IPv6 range.\n", __func__);
+               "Check you IPv6 range to be within the same scope.\n", __func__);
       return -1;
     }
 
