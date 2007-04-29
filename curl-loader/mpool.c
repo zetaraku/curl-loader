@@ -29,6 +29,7 @@
 #include <asm/page.h>
 
 #define OS_FREE_LIST_CHUNK_SIZE (PAGE_SIZE*9/10)
+#define MPOOL_PTR_ALIGN (sizeof(void*))
 
 
 #include "mpool.h"
@@ -152,6 +153,8 @@ int mpool_init (mpool* mpool, size_t object_size, int num_obj)
      fprintf (stderr, "%s - wrong input\n", __func__);
      return -1;
    }
+
+  object_size = (object_size + MPOOL_PTR_ALIGN) & (~(MPOOL_PTR_ALIGN - 1));
 
   if (object_size > OS_FREE_LIST_CHUNK_SIZE)
     {
