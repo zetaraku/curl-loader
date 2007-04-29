@@ -35,7 +35,7 @@ typedef int (*handle_timer) (struct timer_node*, void*, unsigned long);
  */
 typedef struct timer_node
 {
-  /* The next timer shot in seconds since epoch (Jan 1 1970) */
+  /* The next timer shot in msec since the epoch (Jan 1 1970) */
   unsigned long next_timer;
 
   /* Interval in msec between periodic timer shots. Zero for non-periodic timer. */

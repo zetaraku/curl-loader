@@ -48,11 +48,11 @@ static void dump_statistics (unsigned long period,
 static void print_statistics_footer_to_file (FILE* file);
 
 static void print_statistics_data_to_file (FILE* file, 
-                                   unsigned long timestamp,
-                                   char* prot,
-                                   long clients_num,
-                                   stat_point *sd,
-                                   unsigned long period);
+                                           unsigned long timestamp,
+                                           char* prot,
+                                           long clients_num,
+                                           stat_point *sd,
+                                           unsigned long period);
 
 static void print_operational_statistics (op_stat_point*const osp);
 
@@ -65,7 +65,7 @@ static void dump_clients (client_context* cctx_array);
 /****************************************************************************************
 * Function name - stat_point_add
 *
-* Description - Adds counters of one stat_point structure to anther
+* Description - Adds counters of one stat_point object to another
 * Input -       *left -  pointer to the stat_point, where counter will be added
 *               *right -  pointer to the stat_point, which counter will be added to the <left>
 * Return Code/Output - None
@@ -113,8 +113,8 @@ void stat_point_add (stat_point* left, stat_point* right)
 * Function name - stat_point_reset
 *
 * Description - Nulls counters of a stat_point structure
-* Input -       *point -  pointer to the stat_point
 * 
+* Input -       *point -  pointer to the stat_point
 * Return Code/Output - None
 ****************************************************************************************/
 void stat_point_reset (stat_point* p)
@@ -136,7 +136,7 @@ void stat_point_reset (stat_point* p)
 /****************************************************************************************
 * Function name - op_stat_point_add
 *
-* Description - Adds counters of one op_stat_point structure to anther
+* Description - Adds counters of one op_stat_point object to another
 * Input -       *left -  pointer to the op_stat_point, where counter will be added
 *               *right -  pointer to the op_stat_point, which counter will be added to the <left>
 * Return Code/Output - None
@@ -240,12 +240,13 @@ void op_stat_point_release (op_stat_point* point)
 /****************************************************************************************
 * Function name - op_stat_point_init
 *
-* Description - Initializes an allocated op_stat_point by allocating relevant fields for counters
+* Description - Initializes an allocated op_stat_point by allocating relevant pointer 
+* 		fields for counters
 *
-* Input -       *point -  pointer to the op_stat_point, where counter will be added
-*               login -  boolean flag, whether login is relevant (1) or not (0)
-*               uas_url_num -  number of UAS urls, which can be 0, if UAS is not relevant
-*               logoff -  boolean flag, whether login is relevant (1) or not (0)
+* Input -       *point      - pointer to the op_stat_point, where counter will be added
+*               login       - boolean flag, whether login is relevant (1) or not (0)
+*               uas_url_num - number of UAS urls, which can be 0, if UAS is not relevant
+*               logoff      - boolean flag, whether login is relevant (1) or not (0)
 *
 * Return Code/Output - None
 ****************************************************************************************/
@@ -301,11 +302,11 @@ int op_stat_point_init (op_stat_point* point,
 *
 * Description - Updates operation statistics using information from client context
 *
-* Input -       *point -  pointer to the op_stat_point, where counters to be updated
-*               current_state - current state of a client
-*               prev_state -  previous state of a client
-*               current_uas_url_index -  current uas url index of a the client
-*               prev_uas_url_index -  previous uas url index of a the client
+* Input -       *point                - pointer to the op_stat_point, where counters to be updated
+*               current_state         - current state of a client
+*               prev_state            - previous state of a client
+*               current_uas_url_index - current uas url index of a the client
+*               prev_uas_url_index    - previous uas url index of a the client
 *
 * Return Code/Output - None
 ****************************************************************************************/
@@ -344,16 +345,9 @@ void op_stat_update (op_stat_point* op_stat,
         }
       else
         {
-          //  if (current_uas_url_index == (prev_uas_url_index + 1))
-          // {
-              /* 
-                 If loading has advanced to the next UAS url, update
-                 previous url operational statistics counters.
-              */
-              (current_state == CSTATE_ERROR) ? 
-                op_stat-> uas_url_failed[prev_uas_url_index]++ : 
-                op_stat->uas_url_ok[prev_uas_url_index]++;
-          //}
+           (current_state == CSTATE_ERROR) ? 
+             op_stat-> uas_url_failed[prev_uas_url_index]++ : 
+             op_stat->uas_url_ok[prev_uas_url_index]++;
         }
       break;
 
@@ -378,6 +372,7 @@ void op_stat_call_init_count_inc (op_stat_point* op_stat)
 * Function name - get_tick_count
 *
 * Description - Delivers timestamp in milliseconds.
+* 
 * Return Code/Output - timestamp in milliseconds or -1 on errors
 ****************************************************************************************/
 unsigned long get_tick_count ()
@@ -397,9 +392,9 @@ unsigned long get_tick_count ()
 /****************************************************************************************
 * Function name - dump_final_statistics
 *
-* Description - Dumps final statistics counters to stderr and statistics file using 
-*               print_snapshot_interval_statistics and print_statistics_* functions as well as calls
-*               dump_clients () to dump the clients table.
+* Description - Dumps final statistics counters to stdout and statistics file using 
+*               print_snapshot_interval_statistics and print_statistics_* functions.
+*               At the end calls dump_clients () to dump the clients table.
 *
 * Input -       *cctx - pointer to client context, where the decision to complete loading 
 *                       (and dump) has been made. 
@@ -447,21 +442,19 @@ void dump_final_statistics (client_context* cctx)
       const unsigned long loading_t = now - bctx->start_time;
       const unsigned long loading_time = loading_t ? loading_t : 1;
  
-      print_statistics_data_to_file (
-				bctx->statistics_file,
-				loading_time/1000,
-				UNSECURE_APPL_STR,
-				pending_active_and_waiting_clients_num (bctx),
-				&bctx->http_total,
-				loading_time);
+      print_statistics_data_to_file (bctx->statistics_file,
+				     loading_time/1000,
+				     UNSECURE_APPL_STR,
+				     pending_active_and_waiting_clients_num (bctx),
+				     &bctx->http_total,
+				     loading_time);
 			
-      print_statistics_data_to_file (
-				bctx->statistics_file, 
-				loading_time/1000,
-				SECURE_APPL_STR,
-				pending_active_and_waiting_clients_num (bctx),
-				&bctx->https_total,
-				loading_time);
+      print_statistics_data_to_file (bctx->statistics_file, 
+				     loading_time/1000,
+				     SECURE_APPL_STR,
+				     pending_active_and_waiting_clients_num (bctx),
+				     &bctx->https_total,
+				     loading_time);
     }
 
   dump_clients (cctx);
@@ -546,9 +539,7 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
 /****************************************************************************************
 * Function name - print_snapshot_interval_statistics
 *
-* Description - Dumps final statistics counters to stderr and statistics file using 
-*               print_snapshot_interval_statistics and print_statistics_* functions as well 
-*               as calls dump_clients () to dump the clients table.
+* Description - Outputs latest snapshot interval statistics. 
 *
 * Input -       period - latest time period in milliseconds
 *               *http - pointer to the HTTP collected statistics to output
@@ -581,8 +572,8 @@ void print_snapshot_interval_statistics (unsigned long period,
 *
 * Return Code/Output - None
 ****************************************************************************************/
-void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
-                                                    unsigned long now_time)
+void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
+                                                          unsigned long now_time)
 {
   const unsigned long delta_t = now_time - bctx->last_measure; 
   const unsigned long delta_time = delta_t ? delta_t : 1;
@@ -609,21 +600,19 @@ void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
     {
       const unsigned long timestamp_sec =  (now_time - bctx->start_time) / 1000;
 
-      print_statistics_data_to_file (
-                             bctx->statistics_file,
-                             timestamp_sec,
-                             UNSECURE_APPL_STR,
-                             pending_active_and_waiting_clients_num (bctx),
-                             &bctx->http_delta,
-                             delta_time);
+      print_statistics_data_to_file (bctx->statistics_file,
+                                     timestamp_sec,
+                                     UNSECURE_APPL_STR,
+                                     pending_active_and_waiting_clients_num (bctx),
+                                     &bctx->http_delta,
+                                     delta_time);
     
-      print_statistics_data_to_file (
-                             bctx->statistics_file, 
-                             timestamp_sec,
-                             SECURE_APPL_STR, 
-                             pending_active_and_waiting_clients_num (bctx),
-                             &bctx->https_delta,
-                             delta_time);
+      print_statistics_data_to_file (bctx->statistics_file, 
+                                     timestamp_sec,
+                                     SECURE_APPL_STR, 
+                                     pending_active_and_waiting_clients_num (bctx),
+                                     &bctx->https_delta,
+                                     delta_time);
     }
 
   stat_point_add (&bctx->http_total, &bctx->http_delta);
@@ -644,7 +633,7 @@ void dump_snapshot_interval_and_advance_total_statistics(batch_context* bctx,
 * Description - Dumps statistics to screen
 *
 * Input -       period - time interval of the statistics collection in msecs. 
-*               *http - pointer to stat_point structure with HTTP/FTP counters collection
+*               *http  - pointer to stat_point structure with HTTP/FTP counters collection
 *               *https - pointer to stat_point structure with HTTPS/FTPS counters collection
 *
 * Return Code/Output - None
@@ -671,9 +660,9 @@ static void dump_statistics (unsigned long period,
 *
 * Description - Dumps statistics to screen
 *
-* Input -       *protocol - name of the applications/protocols
-*               *sd - pointer to statistics data with statistics counters collection
-*               period - time interval of the statistics collection in msecs. 
+* Input -       *protocol - name of the application/protocol
+*               *sd       - pointer to statistics data with statistics counters collection
+*               period    - time interval of the statistics collection in msecs. 
 *
 * Return Code/Output - None
 ****************************************************************************************/
@@ -726,12 +715,12 @@ static void print_statistics_footer_to_file (FILE* file)
 * Description - Prints to a file batch statistics. At run time the interval statistics 
 *               is printed and at the end of a load - summary statistics.
 *
-* Input -       *file - open file pointer
-*               timestamp - time in seconds since the load started
-*               *protocol - name of the applications/protocols
+* Input -       *file       - open file pointer
+*               timestamp   - time in seconds since the load started
+*               *protocol   - name of the applications/protocols
 *               clients_num - number of active (running + waiting) clients
-*               *sd - pointer to statistics data with statistics counters collection
-*               period - time interval of the statistics collection in msecs. 
+*               *sd         - pointer to statistics data with statistics counters collection
+*               period      - time interval of the statistics collection in msecs. 
 *
 * Return Code/Output - None
 ****************************************************************************************/

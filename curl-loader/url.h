@@ -28,9 +28,9 @@
 #define URL_AUTH_STR_LEN 64
 
 /* 
-   Current loading step: login, uas, logoff. If we are in the loading step 
-   login - take login url, logoff - take logoff url. For UAS step - take the 
-   next url according to <url_uas_num>. 
+   Current loading step: login, uas or logoff. If we are in the loading step 
+   login, pick up the login url; whin in logoff, take the logoff url. 
+   Being in UAS step, pick up the next url according to <url_uas_num>. 
 */
 typedef enum url_load_step
   {
@@ -41,7 +41,7 @@ typedef enum url_load_step
   } url_load_step;
 
 /*
-  Types of URLs.
+  Application types of URLs.
 */
 typedef enum url_appl_type
   {
@@ -50,6 +50,7 @@ typedef enum url_appl_type
     URL_APPL_HTTPS,
     URL_APPL_FTP,
     URL_APPL_FTPS,
+    URL_APPL_SFTP,
   } url_appl_type;
 
 
@@ -64,32 +65,33 @@ typedef struct url_context
 
    /*
      Maximum time for all clients in a batch to accomplish fetching. 
+     Used by storming mode only.
    */
   float url_completion_time;
 
-  /* Sleeping interval after fetching this url in msec.*/
+  /* Time to relax after fetching this url (msec).*/
   unsigned long url_interleave_time;
 
    /* 
-      The username to be used to access the URL by filling the POST form or
-      when requested by server to provide Web or Proxy authentication
+      The username to be used to access the URL by filling the POST form and/or,
+      to provide for Web or Proxy authentication (on server's 401 or proxy 407).
    */
   char username[URL_AUTH_STR_LEN];
 
   /* 
-     The password to be used to access the URL by filling the POST form or
-     when requested by server to provide Web or Proxy authentication
+     The password to be used to access the URL by filling the POST form and/or
+     to provide Web or Proxy authentication
   */
   char password[URL_AUTH_STR_LEN];
 
-  /* Application type of url */
+  /* Application type of url, e.g. HTTP, HTTPS, FTP, etc */
   url_appl_type url_appl_type;
 
   /* 
-     At which loading step the url is used: login, uas, logoff. 
-     
-     If we are in the loading step login - take login url, logoff - take logoff url. 
-     For UAS step - take the next url according to <url_uas_num>. 
+   At which loading step the url is used: login, uas, logoff. 
+   If we are in the loading step login, pick up the login url; whin in logoff, 
+   take the logoff url. Being in UAS step, pick up the next url according to 
+   <url_uas_num>. 
   */
   url_load_step url_lstep;
 
