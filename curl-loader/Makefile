@@ -4,6 +4,10 @@ TAGFILE=.tagfile
 
 BUILD=$(shell pwd)/build
 
+#CARES_BUILD=$(BUILD)/c-ares
+#CARES_VER:=1.3.3-20070430
+#CARES_MAKE_DIR=$(CARES_BUILD)/c-ares-$(CARES_VER)
+
 CURL_BUILD=$(BUILD)/curl
 CURL_VER:=7.16.2
 
@@ -70,14 +74,16 @@ LD=gcc
 LDFLAGS=-L./lib -L$(OPENSSLDIR)/lib
 
 # Link Libraries. RedHat/FC require sometimes lidn
-LIBS= -ldl -lpthread -lrt -lidn -lcurl -levent -lz -lssl -lcrypto 
+LIBS= -ldl -lpthread -lrt -lidn -lcurl -levent -lz -lssl -lcrypto #-lcares 
 
 # Include directories
 INCDIR=-I. -I./inc -I$(OPENSSLDIR)/include
 
 # Targets
-LIBCURL=./lib/libcurl.a
-LIBEVENT=./lib/libevent.a
+#LIBCARES:=./lib/libcares.a
+LIBCURL:=./lib/libcurl.a
+LIBEVENT:=./lib/libevent.a
+
 
 all: $(TARGET)
 
@@ -91,7 +97,8 @@ clean:
 	rm -f $(OBJ_DIR)/*.o $(TARGET) core*
 
 cleanall: clean
-	rm -rf ./build ./packages/curl-$(CURL_VER) ./packages/curl ./inc ./lib ./bin $(TAGFILE) \
+	rm -rf ./build ./packages/curl-$(CURL_VER) \
+	./packages/curl ./inc ./lib ./bin $(TAGFILE) \
 	*.log *.txt *.ctx *~ ./mconfig/*~ ./conf-examples/*~
 
 tags:
@@ -109,8 +116,19 @@ $(LIBEVENT):
 	cd $(LIBEVENT_MAKE_DIR); ./configure --prefix $(LIBEVENT_BUILD) \
 		CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS)"
 	make -C $(LIBEVENT_MAKE_DIR); make -C $(LIBEVENT_MAKE_DIR) install
+	mkdir -p ./inc; mkdir -p ./lib
 	cp -pf $(LIBEVENT_BUILD)/include/*.h ./inc
 	cp -pf $(LIBEVENT_BUILD)/lib/libevent.a ./lib
+
+#$(LIBCARES):
+#	mkdir -p $(CARES_BUILD)
+#	cd $(CARES_BUILD); tar zxf ../../packages/c-ares-$(CARES_VER).tar.gz;
+#	cd $(CARES_MAKE_DIR); ./configure --prefix $(CARES_MAKE_DIR) \
+#		CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS)"
+#	make -C $(CARES_MAKE_DIR); make -C $(CARES_MAKE_DIR) install
+#	mkdir -p ./inc; mkdir -p ./lib
+#	cp -pf $(CARES_MAKE_DIR)/include/*.h ./inc
+#	cp -pf $(CARES_MAKE_DIR)/lib/libcares* ./lib
 
 
 $(LIBCURL):
@@ -118,11 +136,13 @@ $(LIBCURL):
 	patch -d curl -p1 < ../patches/multi-socket-action.patch; \
 	patch -d curl -p1 < ../patches/curl-max-write-size.patch; \
 	patch -d curl -p1 < ../patches/curl-alloc-master-buffer.patch; \
-	patch -d curl -p1 < ../patches/curl-trace-info-error.patch
+	patch -d curl -p1 < ../patches/curl-trace-info-error.patch; \
+	patch -d curl -p1 < ../patches/curl-hash.patch; \
+	patch -d curl -p0 < ../patches/curl-socket-hash-table-size.patch
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix=$(CURL_BUILD) \
+	--enable-ipv6 \
         --enable-thread \
-        --enable-ipv6 \
         --with-random=/dev/urandom \
         --with-ssl=/usr/include/openssl \
         --enable-shared=no \
@@ -132,6 +152,7 @@ $(LIBCURL):
 	cp -a $(CURL_BUILD)/include/curl ./inc/curl
 	cp -pf $(CURL_BUILD)/lib/libcurl* ./lib
 
+#--enable-ares=$(CARES_MAKE_DIR)
 
 # Files types rules
 .SUFFIXES: .o .c .h
