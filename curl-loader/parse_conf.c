@@ -38,6 +38,7 @@
 #include "conf.h"
 #include "batch.h"
 #include "client.h"
+#include "cl_alloc.h"
 
 #define EXPLORER_USERAGENT_STR "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" 
 #define BATCH_MAX_CLIENTS_NUM 4096
@@ -942,7 +943,7 @@ static int uas_urls_num_parser (batch_context*const bctx, char*const value)
     }    
     /* Preparing the staff to load URLs and handles */
     if (! (bctx->uas_url_ctx_array = 
-           (url_context *)calloc (bctx->uas_urls_num, sizeof (url_context))))
+           (url_context *) cl_calloc (bctx->uas_urls_num, sizeof (url_context))))
     {
         fprintf (stderr, 
                  "%s - error: failed to allocate URL-context array for %d urls\n", 
@@ -1722,7 +1723,7 @@ static int init_client_post_buffers_from_file (batch_context*const bctx)
       return -1;
     }
 
-  if (!(bctx->cctx_array  = (client_context *) calloc(bctx->client_num, 
+  if (!(bctx->cctx_array  = (client_context *) cl_calloc(bctx->client_num, 
                                                       sizeof (client_context))))
     {
       fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 

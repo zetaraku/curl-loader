@@ -57,6 +57,7 @@
 #include "conf.h"
 #include "ssl_thr_lock.h"
 #include "screen.h"
+#include "cl_alloc.h"
 
 
 static int create_ip_addrs (batch_context* bctx, int bctx_num);
@@ -1077,7 +1078,7 @@ static int alloc_init_client_contexts (batch_context* bctx,
   */
   if (!bctx->cctx_array)
     {
-      if (!(bctx->cctx_array  = (client_context *) calloc(bctx->client_num, 
+      if (!(bctx->cctx_array  = (client_context *) cl_calloc(bctx->client_num, 
                                               sizeof (client_context))))
         {
           fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 

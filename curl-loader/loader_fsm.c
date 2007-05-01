@@ -31,6 +31,7 @@
 #include "conf.h"
 #include "heap.h"
 #include "screen.h"
+#include "cl_alloc.h"
 
 static timer_node logfile_timer_node;
 static timer_node clients_num_inc_timer_node;
@@ -91,7 +92,7 @@ int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq)
 
   *wq = NULL;
 
-  if (! (tq = calloc (1, sizeof (heap))))
+  if (! (tq = cl_calloc (1, sizeof (heap))))
     {
       fprintf (stderr, "%s - error: failed to allocate queue.\n", __func__);
       return -1;

@@ -28,7 +28,7 @@
 #include <string.h>
 
 #include "heap.h"
-
+#include "cl_alloc.h"
 
 #define HEAP_PARENT(X) (X == 0 ? 0 : (((X) - 1) / 2))
 #define HEAP_LCHILD(X) (((X)+(X))+1)
@@ -136,7 +136,7 @@ int heap_init (heap*const h,
 
   h->fndump = dumper; /* If zero, we do not dump nodes. */
 
-  if (!(h->nodes_mpool = calloc (1, sizeof (mpool))))
+  if (!(h->nodes_mpool = cl_calloc (1, sizeof (mpool))))
     {
       fprintf(stderr, "%s - error: mpool allocation failed\n", __func__);
       return -1;

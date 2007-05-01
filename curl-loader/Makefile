@@ -55,7 +55,7 @@ OPT_FLAGS=
 endif
 
 # CPU-tuning flags
-#OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
+OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
 
 #Profiling flags
 ifeq ($(profile),1)

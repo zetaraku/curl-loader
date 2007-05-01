@@ -35,6 +35,7 @@
 #include "batch.h"
 #include "client.h"
 #include "conf.h"
+#include "cl_alloc.h"
 //#include "heap.h"
 
 
@@ -436,7 +437,7 @@ int user_activity_hyper (client_context* cctx_array)
  
   for (k = 0 ; k < bctx->client_num ; k++)
     {
-      sinfo = calloc (1, sizeof (sock_info));
+      sinfo = cl_calloc (1, sizeof (sock_info));
       if (!sinfo)
         {
            fprintf (stderr, "%s - error: allocation of sock_info failed.\n", __func__);

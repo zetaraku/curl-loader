@@ -154,6 +154,7 @@ int mpool_init (mpool* mpool, size_t object_size, int num_obj)
      return -1;
    }
 
+  /* Alignment as proposed by Michael Moser */
   object_size = (object_size + MPOOL_PTR_ALIGN) & (~(MPOOL_PTR_ALIGN - 1));
 
   if (object_size > OS_FREE_LIST_CHUNK_SIZE)
@@ -284,6 +285,7 @@ int mpool_allocate (mpool* mpool, size_t num_obj)
     {
       chunk = 0;
 
+      /* mpool->obj_size is aligned at pool init stage */
       if (! (chunk =  calloc (mpool->increase_step, mpool->obj_size)))
         {
           fprintf (stderr, "%s - calloc () failed\n", __func__);
