@@ -44,6 +44,7 @@
 #define BATCH_MAX_CLIENTS_NUM 4096
 
 #define NON_APPLICABLE_STR ""
+
 #define REQ_GET "GET"
 #define REQ_POST "POST"
 #define REQ_GET_POST "GET+POST"
@@ -162,7 +163,7 @@ static int validate_batch_url (batch_context*const bctx);
 
 static int post_validate_init (batch_context*const bctx);
 static int init_client_post_buffers_from_file (batch_context*const bctx);
-static int init_post_buffer (char*const input, 
+static int load_client_credentials_buffers (char*const input, 
                              size_t input_length,
                              batch_context*const bctx, 
                              int*const client_num,
@@ -300,7 +301,7 @@ static int add_param_to_batch (
 
   if (strstr (str_buff, tp_map[0].tag))
   {
-      /* On string "BATCH_NAME" move the number */
+      /* On string "BATCH_NAME" - next batch and move the number */
        ++(*batch_num);
   }
 
@@ -315,11 +316,10 @@ static int add_param_to_batch (
 }
 
 /****************************************************************************************
-* Function name - init_post_buffer
+* Function name - load_client_credentials_buffers
 *
 * Description - Parses string with credentials <user>SP<password>, allocates at virtual 
-*               client memory and keeps the credentials with the virtual client in the 
-*               post form buffer
+*               client memory and places the credentials to the client post buffer.
 * 
 * Input -       *input        - pointer to the credentials file string
 *               input_len     - length of the <input> string
@@ -329,7 +329,7 @@ static int add_param_to_batch (
 *                               further used.
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
-static int init_post_buffer (char*const input, 
+static int load_client_credentials_buffers (char*const input, 
                              size_t input_len,
                              batch_context*const bctx, 
                              int*const client_num,
@@ -393,36 +393,16 @@ static int init_post_buffer (char*const input,
         }
     }
 
-  /*
-    Allocate client buffers for POSTing login and logoff credentials.
-  */
-  if (! (bctx->cctx_array[*client_num].post_data =
-         (char *) calloc(POST_LOGIN_BUF_SIZE, sizeof (char))))
+   if (bctx->url_ctx_array[bctx->url_index].form_str[0])
     {
-      fprintf (stderr, "\"%s\" - %s - failed to allocate post login buffer.\n",
-               bctx->batch_name, __func__) ;
-      return -1;
-    }
-
-  /*
-  
-  if (bctx->login_post_str[0])
-    {
+        /*
       snprintf (bctx->cctx_array[*client_num].post_data_login, 
                 POST_LOGIN_BUF_SIZE, 
                 bctx->login_post_str,
                 username, 
                 password ? password : "");
+        */
     }
-
-  if (bctx->logoff_post_str[0])
-    {
-      snprintf (bctx->cctx_array[*client_num].post_data_logoff,
-                POST_LOGOFF_BUF_SIZE,
-                "%s",
-                bctx->logoff_post_str);
-    }
-  */
 
   ++*client_num;
   
@@ -643,9 +623,9 @@ static int user_agent_parser (batch_context*const bctx, char*const value)
 }
 static int urls_num_parser (batch_context*const bctx, char*const value)
 {
-    bctx->uas_urls_num = atoi (value);
+    bctx->urls_num = atoi (value);
     
-    if (bctx->uas_urls_num < 1)
+    if (bctx->urls_num < 1)
     {
         fprintf (stderr, 
                  "%s - error: urls_num (%s) should be one or more.\n",
@@ -653,12 +633,12 @@ static int urls_num_parser (batch_context*const bctx, char*const value)
         return -1;
     }    
     /* Preparing the staff to load URLs and handles */
-    if (! (bctx->uas_url_ctx_array = 
-           (url_context *) cl_calloc (bctx->uas_urls_num, sizeof (url_context))))
+    if (! (bctx->url_ctx_array = 
+           (url_context *) cl_calloc (bctx->urls_num, sizeof (url_context))))
     {
         fprintf (stderr, 
                  "%s - error: failed to allocate URL-context array for %d urls\n", 
-                 __func__, bctx->uas_urls_num);
+                 __func__, bctx->urls_num);
         return -1;
     }
     bctx->url_index = -1;  /* Starting from the 0 position in the arrays */
@@ -680,10 +660,10 @@ static int url_parser (batch_context*const bctx, char*const value)
 {
     size_t url_length = 0;
 
-    if ((int)bctx->url_index >= bctx->uas_urls_num)
+    if ((int)bctx->url_index >= bctx->urls_num)
     {
         fprintf (stderr, 
-                 "%s - error: UAS_URL_NUM (%d) is below uas-urls number in conf-file.\n",
+                 "%s - error: URL_NUM (%d) is below uas-urls number in conf-file.\n",
                  __func__, bctx->url_index);
         return -1;
     }
@@ -695,17 +675,18 @@ static int url_parser (batch_context*const bctx, char*const value)
         return 0;
     }
     
-    if (! (bctx->uas_url_ctx_array[bctx->url_index].url_str = 
+    if (! (bctx->url_ctx_array[bctx->url_index].url_str = 
            (char *) calloc (url_length +1, sizeof (char))))
     {
+
         fprintf (stderr,
                  "%s - error: allocation failed for url string \"%s\"\n", 
                  __func__, value);
         return -1;
     }
-    strcpy(bctx->uas_url_ctx_array[bctx->url_index].url_str, value);
-    bctx->uas_url_ctx_array[bctx->url_index].url_appl_type = url_schema_classification (value);
-    bctx->uas_url_ctx_array[bctx->url_index].url_uas_num = bctx->url_index;
+    strcpy(bctx->url_ctx_array[bctx->url_index].url_str, value);
+    bctx->url_ctx_array[bctx->url_index].url_appl_type = url_schema_classification (value);
+    bctx->url_ctx_array[bctx->url_index].url_uas_num = bctx->url_index;
     
     return 0;
 }
@@ -717,7 +698,7 @@ static int url_cycles_num_parser (batch_context*const bctx, char*const value)
         cycles = LONG_MAX - 1;
     }
 
-    bctx->uas_url_ctx_array[bctx->url_index].url_cycles_num = cycles;
+    bctx->url_ctx_array[bctx->url_index].url_cycles_num = cycles;
 
     return 0;
 }
@@ -740,7 +721,7 @@ static int header_parser (batch_context*const bctx, char*const value)
       return -1;
     }
 
-  if (bctx->uas_url_ctx_array[bctx->url_index].custom_http_hdrs_num >= 
+  if (bctx->url_ctx_array[bctx->url_index].custom_http_hdrs_num >= 
       CUSTOM_HTTP_HDRS_MAX_NUM)
     {
       fprintf (stderr, 
@@ -749,9 +730,9 @@ static int header_parser (batch_context*const bctx, char*const value)
       return -1;
     }
 
-  if (!(bctx->uas_url_ctx_array[bctx->url_index].custom_http_hdrs = 
+  if (!(bctx->url_ctx_array[bctx->url_index].custom_http_hdrs = 
         curl_slist_append (
-                           bctx->uas_url_ctx_array[bctx->url_index].custom_http_hdrs, 
+                           bctx->url_ctx_array[bctx->url_index].custom_http_hdrs, 
                            value))
       )
     {
@@ -760,7 +741,7 @@ static int header_parser (batch_context*const bctx, char*const value)
       return -1;
     }
   
-  bctx->uas_url_ctx_array[bctx->url_index].custom_http_hdrs_num++;
+  bctx->url_ctx_array[bctx->url_index].custom_http_hdrs_num++;
 
   return 0;
 }
@@ -768,17 +749,17 @@ static int request_type_parser (batch_context*const bctx, char*const value)
 {
     if (!strcmp (value, REQ_GET_POST))
     {
-        bctx->uas_url_ctx_array[bctx->url_index].req_type = 
+        bctx->url_ctx_array[bctx->url_index].req_type = 
           LOGIN_REQ_TYPE_GET_AND_POST;
     }
     else if (!strcmp (value, REQ_POST))
     {
-        bctx->uas_url_ctx_array[bctx->url_index].req_type = 
+        bctx->url_ctx_array[bctx->url_index].req_type = 
           LOGIN_REQ_TYPE_POST;
     }
     else if (!strcmp (value, REQ_GET))
     {
-        bctx->uas_url_ctx_array[bctx->url_index].req_type = 
+        bctx->url_ctx_array[bctx->url_index].req_type = 
           LOGIN_REQ_TYPE_GET;
     }
     else
@@ -800,9 +781,9 @@ static int username_parser (batch_context*const bctx, char*const value)
       return 0;
     }
 
-  strncpy (bctx->uas_url_ctx_array[bctx->url_index].username, 
+  strncpy (bctx->url_ctx_array[bctx->url_index].username, 
            value, 
-           sizeof(bctx->uas_url_ctx_array[bctx->url_index].username) - 1);
+           sizeof(bctx->url_ctx_array[bctx->url_index].username) - 1);
 
   return 0;
 }
@@ -814,9 +795,9 @@ static int password_parser (batch_context*const bctx, char*const value)
               __func__, value);
       return 0;
     } 
-  strncpy (bctx->uas_url_ctx_array[bctx->url_index].password, 
+  strncpy (bctx->url_ctx_array[bctx->url_index].password, 
            value, 
-           sizeof(bctx->uas_url_ctx_array[bctx->url_index].password) - 1);
+           sizeof(bctx->url_ctx_array[bctx->url_index].password) - 1);
   return 0;
 }
 static int form_type_parser (batch_context*const bctx, char*const value)
@@ -848,17 +829,17 @@ static int form_string_parser (batch_context*const bctx, char*const value)
 
       if (count_percent_s_percent_d == 2 && count_percent_s == 2)
         {
-          bctx->uas_url_ctx_array[bctx->url_index].form_usage_type = 
+          bctx->url_ctx_array[bctx->url_index].form_usage_type = 
             POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS;
         }
       else if (count_percent_s_percent_d == 1 && count_percent_s == 2)
         {
-          bctx->uas_url_ctx_array[bctx->url_index].form_usage_type  = 
+          bctx->url_ctx_array[bctx->url_index].form_usage_type  = 
             POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD;
         }
       else if (count_percent_s_percent_d == 0 && count_percent_s == 2)
         {
-          bctx->uas_url_ctx_array[bctx->url_index].form_usage_type = 
+          bctx->url_ctx_array[bctx->url_index].form_usage_type = 
             POST_STR_USERTYPE_SINGLE_USER;
             
           /* 
@@ -881,10 +862,41 @@ static int form_string_parser (batch_context*const bctx, char*const value)
           return -1;
         }
 
-      strncpy (bctx->uas_url_ctx_array[bctx->url_index].form_str, 
+      strncpy (bctx->url_ctx_array[bctx->url_index].form_str, 
                value, 
-               sizeof (bctx->uas_url_ctx_array[bctx->url_index].form_str) - 1);
+               sizeof (bctx->url_ctx_array[bctx->url_index].form_str) - 1);
+
+      /*
+        Allocate client contexts, if not allocated before.
+      */
+      if (!bctx->cctx_array)
+      {
+          if (!(bctx->cctx_array  = (client_context *) cl_calloc(bctx->client_num, 
+                                                                 sizeof (client_context))))
+          {
+              fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
+                       bctx->batch_name, __func__);
+              return -1;
+          }
+      }
+
+      /*
+        Allocate client buffers for POSTing login and logoff credentials.
+      */
+      int i;
+      for (i = 0;  i < bctx->client_num; i++)
+      {
+          if (! (bctx->cctx_array[i].post_data = 
+                 (char *) calloc(POST_LOGIN_BUF_SIZE, sizeof (char))))
+          {
+              fprintf (stderr,
+                       "\"%s\" failed to allocate post data buffer.\n", __func__) ;
+              return -1;
+          }
+      }
+      
     }
+
   return 0;
 }
 static int credentials_file_parser  (batch_context*const bctx, char*const value)
@@ -902,14 +914,14 @@ static int credentials_file_parser  (batch_context*const bctx, char*const value)
         }
 
       string_len = strlen (value) + 1;
-      if (! (bctx->uas_url_ctx_array[bctx->url_index].credentials_file = 
+      if (! (bctx->url_ctx_array[bctx->url_index].credentials_file = 
              (char *) calloc (string_len, sizeof (char))))
         {
           fprintf(stderr, "%s error: failed to allocate memory with errno %d.\n",  __func__, errno);
           return -1;
         }
 
-      strncpy (bctx->uas_url_ctx_array[bctx->url_index].credentials_file, 
+      strncpy (bctx->url_ctx_array[bctx->url_index].credentials_file, 
                value, 
                string_len -1);
     }
@@ -930,14 +942,14 @@ static int upload_file_parser  (batch_context*const bctx, char*const value)
         }
 
       string_len = strlen (value) + 1;
-      if (! (bctx->uas_url_ctx_array[bctx->url_index].upload_file = 
+      if (! (bctx->url_ctx_array[bctx->url_index].upload_file = 
              (char *) calloc (string_len, sizeof (char))))
         {
           fprintf(stderr, "%s error: failed to allocate memory with errno %d.\n",  __func__, errno);
           return -1;
         }
 
-      strncpy (bctx->uas_url_ctx_array[bctx->url_index].upload_file, 
+      strncpy (bctx->url_ctx_array[bctx->url_index].upload_file, 
                value, 
                string_len -1);
     }
@@ -963,12 +975,12 @@ static int proxy_auth_credentials_parser (batch_context*const bctx, char*const v
 
 static int timer_url_completion_parser (batch_context*const bctx, char*const value)
 {
-    bctx->uas_url_ctx_array[bctx->url_index].timer_url_completion = atol (value);
+    bctx->url_ctx_array[bctx->url_index].timer_url_completion = atol (value);
     return 0;
 }
 static int timer_after_url_sleep_parser (batch_context*const bctx, char*const value)
 {
-    bctx->uas_url_ctx_array[bctx->url_index].timer_after_url_sleep = atol (value);
+    bctx->url_ctx_array[bctx->url_index].timer_after_url_sleep = atol (value);
     return 0;
 }
 
@@ -1166,7 +1178,7 @@ static int validate_batch_general (batch_context*const bctx)
 ****************************************************************************************/
 static int validate_batch_url (batch_context*const bctx)
 {
-  if (bctx->uas_urls_num)
+  if (bctx->urls_num)
     {
       fprintf (stderr, "%s - error: when UAS section is disabled by \"UAS=N\", \n"
                "comment out all tags of the section after the tag UAS string.\n", 
@@ -1175,7 +1187,7 @@ static int validate_batch_url (batch_context*const bctx)
     }
   return 0;
 
-  if (bctx->uas_urls_num < 1)
+  if (bctx->urls_num < 1)
     {
       fprintf (stderr, "%s - error: at least a single url is expected "
                "for a valid UAS section .\n", __func__);
@@ -1183,35 +1195,35 @@ static int validate_batch_url (batch_context*const bctx)
     }
 
   int k = 0;
-  for (k = 0; k < bctx->uas_urls_num; k++)
+  for (k = 0; k < bctx->urls_num; k++)
     {
       // URL
-      if (!bctx->uas_url_ctx_array[k].url_str || !strlen (bctx->uas_url_ctx_array[k].url_str))
+      if (!bctx->url_ctx_array[k].url_str || !strlen (bctx->url_ctx_array[k].url_str))
         {
           fprintf (stderr, 
                    "%s - error: empty URL in position %d.\n", __func__, k);
           return -1;
         }
 
-      if (bctx->uas_url_ctx_array[k].url_cycles_num <=0)
+      if (bctx->url_ctx_array[k].url_cycles_num <=0)
         {
           fprintf (stderr, 
                    "%s - error: zero or negative URL_CYCLES_NUM in position %d.\n", __func__, k);
           return -1;
         }
 
-      if (bctx->uas_url_ctx_array[k].req_type != LOGIN_REQ_TYPE_POST && 
-          bctx->uas_url_ctx_array[k].req_type != LOGIN_REQ_TYPE_GET &&
-          bctx->uas_url_ctx_array[k].req_type != LOGIN_REQ_TYPE_GET_AND_POST)
+      if (bctx->url_ctx_array[k].req_type != LOGIN_REQ_TYPE_POST && 
+          bctx->url_ctx_array[k].req_type != LOGIN_REQ_TYPE_GET &&
+          bctx->url_ctx_array[k].req_type != LOGIN_REQ_TYPE_GET_AND_POST)
         {
           fprintf (stderr, "%s - error: REQUEST_TYPE is out of valid range .\n", 
                    __func__);
           return -1;
         }
 
-      if (bctx->uas_url_ctx_array[k].credentials_file)
+      if (bctx->url_ctx_array[k].credentials_file)
         {
-          if (! bctx->uas_url_ctx_array[k].form_str[0])
+          if (! bctx->url_ctx_array[k].form_str[0])
             {
               fprintf (stderr, "%s - error: empty FORM_STRING, "
                        "when CREDENTIALS_FILE defined.\n Either disable" 
@@ -1219,9 +1231,9 @@ static int validate_batch_url (batch_context*const bctx)
               return -1;
             }
           
-          if (bctx->uas_url_ctx_array[k].form_usage_type == 
+          if (bctx->url_ctx_array[k].form_usage_type == 
               POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS ||
-              bctx->uas_url_ctx_array[k].form_usage_type == 
+              bctx->url_ctx_array[k].form_usage_type == 
               POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD
               )
             {
@@ -1231,7 +1243,7 @@ static int validate_batch_url (batch_context*const bctx)
             }
           else
             {
-              bctx->uas_url_ctx_array[k].form_usage_type = POST_STR_USERTYPE_LOAD_USERS_FROM_FILE;
+              bctx->url_ctx_array[k].form_usage_type = POST_STR_USERTYPE_LOAD_USERS_FROM_FILE;
             }
         }
     }
@@ -1266,18 +1278,14 @@ static int post_validate_init (batch_context*const bctx)
 
   /* TODO - correct instead of 1-s */
   if (op_stat_point_init(&bctx->op_delta, 
-                         1, 
-                         bctx->uas_urls_num, 
-                         1) == -1)
+                         bctx->urls_num) == -1)
     {
       fprintf (stderr, "%s - error: init of op_delta failed.\n",__func__);
       return -1;
     }
   
-  if (op_stat_point_init(&bctx->op_total, 
-                         1, 
-                         bctx->uas_urls_num, 
-                         1) == -1)
+  if (op_stat_point_init(&bctx->op_total,
+                         bctx->urls_num) == -1)
     {
       fprintf (stderr, "%s - error: init of op_total failed.",__func__);
       return -1;
@@ -1489,14 +1497,14 @@ static int init_client_post_buffers_from_file (batch_context*const bctx)
               break;
             }
 
-          if (init_post_buffer (fgets_buff,
+          if (load_client_credentials_buffers (fgets_buff,
                                 string_len,
                                 bctx, 
                                 &client_index,
                                 &sep) == -1)
             {
               fprintf (stderr, 
-                       "%s - error: init_post_buffer () failed on credentials line \"%s\"\n", 
+                       "%s - error: load_client_credentials_buffers () failed on credentials line \"%s\"\n", 
                        __func__, fgets_buff);
               fclose (fp);
               return -1 ;

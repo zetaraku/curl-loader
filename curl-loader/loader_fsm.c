@@ -917,7 +917,7 @@ static int setup_uas (client_context* cctx)
 
   if (setup_curl_handle_init (
                               cctx,
-                              &bctx->uas_url_ctx_array[cctx->uas_url_curr_index], /* current url */
+                              &bctx->url_ctx_array[cctx->uas_url_curr_index], /* current url */
                               0, /* Cycle, do we need it? */ 
                               0 /* GET - zero, unless we'll need to make POST here */
                               ) == -1)
@@ -1091,12 +1091,12 @@ static int load_uas_state (client_context* cctx, unsigned long *wait_msec)
   if (cctx->client_state == CSTATE_UAS_CYCLING)
     {
       // Mind the interleave timeout after each url, if any.
-      *wait_msec = bctx->uas_url_ctx_array[cctx->uas_url_curr_index].url_interleave_time;
+      *wait_msec = bctx->url_ctx_array[cctx->uas_url_curr_index].url_interleave_time;
 
       // Now, advance the url index
       cctx->uas_url_curr_index++;
 
-      if (cctx->uas_url_curr_index >= (size_t)(bctx->uas_urls_num))
+      if (cctx->uas_url_curr_index >= (size_t)(bctx->urls_num))
         {
           // Finished with all the urls for a single UAS -cycle.
 

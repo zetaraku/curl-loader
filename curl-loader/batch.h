@@ -124,16 +124,16 @@ typedef struct batch_context
   char user_agent[256];
 
 
-  /*------- UAS (User Activity Simulation) SECTION - fetching urls ----- */
+  /*------- URL SECTION - fetching urls ----- */
 
   /* Number of total urls, should be more or equal to 1 */
-  int uas_urls_num;
+  int urls_num;
   
   /* Array of all UAS url contexts */
-  url_context* uas_url_ctx_array;
+  url_context* url_ctx_array;
 
   /* 
-     Index of the parsed url in uas_url_ctx_array below.
+     Index of the parsed url in url_ctx_array below.
   */
   int url_index;
 

@@ -149,9 +149,11 @@ typedef struct client_context
  
   /* 
      The buffers for the POST method login and logoff are allocated only, 
-     when a batch is configured to make some POST-ing
+     when a single url is configured to make some POST-ing and has 
+     filled <form_str>
   */
   char* post_data;
+
 
   /* 
      Counter of the headers going in or out.  For the first header in request

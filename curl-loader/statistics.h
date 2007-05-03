@@ -83,22 +83,12 @@ typedef struct stat_point
 */
 typedef struct op_stat_point
 {
-  /* Number of successful logins */
-  unsigned long* login_ok;
-  /* Number of failed logins */
-  unsigned long* login_failed;
-
   /* Number of url-counters in the below arrays */
-  unsigned long uas_url_num;
+  unsigned long url_num;
   /* Array of UAS-url counters for successful fetches */
-  unsigned long* uas_url_ok;
+  unsigned long* url_ok;
   /* Array of UAS-url counters for failed fetches */
-  unsigned long* uas_url_failed;
-
-  /* Number of successful logoffs */
-  unsigned long* logoff_ok;
-  /* Number of failed logoffs */
-  unsigned long* logoff_failed;
+  unsigned long* url_failed;
 
   /* Used for CAPS calculation */
   unsigned long call_init_count;
@@ -155,15 +145,10 @@ void op_stat_point_reset (op_stat_point* point);
 * 		fields for counters
 *
 * Input -       *point      -  pointer to the op_stat_point, where counter will be added
-*               login       -  boolean flag, whether login is relevant (1) or not (0)
-*               uas_url_num -  number of UAS urls, which can be 0, if UAS is not relevant
-*               logoff      -  boolean flag, whether login is relevant (1) or not (0)
+*               url_num -  number of UAS urls, which can be 0, if UAS is not relevant
 * Return Code/Output - None
 ****************************************************************************************/
-int op_stat_point_init (op_stat_point* point, 
-                        size_t login, 
-                        size_t uas_url_num, 
-                        size_t logoff);
+int op_stat_point_init (op_stat_point* point, size_t url_num);
 
 
 /****************************************************************************************
@@ -185,7 +170,7 @@ void op_stat_point_release (op_stat_point* point);
 * 					to be updated
 *               current_state         - current state of a client
 *               prev_state            - previous state of a client
-*               current_uas_url_index - current uas url index of a the client
+*               current_url_index - current uas url index of a the client
 *               prev_uas_url_index    - previous uas url index of a the client
 *
 * Return Code/Output - None
@@ -193,7 +178,7 @@ void op_stat_point_release (op_stat_point* point);
 void op_stat_update (op_stat_point* op_stat, 
                      int current_state, 
                      int prev_state,
-                     size_t current_uas_url_index,
+                     size_t current_url_index,
                      size_t prev_uas_url_index);
 
 void op_stat_call_init_count_inc (op_stat_point* op_stat);

@@ -535,9 +535,9 @@ static int mget_url_hyper (batch_context* bctx)
 {
   float max_timeout = DEFAULT_SMOOTH_URL_COMPLETION_TIME;
 
-  if (bctx->uas_url_ctx_array)
+  if (bctx->url_ctx_array)
     {
-      max_timeout = bctx->uas_url_ctx_array[0].timer_url_completion;
+      max_timeout = bctx->url_ctx_array[0].timer_url_completion;
     }
  
   /* update timeout */

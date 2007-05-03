@@ -148,27 +148,15 @@ void op_stat_point_add (op_stat_point* left, op_stat_point* right)
   if (!left || !right)
     return;
 
-  if (left->uas_url_num != right->uas_url_num)
+  if (left->url_num != right->url_num)
     return;
   
-  if (left->login_ok)
+  for ( i = 0; i < left->url_num; i++)
     {
-      *left->login_ok += *right->login_ok;
-      *left->login_failed += *right->login_failed;
+      left->url_ok[i] += right->url_ok[i];
+      left->url_failed[i] += right->url_failed[i];
     }
-
-  for ( i = 0; i < left->uas_url_num; i++)
-    {
-      left->uas_url_ok[i] += right->uas_url_ok[i];
-      left->uas_url_failed[i] += right->uas_url_failed[i];
-    }
-
-  if (left->logoff_ok)
-    {
-      *left->logoff_ok += *right->logoff_ok;
-      *left->logoff_failed += *right->logoff_failed;
-    }
-
+  
   left->call_init_count += right->call_init_count;
 }
 
@@ -184,25 +172,15 @@ void op_stat_point_reset (op_stat_point* point)
   if (!point)
     return;
 
-  if (point->login_ok)
-    {
-      *point->login_ok = *point->login_failed = 0;
-    }
-
-  if (point->uas_url_num)
+  if (point->url_num)
     {
       size_t i;
-      for ( i = 0; i < point->uas_url_num; i++)
+      for ( i = 0; i < point->url_num; i++)
         {
-          point->uas_url_ok[i] = point->uas_url_failed[i] = 0;
+          point->url_ok[i] = point->url_failed[i] = 0;
         }
     }
-    /* Don't null point->uas_url_num ! */
-
-   if (point->logoff_ok)
-    {
-      *point->logoff_ok = *point->logoff_failed = 0;
-    }
+    /* Don't null point->url_num ! */
 
    point->call_init_count = 0;
 }
@@ -216,23 +194,11 @@ void op_stat_point_reset (op_stat_point* point)
 ****************************************************************************************/
 void op_stat_point_release (op_stat_point* point)
 {
-  if (point->login_ok)
-    free (point->login_ok);
+  if (point->url_ok)
+    free (point->url_ok);
 
-  if (point->login_failed)
-    free (point->login_failed);
-
-  if (point->uas_url_ok)
-    free (point->uas_url_ok);
-
-  if (point->uas_url_failed)
-    free (point->uas_url_failed);
-
-  if (point->logoff_ok)
-    free (point->logoff_ok);
-
-  if (point->logoff_failed)
-    free (point->logoff_failed);
+  if (point->url_failed)
+    free (point->url_failed);
 
   memset (point, 0, sizeof (op_stat_point));
 }
@@ -244,47 +210,24 @@ void op_stat_point_release (op_stat_point* point)
 * 		fields for counters
 *
 * Input -       *point      - pointer to the op_stat_point, where counter will be added
-*               login       - boolean flag, whether login is relevant (1) or not (0)
-*               uas_url_num - number of UAS urls, which can be 0, if UAS is not relevant
-*               logoff      - boolean flag, whether login is relevant (1) or not (0)
+*               url_num - number of UAS urls, which can be 0, if UAS is not relevant
 *
 * Return Code/Output - None
 ****************************************************************************************/
-int op_stat_point_init (op_stat_point* point, 
-                        size_t login, 
-                        size_t uas_url_num, 
-                        size_t logoff)
+int op_stat_point_init (op_stat_point* point, size_t url_num)
 {
   if (! point)
     return -1;
 
-  if (login)
+   if (url_num)
     { 
-      if (!(point->login_ok = calloc (1, sizeof (unsigned long))) ||
-          !(point->login_failed = calloc (1, sizeof (unsigned long))))
-        {
-          goto allocation_failed;
-        }
-    }
-
-   if (uas_url_num)
-    { 
-      if (!(point->uas_url_ok = calloc (uas_url_num, sizeof (unsigned long))) ||
-          !(point->uas_url_failed = calloc (uas_url_num, sizeof (unsigned long))))
+      if (!(point->url_ok = calloc (url_num, sizeof (unsigned long))) ||
+          !(point->url_failed = calloc (url_num, sizeof (unsigned long))))
         {
           goto allocation_failed;
         }
       else
-        point->uas_url_num = uas_url_num;
-    }
-
-  if (logoff)
-    { 
-      if (!(point->logoff_ok = calloc (1, sizeof (unsigned long))) ||
-          !(point->logoff_failed = calloc (1, sizeof (unsigned long))))
-        {
-          goto allocation_failed;
-        }
+        point->url_num = url_num;
     }
 
   point->call_init_count = 0;
@@ -305,32 +248,24 @@ int op_stat_point_init (op_stat_point* point,
 * Input -       *point                - pointer to the op_stat_point, where counters to be updated
 *               current_state         - current state of a client
 *               prev_state            - previous state of a client
-*               current_uas_url_index - current uas url index of a the client
-*               prev_uas_url_index    - previous uas url index of a the client
+*               current_url_index - current uas url index of a the client
+*               prev_url_index    - previous uas url index of a the client
 *
 * Return Code/Output - None
 ****************************************************************************************/
 void op_stat_update (op_stat_point* op_stat, 
                      int current_state, 
                      int prev_state,
-                     size_t current_uas_url_index,
-                     size_t prev_uas_url_index)
+                     size_t current_url_index,
+                     size_t prev_url_index)
 {
-  (void) current_uas_url_index;
+  (void) current_url_index;
 
   if (!op_stat)
     return;
 
   switch (prev_state)
     {
-    case CSTATE_LOGIN:
-      if (current_state != CSTATE_LOGIN)
-        {
-          (current_state == CSTATE_ERROR) ? ++*op_stat->login_failed : 
-            ++*op_stat->login_ok;
-        }
-      break;
-      
     case CSTATE_UAS_CYCLING:
       if (current_state != CSTATE_UAS_CYCLING)
         {
@@ -340,24 +275,17 @@ void op_stat_update (op_stat_point* op_stat,
              the first and the only)
           */
           (current_state == CSTATE_ERROR) ? 
-            op_stat->uas_url_failed[op_stat->uas_url_num-1]++ : 
-            op_stat->uas_url_ok[op_stat->uas_url_num-1]++;
+            op_stat->url_failed[op_stat->url_num-1]++ : 
+            op_stat->url_ok[op_stat->url_num-1]++;
         }
       else
         {
            (current_state == CSTATE_ERROR) ? 
-             op_stat-> uas_url_failed[prev_uas_url_index]++ : 
-             op_stat->uas_url_ok[prev_uas_url_index]++;
+             op_stat-> url_failed[prev_url_index]++ : 
+             op_stat->url_ok[prev_url_index]++;
         }
       break;
 
-    case CSTATE_LOGOFF:
-      if (current_state != CSTATE_LOGOFF)
-        {
-          (current_state == CSTATE_ERROR) ? ++*op_stat->logoff_failed : 
-            ++*op_stat->logoff_ok;
-        }
-      break;
     }
   
   return;
@@ -800,23 +728,13 @@ static void print_operational_statistics (op_stat_point*const osp)
 
   fprintf (stdout, " Operations:\tSuccess\t\tFailed\n");
 
-  if (osp->login_ok && osp->login_failed)
-    {
-      fprintf (stdout, " LOGIN:\t\t%ld\t\t%ld\n", *osp->login_ok, *osp->login_failed);
-    }
-
-  if (osp->uas_url_num && osp->uas_url_ok && osp->uas_url_failed)
+  if (osp->url_num && osp->url_ok && osp->url_failed)
     {
       unsigned long i;
-      for (i = 0; i < osp->uas_url_num; i++)
+      for (i = 0; i < osp->url_num; i++)
         {
           fprintf (stdout, " UAS-%ld:\t\t%ld\t\t%ld\n",
-                   i, osp->uas_url_ok[i], osp->uas_url_failed[i]);
+                   i, osp->url_ok[i], osp->url_failed[i]);
         }
-    }
-
-  if (osp->logoff_ok && osp->logoff_failed)
-    {
-      fprintf (stdout, " LOGOFF:\t%ld\t\t%ld\n", *osp->logoff_ok, *osp->logoff_failed);
     }
 }

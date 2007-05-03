@@ -78,7 +78,7 @@ int setup_curl_handle_appl (struct client_context*const cctx,
                             url_context* url_ctx,
                             int post_method);
 
-static int alloc_init_client_post_buffers (struct client_context* cctx, struct url_context* url);
+static int init_client_post_buffers (struct client_context* cctx, struct url_context* url);
 static int alloc_init_client_contexts (batch_context* bctx, FILE* output_file);
 static void free_batch_data_allocations (struct batch_context* bctx);
 static int ipv6_increment(const struct in6_addr *const src, 
@@ -355,7 +355,7 @@ static int initial_handles_init (client_context*const ctx_array)
   /* Allocate and fill form strings (for POST) for each client. */
 
   /* TODO - MOVE IT
-  if (alloc_init_client_post_buffers (ctx_array) == -1)
+  if (init_client_post_buffers (ctx_array) == -1)
     {
       fprintf (stderr, "%s - error: alloc_client_post_buffers () .\n", __func__);
       return -1;
@@ -662,7 +662,7 @@ int client_tracing_function (CURL *handle,
   if (url_logging)
     {
 
-      url_target = cctx->bctx->uas_url_ctx_array[cctx->uas_url_curr_index].url_str;
+      url_target = cctx->bctx->url_ctx_array[cctx->uas_url_curr_index].url_str;
       
       /* Clients are being redirected back and forth by 3xx redirects. */
       curl_easy_getinfo (handle, CURLINFO_EFFECTIVE_URL, &url_effective);
@@ -884,14 +884,14 @@ int client_tracing_function (CURL *handle,
 }
 
 /****************************************************************************************
-* Function name - alloc_init_client_post_buffers
+* Function name - init_client_post_buffers
 *
 * Description - Allocate and initialize post form buffers to be used for POST-ing
 * 
 * Input -       *cctx - pointer to client context
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-static int alloc_init_client_post_buffers (client_context* cctx, url_context* url)
+static int init_client_post_buffers (client_context* cctx, url_context* url)
 {
   int i;
   batch_context* bctx = cctx->bctx;
@@ -916,17 +916,6 @@ static int alloc_init_client_post_buffers (client_context* cctx, url_context* ur
 
   for (i = 0;  i < bctx->client_num; i++)
     {
-      /*
-        Allocate client buffers for POSTing login and logoff credentials.
-      */
-      if (! (cctx[i].post_data = 
-             (char *) calloc(POST_LOGIN_BUF_SIZE, sizeof (char))))
-        {
-          fprintf (stderr,
-                   "\"%s\" failed to allocate post login buffer.\n", __func__) ;
-          return -1;
-        }
-
       if (url->form_usage_type ==
           POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS)
         {
@@ -995,22 +984,6 @@ static int alloc_init_client_contexts (batch_context* bctx,
                                        FILE* log_file)
 {
   int i;
-
-  /*
-    Allocate client contexts, if not allocated before. When users and passwords 
-    are loaded from a credentials files (tag LOGIN_CREDENTIALS_FILE), the array 
-    is allocated already in post_validate () of parse_conf.c.
-  */
-  if (!bctx->cctx_array)
-    {
-      if (!(bctx->cctx_array  = (client_context *) cl_calloc(bctx->client_num, 
-                                              sizeof (client_context))))
-        {
-          fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
-                   bctx->batch_name, __func__);
-          return -1;
-        }
-    }
 
   /* 
      Iterate through client contexts and initialize them. 
@@ -1088,36 +1061,36 @@ static void free_batch_data_allocations (batch_context* bctx)
     }
 
   /* Free the allocated UAS url contexts*/
-  if (bctx->uas_url_ctx_array && bctx->uas_urls_num)
+  if (bctx->url_ctx_array && bctx->urls_num)
     {
       /* Free all URL-strings */
-      for (i = 0 ; i < bctx->uas_urls_num; i++)
+      for (i = 0 ; i < bctx->urls_num; i++)
         {
-          if (bctx->uas_url_ctx_array[i].url_str)
+          if (bctx->url_ctx_array[i].url_str)
             {
               /* Free url string */
-              free (bctx->uas_url_ctx_array[i].url_str);
-              bctx->uas_url_ctx_array[i].url_str = NULL ;
+              free (bctx->url_ctx_array[i].url_str);
+              bctx->url_ctx_array[i].url_str = NULL ;
                 
               /* Free custom HTTP headers. */
-              if (bctx->uas_url_ctx_array[i].custom_http_hdrs)
+              if (bctx->url_ctx_array[i].custom_http_hdrs)
                 {
-                  curl_slist_free_all(bctx->uas_url_ctx_array[i].custom_http_hdrs);
-                  bctx->uas_url_ctx_array[i].custom_http_hdrs = NULL;
+                  curl_slist_free_all(bctx->url_ctx_array[i].custom_http_hdrs);
+                  bctx->url_ctx_array[i].custom_http_hdrs = NULL;
                 }
 
               /* Free login credentials. */
-              if (bctx->uas_url_ctx_array[i].credentials_file)
+              if (bctx->url_ctx_array[i].credentials_file)
                 {
-                  free (bctx->uas_url_ctx_array[i].credentials_file);
-                  bctx->uas_url_ctx_array[i].credentials_file = NULL;
+                  free (bctx->url_ctx_array[i].credentials_file);
+                  bctx->url_ctx_array[i].credentials_file = NULL;
                 }
             }
         }
 
       /* Free URL context array */
-      free (bctx->uas_url_ctx_array);
-      bctx->uas_url_ctx_array = NULL;
+      free (bctx->url_ctx_array);
+      bctx->url_ctx_array = NULL;
     }
     }
 
