@@ -155,7 +155,7 @@ int mpool_init (mpool* mpool, size_t object_size, int num_obj)
    }
 
   /* Alignment as proposed by Michael Moser */
-  object_size = (object_size + MPOOL_PTR_ALIGN) & (~(MPOOL_PTR_ALIGN - 1));
+  object_size = (object_size + MPOOL_PTR_ALIGN -1) & (~(MPOOL_PTR_ALIGN - 1));
 
   if (object_size > OS_FREE_LIST_CHUNK_SIZE)
     {

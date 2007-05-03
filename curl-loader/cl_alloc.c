@@ -40,7 +40,7 @@ void* cl_calloc (size_t obj_num, size_t obj_size)
     }
 
   const size_t aligned_obj_size = 
-    (obj_size + CL_PTR_ALIGN) & (~(CL_PTR_ALIGN - 1));
+    (obj_size + CL_PTR_ALIGN - 1) & (~(CL_PTR_ALIGN - 1));
 
   return calloc (obj_num, aligned_obj_size);
 }
