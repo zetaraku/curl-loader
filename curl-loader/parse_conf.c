@@ -79,52 +79,33 @@ static int ip_addr_max_parser (batch_context*const bctx, char*const value);
 static int cycles_num_parser (batch_context*const bctx, char*const value);
 static int clients_initial_inc_parser (batch_context*const bctx, char*const value);
 static int user_agent_parser (batch_context*const bctx, char*const value);
-static int custom_header_parser (batch_context*const bctx, char*const value);
+static int urls_num_parser (batch_context*const bctx, char*const value);
 
 /*
- * LOGIN section tag parsers. 
+ * URL section tag parsers. 
 */
-static int login_parser (batch_context*const bctx, char*const value);
-static int login_cycling_parser (batch_context*const bctx, char*const value);
-static int login_req_type_parser (batch_context*const bctx, char*const value);
-static int login_req_type_get_post_parser (batch_context*const bctx, char*const value);
-static int login_req_type_post_parser (batch_context*const bctx, char*const value);
-static int login_req_type_get_parser (batch_context*const bctx, char*const value);
-static int login_post_str_parser (batch_context*const bctx, char*const value);
-static int login_credentials_file_parser  (batch_context*const bctx, char*const value);
-static int login_url_parser (batch_context*const bctx, char*const value);
-static int login_url_username_parser (batch_context*const bctx, char*const value);
-static int login_url_password_parser (batch_context*const bctx, char*const value);
-static int login_url_max_time_parser (batch_context*const bctx, char*const value);
-static int login_url_interleave_time_parser (batch_context*const bctx, char*const value);
+static int url_start_parser (batch_context*const bctx, char*const value);
+static int url_cycles_num_parser (batch_context*const bctx, char*const value);
+static int url_parser (batch_context*const bctx, char*const value);
+static int header_parser (batch_context*const bctx, char*const value);
+static int request_type_parser (batch_context*const bctx, char*const value);
 
+static int username_parser (batch_context*const bctx, char*const value);
+static int password_parser (batch_context*const bctx, char*const value);
+static int form_type_parser (batch_context*const bctx, char*const value);
+static int form_string_parser (batch_context*const bctx, char*const value);
+static int credentials_file_parser (batch_context*const bctx, char*const value);
 
-/*
- * UAS section tag parsers. 
-*/
-static int uas_parser (batch_context*const bctx, char*const value);
-static int uas_urls_num_parser (batch_context*const bctx, char*const value);
-static int uas_url_parser (batch_context*const bctx, char*const value);
-static int uas_url_username_parser (batch_context*const bctx, char*const value);
-static int uas_url_password_parser (batch_context*const bctx, char*const value);
-static int uas_url_max_time_parser (batch_context*const bctx, char*const value);
-static int uas_url_interleave_time_parser (batch_context*const bctx, char*const value);
+static int upload_file_parser (batch_context*const bctx, char*const value);
 
-/*
- * LOGOFF section tag parsers. 
-*/
-static int logoff_parser (batch_context*const bctx, char*const value);
-static int logoff_cycling_parser (batch_context*const bctx, char*const value);
-static int logoff_req_type_parser (batch_context*const bctx, char*const value);
-static int logoff_req_type_get_post_parser (batch_context*const bctx, char*const value);
-static int logoff_req_type_post_parser (batch_context*const bctx, char*const value);
-static int logoff_req_type_get_parser (batch_context*const bctx, char*const value);
-static int logoff_post_str_parser (batch_context*const bctx, char*const value);
-static int logoff_url_parser (batch_context*const bctx, char*const value);
-static int logoff_url_username_parser (batch_context*const bctx, char*const value);
-static int logoff_url_password_parser (batch_context*const bctx, char*const value);
-static int logoff_url_max_time_parser (batch_context*const bctx, char*const value);
-static int logoff_url_interleave_time_parser (batch_context*const bctx, char*const value);
+static int web_auth_method_parser (batch_context*const bctx, char*const value);
+static int web_auth_credentials_parser (batch_context*const bctx, char*const value);
+static int proxy_auth_method_parser (batch_context*const bctx, char*const value);
+static int proxy_auth_credentials_parser (batch_context*const bctx, char*const value);
+
+static int timer_url_completion_parser (batch_context*const bctx, char*const value);
+static int timer_after_url_sleep_parser (batch_context*const bctx, char*const value);
+
 
 static fparser find_tag_parser (const char* tag);
 
@@ -135,72 +116,49 @@ static const tag_parser_pair tp_map [] =
 {
     /*------------------------ GENERAL SECTION ------------------------------ */
     {"BATCH_NAME", batch_name_parser},
-    {"CLIENTS_NUM", clients_num_parser}, /* depricated, use CLIENTS_NUM_MAX */
     {"CLIENTS_NUM_MAX", clients_num_parser},
     {"CLIENTS_NUM_START", clients_num_start_parser},
+    {"CLIENTS_INITIAL_INC", clients_initial_inc_parser},
     {"INTERFACE", interface_parser},
     {"NETMASK", netmask_parser},
     {"IP_ADDR_MIN", ip_addr_min_parser},
     {"IP_ADDR_MAX", ip_addr_max_parser},
     {"CYCLES_NUM", cycles_num_parser},
-    {"CLIENTS_INITIAL_INC", clients_initial_inc_parser},
     {"USER_AGENT", user_agent_parser},
-    {"CUSTOM_HEADER", custom_header_parser},
+    {"URLS_NUM", urls_num_parser},
     
 
-    /*------------------------ LOGIN SECTION -------------------------------- */
-    {"LOGIN", login_parser},
-    /* if Login Authentication is yes - then the optional fields follow: */
-    {"LOGIN_CYCLING", login_cycling_parser},
-    {"LOGIN_USERNAME", login_url_username_parser}, /* depricated, use LOGIN_URL_USERNAME */
-    {"LOGIN_PASSWORD", login_url_password_parser}, /* depricated *, LOGIN_URL_PASSWORD */
-    {"LOGIN_REQ_TYPE", login_req_type_parser},
-    {"LOGIN_REQ_TYPE_GET_POST", login_req_type_get_post_parser},
-    {"LOGIN_REQ_TYPE_POST", login_req_type_post_parser},
-    {"LOGIN_REQ_TYPE_GET", login_req_type_get_parser},
-    {"LOGIN_POST_STR", login_post_str_parser},
-    {"LOGIN_CREDENTIALS_FILE", login_credentials_file_parser},
-    {"LOGIN_URL", login_url_parser},
-    {"LOGIN_URL_USERNAME", login_url_username_parser},
-    {"LOGIN_URL_PASSWORD", login_url_password_parser},
-    {"LOGIN_URL_MAX_TIME", login_url_max_time_parser},
-    {"LOGIN_URL_INTERLEAVE_TIME", login_url_interleave_time_parser},
+    /*------------------------ URL SECTION -------------------------------- */
 
+    {"URL_START", url_start_parser},
 
-    /*------- UAS (User Activity Simulation) SECTION - fetching urls ----- */ 
-    {"UAS", uas_parser},
-    /* USER_ACTIVITY_SIMULATION - if yes, then optional N-URLs: */
-    {"UAS_URLS_NUM", uas_urls_num_parser},
-    {"UAS_URL", uas_url_parser},
-    {"UAS_URL_USERNAME", uas_url_username_parser},
-    {"UAS_URL_PASSWORD", uas_url_password_parser},
-    {"UAS_URL_MAX_TIME", uas_url_max_time_parser},
-    {"UAS_URL_INTERLEAVE_TIME", uas_url_interleave_time_parser},
+    {"URL", url_parser},
+    {"URL_CYCLES_NUM", url_cycles_num_parser},
+    {"HEADER", header_parser},
+    {"REQUEST_TYPE", request_type_parser},
 
+    {"USERNAME", username_parser},
+    {"PASSWORD", password_parser},
+    {"FORM_TYPE", form_type_parser},
+    {"FORM_STRING", form_string_parser},
+    {"CREDENTIALS_FILE", credentials_file_parser},
 
-    /*------------------------LOGOFF SECTION ---------------------------------*/
-    {"LOGOFF", logoff_parser},
-    /* if logoff is yes - then the optional fields follow: */
-    {"LOGOFF_CYCLING", logoff_cycling_parser},
-    {"LOGOFF_REQ_TYPE", logoff_req_type_parser},
-    {"LOGOFF_REQ_TYPE_GET_POST", logoff_req_type_get_post_parser},
-    {"LOGOFF_REQ_TYPE_POST", logoff_req_type_post_parser},
-    {"LOGOFF_REQ_TYPE_GET", logoff_req_type_get_parser},
-    {"LOGOFF_POST_STR", logoff_post_str_parser},
-    {"LOGOFF_URL", logoff_url_parser},
-    {"LOGOFF_URL_USERNAME", logoff_url_username_parser},
-    {"LOGOFF_URL_PASSWORD", logoff_url_password_parser},
-    {"LOGOFF_URL_MAX_TIME", logoff_url_max_time_parser},
-    {"LOGOFF_URL_INTERLEAVE_TIME", logoff_url_interleave_time_parser},
-  
+    {"UPLOAD_FILE", upload_file_parser},
+
+    {"WEB_AUTH_METHOD", web_auth_method_parser},
+    {"WEB_AUTH_CREDENTIALS", web_auth_credentials_parser},
+    {"PROXY_AUTH_METHOD", proxy_auth_method_parser},
+    {"PROXY_AUTH_CREDENTIALS", proxy_auth_credentials_parser},
+
+    {"TIMER_URL_COMPLETION", timer_url_completion_parser},
+    {"TIMER_AFTER_URL_SLEEP", timer_after_url_sleep_parser},
+
     {NULL, 0}
 };
 
 static int validate_batch (batch_context*const bctx);
 static int validate_batch_general (batch_context*const bctx);
-static int validate_batch_login (batch_context*const bctx);
-static int validate_batch_uas (batch_context*const bctx);
-static int validate_batch_logoff (batch_context*const bctx);
+static int validate_batch_url (batch_context*const bctx);
 
 static int post_validate_init (batch_context*const bctx);
 static int init_client_post_buffers_from_file (batch_context*const bctx);
@@ -438,22 +396,16 @@ static int init_post_buffer (char*const input,
   /*
     Allocate client buffers for POSTing login and logoff credentials.
   */
-  if (! (bctx->cctx_array[*client_num].post_data_login =
+  if (! (bctx->cctx_array[*client_num].post_data =
          (char *) calloc(POST_LOGIN_BUF_SIZE, sizeof (char))))
     {
       fprintf (stderr, "\"%s\" - %s - failed to allocate post login buffer.\n",
                bctx->batch_name, __func__) ;
       return -1;
     }
-  
-  if (! (bctx->cctx_array[*client_num].post_data_logoff =
-         (char *) calloc(POST_LOGOFF_BUF_SIZE, sizeof (char))))
-    {
-      fprintf (stderr, "%s - error: %s - failed to allocate post login buffer.\n",
-               __func__, bctx->batch_name);
-      return -1;
-    }
 
+  /*
+  
   if (bctx->login_post_str[0])
     {
       snprintf (bctx->cctx_array[*client_num].post_data_login, 
@@ -470,6 +422,7 @@ static int init_post_buffer (char*const input,
                 "%s",
                 bctx->logoff_post_str);
     }
+  */
 
   ++*client_num;
   
@@ -688,8 +641,87 @@ static int user_agent_parser (batch_context*const bctx, char*const value)
     strncpy (bctx->user_agent, value, sizeof(bctx->user_agent) - 1);
     return 0;
 }
+static int urls_num_parser (batch_context*const bctx, char*const value)
+{
+    bctx->uas_urls_num = atoi (value);
+    
+    if (bctx->uas_urls_num < 1)
+    {
+        fprintf (stderr, 
+                 "%s - error: urls_num (%s) should be one or more.\n",
+                 __func__, value);
+        return -1;
+    }    
+    /* Preparing the staff to load URLs and handles */
+    if (! (bctx->uas_url_ctx_array = 
+           (url_context *) cl_calloc (bctx->uas_urls_num, sizeof (url_context))))
+    {
+        fprintf (stderr, 
+                 "%s - error: failed to allocate URL-context array for %d urls\n", 
+                 __func__, bctx->uas_urls_num);
+        return -1;
+    }
+    bctx->url_index = -1;  /* Starting from the 0 position in the arrays */
 
-static int custom_header_parser (batch_context*const bctx, char*const value)
+    return 0;
+}
+
+/*
+ * URL section tag parsers. 
+*/
+static int url_start_parser (batch_context*const bctx, char*const value)
+{
+  (void) value;
+  bctx->url_index++;
+
+  return 0;
+}
+static int url_parser (batch_context*const bctx, char*const value)
+{
+    size_t url_length = 0;
+
+    if ((int)bctx->url_index >= bctx->uas_urls_num)
+    {
+        fprintf (stderr, 
+                 "%s - error: UAS_URL_NUM (%d) is below uas-urls number in conf-file.\n",
+                 __func__, bctx->url_index);
+        return -1;
+    }
+    
+    if ((url_length = strlen (value)) <= 0)
+    {
+        fprintf(stderr, "%s - warning: empty URL\"%s\"\n", 
+                __func__, value);
+        return 0;
+    }
+    
+    if (! (bctx->uas_url_ctx_array[bctx->url_index].url_str = 
+           (char *) calloc (url_length +1, sizeof (char))))
+    {
+        fprintf (stderr,
+                 "%s - error: allocation failed for url string \"%s\"\n", 
+                 __func__, value);
+        return -1;
+    }
+    strcpy(bctx->uas_url_ctx_array[bctx->url_index].url_str, value);
+    bctx->uas_url_ctx_array[bctx->url_index].url_appl_type = url_schema_classification (value);
+    bctx->uas_url_ctx_array[bctx->url_index].url_uas_num = bctx->url_index;
+    
+    return 0;
+}
+static int url_cycles_num_parser (batch_context*const bctx, char*const value)
+{
+    long cycles = atol (value);
+    if (cycles < 0)
+    {
+        cycles = LONG_MAX - 1;
+    }
+
+    bctx->uas_url_ctx_array[bctx->url_index].url_cycles_num = cycles;
+
+    return 0;
+}
+static int header_parser (batch_context*const bctx, char*const value)
 {
   const char colomn = ':';
   size_t hdr_len;
@@ -708,7 +740,8 @@ static int custom_header_parser (batch_context*const bctx, char*const value)
       return -1;
     }
 
-  if (bctx->custom_http_hdrs_num >= CUSTOM_HTTP_HDRS_MAX_NUM)
+  if (bctx->uas_url_ctx_array[bctx->url_index].custom_http_hdrs_num >= 
+      CUSTOM_HTTP_HDRS_MAX_NUM)
     {
       fprintf (stderr, 
                "%s - error: number of custom HTTP headers is limited to %d.\n", 
@@ -716,68 +749,81 @@ static int custom_header_parser (batch_context*const bctx, char*const value)
       return -1;
     }
 
-  if (!(bctx->custom_http_hdrs = curl_slist_append (bctx->custom_http_hdrs, value)))
+  if (!(bctx->uas_url_ctx_array[bctx->url_index].custom_http_hdrs = 
+        curl_slist_append (
+                           bctx->uas_url_ctx_array[bctx->url_index].custom_http_hdrs, 
+                           value))
+      )
     {
       fprintf (stderr, "%s - error: failed to append the header \"%s\"\n", 
                __func__, value);
       return -1;
     }
   
-  bctx->custom_http_hdrs_num++;
+  bctx->uas_url_ctx_array[bctx->url_index].custom_http_hdrs_num++;
 
   return 0;
 }
-
-
-
-static int login_parser (batch_context*const bctx, char*const value)
-{
-    bctx->do_login = (*value == 'Y' || *value == 'y') ? 1 : 0;
-    return 0;
-}
-static int login_req_type_parser (batch_context*const bctx, char*const value)
+static int request_type_parser (batch_context*const bctx, char*const value)
 {
     if (!strcmp (value, REQ_GET_POST))
     {
-        bctx->login_req_type = LOGIN_REQ_TYPE_GET_AND_POST;
+        bctx->uas_url_ctx_array[bctx->url_index].req_type = 
+          LOGIN_REQ_TYPE_GET_AND_POST;
     }
     else if (!strcmp (value, REQ_POST))
     {
-        bctx->login_req_type = LOGIN_REQ_TYPE_POST;
+        bctx->uas_url_ctx_array[bctx->url_index].req_type = 
+          LOGIN_REQ_TYPE_POST;
     }
     else if (!strcmp (value, REQ_GET))
     {
-        bctx->login_req_type = LOGIN_REQ_TYPE_GET;
+        bctx->uas_url_ctx_array[bctx->url_index].req_type = 
+          LOGIN_REQ_TYPE_GET;
     }
     else
     {
         fprintf (stderr, 
-                 "%s - error: LOGIN_REQ_TYPE (%s) is not valid. Use %s or %s .\n", 
-                 __func__, value, REQ_GET_POST, REQ_POST);
+                 "%s - error: REQ_TYPE (%s) is not valid. Use %s or %s .\n", 
+                 __func__, value, REQ_GET_POST, REQ_POST, REQ_GET);
         return -1;
     }
     return 0;
 }
-static int login_req_type_get_post_parser (batch_context*const bctx, char*const value)
-{
-  (void) value;
-  bctx->login_req_type = LOGIN_REQ_TYPE_GET_AND_POST;
-  return 0;
-}
-static int login_req_type_post_parser (batch_context*const bctx, char*const value)
-{
-  (void) value;
-  bctx->login_req_type = LOGIN_REQ_TYPE_POST;
-  return 0;
-}
-static int login_req_type_get_parser (batch_context*const bctx, char*const value)
-{
-  (void) value;
-  bctx->login_req_type = LOGIN_REQ_TYPE_GET;
-  return 0;
-}
 
-static int login_post_str_parser (batch_context*const bctx, char*const value)
+static int username_parser (batch_context*const bctx, char*const value)
+{
+  if (strlen (value) <= 0)
+    {
+      fprintf(stderr, "%s - warning: empty USERNAME\"%s\"\n", 
+              __func__, value);
+      return 0;
+    }
+
+  strncpy (bctx->uas_url_ctx_array[bctx->url_index].username, 
+           value, 
+           sizeof(bctx->uas_url_ctx_array[bctx->url_index].username) - 1);
+
+  return 0;
+}
+static int password_parser (batch_context*const bctx, char*const value)
+{
+  if (strlen (value) <= 0)
+    {
+      fprintf(stderr, "%s - warning: empty PASSWORD\"%s\"\n", 
+              __func__, value);
+      return 0;
+    } 
+  strncpy (bctx->uas_url_ctx_array[bctx->url_index].password, 
+           value, 
+           sizeof(bctx->uas_url_ctx_array[bctx->url_index].password) - 1);
+  return 0;
+}
+static int form_type_parser (batch_context*const bctx, char*const value)
+{
+
+}
+static int form_string_parser (batch_context*const bctx, char*const value)
 {
   int count_percent_s_percent_d = 0, count_percent_s = 0;
   char* pos_current = NULL;
@@ -802,15 +848,18 @@ static int login_post_str_parser (batch_context*const bctx, char*const value)
 
       if (count_percent_s_percent_d == 2 && count_percent_s == 2)
         {
-          bctx->login_post_str_usertype = POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS;
+          bctx->uas_url_ctx_array[bctx->url_index].form_usage_type = 
+            POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS;
         }
       else if (count_percent_s_percent_d == 1 && count_percent_s == 2)
         {
-          bctx->login_post_str_usertype = POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD;
+          bctx->uas_url_ctx_array[bctx->url_index].form_usage_type  = 
+            POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD;
         }
       else if (count_percent_s_percent_d == 0 && count_percent_s == 2)
         {
-          bctx->login_post_str_usertype = POST_STR_USERTYPE_SINGLE_USER;
+          bctx->uas_url_ctx_array[bctx->url_index].form_usage_type = 
+            POST_STR_USERTYPE_SINGLE_USER;
             
           /* 
              If login_credentials_file defined, we will re-mark it later in validation as 
@@ -820,23 +869,25 @@ static int login_post_str_parser (batch_context*const bctx, char*const value)
       else
         {
           fprintf (stderr, 
-                   "\n%s - error: LOGIN_POST_STR (%s) is not valid. \n"
+                   "\n%s - error: FORM_STRING (%s) is not valid. \n"
                    "Please, use for curl-loader either both \"%%s%%d\" strings or both\"%%s\":\n"
                    "- to generate unique passwords something like" 
                    "\"user=%%s%%d&password=%%s%%d\" \n"
                    "- to use the same username and passwords for all clients" 
                    "something like \"user=%%s&password=%%s\" \n"
                    "- to load user credentials from file something like  "
-                   "\"user=%%s&password=%%s\" \n and LOGIN_CREDENTIALS_FILE defined.\n",
+                   "\"user=%%s&password=%%s\" \n and CREDENTIALS_FILE defined.\n",
                    __func__, value);
           return -1;
         }
 
-      strncpy (bctx->login_post_str, value, sizeof (bctx->login_post_str) - 1);
+      strncpy (bctx->uas_url_ctx_array[bctx->url_index].form_str, 
+               value, 
+               sizeof (bctx->uas_url_ctx_array[bctx->url_index].form_str) - 1);
     }
   return 0;
 }
-static int login_credentials_file_parser  (batch_context*const bctx, char*const value)
+static int credentials_file_parser  (batch_context*const bctx, char*const value)
 {
   struct stat statbuf;
   size_t string_len = 0;
@@ -851,284 +902,78 @@ static int login_credentials_file_parser  (batch_context*const bctx, char*const 
         }
 
       string_len = strlen (value) + 1;
-      if (! (bctx->login_credentials_file = (char *) calloc (string_len, sizeof (char))))
+      if (! (bctx->uas_url_ctx_array[bctx->url_index].credentials_file = 
+             (char *) calloc (string_len, sizeof (char))))
         {
           fprintf(stderr, "%s error: failed to allocate memory with errno %d.\n",  __func__, errno);
           return -1;
         }
 
-      strncpy (bctx->login_credentials_file, value, string_len -1);
+      strncpy (bctx->uas_url_ctx_array[bctx->url_index].credentials_file, 
+               value, 
+               string_len -1);
     }
     return 0;
 }
-static int login_url_parser (batch_context*const bctx, char*const value)
+static int upload_file_parser  (batch_context*const bctx, char*const value)
 {
-    size_t url_length = 0;
+  struct stat statbuf;
+  size_t string_len = 0;
 
-    if ((url_length = strlen (value)) <= 0)
+  if (strcmp (value, NON_APPLICABLE_STR))
     {
-        fprintf(stderr, "%s - warning: empty url for \"%s\"\n",  __func__,value);
-        return 0;
-    }
+      /* Stat the file, it it exists. */
+      if (stat (value, &statbuf) == -1)
+        {
+          fprintf(stderr, "%s error: file \"%s\" does not exist.\n",  __func__,value);
+          return -1;
+        }
 
-    if (! (bctx->login_url.url_str =(char *)calloc (url_length+1,sizeof (char))))
-    {
-        fprintf (stderr, 
-                 "%s - error: login_url allocation failed for url \"%s\"\n",
-                 __func__, value);
-        return -1;
+      string_len = strlen (value) + 1;
+      if (! (bctx->uas_url_ctx_array[bctx->url_index].upload_file = 
+             (char *) calloc (string_len, sizeof (char))))
+        {
+          fprintf(stderr, "%s error: failed to allocate memory with errno %d.\n",  __func__, errno);
+          return -1;
+        }
+
+      strncpy (bctx->uas_url_ctx_array[bctx->url_index].upload_file, 
+               value, 
+               string_len -1);
     }
-      
-    strcpy (bctx->login_url.url_str, value);
-    bctx->login_url.url_lstep = URL_LOAD_LOGIN;
-    bctx->login_url.url_appl_type = url_schema_classification (value);
-    bctx->login_url.url_uas_num = -1; // means N/A
     return 0;
 }
-static int login_url_username_parser (batch_context*const bctx, char*const value)
+
+static int web_auth_method_parser (batch_context*const bctx, char*const value)
 {
-  if (strlen (value) <= 0)
-    {
-      fprintf(stderr, "%s - warning: empty LOGIN_URL_USERNAME\"%s\"\n", 
-              __func__, value);
-      return 0;
-    }
-  strncpy (bctx->login_url.username, value, sizeof(bctx->login_url.username) - 1);
   return 0;
 }
-static int login_url_password_parser (batch_context*const bctx, char*const value)
+static int web_auth_credentials_parser (batch_context*const bctx, char*const value)
 {
-  if (strlen (value) <= 0)
-    {
-      fprintf(stderr, "%s - warning: empty LOGIN_URL_PASSWORD\"%s\"\n", 
-              __func__, value);
-      return 0;
-    } 
-  strncpy (bctx->login_url.password, value, sizeof(bctx->login_url.password) - 1);
   return 0;
 }
-static int login_url_max_time_parser (batch_context*const bctx, char*const value)
+static int proxy_auth_method_parser (batch_context*const bctx, char*const value)
 {
-    bctx->login_url.url_completion_time = atof (value);
-    return 0;
-}
-static int login_url_interleave_time_parser (batch_context*const bctx, char*const value)
-{
-    bctx->login_url.url_interleave_time = atol (value);
-    return 0;
-}
-static int login_cycling_parser (batch_context*const bctx, char*const value)
-{
-    bctx->login_cycling = (*value == 'Y' || *value == 'y') ? 1 : 0;
-    return 0;
-}
-
-
-
-static int uas_parser (batch_context*const bctx, char*const value)
-{
-    bctx->do_uas = (*value == 'Y' || *value == 'y') ? 1 : 0;
-    return 0;
-}
-static int uas_urls_num_parser (batch_context*const bctx, char*const value)
-{
-    bctx->uas_urls_num = atoi (value);
-    
-    if (bctx->uas_urls_num < 1)
-    {
-        fprintf (stderr, 
-                 "%s - error: urls_num (%s) should be one or more.\n",
-                 __func__, value);
-        return -1;
-    }    
-    /* Preparing the staff to load URLs and handles */
-    if (! (bctx->uas_url_ctx_array = 
-           (url_context *) cl_calloc (bctx->uas_urls_num, sizeof (url_context))))
-    {
-        fprintf (stderr, 
-                 "%s - error: failed to allocate URL-context array for %d urls\n", 
-                 __func__, bctx->uas_urls_num);
-        return -1;
-    }
-    bctx->url_index = 0;  /* Starting from the 0 position in the arrays */
-
-    return 0;
-}
-static int uas_url_parser (batch_context*const bctx, char*const value)
-{
-    size_t url_length = 0;
-
-    if ((int)bctx->url_index >= bctx->uas_urls_num)
-    {
-        fprintf (stderr, 
-                 "%s - error: UAS_URL_NUM (%d) is below uas-urls number in conf-file.\n",
-                 __func__, bctx->url_index);
-        return -1;
-    }
-    
-    if ((url_length = strlen (value)) <= 0)
-    {
-        fprintf(stderr, "%s - warning: empty UAS URL\"%s\"\n", 
-                __func__, value);
-        return 0;
-    }
-    
-    if (! (bctx->uas_url_ctx_array[bctx->url_index].url_str = 
-           (char *) calloc (url_length +1, sizeof (char))))
-    {
-        fprintf (stderr, 
-                 "%s - error: allocation failed for url string \"%s\"\n", 
-                 __func__, value);
-        return -1;
-    }
-    strcpy(bctx->uas_url_ctx_array[bctx->url_index].url_str, value);
-    bctx->uas_url_ctx_array[bctx->url_index].url_lstep = URL_LOAD_UAS;
-    bctx->uas_url_ctx_array[bctx->url_index].url_appl_type = url_schema_classification (value);
-    bctx->uas_url_ctx_array[bctx->url_index].url_uas_num = bctx->url_index;
-    
-    return 0;
-}
-static int uas_url_username_parser (batch_context*const bctx, char*const value)
-{
-  if (strlen (value) <= 0)
-    return 0;
-  strncpy (bctx->uas_url_ctx_array[bctx->url_index].username, 
-           value, 
-           sizeof(bctx->uas_url_ctx_array[bctx->url_index].username) - 1);
   return 0;
 }
-static int uas_url_password_parser (batch_context*const bctx, char*const value)
+static int proxy_auth_credentials_parser (batch_context*const bctx, char*const value)
 {
-  if (strlen (value) <= 0)
-    return 0;
-  strncpy (bctx->uas_url_ctx_array[bctx->url_index].password, 
-           value, 
-           sizeof(bctx->uas_url_ctx_array[bctx->url_index].password) - 1);
   return 0;
 }
-static int uas_url_max_time_parser (batch_context*const bctx, char*const value)
+
+static int timer_url_completion_parser (batch_context*const bctx, char*const value)
 {
-    bctx->uas_url_ctx_array[bctx->url_index].url_completion_time = 
-        atof (value);
+    bctx->uas_url_ctx_array[bctx->url_index].timer_url_completion = atol (value);
     return 0;
 }
-static int uas_url_interleave_time_parser (batch_context*const bctx, char*const value)
+static int timer_after_url_sleep_parser (batch_context*const bctx, char*const value)
 {
-    bctx->uas_url_ctx_array[bctx->url_index].url_interleave_time = 
-        atol(value);
-    bctx->url_index++; /* advance the position */
+    bctx->uas_url_ctx_array[bctx->url_index].timer_after_url_sleep = atol (value);
     return 0;
 }
 
-static int logoff_parser (batch_context*const bctx, char*const value)
-{
-    bctx->do_logoff = (*value == 'Y' || *value == 'y') ? 1 : 0;
-    return 0;
-}
-static int logoff_req_type_parser (batch_context*const bctx, char*const value)
-{
-    if (!strcmp (value, REQ_GET_POST)) 
-    {
-        bctx->logoff_req_type = LOGOFF_REQ_TYPE_GET_AND_POST;
-    }
-    else if (!strcmp (value, REQ_GET))
-    {
-        bctx->logoff_req_type = LOGOFF_REQ_TYPE_GET;
-    }
-    else if (!strcmp (value, REQ_POST))
-    {
-        bctx->logoff_req_type = LOGOFF_REQ_TYPE_POST;
-    }
-    else
-    {
-        fprintf (stderr, 
-                 "%s - error: LOGOFF_REQ_TYPE (%s) is not valid.\n" 
-                 "Consider %s, %s or %s.\n", 
-                 __func__, value, REQ_GET, REQ_POST, REQ_GET_POST);
-        return -1;
-    }
-    return 0;     
-}
-static int logoff_req_type_get_post_parser (batch_context*const bctx, char*const value)
-{
-  (void) value;
-  bctx->logoff_req_type = LOGOFF_REQ_TYPE_GET_AND_POST;
-  return 0;
-}
-static int logoff_req_type_post_parser (batch_context*const bctx, char*const value)
-{
-  (void) value;
-  bctx->logoff_req_type = LOGOFF_REQ_TYPE_POST;
-  return 0;
-}
-static int logoff_req_type_get_parser (batch_context*const bctx, char*const value)
-{
-  (void) value;
-  bctx->logoff_req_type = LOGOFF_REQ_TYPE_GET;
-  return 0;
-}
-static int logoff_post_str_parser (batch_context*const bctx, char*const value)
-{
-  if (strcmp (value, NON_APPLICABLE_STR) || strcmp (value, "N/A")) /* not an empty string "" */
-    {
-        strncpy (bctx->logoff_post_str, value, sizeof (bctx->logoff_post_str) - 1);
-    }
-    return 0;
-}
-static int logoff_url_parser (batch_context*const bctx, char*const value)
-{
-    size_t url_length;
 
-    if ((url_length = strlen (value)) <= 0)
-    {
-        fprintf(stderr, "%s - warning: empty url for \"%s\"\n", __func__,value);
-        return 0;
-    }
 
-    if (! (bctx->logoff_url.url_str =(char *) calloc (url_length+1,sizeof (char))))
-    {
-        fprintf (stderr, 
-                 "%s - error: logoff_url allocation failed for url \"%s\"\n", 
-                 __func__, value);
-        return -1;
-    }
-
-    strcpy(bctx->logoff_url.url_str, value);
-    bctx->logoff_url.url_lstep = URL_LOAD_LOGOFF;
-    bctx->logoff_url.url_appl_type = url_schema_classification (value);
-    bctx->logoff_url.url_uas_num = -1; // means N/A
-    
-    return 0;
-}
-static int logoff_url_username_parser (batch_context*const bctx, char*const value)
-{
-  if (strlen (value) <= 0)
-    return 0;
-  strncpy (bctx->logoff_url.username, value, sizeof(bctx->logoff_url.username) - 1);
-  return 0;
-}
-static int logoff_url_password_parser (batch_context*const bctx, char*const value)
-{
-  if (strlen (value) <= 0)
-    return 0;
-  strncpy (bctx->logoff_url.password, value, sizeof(bctx->logoff_url.password) - 1);
-  return 0;
-}
-static int logoff_url_max_time_parser (batch_context*const bctx, char*const value)
-{
-    bctx->logoff_url.url_completion_time = atof (value);
-    return 0;
-}
-static int logoff_url_interleave_time_parser (batch_context*const bctx, char*const value)
-{
-   bctx->logoff_url.url_interleave_time = atol (value);
-   return 0;
-}
-static int logoff_cycling_parser (batch_context*const bctx, char*const value)
-{
-    bctx->logoff_cycling = (*value == 'Y' || *value == 'y') ? 1 : 0;
-    return 0;
-}
 
 static url_appl_type 
 url_schema_classification (const char* const url)
@@ -1216,26 +1061,13 @@ static int validate_batch (batch_context*const bctx)
         return -1;
     }
 
-    if (validate_batch_login (bctx) == -1)
-    {
-        fprintf (stderr, "%s - error: failed to validate batch section LOGIN.\n", 
-                 __func__);
-        return -1;
-    }
-
-    if (validate_batch_uas (bctx) == -1)
+    if (validate_batch_url (bctx) == -1)
     {
         fprintf (stderr, "%s - error: failed to validate batch section UAS.\n", 
                  __func__);
         return -1;
     }
 
-    if (validate_batch_logoff (bctx) == -1)
-    {
-        fprintf (stderr, "%s - error: failed to validate batch section LOGOFF.\n", 
-                 __func__);
-        return -1;
-    }
     return 0;
 }
 
@@ -1323,113 +1155,25 @@ static int validate_batch_general (batch_context*const bctx)
     return 0;
 }
 
+
 /****************************************************************************************
-* Function name - validate_batch_login
+* Function name - validate_batch_url
 *
-* Description -  Validates section LOGIN parameters
+* Description - Validates section URL parameters
 * 
 * Input -       *bctx - pointer to the initialized batch context to validate
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
-static int validate_batch_login (batch_context*const bctx)
+static int validate_batch_url (batch_context*const bctx)
 {
-  if (! bctx->do_login)
+  if (bctx->uas_urls_num)
     {
-      if (strlen (bctx->login_url.username) || strlen (bctx->login_url.password) ||
-          bctx->login_req_type || strlen (bctx->login_post_str) || 
-          bctx->login_url.url_str)
-        {
-          fprintf (stderr, "%s - error: when login section is disabled by \"LOGIN=N\", \n"
-                   "comment out all tags of the section after the tag LOGIN string.\n", 
-                   __func__);
-          return -1;
-        }
-      return 0;
-    }
-
-  /* Check the username, but let empty passwords in */
-  if (! bctx->login_credentials_file && !strlen (bctx->login_url.username))
-    {
-      fprintf (stderr, "%s - error: empty LOGIN_URL_USERNAME .\n", 
+      fprintf (stderr, "%s - error: when UAS section is disabled by \"UAS=N\", \n"
+               "comment out all tags of the section after the tag UAS string.\n", 
                __func__);
       return -1;
     }
-
-  if (bctx->login_req_type != LOGIN_REQ_TYPE_POST && 
-      bctx->login_req_type != LOGIN_REQ_TYPE_GET &&
-      bctx->login_req_type != LOGIN_REQ_TYPE_GET_AND_POST)
-    {
-      fprintf (stderr, "%s - error: LOGIN_REQ_TYPE is out of valid range .\n", 
-               __func__);
-      return -1;
-    }
-
-  if (bctx->login_credentials_file)
-    {
-      if (! bctx->login_post_str[0])
-        {
-          fprintf (stderr, "%s - error: empty LOGIN_POST_STR, "
-                   "when LOGIN_CREDENTIALS_FILE defined.\n Either disable" 
-                   "LOGIN_CREDENTIALS_FILE or define LOGIN_POST_STR\n", __func__);
-          return -1;
-        }
-
-      if (
-          bctx->login_post_str_usertype == 
-          POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS ||
-          bctx->login_post_str_usertype == 
-          POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD
-          )
-        {
-          fprintf (stderr, "%s - error: \"%%d\" symbols not to present, when LOGIN_POST_STR, "
-                   "when LOGIN_CREDENTIALS_FILE defined.\n It should be two \"%%s\"", __func__);
-          return -1;
-        }
-      else
-      {
-          bctx->login_post_str_usertype = POST_STR_USERTYPE_LOAD_USERS_FROM_FILE;
-      }
-    }
-    
-  if (!bctx->login_url.url_str || !strlen (bctx->login_url.url_str))
-    {
-      fprintf (stderr, "%s - error: empty LOGIN_URL is not useful for your login .\n", 
-               __func__);
-      return -1;
-    }
-
-  if (bctx->login_url.url_completion_time < 0.0)
-    {
-      fprintf (stderr, 
-               "%s - error: LOGIN_URL_MAX_TIME should not be negative.\n", 
-               __func__);
-      return -1;
-    }
-
   return 0;
-}
-
-/****************************************************************************************
-* Function name - validate_batch_uas
-*
-* Description - Validates section UAS parameters
-* 
-* Input -       *bctx - pointer to the initialized batch context to validate
-* Return Code/Output - On success - 0, on failure - (-1)
-****************************************************************************************/
-static int validate_batch_uas (batch_context*const bctx)
-{
-  if (! bctx->do_uas)
-    {
-      if (bctx->uas_urls_num)
-        {
-          fprintf (stderr, "%s - error: when UAS section is disabled by \"UAS=N\", \n"
-                   "comment out all tags of the section after the tag UAS string.\n", 
-                   __func__);
-          return -1;
-        }
-      return 0;
-    }
 
   if (bctx->uas_urls_num < 1)
     {
@@ -1441,87 +1185,60 @@ static int validate_batch_uas (batch_context*const bctx)
   int k = 0;
   for (k = 0; k < bctx->uas_urls_num; k++)
     {
+      // URL
       if (!bctx->uas_url_ctx_array[k].url_str || !strlen (bctx->uas_url_ctx_array[k].url_str))
         {
           fprintf (stderr, 
-                   "%s - error: empty UAS_URL in position %d.\n"
-                   "Check, that number of UAS_URL triplets is equal to UAS_URLS_NUM.\n", 
-                   __func__, k);
+                   "%s - error: empty URL in position %d.\n", __func__, k);
           return -1;
         }
 
-      if (bctx->uas_url_ctx_array[k].url_completion_time < 0.0)
+      if (bctx->uas_url_ctx_array[k].url_cycles_num <=0)
         {
           fprintf (stderr, 
-                   "%s - error: UAS_URL_MAX_TIME should not be negative.\n", 
+                   "%s - error: zero or negative URL_CYCLES_NUM in position %d.\n", __func__, k);
+          return -1;
+        }
+
+      if (bctx->uas_url_ctx_array[k].req_type != LOGIN_REQ_TYPE_POST && 
+          bctx->uas_url_ctx_array[k].req_type != LOGIN_REQ_TYPE_GET &&
+          bctx->uas_url_ctx_array[k].req_type != LOGIN_REQ_TYPE_GET_AND_POST)
+        {
+          fprintf (stderr, "%s - error: REQUEST_TYPE is out of valid range .\n", 
                    __func__);
           return -1;
-        }			
+        }
 
+      if (bctx->uas_url_ctx_array[k].credentials_file)
+        {
+          if (! bctx->uas_url_ctx_array[k].form_str[0])
+            {
+              fprintf (stderr, "%s - error: empty FORM_STRING, "
+                       "when CREDENTIALS_FILE defined.\n Either disable" 
+                       "CREDENTIALS_FILE or define FORM_STRING\n", __func__);
+              return -1;
+            }
+          
+          if (bctx->uas_url_ctx_array[k].form_usage_type == 
+              POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS ||
+              bctx->uas_url_ctx_array[k].form_usage_type == 
+              POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD
+              )
+            {
+              fprintf (stderr, "%s - error: \"%%d\" symbols not to be in FORM_POST, "
+                       "when CREDENTIALS_FILE is defined.\n It should be two \"%%s\" symbols", __func__);
+              return -1;
+            }
+          else
+            {
+              bctx->uas_url_ctx_array[k].form_usage_type = POST_STR_USERTYPE_LOAD_USERS_FROM_FILE;
+            }
+        }
     }
   return 0;
 }
 
-/****************************************************************************************
-* Function name - validate_batch_logoff
-*
-* Description - Validates section logoff parameters
-* 
-* Input -       *bctx - pointer to the initialized batch context to validate
-* Return Code/Output - On success - 0, on failure - (-1)
-****************************************************************************************/
-static int validate_batch_logoff (batch_context*const bctx)
-{
-    if (! bctx->do_logoff)
-    {
-        if (bctx->logoff_req_type || strlen (bctx->logoff_post_str) || 
-            bctx->logoff_url.url_str)
-        {
-            fprintf (stderr, "%s - error: when login section is disabled by \"LOGOFF=N\", \n"
-                     "comment out all tags of the section after the tag LOGOFF string.\n", 
-                 __func__);
-            return -1;
-        }
-        return 0;
-    }
 
-    if (bctx->login_req_type != LOGOFF_REQ_TYPE_GET_AND_POST &&
-        bctx->login_req_type != LOGOFF_REQ_TYPE_GET &&
-        bctx->login_req_type != LOGOFF_REQ_TYPE_POST)
-    {
-        fprintf (stderr, "%s - error: LOGOFF_REQ_TYPE is out of valid range .\n", 
-                 __func__);
-        return -1;
-    }
-    
-    if (!bctx->logoff_url.url_str || !strlen (bctx->logoff_url.url_str))
-    {
-        fprintf (stderr, "%s - error: empty LOGOFF_URL is not useful for your logoff .\n", 
-                 __func__);
-        return -1;
-    }
-
-    if (bctx->logoff_url.url_completion_time < 0.0)
-    {
-        fprintf (stderr, 
-                 "%s - error: LOGOFF_URL_MAX_TIME should not be negative.\n", 
-                 __func__);
-        return -1;
-    }
-
-   if (bctx->logoff_url.url_interleave_time > 0 && 
-			bctx->logoff_url.url_interleave_time < 10)
-    {
-        fprintf (stderr, 
-                 "%s - error: LOGOFF_URL_INTERLEAVE_TIME should be either 0 or above 10 msec.\n"
-			  "ATTENTION !!! The value starting from version 0.24 is not in seconds, but in msec.\n"
-			 "Please, correct the value from seconds to milliseconds.\n\n", 
-                 __func__);
-        return -1;
-    }
-
-    return 0;
-}
 
 /****************************************************************************************
 * Function name - post_validate_init
@@ -1533,6 +1250,8 @@ static int validate_batch_logoff (batch_context*const bctx)
 ****************************************************************************************/
 static int post_validate_init (batch_context*const bctx)
 {
+  /* TODO
+
   if (bctx->login_credentials_file && 
       init_client_post_buffers_from_file (bctx) == -1)
     {
@@ -1541,22 +1260,24 @@ static int post_validate_init (batch_context*const bctx)
                __func__);
       return -1;
     }
+  */
 
   /* Init operational statistics structures */
-  
+
+  /* TODO - correct instead of 1-s */
   if (op_stat_point_init(&bctx->op_delta, 
-                         (size_t)bctx->do_login, 
+                         1, 
                          bctx->uas_urls_num, 
-                         (size_t)bctx->do_logoff) == -1)
+                         1) == -1)
     {
       fprintf (stderr, "%s - error: init of op_delta failed.\n",__func__);
       return -1;
     }
   
   if (op_stat_point_init(&bctx->op_total, 
-                         (size_t)bctx->do_login, 
+                         1, 
                          bctx->uas_urls_num, 
-                         (size_t)bctx->do_logoff) == -1)
+                         1) == -1)
     {
       fprintf (stderr, "%s - error: init of op_total failed.",__func__);
       return -1;
@@ -1567,6 +1288,7 @@ static int post_validate_init (batch_context*const bctx)
   */
   fprintf (stderr, "\nThe configuration has been validated successfully.\n\n");
 
+  /* TODO: Check, that the configuration has cycling 
   if (!bctx->login_cycling && !bctx->do_uas && !bctx->logoff_cycling)
     {
       fprintf (stderr, "However, the configuration has no cycling defined.\n"
@@ -1576,6 +1298,7 @@ static int post_validate_init (batch_context*const bctx)
              
       getchar ();
     }
+  */
   
   return 0;
 }
@@ -1715,11 +1438,12 @@ static int init_client_post_buffers_from_file (batch_context*const bctx)
   int client_index = 0;
   char sep;
 
-  if (!(fp = fopen (bctx->login_credentials_file, "r")))
+  /*
+  if (!(fp = fopen (bctx->credentials_file, "r")))
     {
       fprintf (stderr, 
                "%s - fopen() failed to open for reading filename \"%s\", errno %d.\n", 
-               __func__, bctx->login_credentials_file, errno);
+               __func__, bctx->credentials_file, errno);
       return -1;
     }
 
@@ -1742,7 +1466,7 @@ static int init_client_post_buffers_from_file (batch_context*const bctx)
       if ((string_len = strlen (fgets_buff)) && 
           (string_buff = eat_ws (fgets_buff, &string_len)))
         {
-          /* Line may be commented out by '#'.*/
+          // Line may be commented out by '#'.
           if (fgets_buff[0] == '#')
             {
               fprintf (stderr, "%s - skipping commented file string \"%s\n", 
@@ -1791,6 +1515,8 @@ static int init_client_post_buffers_from_file (batch_context*const bctx)
       return -1 ;
     }
 
+  */
+
   fclose (fp);
   return 0;
 }
@@ -1819,7 +1545,9 @@ static int netmask_to_cidr (char *dotted_ipv4)
   int tmp = 0;
   
   while (!(host & (1 << tmp)) && tmp < 32)
-    tmp++;
+    {
+      tmp++;
+    }
 
   return (32 - tmp); 
  }

@@ -25,7 +25,9 @@
 #define URL_H
 
 #include <stddef.h>
+
 #define URL_AUTH_STR_LEN 64
+#define FORM_BUFFER_SIZE 256
 
 /* 
    Current loading step: login, uas or logoff. If we are in the loading step 
@@ -63,40 +65,81 @@ typedef struct url_context
    /* URL buffer */
   char* url_str;
 
-   /*
-     Maximum time for all clients in a batch to accomplish fetching. 
-     Used by storming mode only.
-   */
-  float url_completion_time;
+  long url_cycles_num;
 
-  /* Time to relax after fetching this url (msec).*/
-  unsigned long url_interleave_time;
+  /* 
+     Number of custom  HTTP headers in array.
+  */
+  size_t custom_http_hdrs_num;
+  
+  /* 
+     The list of custom  HTTP headers.
+  */
+  struct curl_slist *custom_http_hdrs;
 
-   /* 
-      The username to be used to access the URL by filling the POST form and/or,
-      to provide for Web or Proxy authentication (on server's 401 or proxy 407).
+  /* 
+     REQ_TYPE_GET_AND_POST, REQ_TYPE_POST, REQ_TYPE_GET
+  */
+  size_t req_type;
+
+     /* 
+      The username to be used to access the URL by filling the POST 
+      form or in GET url
    */
   char username[URL_AUTH_STR_LEN];
 
   /* 
-     The password to be used to access the URL by filling the POST form and/or
-     to provide Web or Proxy authentication
+     The password to be used to access the URL by filling the POST form or 
+     in GET url.
   */
   char password[URL_AUTH_STR_LEN];
+
+  /* 
+     The type of <login_post_str>. Valid types are: 
+     UNIQUE_USERS_AND_PASSWORDS, - like "user=%s%d&password=%s%d"
+     UNIQUE_USERS_SAME_PASSWORD, - like "user=%s%d&password=%s"
+     SINGLE_USER,                - like "user=%s&password=%s"
+     LOAD_USERS_FROM_FILE,       - like "user=%s&password=%s" and 
+                                                           login_credentials_file defined.
+   */
+  int form_usage_type;
+
+    /* The string to be used as the base for login post message */
+  char form_str [FORM_BUFFER_SIZE + 1];
+
+    /*
+     The file with strings like "user:password", where separator may be 
+     ':', '@', '/' and ' ' (space) in line with RFC1738. The file may be created
+     as a dump of DB tables of users and passwords.
+  */
+  char* credentials_file;
+
+  char* upload_file;
+
+  int web_auth_method;
+  
+  char* web_auth_credentials;
+
+
+  int proxy_auth_method;
+  
+  char* proxy_auth_credentials;
+
+  
+   /*
+     Maximum time to accomplish fetching  of the url
+   */
+  unsigned long timer_url_completion;
+
+  /* Time to relax/sleep after fetching this url (msec).*/
+  unsigned long timer_after_url_sleep;
+
 
   /* Application type of url, e.g. HTTP, HTTPS, FTP, etc */
   url_appl_type url_appl_type;
 
-  /* 
-   At which loading step the url is used: login, uas, logoff. 
-   If we are in the loading step login, pick up the login url; whin in logoff, 
-   take the logoff url. Being in UAS step, pick up the next url according to 
-   <url_uas_num>. 
-  */
-  url_load_step url_lstep;
-
   /*
-    If we are in the UAS step, this is the index of the UAS-url, that we are using.
+    Our index in the url array
   */
   long url_uas_num;
 

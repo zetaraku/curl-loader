@@ -96,11 +96,10 @@ extern unsigned long error_recovery_client;
 enum load_mode
   {
     LOAD_MODE_HYPER = 0, /* Hyper-mode to be developed. */
-    LOAD_MODE_STORMING = 1, /*Stress mode - peaks of load */
-    LOAD_MODE_SMOOTH = 2,    /* Initial stress, futher smooth loading. */
+    LOAD_MODE_SMOOTH = 1,    /* Initial stress, futher smooth loading. */
   };
 
-#define LOAD_MODE_DEFAULT LOAD_MODE_SMOOTH
+#define LOAD_MODE_DEFAULT LOAD_MODE_HYPER
 extern int loading_mode;
 
 /* 

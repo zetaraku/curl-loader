@@ -78,7 +78,13 @@ typedef struct batch_context
   /* Maximum number of clients (each client with its own IP-address) in the batch */
   int client_num;
 
+  /* Number of clients to start with */
   int client_num_start;
+
+  /* 
+      Clients added per second for the loading start phase.
+  */
+  long clients_initial_inc;
   
    /* Name of the network interface to be used for loading, e.g. "eth0", "eth1:16" */
   char net_interface[16];
@@ -105,9 +111,7 @@ typedef struct batch_context
 
   /* Miximum IPv6-address of a client in the batch. */
   struct in6_addr ipv6_addr_max;
-
-  
-  
+ 
    /* 
       Number of cycles to repeat the urls downloads and afterwards sleeping 
       cycles. Zero means run it forever. 
@@ -115,79 +119,12 @@ typedef struct batch_context
   long cycles_num;
 
    /* 
-      Clients added per second for the loading start phase.
-  */
-  long clients_initial_inc;
-
-   /* 
       User-agent string to appear in the HTTP 1/1 requests.
   */
   char user_agent[256];
 
-  /* 
-      Number of custom  HTTP headers in array.
-  */
-  size_t custom_http_hdrs_num;
-
-   /* 
-      The list of custom  HTTP headers.
-  */
-  struct curl_slist *custom_http_hdrs;
-
-
-  /*------------------------ LOGIN SECTION -------------------------------- */
-
-  /* 
-     Flag, whether to do authentication. If zero - don't do, else 
-     do it. When zero, other fields of the login section are not relevant
-     and should be commented out in the configuration file.
-  */
-  int do_login;
-
-  /* Whether to include login to cycling or not. */
-  int login_cycling;
-
-  /* Authentication login_username - depricated, moved to Login URL*/
- 
-  /* Authentication login_password - depricated, moved to Login URL */
-  
-  /* 
-     Either LOGIN_REQ_TYPE_GET_AND_POST or LOGIN_REQ_TYPE_POST
-  */
-  size_t login_req_type;
-
-  /* The string to be used as the base for login post message */
-  char login_post_str [POST_BUFFER_SIZE + 1];
-
-   /* The type of <login_post_str>. Valid types are: 
-     POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS, - like "user=%s%d&password=%s%d"
-     POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD, - like "user=%s%d&password=%s"
-     POST_STR_USERTYPE_SINGLE_USER,                - like "user=%s&password=%s"
-     POST_STR_USERTYPE_LOAD_USERS_FROM_FILE,       - like "user=%s&password=%s" and 
-                                                           login_credentials_file defined.
-   */
-  int login_post_str_usertype;
-
-  /*
-     The file with strings like "user:password", where separator may be 
-     ':', '@', '/' and ' ' (space) in line with RFC1738. The file may be created
-     as a dump of DB tables of users and passwords.
-  */
-  char* login_credentials_file;
-
-   /* The url object for login. */
-  url_context login_url;
-
-
-
 
   /*------- UAS (User Activity Simulation) SECTION - fetching urls ----- */
-
-   /* 
-      Whether to proceed with UAS, When zero, other fields of the UAS section 
-      are not relevant and should be commented out in the configuration file.
-   */
-  int do_uas;
 
   /* Number of total urls, should be more or equal to 1 */
   int uas_urls_num;
@@ -197,36 +134,8 @@ typedef struct batch_context
 
   /* 
      Index of the parsed url in uas_url_ctx_array below.
-     Further used by the storm-mode as the current url index. 
   */
   int url_index;
-
-
-  /*------------------------LOGOFF SECTION ---------------------------------*/
-
-  /* 
-     Flag, whether to do logoff. If zero - don't do, else 
-     do it. When zero, other fields of the logoff section are not relevant
-     and should be commented out in the configuration file.
-  */
-  int do_logoff;
-
-  /* Whether to include login to cycling or not. */
-  int logoff_cycling;
-
-  /* 
-     LOGOFF_REQ_TYPE_GET, 
-     LOGOFF_REQ_TYPE_GET_AND_POST,
-     LOGOFF_REQ_TYPE_POST
-  */
-  size_t logoff_req_type;
-
-  /* The string to be used as the base for login post message */
-  char logoff_post_str[POST_BUFFER_SIZE + 1];
-
-  /* The url object for logoff. */
-  url_context logoff_url;
-
 
 
   /*------------------------- ASSISTING SECTION ----------------------------*/

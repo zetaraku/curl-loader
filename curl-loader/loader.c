@@ -78,7 +78,7 @@ int setup_curl_handle_appl (struct client_context*const cctx,
                             url_context* url_ctx,
                             int post_method);
 
-static int alloc_init_client_post_buffers (struct client_context* cctx);
+static int alloc_init_client_post_buffers (struct client_context* cctx, struct url_context* url);
 static int alloc_init_client_contexts (batch_context* bctx, FILE* output_file);
 static void free_batch_data_allocations (struct batch_context* bctx);
 static int ipv6_increment(const struct in6_addr *const src, 
@@ -108,7 +108,6 @@ typedef int (*pf_user_activity) (struct client_context*const);
 static pf_user_activity ua_array[3] = 
 { 
   user_activity_hyper,
-  user_activity_storm,
   user_activity_smooth
 };
 
@@ -305,7 +304,7 @@ static void* batch_function (void * batch_data)
      Now run login, user-defined actions, like fetching various urls and and 
      sleeping in between, and logoff.
      Calls user activity loading function corresponding to the loading mode
-     used (user_activity_smooth () or user_activity_storm () or user_activity_hyper ()).
+     used (user_activity_smooth () or user_activity_hyper ()).
   */ 
   rval = ua_array[loading_mode] (bctx->cctx_array);
 
@@ -353,16 +352,16 @@ static int initial_handles_init (client_context*const ctx_array)
       return -1;
     }
 
-  /* Allocate and fill login/logoff POST strings for each client. */ 
-  if (bctx->do_login)
-    {
-      if (alloc_init_client_post_buffers (ctx_array) == -1)
-        {
-          fprintf (stderr, "%s - error: alloc_client_post_buffers () .\n", __func__);
-          return -1;
-        }
-    }
+  /* Allocate and fill form strings (for POST) for each client. */
 
+  /* TODO - MOVE IT
+  if (alloc_init_client_post_buffers (ctx_array) == -1)
+    {
+      fprintf (stderr, "%s - error: alloc_client_post_buffers () .\n", __func__);
+      return -1;
+    }
+  */
+    
   /* Initialize all CURL handles */
   for (k = 0 ; k < bctx->client_num ; k++)
     {
@@ -388,7 +387,7 @@ static int initial_handles_init (client_context*const ctx_array)
 *
 * Input -       *cctx        - pointer to client context, containing CURL handle pointer;
 *               *url_ctx     - pointer to url-context, containing all url-related information;
-*               cycle_number - current number of loading cycle, passed here for storming mode;
+*               cycle_number - current number of loading cycle
 *               post_method  - when 'true', POST method is used instead of the default GET
 *
 * Return Code/Output - On Success - 0, on Error -1
@@ -406,40 +405,12 @@ int setup_curl_handle (client_context*const cctx,
     {
       return -1;
     }
-
-  /*
-    Remove the handle from the multiple handle and reset it. 
-    Still the handle remembers DNS, cookies, etc. 
-  */
-
-  /* TODO: check the issue */
-  if (loading_mode == LOAD_MODE_STORMING)
-    {
-      if ((m_error = curl_multi_remove_handle (bctx->multiple_handle, 
-                                               handle)) != CURLM_OK)
-        {
-          fprintf (stderr,"%s - error: curl_multi_remove_handle () failed with error %d.\n",
-                   __func__, m_error);
-          return -1;
-        }
-    }
   
   if (setup_curl_handle_init (cctx, url_ctx, cycle_number, post_method) == -1)
   {
       fprintf (stderr,"%s - error: failed.\n",__func__);
       return -1;
   }
-     
-  /* The handle is supposed to be removed before. */
-  if (loading_mode == LOAD_MODE_STORMING)
-    {
-      if ((m_error = curl_multi_add_handle(bctx->multiple_handle, handle)) != CURLM_OK)
-        {
-          fprintf (stderr,"%s - error: curl_multi_add_handle () failed with error %d.\n",
-                   __func__, m_error);
-          return -1;
-        }
-    }
 
   return 0;
 }
@@ -453,7 +424,7 @@ int setup_curl_handle (client_context*const cctx,
 *
 * Input -       *cctx        - pointer to client context, containing CURL handle pointer;
 *               *url_ctx     - pointer to url-context, containing all url-related information;
-*               cycle_number - current number of loading cycle, passed here for storming mode;
+*               cycle_number - current number of loading cycle
 *               post_method  - when 'true', POST method is used instead of the default GET
 *
 * Return Code/Output - On Success - 0, on Error -1
@@ -541,11 +512,7 @@ int setup_curl_handle_init (client_context*const cctx,
   curl_easy_setopt (handle, CURLOPT_SSL_VERIFYPEER, 0);
   curl_easy_setopt (handle, CURLOPT_SSL_VERIFYHOST, 0);
     
-  /* Set current cycle_number in buffer. */
-  if (loading_mode == LOAD_MODE_STORMING)
-    {
-      cctx->cycle_num = cycle_number;
-    }
+  // ? cctx->cycle_num = cycle_number;
 
   /* Set the private pointer to be used by the smooth-mode. */
   curl_easy_setopt (handle, CURLOPT_PRIVATE, cctx);
@@ -618,10 +585,10 @@ int setup_curl_handle_appl (client_context*const cctx,
       /*
         Setup the custom HTTP headers, if appropriate.
       */
-      if (bctx->custom_http_hdrs && bctx->custom_http_hdrs_num)
+      if (url_ctx->custom_http_hdrs && url_ctx->custom_http_hdrs_num)
         {
           curl_easy_setopt (handle, CURLOPT_HTTPHEADER, 
-                            bctx->custom_http_hdrs);
+                            url_ctx->custom_http_hdrs);
         }
       
       /* Enable cookies. This is important for various authentication schemes. */
@@ -630,20 +597,14 @@ int setup_curl_handle_appl (client_context*const cctx,
       /* Make POST, using post buffer, if requested. */
       if (post_method)
         {
-          char* post_buff = NULL;
-          
-          if (url_ctx->url_lstep == URL_LOAD_LOGIN)
-            post_buff = cctx->post_data_login;
-          else if (url_ctx->url_lstep == URL_LOAD_LOGOFF)
-            post_buff = cctx->post_data_logoff;
-          else
+          if (!cctx->post_data)
             {            
               fprintf (stderr,
-                       "%s - error: post_method to be used only for login or logoff url.\n",
+                       "%s - error: post_data is NULL.\n",
                        __func__);
               return -1;
             }
-          curl_easy_setopt(handle, CURLOPT_POSTFIELDS, post_buff);
+          curl_easy_setopt(handle, CURLOPT_POSTFIELDS, cctx->post_data);
         }
 
       if (url_ctx->username[0])
@@ -700,21 +661,9 @@ int client_tracing_function (CURL *handle,
 
   if (url_logging)
     {
-      switch (cctx->client_state)
-        {
-        case CSTATE_LOGIN:
-          url_target = cctx->bctx->login_url.url_str;
-          break;
-        case CSTATE_UAS_CYCLING:
-          url_target = cctx->bctx->uas_url_ctx_array[cctx->uas_url_curr_index].url_str;
-          break;
-        case CSTATE_LOGOFF:
-          url_target = cctx->bctx->logoff_url.url_str;
-          break;
 
-        default:
-          url_target = NULL;
-        }
+      url_target = cctx->bctx->uas_url_ctx_array[cctx->uas_url_curr_index].url_str;
+      
       /* Clients are being redirected back and forth by 3xx redirects. */
       curl_easy_getinfo (handle, CURLINFO_EFFECTIVE_URL, &url_effective);
     }
@@ -942,27 +891,20 @@ int client_tracing_function (CURL *handle,
 * Input -       *cctx - pointer to client context
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-static int alloc_init_client_post_buffers (client_context* cctx)
+static int alloc_init_client_post_buffers (client_context* cctx, url_context* url)
 {
   int i;
   batch_context* bctx = cctx->bctx;
 
-  if (! bctx->login_post_str[0])
+  if (! url->form_str[0])
     {
-      if (bctx->login_req_type == LOGOFF_REQ_TYPE_GET)
-        {
-          return 0;
-        }
-      else
-        {
-          fprintf (stderr,
-                   "%s - error: %s - LOGIN_POST_STR not defined.\n",
-                   __func__, bctx->batch_name);
-          return -1;
-        }
+ 
+      fprintf (stderr, "%s - error: FORM_STR not defined.\n",
+               __func__);
+      return -1;
     }
 
-  if (bctx->login_credentials_file)
+  if (url->credentials_file)
     {
       /* 
          When we are loading users with passwords credentials from a file
@@ -977,16 +919,15 @@ static int alloc_init_client_post_buffers (client_context* cctx)
       /*
         Allocate client buffers for POSTing login and logoff credentials.
       */
-      if (! (cctx[i].post_data_login = 
+      if (! (cctx[i].post_data = 
              (char *) calloc(POST_LOGIN_BUF_SIZE, sizeof (char))))
         {
           fprintf (stderr,
-                   "\"%s\" - %s - failed to allocate post login buffer.\n",
-                   bctx->batch_name, __func__) ;
+                   "\"%s\" failed to allocate post login buffer.\n", __func__) ;
           return -1;
         }
 
-      if (bctx->login_post_str_usertype ==  
+      if (url->form_usage_type ==
           POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS)
         {
           /* 
@@ -994,15 +935,15 @@ static int alloc_init_client_post_buffers (client_context* cctx)
              with uniqueness added via added to the base username and password
              client index.
           */
-          snprintf (cctx[i].post_data_login, 
+          snprintf (cctx[i].post_data, 
                     POST_LOGIN_BUF_SIZE, 
-                    bctx->login_post_str,
-                    bctx->login_url.username, 
+                    url->form_str,
+                    url->username, 
                     i + 1,
-                    bctx->login_url.password[0] ? bctx->login_url.password : "",
+                    url->password[0] ? url->password : "",
                     i + 1);
         }
-      else if (bctx->login_post_str_usertype ==  
+      else if (url->form_usage_type ==
           POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD)
         {
           /* 
@@ -1010,24 +951,24 @@ static int alloc_init_client_post_buffers (client_context* cctx)
              added via added to the base username client index. Password is kept
              the same for all users.
           */
-          snprintf (cctx[i].post_data_login, 
+          snprintf (cctx[i].post_data, 
                     POST_LOGIN_BUF_SIZE, 
-                    bctx->login_post_str,
-                    bctx->login_url.username, 
+                    url->form_str,
+                    url->username, 
                     i + 1,
-                    bctx->login_url.password[0] ? bctx->login_url.password : "");
+                    url->password[0] ? url->password : "");
         }
-      else if ((bctx->login_post_str_usertype ==  
+      else if ((url->form_usage_type ==
                 POST_STR_USERTYPE_SINGLE_USER) ||
-               (bctx->login_post_str_usertype ==  
+               (url->form_usage_type  ==  
                 POST_STR_USERTYPE_LOAD_USERS_FROM_FILE))
         {
           /* All clients have the same login_username and password.*/
-          snprintf (cctx[i].post_data_login, 
+          snprintf (cctx[i].post_data, 
                     POST_LOGIN_BUF_SIZE, 
-                    bctx->login_post_str,
-                    bctx->login_url.username, 
-                    bctx->login_url.password[0] ? bctx->login_url.password : "");
+                    url->form_str,
+                    url->username, 
+                    url->password[0] ? url->password : "");
         }
       else
         {
@@ -1035,24 +976,8 @@ static int alloc_init_client_post_buffers (client_context* cctx)
                    "\"%s\" error: none valid bctx->post_str_usertype.\n", __func__) ;
           return -1;
         }
-      
-      if (bctx->logoff_post_str[0])
-        {
-            if (! (cctx[i].post_data_logoff = 
-                   (char *) calloc(POST_LOGOFF_BUF_SIZE, sizeof (char))))
-            {
-                fprintf (stderr,
-                         "%s - error: %s - failed to allocate post login buffer.\n",
-                         __func__, bctx->batch_name);
-                return -1;
-            }
-
-            snprintf (cctx[i].post_data_logoff,
-                      POST_LOGOFF_BUF_SIZE,
-                      "%s",
-                      bctx->logoff_post_str);
-        }
     }
+
   return 0;
 }
 
@@ -1151,38 +1076,16 @@ static void free_batch_data_allocations (batch_context* bctx)
           if (bctx->cctx_array[i].handle)
             curl_easy_cleanup(bctx->cctx_array[i].handle);
           
-          /* Free POST-buffers */
-          
-          if (bctx->cctx_array[i].post_data_login)
-            free (bctx->cctx_array[i].post_data_login);
-          if (bctx->cctx_array[i].post_data_logoff)
-            free (bctx->cctx_array[i].post_data_logoff);
-        }
+          /* Free client POST-buffers */ 
+          if (bctx->cctx_array[i].post_data)
+            {
+              free (bctx->cctx_array[i].post_data);
+              bctx->cctx_array[i].post_data = NULL;
+            }
 
       free(bctx->cctx_array);
       bctx->cctx_array = NULL;
     }
-  
-  /* Free custom HTTP headers. */
-  if (bctx->custom_http_hdrs)
-    {
-      curl_slist_free_all(bctx->custom_http_hdrs);
-      bctx->custom_http_hdrs = NULL;
-    }
-
-
-  /* Free login credentials. */
-  free (bctx->login_credentials_file);
-  bctx->login_credentials_file = NULL;
-
-  /* Free the login and logoff urls */
-  free (bctx->login_url.url_str);
-  bctx->login_url.url_str = NULL;
-
-  free (bctx->logoff_url.url_str);
-  bctx->logoff_url.url_str = NULL;
-
-  free (bctx->login_credentials_file);
 
   /* Free the allocated UAS url contexts*/
   if (bctx->uas_url_ctx_array && bctx->uas_urls_num)
@@ -1192,8 +1095,23 @@ static void free_batch_data_allocations (batch_context* bctx)
         {
           if (bctx->uas_url_ctx_array[i].url_str)
             {
+              /* Free url string */
               free (bctx->uas_url_ctx_array[i].url_str);
               bctx->uas_url_ctx_array[i].url_str = NULL ;
+                
+              /* Free custom HTTP headers. */
+              if (bctx->uas_url_ctx_array[i].custom_http_hdrs)
+                {
+                  curl_slist_free_all(bctx->uas_url_ctx_array[i].custom_http_hdrs);
+                  bctx->uas_url_ctx_array[i].custom_http_hdrs = NULL;
+                }
+
+              /* Free login credentials. */
+              if (bctx->uas_url_ctx_array[i].credentials_file)
+                {
+                  free (bctx->uas_url_ctx_array[i].credentials_file);
+                  bctx->uas_url_ctx_array[i].credentials_file = NULL;
+                }
             }
         }
 
@@ -1201,6 +1119,8 @@ static void free_batch_data_allocations (batch_context* bctx)
       free (bctx->uas_url_ctx_array);
       bctx->uas_url_ctx_array = NULL;
     }
+    }
+
 }
 
 /****************************************************************************************

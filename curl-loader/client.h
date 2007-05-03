@@ -149,10 +149,9 @@ typedef struct client_context
  
   /* 
      The buffers for the POST method login and logoff are allocated only, 
-     when a batch is configured to run login or logoff, respectively.
+     when a batch is configured to make some POST-ing
   */
-  char* post_data_login;
-  char* post_data_logoff;
+  char* post_data;
 
   /* 
      Counter of the headers going in or out.  For the first header in request
@@ -181,7 +180,7 @@ typedef struct client_context
   stat_point st;
 
   /*
-     extension data. 
+     Pointer to socket data used by hyper-mode
    */
   void * ext_data;
 

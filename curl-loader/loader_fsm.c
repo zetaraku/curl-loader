@@ -755,6 +755,7 @@ static int is_first_cycling_state (client_context* cctx)
 
 static int last_cycling_state (batch_context* bctx)
 {
+  /*
   if (bctx->do_logoff && bctx->logoff_cycling)
     {
       return CSTATE_LOGOFF;
@@ -767,12 +768,14 @@ static int last_cycling_state (batch_context* bctx)
     {
       return CSTATE_LOGIN;
     }
+  */
 
   return CSTATE_ERROR;
 }
 
 static int first_cycling_state (batch_context* bctx)
 {
+  /*
   if (bctx->do_login && bctx->login_cycling)
     {
       return CSTATE_LOGIN;
@@ -785,6 +788,7 @@ static int first_cycling_state (batch_context* bctx)
     {
       return CSTATE_LOGOFF;
     }
+  */
 
   return CSTATE_ERROR;
 }
@@ -815,11 +819,8 @@ static int on_cycling_completed (client_context* cctx, unsigned long *wait_msec)
   batch_context* bctx = cctx->bctx;
 
   /* 
-     Go to not-cycling logoff, else to the finish-line. 
+     Go to the finish-line. 
   */
-  if (bctx->do_logoff && !bctx->logoff_cycling)
-    return load_logoff_state (cctx, wait_msec);
-
   return (cctx->client_state = CSTATE_FINISHED_OK);
 }
 
@@ -837,6 +838,7 @@ static int setup_login_logoff (client_context* cctx, const int login)
   batch_context* bctx = cctx->bctx;
   int posting_after_get = 0;
 
+  /*
   if ( (login && bctx->login_req_type == LOGIN_REQ_TYPE_GET_AND_POST)  ||
        (!login && bctx->logoff_req_type == LOGOFF_REQ_TYPE_GET_AND_POST)
        )
@@ -849,6 +851,7 @@ static int setup_login_logoff (client_context* cctx, const int login)
           cctx->get_post_count = 0;
         }
     }
+  */
   
   if (!posting_after_get)
     {
@@ -860,22 +863,25 @@ static int setup_login_logoff (client_context* cctx, const int login)
       */
       int post_standalone = 0;
 
+      /*
       if ((login && bctx->login_req_type == LOGIN_REQ_TYPE_POST) ||
           (!login && bctx->logoff_req_type == LOGOFF_REQ_TYPE_POST))
         {
           post_standalone = 1;
         }
+      
 
       if (setup_curl_handle_init (
                                   cctx,
                                   login ? &bctx->login_url : &bctx->logoff_url,
-                                  0, /* Not applicable for smooth mode */
-                                  post_standalone /* If 'true' -POST, else GET */
+                                  0, // Not applicable for smooth mode
+                                    post_standalone // If 'true' -POST, else GET
                                   ) == -1)
         {
           fprintf(stderr,"%s error: setup_curl_handle_init - failed\n", __func__);
           return -1;
         }
+      */
     }
   else
     {
@@ -891,8 +897,7 @@ static int setup_login_logoff (client_context* cctx, const int login)
          Just add POSTFIELDS. Note, that it should be done on CURL handle 
          outside (removed) from MCURL handle. Add it back afterwords.
       */
-      curl_easy_setopt (handle, CURLOPT_POSTFIELDS, 
-                        login ? cctx->post_data_login : cctx->post_data_logoff);
+      curl_easy_setopt (handle, CURLOPT_POSTFIELDS, cctx->post_data);
     }
 
   return cctx->client_state = login ? CSTATE_LOGIN : CSTATE_LOGOFF;
@@ -940,19 +945,20 @@ static int load_init_state (client_context* cctx, unsigned long *wait_msec)
 
   *wait_msec = 0;
 
-  if (bctx->do_login) /* Normally, the very first operation is login, but who is normal? */
+  /*
+  if (bctx->do_login)
     {
       return load_login_state (cctx, wait_msec);
     }
-  else if (bctx->do_uas) /* Sometimes, no login is defined. Just a traffic-gen */
+  else if (bctx->do_uas) 
     {
       return load_uas_state (cctx, wait_msec);
     }
-  else if (bctx->do_logoff) /* Logoff only?  If this is what a user wishing ...  */
+  else if (bctx->do_logoff) 
     {
       return load_logoff_state (cctx, wait_msec);
     }
-
+*/
   return (cctx->client_state = CSTATE_ERROR);
 }
 
@@ -1015,41 +1021,41 @@ static int load_login_state (client_context* cctx, unsigned long *wait_msec)
   batch_context* bctx = cctx->bctx;
 
   /*
-    Test for login state, if a single login operation has been accomplished. 
-    Sometimes, the operation contains two elements: GET and POST.
-  */
+  //
+    //Test for login state, if a single login operation has been accomplished. 
+    //Sometimes, the operation contains two elements: GET and POST.
+  //
   if (cctx->client_state == CSTATE_LOGIN)
     {
       if ((bctx->login_req_type != LOGIN_REQ_TYPE_GET_AND_POST) ||
           (bctx->login_req_type == LOGIN_REQ_TYPE_GET_AND_POST && !cctx->get_post_count))
         {
-          /* 
-             Indeed, accomplished a single login operation. 
-          */
+           
+             //Indeed, accomplished a single login operation. 
+          
 
-          /* Mind the interleave timeout after login */
+          // Mind the interleave timeout after login
           *wait_msec = bctx->login_url.url_interleave_time;
 
           if (is_last_cycling_state (cctx))
             {
-              /*
-                If we are login cycling and the last/only cycling state,
-                we are in charge for advancing cycles counter.
-              */
+              
+                //If we are login cycling and the last/only cycling state,
+                //we are in charge for advancing cycles counter.
+              
               advance_cycle_num (cctx);
 
               if (cctx->cycle_num >= bctx->cycles_num)
                 {
-                  /* Either jump to logoff or to finish_ok. */
+                  // Either jump to logoff or to finish_ok. 
                   return on_cycling_completed (cctx, wait_msec);
                 }
               else
                 {
-                  /* 
-                     Configured to cycle, but the state is the last cycling state 
-                     and the only cycling state, therefore, continue login. 
-                  */
-                  return setup_login_logoff (cctx, 1); /* 1 - means login */
+                  
+                     //Configured to cycle, but the state is the last cycling state 
+                     //and the only cycling state, therefore, continue login. 
+                  return setup_login_logoff (cctx, 1); // 1 - means login
                 }
             }
  
@@ -1061,7 +1067,7 @@ static int load_login_state (client_context* cctx, unsigned long *wait_msec)
             return (cctx->client_state = CSTATE_FINISHED_OK);
         }
     }
-
+  */
   /* Non-LOGIN states are all falling below: */
   return setup_login_logoff (cctx, 1);
 }
@@ -1080,34 +1086,35 @@ static int load_login_state (client_context* cctx, unsigned long *wait_msec)
 static int load_uas_state (client_context* cctx, unsigned long *wait_msec)
 { 
   batch_context* bctx = cctx->bctx;
+  /*
 
   if (cctx->client_state == CSTATE_UAS_CYCLING)
     {
-      /* Mind the interleave timeout after each url, if any. */
+      // Mind the interleave timeout after each url, if any.
       *wait_msec = bctx->uas_url_ctx_array[cctx->uas_url_curr_index].url_interleave_time;
 
-      /* Now, advance the url index */
+      // Now, advance the url index
       cctx->uas_url_curr_index++;
 
       if (cctx->uas_url_curr_index >= (size_t)(bctx->uas_urls_num))
         {
-          /* Finished with all the urls for a single UAS -cycle. */
+          // Finished with all the urls for a single UAS -cycle.
 
           cctx->uas_url_curr_index = 0;
  
           if (is_last_cycling_state (cctx))
             {
-              /* If UAS is the last cycling state, advance cycle counter. */
+              // If UAS is the last cycling state, advance cycle counter. 
               advance_cycle_num (cctx);
 
               if (cctx->cycle_num >= bctx->cycles_num)
                 {
-                  /* Either logoff or finish_ok. */
+                  // Either logoff or finish_ok. 
                   return on_cycling_completed (cctx, wait_msec);
                 }
               else
                 {
-                  /* Continue cycling - take another cycle */
+                  // Continue cycling - take another cycle
                   if (bctx->do_login && bctx->login_cycling)
                     return load_login_state  (cctx, wait_msec);
                   else
@@ -1115,10 +1122,8 @@ static int load_uas_state (client_context* cctx, unsigned long *wait_msec)
                 }
             }
 
-          /* 
-             We are not the last cycling state. A guess is, that the
-             next state is logoff with cycling.
-          */
+             //We are not the last cycling state. A guess is, that the
+             //next state is logoff with cycling.
           return load_logoff_state (cctx, wait_msec);
         }
     }
@@ -1126,6 +1131,8 @@ static int load_uas_state (client_context* cctx, unsigned long *wait_msec)
     {
       cctx->uas_url_curr_index = 0;
     }
+
+*/
 
   /* Non-UAS states are all falling below: */
   return setup_uas (cctx);
@@ -1150,47 +1157,49 @@ static int load_logoff_state (client_context* cctx, unsigned long *wait_msec)
     Test for logoff state, if a single login operation has been accomplished. 
     Sometimes, the operation contains two elements: GET and POST.
   */
+  /*
   if (cctx->client_state == CSTATE_LOGOFF)
     {
       if ((bctx->logoff_req_type != LOGOFF_REQ_TYPE_GET_AND_POST) ||
           (bctx->logoff_req_type == LOGOFF_REQ_TYPE_GET_AND_POST && !cctx->get_post_count))
         {
-          /* 
-             Indeed, we have accomplished a single logoff operation. 
-          */
+          
+             //Indeed, we have accomplished a single logoff operation. 
+         
 
-          /* Mind the interleave timeout after login */
+          //  Mind the interleave timeout after login
           *wait_msec = bctx->logoff_url.url_interleave_time;
 
           if (is_last_cycling_state (cctx))
             {
-              /*
-                If logoff cycling ,we are in charge for advancing cycles counter.
-              */
+             
+              // If logoff cycling ,we are in charge for advancing cycles counter.
+              
               advance_cycle_num (cctx);
 
               if (cctx->cycle_num >= bctx->cycles_num)
                 {
-                  return on_cycling_completed (cctx, wait_msec); /* Goes to finish-ok */
+                  return on_cycling_completed (cctx, wait_msec); // Goes to finish-ok 
                 }
               else
                 {
-                  /*
-                    Continue cycling - take another cycle
-                  */
+                  
+                    //Continue cycling - take another cycle
+                  
                   if (bctx->do_login && bctx->login_cycling)
                     return load_login_state  (cctx, wait_msec);
                   else if (bctx->do_uas)
                     return load_uas_state (cctx, wait_msec);
-                  else /* logoff is the only cycling state? Sounds strange, but allow it */
-                    return setup_login_logoff (cctx, 0); /* 0 - means logoff */
+                  else // logoff is the only cycling state? Sounds strange, but allow it
+                    return setup_login_logoff (cctx, 0); //0 - means logoff
                 }
             }
  
-          /* If not doing logoff cycling, means single logoff done - go to finish-ok */
+          // If not doing logoff cycling, means single logoff done - go to finish-ok
           return (cctx->client_state = CSTATE_FINISHED_OK);
         }
     }
+*/
 
   /* Non-LOGOFF states are all falling below: */
   return setup_login_logoff (cctx, 0);

@@ -58,7 +58,7 @@ int test_environment (struct batch_context* bctx);
 *
 * Input -       *cctx - pointer to client context, which contains CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
-*               cycle_number - current number of loading cycle, passing here for storming mode;
+*               cycle_number - current number of loading cycle
 *               post_method - when 'true', POST method is used instead of the default GET
 *
 * Return Code/Output - On Success - 0, on Error -1
@@ -363,17 +363,6 @@ int init_timers_and_add_initial_clients_to_load (struct batch_context* bctx,
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int user_activity_hyper (struct client_context*const cctx_array);
-
-/* ------------- Storm-mode loading  function ----------------*/
-
-/****************************************************************************************
-* Function name - user_activity_storm
-*
-* Description - Simulates user-activities, like login, uas, logoff, using STORM-MODE
-* Input -       *cctx_array - array of client contexts (related to a certain batch of clients)
-* Return Code/Output - On Success - 0, on Error -1
-****************************************************************************************/
-int user_activity_storm (struct client_context*const cctx_array);
 
 /*-------------- Smooth-mode loading function ----------------*/
 

@@ -143,12 +143,12 @@ int parse_command_line (int argc, char *argv [])
         case 'm': /* Modes of loading: SMOOTH and STORMING */
 
             if (!optarg || 
-                ((loading_mode = atoi (optarg)) != LOAD_MODE_STORMING &&
-                 loading_mode != LOAD_MODE_SMOOTH && loading_mode != LOAD_MODE_HYPER ))
+                ((loading_mode != LOAD_MODE_SMOOTH && 
+                  loading_mode != LOAD_MODE_HYPER )))
             {
               fprintf (stderr, 
                        "%s error: -m to be followed by a number either %d or %d or %d.\n",
-                       __func__, LOAD_MODE_STORMING, LOAD_MODE_SMOOTH, LOAD_MODE_HYPER);
+                       __func__, LOAD_MODE_SMOOTH, LOAD_MODE_HYPER);
               return -1;
             }
 
@@ -221,7 +221,7 @@ void print_help ()
   fprintf (stderr, " -e[rror drop client (smooth mode). Client on error doesn't attempt next cycle]\n");
   fprintf (stderr, " -i[ntermediate (snapshot) statistics time interval (default 3 sec)]\n");
   fprintf (stderr, " -l[ogfile max size in MB (default 1024). On the size reached, file pointer rewinded]\n");
-  fprintf (stderr, " -m[ode of loading, 1 - storming, 2 - smooth (default), 3 - hyper (under construction)]\n");
+  fprintf (stderr, " -m[ode of loading, 0 - hyper  (default), 1 - smooth]\n");
   fprintf (stderr, " -o[utput to stdout bodies of downloaded files - attn!- bulky]\n");
   fprintf (stderr, " -r[euse onnections disabled. Close connections and re-open them. Try with and without]\n");
   fprintf (stderr, " -s[tderr printout of client messages instead of to logfile - attn!- bulky]\n");
