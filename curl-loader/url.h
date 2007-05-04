@@ -55,6 +55,17 @@ typedef enum url_appl_type
     URL_APPL_SFTP,
   } url_appl_type;
 
+/* Currently, only username and password - 2 records */
+#define FORM_RECORDS_MAX_TOKENS_NUM 2
+
+typedef struct form_records_cdata
+{
+    /*
+      On access test, that the form_tokens have been allocated. 
+    */
+    char* form_tokens[FORM_RECORDS_MAX_TOKENS_NUM];
+} form_records_cdata;
+
 
 /*
   url_context - structure, that concentrates our knowledge about the url
@@ -112,7 +123,11 @@ typedef struct url_context
      ':', '@', '/' and ' ' (space) in line with RFC1738. The file may be created
      as a dump of DB tables of users and passwords.
   */
-  char* credentials_file;
+  char* form_records_file;
+
+  form_records_cdata* form_records_array;
+
+  size_t form_records_num;
 
   char* upload_file;
 

@@ -904,11 +904,11 @@ static int init_client_post_buffers (client_context* cctx, url_context* url)
       return -1;
     }
 
-  if (url->credentials_file)
+  if (url->form_records_file)
     {
       /* 
          When we are loading users with passwords credentials from a file
-         (tag LOGIN_CREDENTIALS_FILE, this is done in post_validation () of 
+         (tag FORM_RECORDS_FILE, this is done in post_validation () of 
          parce_conf.c.
       */
       return 0;
@@ -1080,10 +1080,10 @@ static void free_batch_data_allocations (batch_context* bctx)
                 }
 
               /* Free login credentials. */
-              if (bctx->url_ctx_array[i].credentials_file)
+              if (bctx->url_ctx_array[i].form_records_file)
                 {
-                  free (bctx->url_ctx_array[i].credentials_file);
-                  bctx->url_ctx_array[i].credentials_file = NULL;
+                  free (bctx->url_ctx_array[i].form_records_file);
+                  bctx->url_ctx_array[i].form_records_file = NULL;
                 }
             }
         }

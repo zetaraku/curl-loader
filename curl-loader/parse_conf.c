@@ -95,7 +95,7 @@ static int username_parser (batch_context*const bctx, char*const value);
 static int password_parser (batch_context*const bctx, char*const value);
 static int form_type_parser (batch_context*const bctx, char*const value);
 static int form_string_parser (batch_context*const bctx, char*const value);
-static int credentials_file_parser (batch_context*const bctx, char*const value);
+static int form_records_file_parser (batch_context*const bctx, char*const value);
 
 static int upload_file_parser (batch_context*const bctx, char*const value);
 
@@ -142,7 +142,7 @@ static const tag_parser_pair tp_map [] =
     {"PASSWORD", password_parser},
     {"FORM_TYPE", form_type_parser},
     {"FORM_STRING", form_string_parser},
-    {"CREDENTIALS_FILE", credentials_file_parser},
+    {"FORM_RECORDS_FILE", form_records_file_parser},
 
     {"UPLOAD_FILE", upload_file_parser},
 
@@ -162,11 +162,11 @@ static int validate_batch_general (batch_context*const bctx);
 static int validate_batch_url (batch_context*const bctx);
 
 static int post_validate_init (batch_context*const bctx);
-static int init_client_post_buffers_from_file (batch_context*const bctx);
-static int load_client_credentials_buffers (char*const input, 
+static int load_form_records_file (batch_context*const bctx, url_context* url);
+static int load_form_record_string (char*const input, 
                              size_t input_length,
-                             batch_context*const bctx, 
-                             int*const client_num,
+                             form_records_cdata* form_record,
+                             size_t record_num,
                              char* separator);
 
 static int add_param_to_batch (char*const input, 
@@ -316,7 +316,7 @@ static int add_param_to_batch (
 }
 
 /****************************************************************************************
-* Function name - load_client_credentials_buffers
+* Function name - load_form_record_string
 *
 * Description - Parses string with credentials <user>SP<password>, allocates at virtual 
 *               client memory and places the credentials to the client post buffer.
@@ -329,10 +329,10 @@ static int add_param_to_batch (
 *                               further used.
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
-static int load_client_credentials_buffers (char*const input, 
+static int load_form_record_string (char*const input, 
                              size_t input_len,
-                             batch_context*const bctx, 
-                             int*const client_num,
+                             form_records_cdata* form_record, 
+                             size_t record_num,
                              char* separator)
 {
   const char separators_supported [] =
@@ -345,7 +345,7 @@ static int load_client_credentials_buffers (char*const input,
   /* 
      Figure out the separator used by the first string analyses 
   */
-  if (*client_num == 0)
+  if (! record_num)
     {
       for (i = 0; separators_supported [i]; i++)
         {
@@ -393,18 +393,51 @@ static int load_client_credentials_buffers (char*const input,
         }
     }
 
-   if (bctx->url_ctx_array[bctx->url_index].form_str[0])
-    {
-        /*
-      snprintf (bctx->cctx_array[*client_num].post_data_login, 
-                POST_LOGIN_BUF_SIZE, 
-                bctx->login_post_str,
-                username, 
-                password ? password : "");
-        */
-    }
+  /*
+    Empty passwords are allowed.
+  */
+  size_t len_username = 0, len_password = 0;
 
-  ++*client_num;
+  /* 
+     TODO: The tokens below to be treated in a cycle and up to 8
+     tokens to be supported
+  */
+  if (username)
+  {
+      if (! (len_username = strlen (username)))
+      {
+          fprintf (stderr, "%s - even the very first token of the record is empty. \n", __func__);
+          return -1;
+      }
+
+      if (! (form_record->form_tokens[0] = calloc (len_username +1, sizeof (char))))
+      {
+          fprintf (stderr, "%s - calloc() for username failed with errno %d\n", __func__, errno);
+          return -1;
+      }
+      else
+      {
+          strcpy (form_record->form_tokens[0], username);
+      }
+  }
+
+  if (password)
+  {
+      if (!(len_password = strlen (password)))
+      {
+          return 0;
+      }
+      
+      if (! (form_record->form_tokens[1] = calloc (len_password +1, sizeof (char))))
+      {
+          fprintf (stderr, "%s - calloc() for password failed with errno %d\n", __func__, errno);
+          return -1;
+      }
+      else
+      {
+          strcpy (form_record->form_tokens[1], password);
+      }
+  }
   
   return 0;
 }
@@ -765,7 +798,7 @@ static int request_type_parser (batch_context*const bctx, char*const value)
     else
     {
         fprintf (stderr, 
-                 "%s - error: REQ_TYPE (%s) is not valid. Use %s or %s .\n", 
+                 "%s - error: REQ_TYPE (%s) is not valid. Use %s, %s or %s.\n", 
                  __func__, value, REQ_GET_POST, REQ_POST, REQ_GET);
         return -1;
     }
@@ -802,7 +835,8 @@ static int password_parser (batch_context*const bctx, char*const value)
 }
 static int form_type_parser (batch_context*const bctx, char*const value)
 {
-
+    (void) bctx; (void) value;
+    return 0;
 }
 static int form_string_parser (batch_context*const bctx, char*const value)
 {
@@ -881,7 +915,7 @@ static int form_string_parser (batch_context*const bctx, char*const value)
       }
 
       /*
-        Allocate client buffers for POSTing login and logoff credentials.
+        Allocate client buffers for POST-ing login and logoff credentials.
       */
       int i;
       for (i = 0;  i < bctx->client_num; i++)
@@ -899,7 +933,7 @@ static int form_string_parser (batch_context*const bctx, char*const value)
 
   return 0;
 }
-static int credentials_file_parser  (batch_context*const bctx, char*const value)
+static int form_records_file_parser (batch_context*const bctx, char*const value)
 {
   struct stat statbuf;
   size_t string_len = 0;
@@ -914,17 +948,25 @@ static int credentials_file_parser  (batch_context*const bctx, char*const value)
         }
 
       string_len = strlen (value) + 1;
-      if (! (bctx->url_ctx_array[bctx->url_index].credentials_file = 
+      if (! (bctx->url_ctx_array[bctx->url_index].form_records_file = 
              (char *) calloc (string_len, sizeof (char))))
         {
-          fprintf(stderr, "%s error: failed to allocate memory with errno %d.\n",  __func__, errno);
+          fprintf(stderr, "%s error: failed to allocate memory for form_records_file with errno %d.\n",  
+                  __func__, errno);
           return -1;
         }
 
-      strncpy (bctx->url_ctx_array[bctx->url_index].credentials_file, 
+      strncpy (bctx->url_ctx_array[bctx->url_index].form_records_file, 
                value, 
                string_len -1);
+
+      if (load_form_records_file (bctx, &bctx->url_ctx_array[bctx->url_index]) == -1)
+      {
+          fprintf(stderr, "%s error: load_form_records_file () failed.\n", __func__);
+          return -1;
+      }
     }
+
     return 0;
 }
 static int upload_file_parser  (batch_context*const bctx, char*const value)
@@ -958,18 +1000,22 @@ static int upload_file_parser  (batch_context*const bctx, char*const value)
 
 static int web_auth_method_parser (batch_context*const bctx, char*const value)
 {
+    (void) bctx; (void) value;
   return 0;
 }
 static int web_auth_credentials_parser (batch_context*const bctx, char*const value)
 {
+    (void) bctx; (void) value;
   return 0;
 }
 static int proxy_auth_method_parser (batch_context*const bctx, char*const value)
 {
+    (void) bctx; (void) value;
   return 0;
 }
 static int proxy_auth_credentials_parser (batch_context*const bctx, char*const value)
 {
+    (void) bctx; (void) value;
   return 0;
 }
 
@@ -1221,13 +1267,13 @@ static int validate_batch_url (batch_context*const bctx)
           return -1;
         }
 
-      if (bctx->url_ctx_array[k].credentials_file)
+      if (bctx->url_ctx_array[k].form_records_file)
         {
           if (! bctx->url_ctx_array[k].form_str[0])
             {
               fprintf (stderr, "%s - error: empty FORM_STRING, "
-                       "when CREDENTIALS_FILE defined.\n Either disable" 
-                       "CREDENTIALS_FILE or define FORM_STRING\n", __func__);
+                       "when FORM_RECORDS_FILE defined.\n Either disable" 
+                       "FORM_RECORDS_FILE or define FORM_STRING\n", __func__);
               return -1;
             }
           
@@ -1238,7 +1284,7 @@ static int validate_batch_url (batch_context*const bctx)
               )
             {
               fprintf (stderr, "%s - error: \"%%d\" symbols not to be in FORM_POST, "
-                       "when CREDENTIALS_FILE is defined.\n It should be two \"%%s\" symbols", __func__);
+                       "when FORM_RECORDS_FILE is defined.\n It should be two \"%%s\" symbols", __func__);
               return -1;
             }
           else
@@ -1264,11 +1310,11 @@ static int post_validate_init (batch_context*const bctx)
 {
   /* TODO
 
-  if (bctx->login_credentials_file && 
-      init_client_post_buffers_from_file (bctx) == -1)
+  if (bctx->login_form_records_file && 
+      load_credentials_file (bctx) == -1)
     {
       fprintf (stderr, 
-               "%s - error: init_client_post_buffers_from_file () failed.\n",
+               "%s - error: load_credentials_file () failed.\n",
                __func__);
       return -1;
     }
@@ -1430,7 +1476,7 @@ int parse_config_file (char* const filename,
 
 
 /*******************************************************************************
-* Function name - init_client_post_buffers_from_file
+* Function name - load_form_records_file
 *
 * Description - Itializes client post form buffers, using credentials loaded from file.
 *               To be called after batch context validation.
@@ -1439,33 +1485,37 @@ int parse_config_file (char* const filename,
 *                          
 * Return Code/Output - On Success - number of batches >=1, on Error -1
 ********************************************************************************/
-static int init_client_post_buffers_from_file (batch_context*const bctx)
+static int load_form_records_file (batch_context*const bctx, url_context* url)
 {
   char fgets_buff[512];
   FILE* fp;
-  int client_index = 0;
   char sep;
 
-  /*
-  if (!(fp = fopen (bctx->credentials_file, "r")))
+  /* 
+     Open the file with form records 
+  */
+  if (!(fp = fopen (url->form_records_file, "r")))
     {
       fprintf (stderr, 
                "%s - fopen() failed to open for reading filename \"%s\", errno %d.\n", 
-               __func__, bctx->credentials_file, errno);
+               __func__, url->form_records_file, errno);
       return -1;
     }
 
-  if (!(bctx->cctx_array  = (client_context *) cl_calloc(bctx->client_num, 
-                                                      sizeof (client_context))))
-    {
-      fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
-               bctx->batch_name, __func__);
+  /* 
+     Allocate the place to keep form records tokens for clients
+  */
+  if (! (url->form_records_array =  calloc (bctx->client_num, sizeof (form_records_cdata))))
+  {
+      fprintf (stderr, 
+               "%s - failed to allocate memory for url->form_records_array with errno %d.\n", 
+               __func__, errno);
       return -1;
-    }
+  }
 
   while (fgets (fgets_buff, sizeof (fgets_buff) - 1, fp))
     {
-      fprintf (stderr, "%s - processing login credentials file string \"%s\n", 
+      fprintf (stderr, "%s - processing form records file string \"%s\n", 
                __func__, fgets_buff);
 
       char* string_buff = NULL;
@@ -1488,42 +1538,42 @@ static int init_client_post_buffers_from_file (batch_context*const bctx)
               continue;
             }
 
-          if (client_index >= bctx->client_num)
+          if ((int)url->form_records_num >= bctx->client_num)
             {
               fprintf (stderr, 
                        "%s - warning: CLIENTS_NUM (%d) is less than the number of" 
-                       "credentials pair is the file\n", __func__, bctx->client_num);
-              sleep (2);
+                       "records is the file form_records_file.\n", __func__, bctx->client_num);
+              sleep (3);
               break;
             }
 
-          if (load_client_credentials_buffers (fgets_buff,
-                                string_len,
-                                bctx, 
-                                &client_index,
-                                &sep) == -1)
-            {
+          if (load_form_record_string (fgets_buff,
+                                       string_len,
+                                       &url->form_records_array[url->form_records_num],
+                                       url->form_records_num,
+                                       &sep) == -1)
+          {
               fprintf (stderr, 
-                       "%s - error: load_client_credentials_buffers () failed on credentials line \"%s\"\n", 
+                       "%s - error: load_client_credentials_buffers () failed on records line \"%s\"\n", 
                        __func__, fgets_buff);
               fclose (fp);
               return -1 ;
-            }
+          }
+          
+          url->form_records_num++;
         }
     }
 
-  if (client_index < bctx->client_num)
+  if ((int)url->form_records_num < bctx->client_num)
     {
       fprintf (stderr, 
                "%s - error: CLIENTS_NUM (%d) is above the number " 
-               "of credentials pairs\nPlease, either decrease the CLIENTS_NUM "
-               "or add more credentials strings to the file.\n", 
+               "of records in the form_records_file\nPlease, either decrease the CLIENTS_NUM "
+               "or add more records strings to the file.\n", 
                __func__, bctx->client_num);
       fclose (fp);
       return -1 ;
     }
-
-  */
 
   fclose (fp);
   return 0;
