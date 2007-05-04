@@ -442,11 +442,11 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
       const int current_clients = pending_active_and_waiting_clients_num (bctx);
 
       fprintf(stdout," Manual: clients:max[%d],curr[%d]. Inc num: [+|*].",
-              bctx->client_num, current_clients);
+              bctx->client_num_max, current_clients);
 
       if (bctx->stop_client_num_gradual_increase && 
           bctx->clients_initial_inc &&
-          current_clients < bctx->client_num)
+          current_clients < bctx->client_num_max)
         {
           fprintf(stdout," Automatic: [A].\n");
         }
@@ -703,7 +703,7 @@ static void dump_clients (client_context* cctx_array)
       return;
     }
 
-  for (i = 0 ; i < bctx->client_num; i++)
+  for (i = 0 ; i < bctx->client_num_max; i++)
     {
       dump_client (ct_file, &cctx_array[i]);
     }

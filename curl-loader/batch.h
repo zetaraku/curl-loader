@@ -40,14 +40,15 @@
 
 #define CUSTOM_HTTP_HDRS_MAX_NUM 16
 
-enum post_str_usertype
+typedef enum form_usagetype
 {
-    POST_STR_USERTYPE_NON_VALID = 0,
-    POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS,
-    POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD,
-    POST_STR_USERTYPE_SINGLE_USER,
-    POST_STR_USERTYPE_LOAD_USERS_FROM_FILE,
-};
+    FORM_USAGETYPE_NON_VALID = 0,
+    FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS,
+    FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD,
+    FORM_USAGETYPE_SINGLE_USER,
+    FORM_USAGETYPE_RECORDS_FROM_FILE,
+    FORM_USAGETYPE_AS_IS,
+} form_usagetype;
 
 struct client_context;
 
@@ -76,7 +77,7 @@ typedef struct batch_context
   char batch_statistics[BATCH_NAME_SIZE+BATCH_NAME_EXTRA_SIZE];
 
   /* Maximum number of clients (each client with its own IP-address) in the batch */
-  int client_num;
+  int client_num_max;
 
   /* Number of clients to start with */
   int client_num_start;

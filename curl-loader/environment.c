@@ -54,13 +54,13 @@ int test_environment (batch_context* bctx)
   /* 
      Limit of descriptors is less, than the number of clients.
   */
-  if (!ret && file_limit.rlim_cur <= (unsigned int) bctx->client_num)
+  if (!ret && file_limit.rlim_cur <= (unsigned int) bctx->client_num_max)
     {
       fprintf(stderr,
               "%s - ERROR: the current limit of open descriptors for the shell (%d) \n"
               "is below the number of clients in the batch (%d).\n"
               "Please, increase the limit, e.g. by running    ulimit -n %d\n",
-              __func__, (int)(file_limit.rlim_cur), bctx->client_num, OPEN_FDS_SUGGESTION);
+              __func__, (int)(file_limit.rlim_cur), bctx->client_num_max, OPEN_FDS_SUGGESTION);
       return -1;
     }
 
@@ -88,7 +88,7 @@ int test_environment (batch_context* bctx)
      Suggestion to increase the current descriptor limit
      and/or recycle sockets
   */
-  if (!ret && file_limit.rlim_cur <= (unsigned int) (2*bctx->client_num))
+  if (!ret && file_limit.rlim_cur <= (unsigned int) (2*bctx->client_num_max))
   {
     if (!warnings_skip)
       {
@@ -98,7 +98,7 @@ int test_environment (batch_context* bctx)
                 "Still, due to time-waiting state of TCP sockets, the number \n"
                 "of the sockets may be not enough.\n"
                 "Consider, increasing the limit, e.g. by running   ulimit -n %d\n",
-                (int)(file_limit.rlim_cur), bctx->client_num, OPEN_FDS_SUGGESTION);
+                (int)(file_limit.rlim_cur), bctx->client_num_max, OPEN_FDS_SUGGESTION);
         
         if (file_limit.rlim_cur > 5000)
           {
@@ -116,7 +116,7 @@ int test_environment (batch_context* bctx)
     /* 
      Suggestion to increase kernel memory for tcp.
   */
-  if (bctx->client_num > 2000)
+  if (bctx->client_num_max > 2000)
     {
       if (!warnings_skip)
       {

@@ -361,7 +361,7 @@ int add_loading_clients (batch_context* bctx)
   /* 
      Return, if initial gradual scheduling of all new clients has been accomplished. 
   */
-  if (bctx->client_num <= bctx->clients_current_sched_num)
+  if (bctx->client_num_max <= bctx->clients_current_sched_num)
     {
       bctx->do_client_num_gradual_increase = 0;
       return -1; // Returning -1 means - stop the timer
@@ -376,8 +376,8 @@ int add_loading_clients (batch_context* bctx)
   else 
     {
       clients_to_sched = bctx->clients_initial_inc ?
-        min (bctx->clients_initial_inc, bctx->client_num - bctx->clients_current_sched_num) :
-        bctx->client_num;
+        min (bctx->clients_initial_inc, bctx->client_num_max - bctx->clients_current_sched_num) :
+        bctx->client_num_max;
     }
 
 
@@ -411,7 +411,7 @@ int add_loading_clients (batch_context* bctx)
 
   if (bctx->clients_initial_inc)
     {
-      if (bctx->clients_current_sched_num < bctx->client_num)
+      if (bctx->clients_current_sched_num < bctx->client_num_max)
         {
           bctx->do_client_num_gradual_increase = 1;
         }
@@ -438,14 +438,14 @@ int add_loading_clients_num (batch_context* bctx, int add_number)
       return -1;
     }
   
-  if (bctx->client_num <= bctx->clients_current_sched_num)
+  if (bctx->client_num_max <= bctx->clients_current_sched_num)
     {
       return -1; // No room to add more
     }
   
   /* Calculate number of the new clients to schedule. */
   const long clients_to_sched = min (add_number, 
-                                  bctx->client_num - bctx->clients_current_sched_num); 
+                                  bctx->client_num_max - bctx->clients_current_sched_num); 
 
   //fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_to_sched);
 

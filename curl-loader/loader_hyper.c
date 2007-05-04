@@ -435,7 +435,7 @@ int user_activity_hyper (client_context* cctx_array)
 
   still_running = 1; 
  
-  for (k = 0 ; k < bctx->client_num ; k++)
+  for (k = 0 ; k < bctx->client_num_max ; k++)
     {
       sinfo = cl_calloc (1, sizeof (sock_info));
       if (!sinfo)
@@ -448,7 +448,7 @@ int user_activity_hyper (client_context* cctx_array)
     }
 
   if (alloc_init_timer_waiting_queue (
-                                      bctx->client_num + PERIODIC_TIMERS_NUMBER + 1,
+                                      bctx->client_num_max + PERIODIC_TIMERS_NUMBER + 1,
                                       &bctx->waiting_queue) == -1)
     {
       fprintf (stderr, "%s - error: failed to alloc or init timer waiting queue.\n", __func__);

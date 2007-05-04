@@ -31,8 +31,7 @@
 
 #define CLIENT_NAME_LEN 64
 
-#define POST_LOGIN_BUF_SIZE 256
-#define POST_LOGOFF_BUF_SIZE 64
+#define POST_DATA_BUF_SIZE 256
 
 /*
   cstates - states of a virtual client.

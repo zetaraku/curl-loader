@@ -62,7 +62,7 @@ int user_activity_smooth (client_context* cctx_array)
     }
 
   if (alloc_init_timer_waiting_queue (
-                                      bctx->client_num + PERIODIC_TIMERS_NUMBER + 1,
+                                      bctx->client_num_max + PERIODIC_TIMERS_NUMBER + 1,
                                       &bctx->waiting_queue) == -1)
     {
       fprintf (stderr, 

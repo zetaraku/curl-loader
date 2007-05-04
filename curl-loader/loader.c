@@ -363,7 +363,7 @@ static int initial_handles_init (client_context*const ctx_array)
   */
     
   /* Initialize all CURL handles */
-  for (k = 0 ; k < bctx->client_num ; k++)
+  for (k = 0 ; k < bctx->client_num_max ; k++)
     {
       if (!(bctx->cctx_array[k].handle = curl_easy_init ()))
         {
@@ -386,27 +386,23 @@ static int initial_handles_init (client_context*const ctx_array)
 *               handle back to the multi-handle.
 *
 * Input -       *cctx        - pointer to client context, containing CURL handle pointer;
-*               *url_ctx     - pointer to url-context, containing all url-related information;
+*               *url     - pointer to url-context, containing all url-related information;
 *               cycle_number - current number of loading cycle
 *               post_method  - when 'true', POST method is used instead of the default GET
 *
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int setup_curl_handle (client_context*const cctx,
-                       url_context* url_ctx,
+                       url_context* url,
                        long cycle_number,
                        int post_method)
 {
-  batch_context* bctx = cctx->bctx;
-  CURL* handle = cctx->handle;
-  int m_error = -1;
-
-  if (!cctx || !url_ctx)
+  if (!cctx || !url)
     {
       return -1;
     }
   
-  if (setup_curl_handle_init (cctx, url_ctx, cycle_number, post_method) == -1)
+  if (setup_curl_handle_init (cctx, url, cycle_number, post_method) == -1)
   {
       fprintf (stderr,"%s - error: failed.\n",__func__);
       return -1;
@@ -434,6 +430,7 @@ int setup_curl_handle_init (client_context*const cctx,
                             long cycle_number,
                             int post_method)
 {
+  (void) cycle_number;
   batch_context* bctx = cctx->bctx;
   CURL* handle = cctx->handle;
 
@@ -467,7 +464,9 @@ int setup_curl_handle_init (client_context*const cctx,
   
   /* Set the index to client for the smooth and hyper modes */
   if (url_ctx->url_uas_num >= 0)
+  {
     cctx->uas_url_curr_index = url_ctx->url_uas_num;
+  }
   
   bctx->url_index = url_ctx->url_uas_num;
 
@@ -604,7 +603,10 @@ int setup_curl_handle_appl (client_context*const cctx,
                        __func__);
               return -1;
             }
-          curl_easy_setopt(handle, CURLOPT_POSTFIELDS, cctx->post_data);
+          else
+          {
+              curl_easy_setopt(handle, CURLOPT_POSTFIELDS, cctx->post_data);
+          }
         }
 
       if (url_ctx->username[0])
@@ -886,7 +888,7 @@ int client_tracing_function (CURL *handle,
 /****************************************************************************************
 * Function name - init_client_post_buffers
 *
-* Description - Allocate and initialize post form buffers to be used for POST-ing
+* Description - Initialize post form buffers to be used for POST-ing
 * 
 * Input -       *cctx - pointer to client context
 * Return Code/Output - On Success - 0, on Error -1
@@ -914,10 +916,10 @@ static int init_client_post_buffers (client_context* cctx, url_context* url)
       return 0;
     }
 
-  for (i = 0;  i < bctx->client_num; i++)
+  for (i = 0;  i < bctx->client_num_max; i++)
     {
       if (url->form_usage_type ==
-          POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS)
+          FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS)
         {
           /* 
              For each client init post buffer, containing username and password 
@@ -925,7 +927,7 @@ static int init_client_post_buffers (client_context* cctx, url_context* url)
              client index.
           */
           snprintf (cctx[i].post_data, 
-                    POST_LOGIN_BUF_SIZE, 
+                    POST_DATA_BUF_SIZE, 
                     url->form_str,
                     url->username, 
                     i + 1,
@@ -933,7 +935,7 @@ static int init_client_post_buffers (client_context* cctx, url_context* url)
                     i + 1);
         }
       else if (url->form_usage_type ==
-          POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD)
+          FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD)
         {
           /* 
              For each client init post buffer, containing username with uniqueness 
@@ -941,20 +943,20 @@ static int init_client_post_buffers (client_context* cctx, url_context* url)
              the same for all users.
           */
           snprintf (cctx[i].post_data, 
-                    POST_LOGIN_BUF_SIZE, 
+                    POST_DATA_BUF_SIZE, 
                     url->form_str,
                     url->username, 
                     i + 1,
                     url->password[0] ? url->password : "");
         }
       else if ((url->form_usage_type ==
-                POST_STR_USERTYPE_SINGLE_USER) ||
+                FORM_USAGETYPE_SINGLE_USER) ||
                (url->form_usage_type  ==  
-                POST_STR_USERTYPE_LOAD_USERS_FROM_FILE))
+                FORM_USAGETYPE_RECORDS_FROM_FILE))
         {
           /* All clients have the same login_username and password.*/
           snprintf (cctx[i].post_data, 
-                    POST_LOGIN_BUF_SIZE, 
+                    POST_DATA_BUF_SIZE, 
                     url->form_str,
                     url->username, 
                     url->password[0] ? url->password : "");
@@ -988,7 +990,7 @@ static int alloc_init_client_contexts (batch_context* bctx,
   /* 
      Iterate through client contexts and initialize them. 
   */
-  for (i = 0 ; i < bctx->client_num ; i++)
+  for (i = 0 ; i < bctx->client_num_max ; i++)
     {
       /* 
          Set the timer handling function, which is used by the smooth 
@@ -1044,7 +1046,7 @@ static void free_batch_data_allocations (batch_context* bctx)
   */
   if (bctx->cctx_array)
     {
-      for (i = 0 ; i < bctx->client_num ; i++)
+      for (i = 0 ; i < bctx->client_num_max ; i++)
         {
           if (bctx->cctx_array[i].handle)
             curl_easy_cleanup(bctx->cctx_array[i].handle);
@@ -1123,7 +1125,7 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
   for (batch_index = 0 ; batch_index < bctx_num ; batch_index++) 
     {
       /* Allocate array of IP-addresses */
-      if (!(ip_addresses[batch_index] = (char**)calloc (bctx_array[batch_index].client_num, 
+      if (!(ip_addresses[batch_index] = (char**)calloc (bctx_array[batch_index].client_num_max, 
                                                sizeof (char *))))
         {
           fprintf (stderr, 
@@ -1137,7 +1139,7 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
 
       /* Allocate for each client a buffer and snprintf to it the IP-address string.
        */
-      for (client_index = 0; client_index < bctx_array[batch_index].client_num; client_index++)
+      for (client_index = 0; client_index < bctx_array[batch_index].client_num_max; client_index++)
         {
           if (!(ip_addresses[batch_index][client_index] = 
                 (char*)calloc (bctx_array[batch_index].ipv6 ? 
@@ -1205,7 +1207,7 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
          ip-addresses, using netlink userland-kernel interface.
       */
       if (add_secondary_ip_addrs (bctx_array[batch_index].net_interface,
-                                  bctx_array[batch_index].client_num, 
+                                  bctx_array[batch_index].client_num_max, 
                                   (const char** const) ip_addresses[batch_index], 
                                   bctx_array[batch_index].cidr_netmask,
                                   bctx_array[batch_index].scope) == -1)

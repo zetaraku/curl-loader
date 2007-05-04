@@ -71,7 +71,7 @@ typedef struct tag_parser_pair
  * GENERAL section tag parsers. 
 */
 static int batch_name_parser (batch_context*const bctx, char*const value);
-static int clients_num_parser (batch_context*const bctx, char*const value);
+static int clients_num_max_parser (batch_context*const bctx, char*const value);
 static int clients_num_start_parser (batch_context*const bctx, char*const value);
 static int interface_parser (batch_context*const bctx, char*const value);
 static int netmask_parser (batch_context*const bctx, char*const value);
@@ -117,7 +117,7 @@ static const tag_parser_pair tp_map [] =
 {
     /*------------------------ GENERAL SECTION ------------------------------ */
     {"BATCH_NAME", batch_name_parser},
-    {"CLIENTS_NUM_MAX", clients_num_parser},
+    {"CLIENTS_NUM_MAX", clients_num_max_parser},
     {"CLIENTS_NUM_START", clients_num_start_parser},
     {"CLIENTS_INITIAL_INC", clients_initial_inc_parser},
     {"INTERFACE", interface_parser},
@@ -522,16 +522,16 @@ static int batch_name_parser (batch_context*const bctx, char*const value)
     strncpy (bctx->batch_name, value, sizeof (bctx->batch_name) -1);
     return 0;
 }
-static int clients_num_parser (batch_context*const bctx, char*const value)
+static int clients_num_max_parser (batch_context*const bctx, char*const value)
 {
-    bctx->client_num = 0;
-    bctx->client_num = atoi (value);
+    bctx->client_num_max = 0;
+    bctx->client_num_max = atoi (value);
     
-    /* fprintf (stderr, "\nclients number is %d\n", bctx->client_num); */
-    if (bctx->client_num < 1)
+    /* fprintf (stderr, "\nclients number is %d\n", bctx->client_num_max); */
+    if (bctx->client_num_max < 1)
     {
         fprintf (stderr, "%s - error: clients number (%d) is out of the range\n", 
-                 __func__, bctx->client_num);
+                 __func__, bctx->client_num_max);
         return -1;
     }
     return 0;
@@ -864,21 +864,21 @@ static int form_string_parser (batch_context*const bctx, char*const value)
       if (count_percent_s_percent_d == 2 && count_percent_s == 2)
         {
           bctx->url_ctx_array[bctx->url_index].form_usage_type = 
-            POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS;
+            FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS;
         }
       else if (count_percent_s_percent_d == 1 && count_percent_s == 2)
         {
           bctx->url_ctx_array[bctx->url_index].form_usage_type  = 
-            POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD;
+            FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD;
         }
       else if (count_percent_s_percent_d == 0 && count_percent_s == 2)
         {
           bctx->url_ctx_array[bctx->url_index].form_usage_type = 
-            POST_STR_USERTYPE_SINGLE_USER;
+            FORM_USAGETYPE_SINGLE_USER;
             
           /* 
              If login_credentials_file defined, we will re-mark it later in validation as 
-             POST_STR_USERTYPE_LOAD_USERS_FROM_FILE
+             FORM_USAGETYPE_RECORDS_FROM_FILE
           */
         }
       else
@@ -905,7 +905,7 @@ static int form_string_parser (batch_context*const bctx, char*const value)
       */
       if (!bctx->cctx_array)
       {
-          if (!(bctx->cctx_array  = (client_context *) cl_calloc(bctx->client_num, 
+          if (!(bctx->cctx_array  = (client_context *) cl_calloc(bctx->client_num_max, 
                                                                  sizeof (client_context))))
           {
               fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
@@ -918,17 +918,16 @@ static int form_string_parser (batch_context*const bctx, char*const value)
         Allocate client buffers for POST-ing login and logoff credentials.
       */
       int i;
-      for (i = 0;  i < bctx->client_num; i++)
+      for (i = 0;  i < bctx->client_num_max; i++)
       {
           if (! (bctx->cctx_array[i].post_data = 
-                 (char *) calloc(POST_LOGIN_BUF_SIZE, sizeof (char))))
+                 (char *) calloc (POST_DATA_BUF_SIZE, sizeof (char))))
           {
               fprintf (stderr,
                        "\"%s\" failed to allocate post data buffer.\n", __func__) ;
               return -1;
           }
       }
-      
     }
 
   return 0;
@@ -1144,9 +1143,9 @@ static int validate_batch_general (batch_context*const bctx)
         fprintf (stderr, "%s - error: BATCH_NAME is empty.\n", __func__);
         return -1;
     }
-    if (bctx->client_num < 1)
+    if (bctx->client_num_max < 1)
     {
-        fprintf (stderr, "%s - error: CLIENT_NUM is less than 1.\n", __func__);
+        fprintf (stderr, "%s - error: CLIENT_NUM_MAX is less than 1.\n", __func__);
         return -1;
     }
     if (bctx->client_num_start < 0)
@@ -1190,7 +1189,7 @@ static int validate_batch_general (batch_context*const bctx)
     
     if (!bctx->ipv6)
       {
-        if ((bctx->ip_addr_max - bctx->ip_addr_min + 1) < bctx->client_num)
+        if ((bctx->ip_addr_max - bctx->ip_addr_min + 1) < bctx->client_num_max)
           {
             fprintf (stderr, "%s - error: range of IPv4 addresses is less than number of clients.\n"
                      "Please, increase IP_ADDR_MAX.\n", __func__);
@@ -1278,9 +1277,9 @@ static int validate_batch_url (batch_context*const bctx)
             }
           
           if (bctx->url_ctx_array[k].form_usage_type == 
-              POST_STR_USERTYPE_UNIQUE_USERS_AND_PASSWORDS ||
+              FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS ||
               bctx->url_ctx_array[k].form_usage_type == 
-              POST_STR_USERTYPE_UNIQUE_USERS_SAME_PASSWORD
+              FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD
               )
             {
               fprintf (stderr, "%s - error: \"%%d\" symbols not to be in FORM_POST, "
@@ -1289,7 +1288,7 @@ static int validate_batch_url (batch_context*const bctx)
             }
           else
             {
-              bctx->url_ctx_array[k].form_usage_type = POST_STR_USERTYPE_LOAD_USERS_FROM_FILE;
+              bctx->url_ctx_array[k].form_usage_type = FORM_USAGETYPE_RECORDS_FROM_FILE;
             }
         }
     }
@@ -1505,7 +1504,7 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
   /* 
      Allocate the place to keep form records tokens for clients
   */
-  if (! (url->form_records_array =  calloc (bctx->client_num, sizeof (form_records_cdata))))
+  if (! (url->form_records_array =  calloc (bctx->client_num_max, sizeof (form_records_cdata))))
   {
       fprintf (stderr, 
                "%s - failed to allocate memory for url->form_records_array with errno %d.\n", 
@@ -1538,11 +1537,11 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
               continue;
             }
 
-          if ((int)url->form_records_num >= bctx->client_num)
+          if ((int)url->form_records_num >= bctx->client_num_max)
             {
               fprintf (stderr, 
                        "%s - warning: CLIENTS_NUM (%d) is less than the number of" 
-                       "records is the file form_records_file.\n", __func__, bctx->client_num);
+                       "records is the file form_records_file.\n", __func__, bctx->client_num_max);
               sleep (3);
               break;
             }
@@ -1564,13 +1563,13 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
         }
     }
 
-  if ((int)url->form_records_num < bctx->client_num)
+  if ((int)url->form_records_num < bctx->client_num_max)
     {
       fprintf (stderr, 
                "%s - error: CLIENTS_NUM (%d) is above the number " 
                "of records in the form_records_file\nPlease, either decrease the CLIENTS_NUM "
                "or add more records strings to the file.\n", 
-               __func__, bctx->client_num);
+               __func__, bctx->client_num_max);
       fclose (fp);
       return -1 ;
     }
