@@ -1,5 +1,45 @@
 01/03/2007
 
+a. To support above 2 tokens (up to 8) in FORM_RECORDS_FILE.
+    Tokenize the input in cycle.
+
+b. POST forms improvement and adding more flexebility.
+   Support for more flexible API for POST forms:
+    http://curl.haxx.se/libcurl/c/curl_formadd.html
+
+c. Support for a single/common IP-address for all clients
+
+d. PUT option support with file transfer and PUT after GET.
+
+e. Add a url-based tag STOP_ON_ERROR not to schedule 
+   a client any more on a url error conditions.
+
+f. ERROR_RESPONSE_CODES - add a list or codes considered
+   as errors, or not considered as error conditions. By default,
+   all HTTP 5xx codes and 4xx -401-407 are considered as errors.
+   Something like ERROR_RESPONSE_CODES="+100+101-500-503"
+
+g. ERROR_RESPONSE_BODY - a regular expression pattern for a 
+    search in a response body. If not found - error. Look in Apache
+   JMeter.
+
+h. Aleksandar Lazic <al-curlloader@none.at> suggested:
+to make configurable a number of TCP connections, that our
+virtual client can use (the default is up to 5), whether the 
+connections are persistant or closed after each request-response 
+and, if persistant, what is the number of request-responses
+till the connection to be closed and re-established. 
+
+Another proposal of Aleks is to make configurable HTTP 1.1 or 1.0, that
+we will not implement unless it becomes a feature required by many
+users.
+
+We can add configurable CURLOPT_MAXCONNECTS number
+and play with CURLOPT_FRESH_CONNECT/CURLOPT_FORBID_REUSE
+options and optionally to enhance them to make configurable number
+of request-responses via a tcp-connection till the connection renewal.
+
+
 1. Dialog menu interface to support: multiple UAS urls;
 
 2. Configuration/making improvements: moving all source-files
