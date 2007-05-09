@@ -47,7 +47,7 @@
 
 #define REQ_GET "GET"
 #define REQ_POST "POST"
-#define REQ_GET_POST "GET+POST"
+#define REQ_PUT "PUT"
 
 /*
   value - supposed to be a null-terminated string.
@@ -812,7 +812,7 @@ static int header_parser (batch_context*const bctx, char*const value)
 }
 static int request_type_parser (batch_context*const bctx, char*const value)
 {
-    if (!strcmp (value, REQ_GET_POST))
+    if (!strcmp (value, REQ_GET))
     {
         bctx->url_ctx_array[bctx->url_index].req_type = 
           HTTP_REQ_TYPE_GET;
@@ -822,7 +822,7 @@ static int request_type_parser (batch_context*const bctx, char*const value)
         bctx->url_ctx_array[bctx->url_index].req_type = 
           HTTP_REQ_TYPE_POST;
     }
-    else if (!strcmp (value, REQ_GET))
+    else if (!strcmp (value, REQ_PUT))
     {
         bctx->url_ctx_array[bctx->url_index].req_type = 
           HTTP_REQ_TYPE_PUT;
@@ -831,7 +831,7 @@ static int request_type_parser (batch_context*const bctx, char*const value)
     {
         fprintf (stderr, 
                  "%s - error: REQ_TYPE (%s) is not valid. Use %s, %s or %s.\n", 
-                 __func__, value, REQ_GET_POST, REQ_POST, REQ_GET);
+                 __func__, value, REQ_GET, REQ_POST, REQ_PUT);
         return -1;
     }
     return 0;

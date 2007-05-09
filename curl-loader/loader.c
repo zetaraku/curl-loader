@@ -74,11 +74,8 @@ size_t do_nothing_write_func (void *ptr,
 
 static void* batch_function (void *batch_data);
 static int initial_handles_init (struct client_context*const cdata);
-int setup_curl_handle_appl (struct client_context*const cctx,  
-                            url_context* url_ctx,
-                            int post_method);
-
-static int init_client_post_buffers (struct client_context* cctx, struct url_context* url);
+static int setup_curl_handle_appl (struct client_context*const cctx,  url_context* url_ctx);
+static int init_client_post_buffers (client_context* cctx, url_context* url);
 static int alloc_init_client_contexts (batch_context* bctx, FILE* output_file);
 static void free_batch_data_allocations (struct batch_context* bctx);
 static int ipv6_increment(const struct in6_addr *const src, 
@@ -291,7 +288,7 @@ static void* batch_function (void * batch_data)
  
   /* 
      Init libcurl MCURL and CURL handles. Setup of the handles is delayed to
-     the later step, depending on whether login, UAS or logoff URL is required.
+     the later step, depending on the flavors of url required.
   */
   if (initial_handles_init (bctx->cctx_array) == -1)
     {
@@ -301,8 +298,8 @@ static void* batch_function (void * batch_data)
     }
 
   /* 
-     Now run login, user-defined actions, like fetching various urls and and 
-     sleeping in between, and logoff.
+     Now run configuration-defined actions, like login, fetching various urls and and 
+     sleeping in between, loggoff
      Calls user activity loading function corresponding to the loading mode
      used (user_activity_smooth () or user_activity_hyper ()).
   */ 
@@ -352,16 +349,6 @@ static int initial_handles_init (client_context*const ctx_array)
       return -1;
     }
 
-  /* Allocate and fill form strings (for POST) for each client. */
-
-  /* TODO - MOVE IT
-  if (init_client_post_buffers (ctx_array) == -1)
-    {
-      fprintf (stderr, "%s - error: alloc_client_post_buffers () .\n", __func__);
-      return -1;
-    }
-  */
-    
   /* Initialize all CURL handles */
   for (k = 0 ; k < bctx->client_num_max ; k++)
     {
@@ -376,8 +363,6 @@ static int initial_handles_init (client_context*const ctx_array)
   return 0;
 }
 
-
-
 /****************************************************************************************
 * Function name - setup_curl_handle
 *
@@ -387,22 +372,16 @@ static int initial_handles_init (client_context*const ctx_array)
 *
 * Input -       *cctx        - pointer to client context, containing CURL handle pointer;
 *               *url     - pointer to url-context, containing all url-related information;
-*               cycle_number - current number of loading cycle
-*               post_method  - when 'true', POST method is used instead of the default GET
-*
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-int setup_curl_handle (client_context*const cctx,
-                       url_context* url,
-                       long cycle_number,
-                       int post_method)
+int setup_curl_handle (client_context*const cctx, url_context* url)
 {
   if (!cctx || !url)
     {
       return -1;
     }
   
-  if (setup_curl_handle_init (cctx, url, cycle_number, post_method) == -1)
+  if (setup_curl_handle_init (cctx, url) == -1)
   {
       fprintf (stderr,"%s - error: failed.\n",__func__);
       return -1;
@@ -411,7 +390,7 @@ int setup_curl_handle (client_context*const cctx,
   return 0;
 }
 
-/****************************************************************************************
+/****************************************************************************
 * Function name - setup_curl_handle_init
 *
 * Description - Resets client context kept CURL handle and inits it locally, using 
@@ -420,17 +399,10 @@ int setup_curl_handle (client_context*const cctx,
 *
 * Input -       *cctx        - pointer to client context, containing CURL handle pointer;
 *               *url_ctx     - pointer to url-context, containing all url-related information;
-*               cycle_number - current number of loading cycle
-*               post_method  - when 'true', POST method is used instead of the default GET
-*
 * Return Code/Output - On Success - 0, on Error -1
-****************************************************************************************/
-int setup_curl_handle_init (client_context*const cctx,
-                            url_context* url_ctx,
-                            long cycle_number,
-                            int post_method)
+******************************************************************************/
+int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
 {
-  (void) cycle_number;
   batch_context* bctx = cctx->bctx;
   CURL* handle = cctx->handle;
 
@@ -511,8 +483,6 @@ int setup_curl_handle_init (client_context*const cctx,
   curl_easy_setopt (handle, CURLOPT_SSL_VERIFYPEER, 0);
   curl_easy_setopt (handle, CURLOPT_SSL_VERIFYHOST, 0);
     
-  // ? cctx->cycle_num = cycle_number;
-
   /* Set the private pointer to be used by the smooth-mode. */
   curl_easy_setopt (handle, CURLOPT_PRIVATE, cctx);
 
@@ -527,7 +497,7 @@ int setup_curl_handle_init (client_context*const cctx,
   /* 
      Application (url) specific setups, like HTTP-specific, FTP-specific, etc. 
   */
-  if (setup_curl_handle_appl (cctx, url_ctx, post_method) == -1)
+  if (setup_curl_handle_appl (cctx, url_ctx) == -1)
     {
       fprintf (stderr,
                "%s - error: setup_curl_handle_appl () failed .\n",
@@ -545,13 +515,9 @@ int setup_curl_handle_init (client_context*const cctx,
 *
 * Input -       *cctx       - pointer to client context, containing CURL handle pointer;
 *               *url_ctx    - pointer to url-context, containing all url-related information;
-*               post_method - when 'true', POST method is used instead of the default GET
-*
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-int setup_curl_handle_appl (client_context*const cctx,  
-                            url_context* url_ctx,
-                            int post_method)
+int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
 {
     batch_context* bctx = cctx->bctx;
     CURL* handle = cctx->handle;
@@ -562,7 +528,7 @@ int setup_curl_handle_appl (client_context*const cctx,
         url_ctx->url_appl_type == URL_APPL_HTTP)
     {
         
-         /* HTTP-specific initialization */
+        /* HTTP-specific initialization */
         
       /* 
          Follow possible HTTP-redirection from header Location of the 
@@ -594,14 +560,15 @@ int setup_curl_handle_appl (client_context*const cctx,
       curl_easy_setopt (handle, CURLOPT_COOKIEFILE, "");
       
       /* Make POST, using post buffer, if requested. */
-      if (post_method)
+      if (url_ctx->req_type == HTTP_REQ_TYPE_POST)
         {
-          if (!cctx->post_data)
+            
+            if (!cctx->post_data)
             {            
-              fprintf (stderr,
-                       "%s - error: post_data is NULL.\n",
-                       __func__);
-              return -1;
+                fprintf (stderr,
+                         "%s - error: post_data is NULL.\n",
+                         __func__);
+                return -1;
             }
           else
           {
@@ -628,6 +595,87 @@ int setup_curl_handle_appl (client_context*const cctx,
 
   return 0;
 }
+
+/****************************************************************************************
+* Function name - init_client_post_buffers
+*
+* Description - Initialize post form buffers to be used for POST-ing
+* 
+* Input -       *cctx - pointer to client context
+* Return Code/Output - On Success - 0, on Error -1
+****************************************************************************************/
+static int init_client_post_buffers (client_context* cctx, url_context* url)
+{
+  int i;
+  batch_context* bctx = cctx->bctx;
+
+  if (!url->form_str || !url->form_str[0])
+    {
+ 
+      fprintf (stderr, "%s - error: FORM_STR not defined.\n",
+               __func__);
+      return -1;
+    }
+
+  for (i = 0;  i < bctx->client_num_max; i++)
+    {
+      if (url->form_usage_type ==
+          FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS)
+        {
+          /*
+             For each client init post buffer, containing username and password 
+             with uniqueness added via added to the base username and password
+             client index.
+          */
+          snprintf (cctx[i].post_data, 
+                    POST_DATA_BUF_SIZE, 
+                    url->form_str,
+                    url->username, 
+                    i + 1,
+                    url->password[0] ? url->password : "",
+                    i + 1);
+        }
+      else if (url->form_usage_type ==
+          FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD)
+        {
+          /* 
+             For each client init post buffer, containing username with uniqueness 
+             added via added to the base username client index. Password is kept
+             the same for all users.
+          */
+          snprintf (cctx[i].post_data, 
+                    POST_DATA_BUF_SIZE, 
+                    url->form_str,
+                    url->username, 
+                    i + 1,
+                    url->password[0] ? url->password : "");
+        }
+      else if (url->form_usage_type ==
+               FORM_USAGETYPE_SINGLE_USER)
+      {
+          /* All clients have the same login_username and password.*/
+          snprintf (cctx[i].post_data, 
+                    POST_DATA_BUF_SIZE, 
+                    url->form_str,
+                    url->username, 
+                    url->password[0] ? url->password : "");
+      }
+      else if (url->form_usage_type  ==  
+               FORM_USAGETYPE_RECORDS_FROM_FILE)
+      {
+          
+      }
+      else
+      {
+          fprintf (stderr,
+                   "\"%s\" error: none valid bctx->post_str_usertype.\n", __func__) ;
+          return -1;
+      }
+    }
+  
+  return 0;
+}
+
 
 /****************************************************************************************
 * Function name - client_tracing_function
@@ -885,92 +933,7 @@ int client_tracing_function (CURL *handle,
   return 0;
 }
 
-/****************************************************************************************
-* Function name - init_client_post_buffers
-*
-* Description - Initialize post form buffers to be used for POST-ing
-* 
-* Input -       *cctx - pointer to client context
-* Return Code/Output - On Success - 0, on Error -1
-****************************************************************************************/
-static int init_client_post_buffers (client_context* cctx, url_context* url)
-{
-  int i;
-  batch_context* bctx = cctx->bctx;
 
-  if (! url->form_str[0])
-    {
- 
-      fprintf (stderr, "%s - error: FORM_STR not defined.\n",
-               __func__);
-      return -1;
-    }
-
-  if (url->form_records_file)
-    {
-      /* 
-         When we are loading users with passwords credentials from a file
-         (tag FORM_RECORDS_FILE, this is done in post_validation () of 
-         parce_conf.c.
-      */
-      return 0;
-    }
-
-  for (i = 0;  i < bctx->client_num_max; i++)
-    {
-      if (url->form_usage_type ==
-          FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS)
-        {
-          /* 
-             For each client init post buffer, containing username and password 
-             with uniqueness added via added to the base username and password
-             client index.
-          */
-          snprintf (cctx[i].post_data, 
-                    POST_DATA_BUF_SIZE, 
-                    url->form_str,
-                    url->username, 
-                    i + 1,
-                    url->password[0] ? url->password : "",
-                    i + 1);
-        }
-      else if (url->form_usage_type ==
-          FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD)
-        {
-          /* 
-             For each client init post buffer, containing username with uniqueness 
-             added via added to the base username client index. Password is kept
-             the same for all users.
-          */
-          snprintf (cctx[i].post_data, 
-                    POST_DATA_BUF_SIZE, 
-                    url->form_str,
-                    url->username, 
-                    i + 1,
-                    url->password[0] ? url->password : "");
-        }
-      else if ((url->form_usage_type ==
-                FORM_USAGETYPE_SINGLE_USER) ||
-               (url->form_usage_type  ==  
-                FORM_USAGETYPE_RECORDS_FROM_FILE))
-        {
-          /* All clients have the same login_username and password.*/
-          snprintf (cctx[i].post_data, 
-                    POST_DATA_BUF_SIZE, 
-                    url->form_str,
-                    url->username, 
-                    url->password[0] ? url->password : "");
-        }
-      else
-        {
-          fprintf (stderr,
-                   "\"%s\" error: none valid bctx->post_str_usertype.\n", __func__) ;
-          return -1;
-        }
-    }
-
-  return 0;
-}
 
 /****************************************************************************************
 * Function name - alloc_init_client_contexts

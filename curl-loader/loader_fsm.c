@@ -45,7 +45,6 @@ static int load_error_state (client_context* cctx, unsigned long *wait_msec);
 static int load_init_state (client_context* cctx, unsigned long *wait_msec);
 static int load_urls_state (client_context* cctx, unsigned long *wait_msec);
 static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec);
-static int pick_up_next_url (client_context* cctx);
 
 /* 
    Table of loading functions in order to call an appropiate for 
@@ -62,9 +61,11 @@ const load_state_func load_state_func_table [] =
     load_final_ok_state,
   };
 
+static int pick_up_next_url (client_context* cctx);
 static int fetching_first_cycling_url (client_context* cctx);
 static void advance_cycle_num (client_context* cctx);
 static int setup_url (client_context* cctx);
+
 
 /*****************************************************************************
  * Function name - alloc_init_timer_waiting_queue
@@ -729,33 +730,6 @@ static void advance_cycle_num (client_context* cctx)
       cctx->cycle_num++;
 }
 
-/****************************************************************************************
- * Function name - setup_login_logoff
- *
- * Description - Sets up login or logoff url, depending on flag <login>
- * Input -       *cctx - pointer to the client context
- *               login - when true - login state, when false logoff state is set
- *
- * Return Code/Output - CSTATE enumeration with client state
- ****************************************************************************************/
-static int setup_login_logoff (client_context* cctx, const int login)
-{
-  batch_context* bctx = cctx->bctx;
-  CURL* handle = cctx->handle;
-  
-  /*
-    We should preserve the url kept in CURL handle after GET,
-     which may be the result of redirection/s,  but switch to POST 
-     request method using client-specific POST login/logoff fields. 
-
-     Just add POSTFIELDS. Note, that it should be done on CURL handle 
-     outside (removed) from MCURL handle. Add it back afterwords.
-  */
-  curl_easy_setopt (handle, CURLOPT_POSTFIELDS, cctx->post_data);
-  
-  return 0;
-}
-
 /*****************************************************************************
  * Function name - setup_url
  *
@@ -767,17 +741,28 @@ static int setup_login_logoff (client_context* cctx, const int login)
 static int setup_url (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
+  url_context* url = &bctx->url_ctx_array[cctx->url_curr_index];
+  CURL* handle = cctx->handle;
 
-  if (setup_curl_handle_init (
-                              cctx,
-                              &bctx->url_ctx_array[cctx->url_curr_index], /* current url */
-                              0, /* Cycle, do we need it? */ 
-                              0 /* GET - zero, unless we'll need to make POST here */
-                              ) == -1)
-    {
-      fprintf(stderr,"%s error: setup_curl_handle_init - failed\n", __func__);
-      return -1;
-    }
+  if (! url->url_use_current)
+  {
+      /* Setup a new url */
+      if (setup_curl_handle_init (cctx, url) == -1)
+      {
+          fprintf(stderr,"%s error: setup_curl_handle_init - failed\n", __func__);
+          return -1;
+      }
+  }
+
+    /*
+    We should preserve the url kept in CURL handle after GET,
+     which may be the result of redirection/s,  but switch to POST 
+     request method using client-specific POST login/logoff fields. 
+
+     Just add POSTFIELDS. Note, that it should be done on CURL handle 
+     outside (removed) from MCURL handle. Add it back afterwords.
+  */
+  curl_easy_setopt (handle, CURLOPT_POSTFIELDS, cctx->post_data);
   
   return cctx->client_state = CSTATE_URLS;
 }
@@ -794,8 +779,6 @@ static int setup_url (client_context* cctx)
  *******************************************************************************/
 static int load_init_state (client_context* cctx, unsigned long *wait_msec)
 {
-  batch_context* bctx = cctx->bctx;
-
   *wait_msec = 0;
 
   return load_urls_state (cctx, wait_msec);
@@ -853,7 +836,7 @@ static int pick_up_next_url (client_context* cctx)
   const int fc_url = bctx->first_cycling_url;
   const int lc_url = bctx->last_cycling_url;
   
-  if (! bctx->cycling_completed && cctx->url_curr_index < lc_url)
+  if (! bctx->cycling_completed && ((int)cctx->url_curr_index < lc_url))
     {
       return cctx->url_curr_index++;
     }
