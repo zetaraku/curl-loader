@@ -86,8 +86,9 @@ static int urls_num_parser (batch_context*const bctx, char*const value);
  * URL section tag parsers. 
 */
 static int url_start_parser (batch_context*const bctx, char*const value);
-static int url_cycles_num_parser (batch_context*const bctx, char*const value);
 static int url_parser (batch_context*const bctx, char*const value);
+static int url_use_current_parser (batch_context*const bctx, char*const value);
+static int url_dont_cycle_parser (batch_context*const bctx, char*const value);
 static int header_parser (batch_context*const bctx, char*const value);
 static int request_type_parser (batch_context*const bctx, char*const value);
 
@@ -134,7 +135,8 @@ static const tag_parser_pair tp_map [] =
     {"URL_START", url_start_parser},
 
     {"URL", url_parser},
-    {"URL_CYCLES_NUM", url_cycles_num_parser},
+    {"URL_USE_CURRENT", url_use_current_parser},
+    {"URL_DONT_CYCLE", url_dont_cycle_parser},
     {"HEADER", header_parser},
     {"REQUEST_TYPE", request_type_parser},
 
@@ -180,6 +182,9 @@ static char* skip_non_ws (char*ptr, size_t*const len);
 static char* eat_ws (char*ptr, size_t*const len);
 static int is_ws (char*const ptr);
 static int is_non_ws (char*const ptr);
+
+static int find_first_cycling_url (batch_context* bctx);
+static int find_last_cycling_url (batch_context* bctx);
 static int netmask_to_cidr (char *dotted_ipv4);
 
 
@@ -512,7 +517,7 @@ static int pre_parser (char** ptr, size_t* len)
     return 0;
 }
 
-/**
+/*
 **
 ** TAG PARSERS IMPLEMENTATION
 **
@@ -582,7 +587,6 @@ static int netmask_parser (batch_context*const bctx, char*const value)
 static int ip_addr_min_parser (batch_context*const bctx, char*const value)
 {
     struct in_addr inv4;
-
     memset (&inv4, 0, sizeof (struct in_addr));
 
     bctx->ipv6 = strchr (value, ':') ? 1 : 0;
@@ -592,14 +596,17 @@ static int ip_addr_min_parser (batch_context*const bctx, char*const value)
                    bctx->ipv6 ? (void *)&bctx->ipv6_addr_min : (void *)&inv4) == -1)
       {
         fprintf (stderr, 
-                   "%s - error: inet_pton ()  failed for ip_addr_min %s\n", 
-                   __func__, value);
-          return -1;
+                 "%s - error: inet_pton ()  failed for ip_addr_min %s\n", 
+                 __func__, value);
+        return -1;
       }
     
     if (!bctx->ipv6)
-      bctx->ip_addr_min = ntohl (inv4.s_addr);
-      return 0;
+      {
+        bctx->ip_addr_min = ntohl (inv4.s_addr);
+      }
+
+    return 0;
 }
 static int ip_addr_max_parser (batch_context*const bctx, char*const value)
 {
@@ -619,7 +626,10 @@ static int ip_addr_max_parser (batch_context*const bctx, char*const value)
     }
   
   if (!bctx->ipv6)
-    bctx->ip_addr_max = ntohl (inv4.s_addr);
+    {
+      bctx->ip_addr_max = ntohl (inv4.s_addr);
+    }
+
   return 0;
 }
 static int cycles_num_parser (batch_context*const bctx, char*const value)
@@ -647,8 +657,8 @@ static int user_agent_parser (batch_context*const bctx, char*const value)
 {
     if (strlen (value) <= 0)
     {
-        fprintf(stderr, "%s - warning: empty USER_AGENT\"%s\", taking the defaults\n", 
-                __func__, value);
+        fprintf(stderr, "%s - warning: empty USER_AGENT "
+                "\"%s\", taking the defaults\n", __func__, value);
         return 0;
     }
     strncpy (bctx->user_agent, value, sizeof(bctx->user_agent) - 1);
@@ -674,19 +684,19 @@ static int urls_num_parser (batch_context*const bctx, char*const value)
                  __func__, bctx->urls_num);
         return -1;
     }
+
     bctx->url_index = -1;  /* Starting from the 0 position in the arrays */
 
     return 0;
 }
 
 /*
- * URL section tag parsers. 
+** URL section tag parsers. 
 */
 static int url_start_parser (batch_context*const bctx, char*const value)
 {
   (void) value;
   bctx->url_index++;
-
   return 0;
 }
 static int url_parser (batch_context*const bctx, char*const value)
@@ -703,7 +713,8 @@ static int url_parser (batch_context*const bctx, char*const value)
     
     if ((url_length = strlen (value)) <= 0)
     {
-        fprintf(stderr, "%s - warning: empty URL\"%s\"\n", 
+        fprintf(stderr, "%s - warning: empty URL\"%s\" "
+                "is OK only, if URL_USE_CURRENT tag defined\n", 
                 __func__, value);
         return 0;
     }
@@ -718,22 +729,44 @@ static int url_parser (batch_context*const bctx, char*const value)
         return -1;
     }
     strcpy(bctx->url_ctx_array[bctx->url_index].url_str, value);
-    bctx->url_ctx_array[bctx->url_index].url_appl_type = url_schema_classification (value);
+    bctx->url_ctx_array[bctx->url_index].url_appl_type = 
+      url_schema_classification (value);
     bctx->url_ctx_array[bctx->url_index].url_uas_num = bctx->url_index;
     
     return 0;
 }
-static int url_cycles_num_parser (batch_context*const bctx, char*const value)
+static int url_use_current_parser (batch_context*const bctx, char*const value)
 {
-    long cycles = atol (value);
-    if (cycles < 0)
+  long url_use_current_flag = 0;
+  url_use_current_flag = atol (value);
+
+  if (url_use_current_flag < 0 || url_use_current_flag > 1)
     {
-        cycles = LONG_MAX - 1;
+      fprintf (stderr, 
+               "%s - error: URL_USE_CURRENT should be "
+               "either 0 or 1 and not %ld.\n", __func__, url_use_current_flag);
+      return -1;
     }
 
-    bctx->url_ctx_array[bctx->url_index].url_cycles_num = cycles;
+  bctx->url_ctx_array[bctx->url_index].url_use_current = url_use_current_flag;
 
-    return 0;
+  return 0;
+}
+static int url_dont_cycle_parser (batch_context*const bctx, char*const value)
+{
+  long url_dont_cycle_flag = 0;
+  url_dont_cycle_flag = atol (value);
+
+  if (url_dont_cycle_flag < 0 || url_dont_cycle_flag > 1)
+    {
+      fprintf (stderr, 
+               "%s - error: URL_DONT_CYCLE should be either 0 or 1 and not %ld.\n",
+               __func__, url_dont_cycle_flag);
+      return -1;
+    }
+
+  bctx->url_ctx_array[bctx->url_index].url_dont_cycle = url_dont_cycle_flag;
+  return 0;
 }
 static int header_parser (batch_context*const bctx, char*const value)
 {
@@ -765,9 +798,8 @@ static int header_parser (batch_context*const bctx, char*const value)
 
   if (!(bctx->url_ctx_array[bctx->url_index].custom_http_hdrs = 
         curl_slist_append (
-                           bctx->url_ctx_array[bctx->url_index].custom_http_hdrs, 
-                           value))
-      )
+                           bctx->url_ctx_array[bctx->url_index].custom_http_hdrs,
+                           value)))
     {
       fprintf (stderr, "%s - error: failed to append the header \"%s\"\n", 
                __func__, value);
@@ -783,17 +815,17 @@ static int request_type_parser (batch_context*const bctx, char*const value)
     if (!strcmp (value, REQ_GET_POST))
     {
         bctx->url_ctx_array[bctx->url_index].req_type = 
-          LOGIN_REQ_TYPE_GET_AND_POST;
+          HTTP_REQ_TYPE_GET;
     }
     else if (!strcmp (value, REQ_POST))
     {
         bctx->url_ctx_array[bctx->url_index].req_type = 
-          LOGIN_REQ_TYPE_POST;
+          HTTP_REQ_TYPE_POST;
     }
     else if (!strcmp (value, REQ_GET))
     {
         bctx->url_ctx_array[bctx->url_index].req_type = 
-          LOGIN_REQ_TYPE_GET;
+          HTTP_REQ_TYPE_PUT;
     }
     else
     {
@@ -804,7 +836,6 @@ static int request_type_parser (batch_context*const bctx, char*const value)
     }
     return 0;
 }
-
 static int username_parser (batch_context*const bctx, char*const value)
 {
   if (strlen (value) <= 0)
@@ -877,8 +908,8 @@ static int form_string_parser (batch_context*const bctx, char*const value)
             FORM_USAGETYPE_SINGLE_USER;
             
           /* 
-             If login_credentials_file defined, we will re-mark it later in validation as 
-             FORM_USAGETYPE_RECORDS_FROM_FILE
+             If login_credentials_file defined, we will re-mark it later in
+             validation as FORM_USAGETYPE_RECORDS_FROM_FILE
           */
         }
       else
@@ -896,7 +927,7 @@ static int form_string_parser (batch_context*const bctx, char*const value)
           return -1;
         }
 
-      strncpy (bctx->url_ctx_array[bctx->url_index].form_str, 
+      strncpy (bctx->url_ctx_array[bctx->url_index].form_str,
                value, 
                sizeof (bctx->url_ctx_array[bctx->url_index].form_str) - 1);
 
@@ -905,7 +936,8 @@ static int form_string_parser (batch_context*const bctx, char*const value)
       */
       if (!bctx->cctx_array)
       {
-          if (!(bctx->cctx_array  = (client_context *) cl_calloc(bctx->client_num_max, 
+          if (!(bctx->cctx_array  = 
+                (client_context *) cl_calloc (bctx->client_num_max,
                                                                  sizeof (client_context))))
           {
               fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
@@ -986,11 +1018,13 @@ static int upload_file_parser  (batch_context*const bctx, char*const value)
       if (! (bctx->url_ctx_array[bctx->url_index].upload_file = 
              (char *) calloc (string_len, sizeof (char))))
         {
-          fprintf(stderr, "%s error: failed to allocate memory with errno %d.\n",  __func__, errno);
+          fprintf(stderr, 
+                  "%s error: failed to allocate memory with errno %d.\n",
+                  __func__, errno);
           return -1;
         }
 
-      strncpy (bctx->url_ctx_array[bctx->url_index].upload_file, 
+      strncpy (bctx->url_ctx_array[bctx->url_index].upload_file,
                value, 
                string_len -1);
     }
@@ -1004,17 +1038,17 @@ static int web_auth_method_parser (batch_context*const bctx, char*const value)
 }
 static int web_auth_credentials_parser (batch_context*const bctx, char*const value)
 {
-    (void) bctx; (void) value;
+  (void) bctx; (void) value;
   return 0;
 }
 static int proxy_auth_method_parser (batch_context*const bctx, char*const value)
 {
-    (void) bctx; (void) value;
+  (void) bctx; (void) value;
   return 0;
 }
 static int proxy_auth_credentials_parser (batch_context*const bctx, char*const value)
 {
-    (void) bctx; (void) value;
+  (void) bctx; (void) value;
   return 0;
 }
 
@@ -1030,8 +1064,6 @@ static int timer_after_url_sleep_parser (batch_context*const bctx, char*const va
 }
 
 
-
-
 static url_appl_type 
 url_schema_classification (const char* const url)
 {
@@ -1044,23 +1076,21 @@ url_schema_classification (const char* const url)
 #define HTTP_SCHEMA_STR "http://"
 #define FTPS_SCHEMA_STR "ftps://"
 #define FTP_SCHEMA_STR "ftp://"
+#define SFTP_SCHEMA_STR "sftp://"
+#define TELNET_SCHEMA_STR "telnet://"
 
   if (strstr (url, HTTPS_SCHEMA_STR))
-  {
-      return URL_APPL_HTTPS;
-  }
+    return URL_APPL_HTTPS;
   else if (strstr (url, HTTP_SCHEMA_STR))
-  {
     return URL_APPL_HTTP;
-  }
   else if (strstr (url, FTPS_SCHEMA_STR))
-  {
     return URL_APPL_FTPS;
-  }
   else if (strstr (url, FTP_SCHEMA_STR))
-  {
     return URL_APPL_FTP;
-  }
+  else if (strstr (url, SFTP_SCHEMA_STR))
+    return URL_APPL_SFTP;
+  else if (strstr (url, TELNET_SCHEMA_STR))
+    return URL_APPL_TELNET;
 
   return  URL_APPL_UNDEF;
 }
@@ -1197,16 +1227,19 @@ static int validate_batch_general (batch_context*const bctx)
           }
       }
 
-    if (bctx->cycles_num < 0)
+    if (bctx->cycles_num < 1)
     {
-        fprintf (stderr, "%s - error: CYCLES_NUM is negative.\n",__func__);
+        fprintf (stderr, "%s - error: CYCLES_NUM is less than 1.\n"
+                 "To cycle or not to cycle - this is the question.\n",__func__);
         return -1;
     }
 
     if (!strlen (bctx->user_agent))
     {
         /* user-agent not provided, taking the defaults */
-        strncpy (bctx->user_agent, EXPLORER_USERAGENT_STR, sizeof (bctx->user_agent) -1);
+        strncpy (bctx->user_agent, 
+                 EXPLORER_USERAGENT_STR, 
+                 sizeof (bctx->user_agent) -1);
     }
   
     return 0;
@@ -1223,47 +1256,56 @@ static int validate_batch_general (batch_context*const bctx)
 ****************************************************************************************/
 static int validate_batch_url (batch_context*const bctx)
 {
-  if (bctx->urls_num)
-    {
-      fprintf (stderr, "%s - error: when UAS section is disabled by \"UAS=N\", \n"
-               "comment out all tags of the section after the tag UAS string.\n", 
-               __func__);
-      return -1;
-    }
-  return 0;
-
   if (bctx->urls_num < 1)
     {
       fprintf (stderr, "%s - error: at least a single url is expected "
-               "for a valid UAS section .\n", __func__);
+               "for a valid URL section .\n", __func__);
       return -1;
     }
 
   int k = 0;
   for (k = 0; k < bctx->urls_num; k++)
     {
-      // URL
-      if (!bctx->url_ctx_array[k].url_str || !strlen (bctx->url_ctx_array[k].url_str))
+      if (! bctx->url_ctx_array[k].url_use_current)
         {
-          fprintf (stderr, 
-                   "%s - error: empty URL in position %d.\n", __func__, k);
-          return -1;
+          /*
+            Check non-empty URL, when URL_USE_CURRENT is not defined.
+          */
+          if (!bctx->url_ctx_array[k].url_str || !strlen (bctx->url_ctx_array[k].url_str))
+            {
+              fprintf (stderr, 
+                       "%s - error: empty URL in position %d.\n", __func__, k);
+              return -1;
+            }
+        }
+      else
+        {
+          /* 
+             URL_USE_CURRENT cannot appear in the first URL, 
+             nothing is current.
+          */
+          if (0 == k)
+            {
+              fprintf (stderr, 
+                       "%s - error: empty URL with URL_USE_CURRENT " 
+                       "defined cannot appear as the very first url.\n"
+                       "There is no any url to take as \"current\"\n", __func__);
+              return -1;
+            }
         }
 
-      if (bctx->url_ctx_array[k].url_cycles_num <=0)
-        {
-          fprintf (stderr, 
-                   "%s - error: zero or negative URL_CYCLES_NUM in position %d.\n", __func__, k);
-          return -1;
-        }
+      const url_appl_type url_type = bctx->url_ctx_array[k].url_appl_type;
+      const int req_type = bctx->url_ctx_array[k].req_type;
 
-      if (bctx->url_ctx_array[k].req_type != LOGIN_REQ_TYPE_POST && 
-          bctx->url_ctx_array[k].req_type != LOGIN_REQ_TYPE_GET &&
-          bctx->url_ctx_array[k].req_type != LOGIN_REQ_TYPE_GET_AND_POST)
+      if (url_type == URL_APPL_HTTP || url_type == URL_APPL_HTTPS)
         {
-          fprintf (stderr, "%s - error: REQUEST_TYPE is out of valid range .\n", 
-                   __func__);
-          return -1;
+          if (req_type < HTTP_REQ_TYPE_FIRST || 
+              req_type > HTTP_REQ_TYPE_LAST)
+            {
+              fprintf (stderr, "%s - error: REQUEST_TYPE is out of valid range .\n", 
+                       __func__);
+              return -1;
+            }
         }
 
       if (bctx->url_ctx_array[k].form_records_file)
@@ -1283,19 +1325,19 @@ static int validate_batch_url (batch_context*const bctx)
               )
             {
               fprintf (stderr, "%s - error: \"%%d\" symbols not to be in FORM_POST, "
-                       "when FORM_RECORDS_FILE is defined.\n It should be two \"%%s\" symbols", __func__);
+                       "when FORM_RECORDS_FILE is defined.\n"
+                       "It should be two \"%%s\" symbols", __func__);
               return -1;
             }
           else
             {
-              bctx->url_ctx_array[k].form_usage_type = FORM_USAGETYPE_RECORDS_FROM_FILE;
+              bctx->url_ctx_array[k].form_usage_type = 
+                FORM_USAGETYPE_RECORDS_FROM_FILE;
             }
         }
     }
   return 0;
 }
-
-
 
 /****************************************************************************************
 * Function name - post_validate_init
@@ -1307,21 +1349,24 @@ static int validate_batch_url (batch_context*const bctx)
 ****************************************************************************************/
 static int post_validate_init (batch_context*const bctx)
 {
-  /* TODO
-
-  if (bctx->login_form_records_file && 
-      load_credentials_file (bctx) == -1)
-    {
-      fprintf (stderr, 
-               "%s - error: load_credentials_file () failed.\n",
-               __func__);
-      return -1;
-    }
+  /*
+    Allocate client contexts, if not allocated before.
   */
-
-  /* Init operational statistics structures */
-
-  /* TODO - correct instead of 1-s */
+  if (!bctx->cctx_array)
+    {
+          if (!(bctx->cctx_array  = 
+                (client_context *) cl_calloc (bctx->client_num_max, 
+                                              sizeof (client_context))))
+            {
+              fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
+                       bctx->batch_name, __func__);
+              return -1;
+            }
+    }
+  
+  /* 
+     Init operational statistics structures 
+  */
   if (op_stat_point_init(&bctx->op_delta, 
                          bctx->urls_num) == -1)
     {
@@ -1341,17 +1386,24 @@ static int post_validate_init (batch_context*const bctx)
   */
   fprintf (stderr, "\nThe configuration has been validated successfully.\n\n");
 
-  /* TODO: Check, that the configuration has cycling 
-  if (!bctx->login_cycling && !bctx->do_uas && !bctx->logoff_cycling)
+  /* 
+     Check, that this configuration has cycling. 
+     Namely, at least a single url is without tag URL_DONT_CYCLE
+  */
+  const int first_cycling_url = find_first_cycling_url (bctx);
+
+  find_last_cycling_url (bctx);
+
+  if (first_cycling_url < 0)
     {
-      fprintf (stderr, "However, the configuration has no cycling defined.\n"
+      fprintf (stderr, "The configuration has not cycling urls defined.\n"
                "Are you sure, that this is what you are planning to do?\n"
-               "Y may define LOGIN_CYCLING some UAS urls or LOGOFF_CYCLING.\n"
-               " Please, press ENTER to continue.\n");
+               "To make cycling you may wish to remove tag URL_DONT_CYCLE \n"
+               "or set it to zero for the urls that you wish to run in cycle.\n"
+               " Please, press ENTER to continue or Cntl-C to stop.\n");
              
       getchar ();
     }
-  */
   
   return 0;
 }
@@ -1397,7 +1449,7 @@ int parse_config_file (char* const filename,
 
   while (fgets (fgets_buff, sizeof (fgets_buff) - 1, fp))
     {
-      //fprintf (stderr, "%s - processing file string \"%s\n", 
+      // fprintf (stderr, "%s - processing file string \"%s\n", 
       //         __func__, fgets_buff);
 
       char* string_buff = NULL;
@@ -1576,6 +1628,49 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
 
   fclose (fp);
   return 0;
+}
+
+static int find_first_cycling_url (batch_context* bctx)
+{
+  size_t i;
+  int first_url = -1;
+  
+  for (i = 0;  i < (size_t)bctx->urls_num; i++)
+    {
+      if (! bctx->url_ctx_array[i].url_dont_cycle)
+        {
+          first_url = i;
+          break;
+        }
+    }
+
+  bctx->first_cycling_url = first_url;
+
+  if (bctx->first_cycling_url < 0)
+    bctx->cycling_completed = 1;
+
+  return bctx->first_cycling_url;
+}
+
+static int find_last_cycling_url (batch_context* bctx)
+{
+  size_t i = 0;
+  int last_url = -1;
+
+  for (i = 0;  i < (size_t)bctx->urls_num; i++)
+    {
+      if (! bctx->url_ctx_array[i].url_dont_cycle)
+        {
+          last_url = i;
+        }
+    }
+
+  bctx->last_cycling_url = last_url;
+
+  if (bctx->last_cycling_url < 0)
+    bctx->cycling_completed = 1;
+
+  return bctx->last_cycling_url;
 }
 
 /*******************************************************************************

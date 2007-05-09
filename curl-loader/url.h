@@ -46,14 +46,15 @@ typedef enum url_load_step
   Application types of URLs.
 */
 typedef enum url_appl_type
-  {
-    URL_APPL_UNDEF = 0, /* set by calloc */
-    URL_APPL_HTTP,
-    URL_APPL_HTTPS,
-    URL_APPL_FTP,
-    URL_APPL_FTPS,
-    URL_APPL_SFTP,
-  } url_appl_type;
+{
+  URL_APPL_UNDEF = 0, /* set by calloc */
+  URL_APPL_HTTP,
+  URL_APPL_HTTPS,
+  URL_APPL_FTP,
+  URL_APPL_FTPS,
+  URL_APPL_SFTP,
+  URL_APPL_TELNET,
+}url_appl_type;
 
 /* Currently, only username and password - 2 records */
 #define FORM_RECORDS_MAX_TOKENS_NUM 2
@@ -76,7 +77,20 @@ typedef struct url_context
    /* URL buffer */
   char* url_str;
 
-  long url_cycles_num;
+  /*
+    Used instead of URL string. If true, current url will be used and not some
+    new URL string. Useful e.g. when POST-ing to the form, obtained by the
+    previous GET fetching. 
+    Cannot be used for the first URL.
+  */
+  int url_use_current;
+
+  /*
+    If true, the url is done only once and when previous urls have
+    been accomplished. Useful for a single logoff operation. It is done,
+    when previous URLs have been fetched.
+  */
+  int url_dont_cycle;
 
   /* 
      Number of custom  HTTP headers in array.
@@ -106,29 +120,51 @@ typedef struct url_context
   char password[URL_AUTH_STR_LEN];
 
   /* 
-     The type of <login_post_str>. Valid types are: 
-     UNIQUE_USERS_AND_PASSWORDS, - like "user=%s%d&password=%s%d"
-     UNIQUE_USERS_SAME_PASSWORD, - like "user=%s%d&password=%s"
-     SINGLE_USER,                - like "user=%s&password=%s"
-     LOAD_USERS_FROM_FILE,       - like "user=%s&password=%s" and 
-                                                           login_credentials_file defined.
+     The type of <form_str>. Valid types are: 
+
+     FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS
+     - like "user=%s%d&password=%s%d";
+
+     FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD 
+     - like "user=%s%d&password=%s";
+
+     FORM_USAGETYPE_SINGLE_USER  - like "user=%s&password=%s";
+
+     FORM_USAGETYPE_RECORDS_FROM_FILE
+     - like "user=%s&password=%s" and form_records_file defined;
+
+     FORM_USAGETYPE_AS_IS - use the string provided AS IS;
    */
   int form_usage_type;
 
-    /* The string to be used as the base for login post message */
+  /* 
+     The string to be used as the base for login post message 
+  */
   char form_str [FORM_BUFFER_SIZE + 1];
 
-    /*
-     The file with strings like "user:password", where separator may be 
-     ':', '@', '/' and ' ' (space) in line with RFC1738. The file may be created
-     as a dump of DB tables of users and passwords.
+  /*
+    The file with strings like "user:password", where separator may be 
+    ':', '@', '/' and ' ' (space) in line with RFC1738. The file may be created
+    as a dump of DB tables of users and passwords.
   */
   char* form_records_file;
 
+  /*
+    The array of form records with clients data (cdata). 
+    form_records_array[N] is for client number N and contains cdata tokens
+    to be used e.g. in POST-ing forms
+  */
   form_records_cdata* form_records_array;
 
+  /*
+    Number of records in the array of form records with clients data (cdata). 
+    Normally to be the same as the number of clients, but may be more.
+  */
   size_t form_records_num;
 
+  /*
+    Nme of the file (with a path, if required) to upload.
+  */
   char* upload_file;
 
   int web_auth_method;

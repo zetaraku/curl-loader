@@ -116,34 +116,21 @@ extern int warnings_skip;
 extern char config_file[PATH_MAX + 1];
 
 /*
-  Authentication login types for clients: 
-  1) via GET and following POST or
-  2) via POST only.
+  HTTP requests: GET, POST and PUT.
   3xx redirections are supported valid options for each above case.
 */
-enum login_req_type
-  {
-    LOGIN_REQ_TYPE_GET_AND_POST = 1,
-    LOGIN_REQ_TYPE_POST = 2,
-    LOGIN_REQ_TYPE_GET = 3,
-  };
+typedef enum appl_req_type
+{
+  HTTP_REQ_TYPE_FIRST= 0,
 
+  HTTP_REQ_TYPE_GET = 1,
+  HTTP_REQ_TYPE_POST = 2,
+  HTTP_REQ_TYPE_PUT = 3,
 
-/*
-  Types of logoff: 
-  1) via GET only;
-  2) via GET and following POST;
-  3) via POST only;
-  3xx redirections are valid options for each case.
-*/
-enum logoff_req_type
-  {
-    LOGOFF_REQ_TYPE_GET = 1, 
-    LOGOFF_REQ_TYPE_GET_AND_POST = 2,
-    LOGOFF_REQ_TYPE_POST = 3
-  };
+  HTTP_REQ_TYPE_LAST = 7,
 
-
+  // FTP, etc
+} appl_req_type;
 
 
 /* 

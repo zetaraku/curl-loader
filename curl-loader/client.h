@@ -43,9 +43,7 @@
   CSTATE_INIT
 
   Operational states:
-  CSTATE_LOGIN, CSTATE_LOGOFF are optionally cycling states, 
-  if cycling is enabled
-  CSTATE_UAS_CYCLING - is always cycling state.
+  CSTATE_URLS
 */
 typedef enum cstate
   {
@@ -56,9 +54,7 @@ typedef enum cstate
     CSTATE_INIT,
   
     /* Operational states */
-    CSTATE_LOGIN,
-    CSTATE_UAS_CYCLING,
-    CSTATE_LOGOFF,
+    CSTATE_URLS,
 
     /* Completion state */
     CSTATE_FINISHED_OK,
@@ -104,7 +100,9 @@ typedef struct client_context
   */
   CURL* handle;
  
-  /* Current cycle number. Useful for multiple runs. */
+  /* 
+     Current cycle number.
+  */
   long cycle_num;
 
   /* 
@@ -122,11 +120,11 @@ typedef struct client_context
   /* Index of the client within its batch. */
   size_t client_index;
 
-  /* Index of the currently used UAS url. */
-  size_t uas_url_curr_index;
+  /* Index of the currently used url. */
+  size_t url_curr_index;
 
-  /* Remember here preload UAS url. */
-  size_t preload_uas_url_curr_index;
+  /* Remember here preload url. */
+  size_t preload_url_curr_index;
 
    /* Current state of the client. */
   cstate client_state;
@@ -141,7 +139,7 @@ typedef struct client_context
      Flag controlling sequence of GET-POST logins and logoffs.
      When 0 - do GET, when 1 do POST and set back to 0
   */
-  int get_post_count;
+  //int get_post_count;
 
   /* Whether to update statistics of https or http. What about ftp: TODO */
   int is_https;

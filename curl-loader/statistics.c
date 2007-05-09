@@ -266,8 +266,8 @@ void op_stat_update (op_stat_point* op_stat,
 
   switch (prev_state)
     {
-    case CSTATE_UAS_CYCLING:
-      if (current_state != CSTATE_UAS_CYCLING)
+    case CSTATE_URLS:
+      if (current_state != CSTATE_URLS)
         {
           /* 
              If loading has advanced to the next state, update operational 

@@ -138,6 +138,20 @@ typedef struct batch_context
   */
   int url_index;
 
+  /* 
+     Index of the first cycling url. Minimal index of url not marked
+     as <dont_cycle>.
+  */
+  int first_cycling_url;
+
+ /* 
+     Index of the last cycling url. Maximum index of url not marked
+     as <dont_cycle>.
+  */
+  int last_cycling_url;
+
+  int cycling_completed;
+
 
   /*------------------------- ASSISTING SECTION ----------------------------*/
 

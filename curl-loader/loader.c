@@ -465,7 +465,7 @@ int setup_curl_handle_init (client_context*const cctx,
   /* Set the index to client for the smooth and hyper modes */
   if (url_ctx->url_uas_num >= 0)
   {
-    cctx->uas_url_curr_index = url_ctx->url_uas_num;
+    cctx->url_curr_index = url_ctx->url_uas_num;
   }
   
   bctx->url_index = url_ctx->url_uas_num;
@@ -664,7 +664,7 @@ int client_tracing_function (CURL *handle,
   if (url_logging)
     {
 
-      url_target = cctx->bctx->url_ctx_array[cctx->uas_url_curr_index].url_str;
+      url_target = cctx->bctx->url_ctx_array[cctx->url_curr_index].url_str;
       
       /* Clients are being redirected back and forth by 3xx redirects. */
       curl_easy_getinfo (handle, CURLINFO_EFFECTIVE_URL, &url_effective);
@@ -1015,7 +1015,7 @@ static int alloc_init_client_contexts (batch_context* bctx,
          Useful to get the client's CURL handle from bctx. 
       */
       bctx->cctx_array[i].client_index = i;
-      bctx->cctx_array[i].uas_url_curr_index = 0; /* Actually zeroed by calloc. */
+      bctx->cctx_array[i].url_curr_index = 0; /* Actually zeroed by calloc. */
       
       /* Set output stream for each client to be either batch logfile or stderr. */
       bctx->cctx_array[i].file_output = stderr_print_client_msg ? stderr : log_file;

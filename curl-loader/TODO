@@ -39,6 +39,8 @@ and play with CURLOPT_FRESH_CONNECT/CURLOPT_FORBID_REUSE
 options and optionally to enhance them to make configurable number
 of request-responses via a tcp-connection till the connection renewal.
 
+httperf sessions - is a reference application.
+
 
 1. Dialog menu interface to support: multiple UAS urls;
 
