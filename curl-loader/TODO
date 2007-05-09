@@ -11,8 +11,8 @@ c. Support for a single/common IP-address for all clients
 
 d. PUT option support with file transfer and PUT after GET.
 
-e. Add a url-based tag STOP_ON_ERROR not to schedule 
-   a client any more on a url error conditions.
+e. Add a url-based tag STOP_ON_ERROR to schedule or not to
+    schedule a client for more cycles, when an error condition detected 
 
 f. ERROR_RESPONSE_CODES - add a list or codes considered
    as errors, or not considered as error conditions on a per-url bases. 
@@ -40,17 +40,21 @@ We can add configurable CURLOPT_MAXCONNECTS number
 and play with CURLOPT_FRESH_CONNECT/CURLOPT_FORBID_REUSE
 options and optionally to enhance them to make configurable number
 of request-responses via a tcp-connection till the connection renewal.
+We can add to libcurl a new option - something like 
+CURLOPT_CONNECTION_REUSENUM to pass a <max_number> of 
+requests till connection refresh.
 
 httperf sessions - is a reference application.
 
 
 1. Performance improvements:
 
-- cached memory allocators, using libcurl API:
+- cached memory allocators, using libcurl API 
+   (Aleksandar Lazic <al-curlloader@none.at>):
    http://curl.haxx.se/libcurl/c/curl_global_init_mem.html
 
-- adaptation of curl-loader for SMP HW. We can share the number
-   of clients (and their ip-addresses) among several threads. The
+- adaptation of curl-loader for SMP/multi- core HW. We can share 
+   the clients (and their ip-addresses) among several threads. The
    first thread will read from others statistics counters, combine them
    and output it to screen and files (the first thread makes join).
    Michael Moser has proposed to use the memory allocator like here:
@@ -81,3 +85,7 @@ httperf sessions - is a reference application.
 
 10. Template-guided output of configurable statistics 
 (what user wishes with desired string, names) to statistics file.
+
+11. Random time intervals, e.g 100-200 (from 100 to 200 msec).
+
+12. Support for telnet, SFTP, SSH, etc
