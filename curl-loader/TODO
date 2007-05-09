@@ -15,8 +15,10 @@ e. Add a url-based tag STOP_ON_ERROR not to schedule
    a client any more on a url error conditions.
 
 f. ERROR_RESPONSE_CODES - add a list or codes considered
-   as errors, or not considered as error conditions. By default,
-   all HTTP 5xx codes and 4xx -401-407 are considered as errors.
+   as errors, or not considered as error conditions on a per-url bases. 
+   By default all HTTP 5xx codes and 4xx -401-407 are considered as errors.
+   Plus means add to a url errors list, where minus means remove from a
+   url error list.
    Something like ERROR_RESPONSE_CODES="+100+101-500-503"
 
 g. ERROR_RESPONSE_BODY - a regular expression pattern for a 
@@ -42,7 +44,18 @@ of request-responses via a tcp-connection till the connection renewal.
 httperf sessions - is a reference application.
 
 
-1. Dialog menu interface to support: multiple UAS urls;
+1. Performance improvements:
+
+- cached memory allocators, using libcurl API:
+   http://curl.haxx.se/libcurl/c/curl_global_init_mem.html
+
+- adaptation of curl-loader for SMP HW. We can share the number
+   of clients (and their ip-addresses) among several threads. The
+   first thread will read from others statistics counters, combine them
+   and output it to screen and files (the first thread makes join).
+   Michael Moser has proposed to use the memory allocator like here:
+   http://www.hoard.org/
+   http://www.cs.umass.edu/%7Eemery/hoard/asplos2000.pdf
 
 2. Configuration/making improvements: moving all source-files
     to src directory etc.
@@ -57,17 +70,14 @@ httperf sessions - is a reference application.
 
 5. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like.
 
-6. Testbed for 20K, 50K and 100K clients. We need more powerful HW.
+6. Testbed for 20K, 50K and 100K clients. We need a more powerful HW.
 
 7. Testing and better support for FTP and FTPS.
 
-8. Support PUT and POST methods for UAS urls. Does somebody really
-    wants it?
+8. HTTP GET filled forms for login credentials (they are sent using url). 
 
-9. HTTP GET filled forms for login credentials (they are sent using url). 
-      Does somebody really wants it?
-
-10. Dynamic allocation of login and logoff post buffers. Current static
+9. Dynamic allocation of form post buffers. Current static
        allocation uses too much memory reserves.
 
-11. Template-guided output of statistics to statistics file.
+10. Template-guided output of configurable statistics 
+(what user wishes with desired string, names) to statistics file.
