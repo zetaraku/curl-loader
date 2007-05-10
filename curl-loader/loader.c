@@ -75,7 +75,7 @@ size_t do_nothing_write_func (void *ptr,
 static void* batch_function (void *batch_data);
 static int initial_handles_init (struct client_context*const cdata);
 static int setup_curl_handle_appl (struct client_context*const cctx,  url_context* url_ctx);
-static int init_client_post_buffers (client_context* cctx, url_context* url);
+static int init_client_post_buffer (client_context* cctx, url_context* url);
 static int alloc_init_client_contexts (batch_context* bctx, FILE* output_file);
 static void free_batch_data_allocations (struct batch_context* bctx);
 static int ipv6_increment(const struct in6_addr *const src, 
@@ -562,18 +562,22 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
       /* Make POST, using post buffer, if requested. */
       if (url_ctx->req_type == HTTP_REQ_TYPE_POST)
         {
-            
-            if (!cctx->post_data)
+          if (!cctx->post_data)
             {            
-                fprintf (stderr,
-                         "%s - error: post_data is NULL.\n",
-                         __func__);
-                return -1;
+              fprintf (stderr,
+                       "%s - error: post_data is NULL.\n",
+                       __func__);
+              return -1;
             }
           else
-          {
-              curl_easy_setopt(handle, CURLOPT_POSTFIELDS, cctx->post_data);
-          }
+            {
+              if (set_client_url_post_data (cctx, url_ctx) == -1)
+                {
+                  fprintf (stderr,"%s - error: set_client_url_post_data() failed.\n",
+                           __func__);
+                  return -1;
+                }
+            }
         }
 
       if (url_ctx->username[0])
@@ -596,18 +600,42 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
   return 0;
 }
 
-/****************************************************************************************
+/**********************************************************************
+* Function name - set_client_url_post_data
+*
+* Description - Initialize client post form buffer to be used for a url POST-ing
+* 
+* Input -       *cctx - pointer to client context
+*                *url - pointer to url context
+* Return Code/Output - On Success - 0, on Error -1
+***********************************************************************/
+int set_client_url_post_data (client_context* cctx, url_context* url)
+{
+  if (init_client_post_buffer (cctx, url) == -1)
+    {
+      fprintf (stderr,
+               "%s - error: init_client_post_buffers() failed.\n",
+               __func__);
+      return -1;
+    }
+
+  curl_easy_setopt (cctx->handle, CURLOPT_POSTFIELDS, cctx->post_data);
+
+  return 0;
+}
+
+/***********************************************************************
 * Function name - init_client_post_buffers
 *
 * Description - Initialize post form buffers to be used for POST-ing
 * 
 * Input -       *cctx - pointer to client context
+*                *url - pointer to url context
 * Return Code/Output - On Success - 0, on Error -1
-****************************************************************************************/
-static int init_client_post_buffers (client_context* cctx, url_context* url)
+*************************************************************************/
+static int init_client_post_buffer (client_context* cctx, url_context* url)
 {
   int i;
-  batch_context* bctx = cctx->bctx;
 
   if (!url->form_str || !url->form_str[0])
     {
@@ -617,59 +645,75 @@ static int init_client_post_buffers (client_context* cctx, url_context* url)
       return -1;
     }
 
-  for (i = 0;  i < bctx->client_num_max; i++)
+  switch (url->form_usage_type)
     {
-      if (url->form_usage_type ==
-          FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS)
-        {
-          /*
-             For each client init post buffer, containing username and password 
-             with uniqueness added via added to the base username and password
-             client index.
-          */
-          snprintf (cctx[i].post_data, 
-                    POST_DATA_BUF_SIZE, 
-                    url->form_str,
-                    url->username, 
-                    i + 1,
-                    url->password[0] ? url->password : "",
-                    i + 1);
-        }
-      else if (url->form_usage_type ==
-          FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD)
-        {
-          /* 
-             For each client init post buffer, containing username with uniqueness 
-             added via added to the base username client index. Password is kept
-             the same for all users.
-          */
-          snprintf (cctx[i].post_data, 
-                    POST_DATA_BUF_SIZE, 
-                    url->form_str,
-                    url->username, 
-                    i + 1,
-                    url->password[0] ? url->password : "");
-        }
-      else if (url->form_usage_type ==
-               FORM_USAGETYPE_SINGLE_USER)
+    case FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS:
+
+      /*
+        For each client init post buffer, containing username and password 
+        with uniqueness added via added to the base username and password
+        client index.
+      */
+      snprintf (cctx->post_data,
+                POST_DATA_BUF_SIZE,
+                url->form_str,
+                url->username,
+                i + 1,
+                url->password[0] ? url->password : "",
+                i + 1);
+      break;
+
+    case FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD:
+      /* 
+         For each client init post buffer, containing username with uniqueness 
+         added via added to the base username client index. Password is kept
+         the same for all users.
+      */
+      snprintf (cctx->post_data,
+                POST_DATA_BUF_SIZE,
+                url->form_str,
+                url->username,
+                i + 1,
+                url->password[0] ? url->password : "");
+      break;
+
+    case FORM_USAGETYPE_SINGLE_USER:
+
+      /* All clients have the same login_username and password.*/
+      snprintf (cctx->post_data,
+                POST_DATA_BUF_SIZE,
+                url->form_str,
+                url->username,
+                url->password[0] ? url->password : "");
+      break;
+
+    case FORM_USAGETYPE_RECORDS_FROM_FILE:
       {
-          /* All clients have the same login_username and password.*/
-          snprintf (cctx[i].post_data, 
-                    POST_DATA_BUF_SIZE, 
-                    url->form_str,
-                    url->username, 
-                    url->password[0] ? url->password : "");
+        if (! url->form_records_array)
+          {
+            fprintf (stderr,
+                     "\"%s\" error: url->form_records_array is NULL.\n", 
+                     __func__);
+            return -1;
+          }
+
+        const form_records_cdata*const fcd = 
+          &url->form_records_array[cctx->client_index];
+        
+        snprintf (cctx->post_data, 
+                  POST_DATA_BUF_SIZE, 
+                  url->form_str,
+                  fcd->form_tokens[0], 
+                  fcd->form_tokens[1] ? fcd->form_tokens[1] : "");
       }
-      else if (url->form_usage_type  ==  
-               FORM_USAGETYPE_RECORDS_FROM_FILE)
+      break;
+
+    default:
       {
-          
-      }
-      else
-      {
-          fprintf (stderr,
-                   "\"%s\" error: none valid bctx->post_str_usertype.\n", __func__) ;
-          return -1;
+        fprintf (stderr,
+                 "\"%s\" error: none valid bctx->post_str_usertype.\n", 
+                 __func__);
+        return -1;
       }
     }
   

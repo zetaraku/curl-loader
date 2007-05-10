@@ -64,7 +64,7 @@ int test_environment (struct batch_context* bctx);
 int setup_curl_handle (struct client_context*const cctx, struct url_context* url_ctx);
 
 
-/****************************************************************************************
+/***************************************************************************
 * Function name - setup_curl_handle_init
 *
 * Description - Resets client context kept CURL handle and inits it locally and using 
@@ -74,9 +74,22 @@ int setup_curl_handle (struct client_context*const cctx, struct url_context* url
 * Input -       *cctx - pointer to client context, which contains CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
 * Return Code/Output - On Success - 0, on Error -1
-***************************************************************************************
+*****************************************************************************
 */
 int setup_curl_handle_init (struct client_context*const cctx, struct url_context* url_ctx);
+
+
+/**********************************************************************
+* Function name - set_client_url_post_data
+*
+* Description - Initialize client post form buffer to be used for a url POST-ing
+* 
+* Input -       *cctx - pointer to client context
+*                *url - pointer to url context
+* Return Code/Output - On Success - 0, on Error -1
+***********************************************************************/
+int set_client_url_post_data (struct client_context* cctx, struct url_context* url);
+
 
 /*******************************************************************************
 * Function name - add_secondary_ip_to_device

@@ -742,28 +742,38 @@ static int setup_url (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
   url_context* url = &bctx->url_ctx_array[cctx->url_curr_index];
-  CURL* handle = cctx->handle;
 
   if (! url->url_use_current)
   {
-      /* Setup a new url */
+      /* 
+         Setup a new url. Internally it initializes client POST-ing buffer,
+         when url req_type is POST.
+       */
       if (setup_curl_handle_init (cctx, url) == -1)
       {
-          fprintf(stderr,"%s error: setup_curl_handle_init - failed\n", __func__);
+          fprintf(stderr,"%s error: setup_curl_handle_init - failed\n", 
+                  __func__);
           return -1;
       }
   }
-
-    /*
-    We should preserve the url kept in CURL handle after GET,
-     which may be the result of redirection/s,  but switch to POST 
-     request method using client-specific POST login/logoff fields. 
-
-     Just add POSTFIELDS. Note, that it should be done on CURL handle 
-     outside (removed) from MCURL handle. Add it back afterwords.
-  */
-  curl_easy_setopt (handle, CURLOPT_POSTFIELDS, cctx->post_data);
-  
+  else
+    {
+      /*
+        We should preserve the url kept in CURL handle after GET,
+        which may be the result of redirection/s,  but switch to POST 
+        request method using client-specific POST login/logoff fields. 
+        
+        Initializes client POST-ing buffer and adds POSTFIELDS to the 
+        CURL handle. Note, that it should be done on CURL handle 
+        outside (removed) from MCURL handle. Add it back afterwords.
+      */
+      if (set_client_url_post_data (cctx, url) == -1)
+        {
+          fprintf(stderr,"%s error: set_client_url_post_data() - failed\n", 
+                  __func__);
+          return -1;
+        }
+    }
   return cctx->client_state = CSTATE_URLS;
 }
 

@@ -49,6 +49,13 @@
 #define REQ_POST "POST"
 #define REQ_PUT "PUT"
 
+#define FT_UNIQUE_USERS_AND_PASSWORDS "UNIQUE_USERS_AND_PASSWORDS"
+#define FT_UNIQUE_USERS_SAME_PASSWORD "UNIQUE_USERS_SAME_PASSWORD"
+#define FT_SINGLE_USER "SINGLE_USER"
+#define FT_RECORDS_FROM_FILE "RECORDS_FROM_FILE"
+#define FT_AS_IS "AS_IS"
+
+
 /*
   value - supposed to be a null-terminated string.
 */
@@ -85,7 +92,6 @@ static int urls_num_parser (batch_context*const bctx, char*const value);
 /*
  * URL section tag parsers. 
 */
-static int url_start_parser (batch_context*const bctx, char*const value);
 static int url_parser (batch_context*const bctx, char*const value);
 static int url_use_current_parser (batch_context*const bctx, char*const value);
 static int url_dont_cycle_parser (batch_context*const bctx, char*const value);
@@ -94,7 +100,7 @@ static int request_type_parser (batch_context*const bctx, char*const value);
 
 static int username_parser (batch_context*const bctx, char*const value);
 static int password_parser (batch_context*const bctx, char*const value);
-static int form_type_parser (batch_context*const bctx, char*const value);
+static int form_usage_type_parser (batch_context*const bctx, char*const value);
 static int form_string_parser (batch_context*const bctx, char*const value);
 static int form_records_file_parser (batch_context*const bctx, char*const value);
 
@@ -132,8 +138,6 @@ static const tag_parser_pair tp_map [] =
 
     /*------------------------ URL SECTION -------------------------------- */
 
-    {"URL_START", url_start_parser},
-
     {"URL", url_parser},
     {"URL_USE_CURRENT", url_use_current_parser},
     {"URL_DONT_CYCLE", url_dont_cycle_parser},
@@ -142,7 +146,7 @@ static const tag_parser_pair tp_map [] =
 
     {"USERNAME", username_parser},
     {"PASSWORD", password_parser},
-    {"FORM_TYPE", form_type_parser},
+    {"FORM_USAGE_TYPE", form_usage_type_parser},
     {"FORM_STRING", form_string_parser},
     {"FORM_RECORDS_FILE", form_records_file_parser},
 
@@ -186,6 +190,7 @@ static int is_non_ws (char*const ptr);
 static int find_first_cycling_url (batch_context* bctx);
 static int find_last_cycling_url (batch_context* bctx);
 static int netmask_to_cidr (char *dotted_ipv4);
+static int print_correct_form_usagetype (form_usagetype ftype, char* value);
 
 
 /****************************************************************************************
@@ -693,15 +698,11 @@ static int urls_num_parser (batch_context*const bctx, char*const value)
 /*
 ** URL section tag parsers. 
 */
-static int url_start_parser (batch_context*const bctx, char*const value)
-{
-  (void) value;
-  bctx->url_index++;
-  return 0;
-}
 static int url_parser (batch_context*const bctx, char*const value)
 {
     size_t url_length = 0;
+
+    bctx->url_index++;
 
     if ((int)bctx->url_index >= bctx->urls_num)
     {
@@ -713,16 +714,14 @@ static int url_parser (batch_context*const bctx, char*const value)
     
     if ((url_length = strlen (value)) <= 0)
     {
-        fprintf(stderr, "%s - warning: empty URL\"%s\" "
-                "is OK only, if URL_USE_CURRENT tag defined\n", 
-                __func__, value);
+        fprintf(stderr, "%s - warning: empty url is OK only "
+                "when URL_USE_CURRENT tag defined\n", __func__);
         return 0;
     }
     
     if (! (bctx->url_ctx_array[bctx->url_index].url_str = 
            (char *) calloc (url_length +1, sizeof (char))))
     {
-
         fprintf (stderr,
                  "%s - error: allocation failed for url string \"%s\"\n", 
                  __func__, value);
@@ -864,15 +863,61 @@ static int password_parser (batch_context*const bctx, char*const value)
            sizeof(bctx->url_ctx_array[bctx->url_index].password) - 1);
   return 0;
 }
-static int form_type_parser (batch_context*const bctx, char*const value)
+static int form_usage_type_parser (batch_context*const bctx, char*const value)
 {
-    (void) bctx; (void) value;
-    return 0;
+
+  if (!strcmp (value, FT_UNIQUE_USERS_AND_PASSWORDS))
+    {
+      bctx->url_ctx_array[bctx->url_index].form_usage_type = 
+        FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS;
+    }
+  else if (!strcmp (value, FT_UNIQUE_USERS_SAME_PASSWORD))
+    {
+      bctx->url_ctx_array[bctx->url_index].form_usage_type = 
+        FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD;
+    }
+  else if (!strcmp (value, FT_SINGLE_USER))
+    {
+      bctx->url_ctx_array[bctx->url_index].form_usage_type = 
+        FORM_USAGETYPE_SINGLE_USER;
+    }
+  else if (!strcmp (value, FT_RECORDS_FROM_FILE))
+    {
+      bctx->url_ctx_array[bctx->url_index].form_usage_type = 
+        FORM_USAGETYPE_RECORDS_FROM_FILE;
+    }
+  else if (!strcmp (value, FT_AS_IS))
+    {
+      bctx->url_ctx_array[bctx->url_index].form_usage_type = 
+        FORM_USAGETYPE_AS_IS;
+    }
+  else
+    {
+      fprintf(stderr, "%s - error: FORM_USAGE_TYPE to be choosen from:"
+              "%s , %s ,\n" "%s , %s , %s \n" ,  __func__, 
+              FT_UNIQUE_USERS_AND_PASSWORDS, FT_UNIQUE_USERS_SAME_PASSWORD,
+              FT_SINGLE_USER, FT_RECORDS_FROM_FILE, FT_AS_IS);
+      return -1;
+    }
+  
+  return 0;
 }
 static int form_string_parser (batch_context*const bctx, char*const value)
 {
   int count_percent_s_percent_d = 0, count_percent_s = 0;
   char* pos_current = NULL;
+  const form_usagetype ftype = 
+        bctx->url_ctx_array[bctx->url_index].form_usage_type;
+
+  if (ftype <= FORM_USAGETYPE_START || ftype >= FORM_USAGETYPE_END)
+    {
+      fprintf(stderr, "%s - error: please, beyond FORM_STRING place the "
+              "defined FORM_USAGE_TYPE tag with its values to be choosen from:"
+              "%s , %s ,\n" "%s , %s , %s \n" , __func__, 
+              FT_UNIQUE_USERS_AND_PASSWORDS, FT_UNIQUE_USERS_SAME_PASSWORD,
+              FT_SINGLE_USER, FT_RECORDS_FROM_FILE, FT_AS_IS);
+      return -1;
+    }
 
   if (strcmp (value, NON_APPLICABLE_STR) || strcmp (value, "N/A"))
     {
@@ -894,37 +939,46 @@ static int form_string_parser (batch_context*const bctx, char*const value)
 
       if (count_percent_s_percent_d == 2 && count_percent_s == 2)
         {
-          bctx->url_ctx_array[bctx->url_index].form_usage_type = 
-            FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS;
+          if (ftype != FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS)
+            {
+              return print_correct_form_usagetype (ftype, value);
+            }
         }
       else if (count_percent_s_percent_d == 1 && count_percent_s == 2)
         {
-          bctx->url_ctx_array[bctx->url_index].form_usage_type  = 
-            FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD;
+          if (ftype  != FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD)
+            {
+              return print_correct_form_usagetype (ftype, value);
+            }
         }
       else if (count_percent_s_percent_d == 0 && count_percent_s == 2)
         {
-          bctx->url_ctx_array[bctx->url_index].form_usage_type = 
-            FORM_USAGETYPE_SINGLE_USER;
-            
-          /* 
-             If login_credentials_file defined, we will re-mark it later in
-             validation as FORM_USAGETYPE_RECORDS_FROM_FILE
-          */
+          if (ftype != FORM_USAGETYPE_SINGLE_USER &&
+              ftype != FORM_USAGETYPE_RECORDS_FROM_FILE)
+            {
+              return print_correct_form_usagetype (ftype, value);
+            }
         }
       else
         {
-          fprintf (stderr, 
-                   "\n%s - error: FORM_STRING (%s) is not valid. \n"
-                   "Please, use for curl-loader either both \"%%s%%d\" strings or both\"%%s\":\n"
-                   "- to generate unique passwords something like" 
-                   "\"user=%%s%%d&password=%%s%%d\" \n"
-                   "- to use the same username and passwords for all clients" 
-                   "something like \"user=%%s&password=%%s\" \n"
-                   "- to load user credentials from file something like  "
-                   "\"user=%%s&password=%%s\" \n and CREDENTIALS_FILE defined.\n",
-                   __func__, value);
-          return -1;
+
+          if (ftype != FORM_USAGETYPE_AS_IS)
+            {
+              fprintf (stderr, 
+                       "\n%s - error: FORM_STRING (%s) is not valid. \n"
+                       "Please, use:\n"
+                       "- to generate unique users with unique passwords two \"%%s%%d\" , something like " 
+                       "\"user=%%s%%d&password=%%s%%d\" \n"
+                       "- to generate unique users with the same passwords one \"%%s%%d\" \n"
+                       "for users and one \"%%s\" for the password," 
+                       "something like \"user=%%s%%d&password=%%s\" \n"
+                       "- for a single configurable user with a password two \"%%s\" , something like "
+                       "\"user=%%s&password=%%s\" \n",
+                       "- to load user credentials (records) from a file two \"%%s\" , something like "
+                       "\"user=%%s&password=%%s\" \n and _FILE defined.\n",
+                       __func__);
+              return -1;
+            }
         }
 
       strncpy (bctx->url_ctx_array[bctx->url_index].form_str,
@@ -1266,12 +1320,57 @@ static int validate_batch_url (batch_context*const bctx)
   int k = 0;
   for (k = 0; k < bctx->urls_num; k++)
     {
-      if (! bctx->url_ctx_array[k].url_use_current)
+      url_context* url = &bctx->url_ctx_array[k];
+
+      /*
+        Test, that HTTP methods (req-types) are GET, POST or PUT
+      */
+      const url_appl_type url_type = url->url_appl_type;
+      const int req_type = url->req_type;
+      
+      if (url_type == URL_APPL_HTTP || url_type == URL_APPL_HTTPS)
+        {
+          if (req_type < HTTP_REQ_TYPE_FIRST || 
+              req_type > HTTP_REQ_TYPE_LAST)
+            {
+              fprintf (stderr, "%s - error: REQUEST_TYPE is out of valid range .\n", 
+                       __func__);
+              return -1;
+            }
+        }
+      
+      if (url->form_records_file && ! url->form_str[0])
+        {
+          fprintf (stderr, "%s - error: empty FORM_STRING, "
+                   "when FORM_RECORDS_FILE defined.\n Either disable" 
+                   "FORM_RECORDS_FILE or define FORM_STRING\n", __func__);
+          return -1;
+        }
+      
+      /*
+        Test, that there is only a single continues area of cycling URLs 
+        in meanwhile, like this:
+        
+        don't-cycle - URL;
+        cycle -URL;
+        cycle -URL;
+        don't-cycle - URL;
+        don't-cycle - URL;
+        
+        We are not supporting several regions of cycling right now, like that
+        don't-cycle - URL;
+        cycle -URL;
+        don't-cycle - URL; separates cycling area.
+        cycle -URL;
+        don't-cycle - URL;
+      */
+      
+      if (! url->url_use_current)
         {
           /*
             Check non-empty URL, when URL_USE_CURRENT is not defined.
           */
-          if (!bctx->url_ctx_array[k].url_str || !strlen (bctx->url_ctx_array[k].url_str))
+          if (!url->url_str || !strlen (url->url_str))
             {
               fprintf (stderr, 
                        "%s - error: empty URL in position %d.\n", __func__, k);
@@ -1280,7 +1379,7 @@ static int validate_batch_url (batch_context*const bctx)
         }
       else
         {
-          /* 
+          /*
              URL_USE_CURRENT cannot appear in the first URL, 
              nothing is current.
           */
@@ -1292,50 +1391,51 @@ static int validate_batch_url (batch_context*const bctx)
                        "There is no any url to take as \"current\"\n", __func__);
               return -1;
             }
-        }
 
-      const url_appl_type url_type = bctx->url_ctx_array[k].url_appl_type;
-      const int req_type = bctx->url_ctx_array[k].req_type;
-
-      if (url_type == URL_APPL_HTTP || url_type == URL_APPL_HTTPS)
-        {
-          if (req_type < HTTP_REQ_TYPE_FIRST || 
-              req_type > HTTP_REQ_TYPE_LAST)
+          /*
+            Test, that CURRENT_URL, if HTTP/S  is of req_type POST or PUT;
+          */
+          if (url->url_appl_type == URL_APPL_HTTP || 
+              url->url_appl_type == URL_APPL_HTTPS)
             {
-              fprintf (stderr, "%s - error: REQUEST_TYPE is out of valid range .\n", 
-                       __func__);
-              return -1;
-            }
-        }
-
-      if (bctx->url_ctx_array[k].form_records_file)
-        {
-          if (! bctx->url_ctx_array[k].form_str[0])
-            {
-              fprintf (stderr, "%s - error: empty FORM_STRING, "
-                       "when FORM_RECORDS_FILE defined.\n Either disable" 
-                       "FORM_RECORDS_FILE or define FORM_STRING\n", __func__);
-              return -1;
+              if (url->req_type != HTTP_REQ_TYPE_POST ||
+                  url->req_type != HTTP_REQ_TYPE_PUT)
+                {
+                  fprintf (stderr, 
+                           "%s - error: URL_USE_CURRENT tag works, when" 
+                           "REQUEST_TYPE is POST or PUT.\n"
+                           "Y do not need to care about 3xx redirections after GET.\n", __func__);
+                  return -1;
+                }
             }
           
-          if (bctx->url_ctx_array[k].form_usage_type == 
-              FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS ||
-              bctx->url_ctx_array[k].form_usage_type == 
-              FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD
-              )
+          /*
+              Test, that cycling or not-cycling status of the 
+              CURRENT_URLs is the same as for the primary-URL
+            */
+          int m;
+          for (m = k - 1; m >= 0; m--)
             {
-              fprintf (stderr, "%s - error: \"%%d\" symbols not to be in FORM_POST, "
-                       "when FORM_RECORDS_FILE is defined.\n"
-                       "It should be two \"%%s\" symbols", __func__);
-              return -1;
+              url_context* url_m = &bctx->url_ctx_array[m];
+
+              if (url_m->url_dont_cycle != url_m->url_dont_cycle)
+                {
+                  fprintf (stderr, 
+                           "%s - error: cycling of the primary url and all urls "
+                           "afterwards with URL_USE_CURRENT defined should be the same.\n" 
+                           "Check tags URL_DONT_CYCLE values. Either cycle or don't cycle\n"
+                           "for both primary and \"use current\" urls.\n", __func__);
+                  return -1;
+                }
+
+              if (! url_m->url_use_current)
+                break;
             }
-          else
-            {
-              bctx->url_ctx_array[k].form_usage_type = 
-                FORM_USAGETYPE_RECORDS_FROM_FILE;
-            }
-        }
+        } /* else */
     }
+      
+
+
   return 0;
 }
 
@@ -1354,14 +1454,14 @@ static int post_validate_init (batch_context*const bctx)
   */
   if (!bctx->cctx_array)
     {
-          if (!(bctx->cctx_array  = 
-                (client_context *) cl_calloc (bctx->client_num_max, 
-                                              sizeof (client_context))))
-            {
-              fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
-                       bctx->batch_name, __func__);
-              return -1;
-            }
+      if (!(bctx->cctx_array  = 
+            (client_context *) cl_calloc (bctx->client_num_max, 
+                                          sizeof (client_context))))
+        {
+          fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
+                   bctx->batch_name, __func__);
+          return -1;
+        }
     }
   
   /* 
@@ -1703,3 +1803,45 @@ static int netmask_to_cidr (char *dotted_ipv4)
 
   return (32 - tmp); 
  }
+
+static int print_correct_form_usagetype (form_usagetype ftype, char* value)
+{
+  switch (ftype)
+    {
+    case FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS:
+
+      fprintf (stderr, 
+               "\n%s - error: FORM_STRING value (%s) is not valid. \nPlease, use:\n"
+               "- to generate unique users with unique passwords two \"%%s%%d\" , something like " 
+               "\"user=%%s%%d&password=%%s%%d\" \n", __func__, value);
+      break;
+
+    case FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD:
+      fprintf (stderr, 
+               "\n%s - error: FORM_STRING value (%s) is not valid. \nPlease, use:\n"
+               "- to generate unique users with the same passwords one \"%%s%%d\" \n"
+               "for users and one \"%%s\" for the password," 
+               "something like \"user=%%s%%d&password=%%s\" \n", __func__, value);
+      break;
+
+    case FORM_USAGETYPE_SINGLE_USER:
+      fprintf (stderr, 
+               "\n%s - error: FORM_STRING  value (%s) is not valid. \nPlease, use:\n"
+               "- for a single configurable user with a password two \"%%s\" , something like "
+                       "\"user=%%s&password=%%s\" \n",__func__, value);
+      break;
+
+    case FORM_USAGETYPE_RECORDS_FROM_FILE:
+      fprintf (stderr, 
+               "\n%s - error: FORM_STRING value (%s) is not valid. \nPlease, use:\n"
+               "- to load user credentials (records) from a file two \"%%s\" , something like "
+               "\"user=%%s&password=%%s\" \n and _FILE defined.\n", __func__, value);
+
+      break;
+
+    default:
+      break;
+    }
+
+  return -1;
+}
