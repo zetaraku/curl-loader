@@ -173,9 +173,9 @@ int tq_cancel_timer (timer_queue*const tq, long timer_id)
 
     if (node_slot < 0)
     {
-        fprintf (stderr, 
-                 "%s - error: the timer-id is not valid any more (cancelled, expired?).\n", 
-                 __func__);
+        //fprintf (stderr, 
+        //         "%s - error: the timer-id is not valid any more (cancelled, expired?).\n", 
+        //         __func__);
         return -1;
     }
 

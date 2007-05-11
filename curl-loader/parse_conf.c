@@ -93,6 +93,7 @@ static int urls_num_parser (batch_context*const bctx, char*const value);
  * URL section tag parsers. 
 */
 static int url_parser (batch_context*const bctx, char*const value);
+static int url_short_name_parser (batch_context*const bctx, char*const value);
 static int url_use_current_parser (batch_context*const bctx, char*const value);
 static int url_dont_cycle_parser (batch_context*const bctx, char*const value);
 static int header_parser (batch_context*const bctx, char*const value);
@@ -139,6 +140,7 @@ static const tag_parser_pair tp_map [] =
     /*------------------------ URL SECTION -------------------------------- */
 
     {"URL", url_parser},
+    {"URL_SHORT_NAME", url_short_name_parser},
     {"URL_USE_CURRENT", url_use_current_parser},
     {"URL_DONT_CYCLE", url_dont_cycle_parser},
     {"HEADER", header_parser},
@@ -734,6 +736,22 @@ static int url_parser (batch_context*const bctx, char*const value)
     
     return 0;
 }
+
+static int url_short_name_parser (batch_context*const bctx, char*const value)
+{
+    size_t url_name_length = 0;
+        
+    if ((url_name_length = strlen (value)) <= 0)
+    {
+        fprintf(stderr, "%s - warning: empty url short name is OK\n ", __func__);
+        return 0;
+    }
+
+    strncpy(bctx->url_ctx_array[bctx->url_index].url_short_name, value, 
+            sizeof (bctx->url_ctx_array[bctx->url_index].url_short_name) -1);
+    
+    return 0;
+}
 static int url_use_current_parser (batch_context*const bctx, char*const value)
 {
   long url_use_current_flag = 0;
@@ -1317,6 +1335,9 @@ static int validate_batch_url (batch_context*const bctx)
       return -1;
     }
 
+  int noncycling_cycling = 0, cycling_noncycling = 0;
+  int prev_url_cycling = 0;
+
   int k = 0;
   for (k = 0; k < bctx->urls_num; k++)
     {
@@ -1364,6 +1385,21 @@ static int validate_batch_url (batch_context*const bctx)
         cycle -URL;
         don't-cycle - URL;
       */
+      if (k)
+      {
+          if (prev_url_cycling && url->url_dont_cycle)
+          {
+              cycling_noncycling++;
+          }
+          else if (!prev_url_cycling && !url->url_dont_cycle)
+          {
+              noncycling_cycling++;
+          }
+      }
+
+      // Remember this url cycling status to prev_url_cycling tobe used the next time
+      prev_url_cycling = url->url_dont_cycle ? 0 : 1;
+      
       
       if (! url->url_use_current)
         {
@@ -1424,7 +1460,7 @@ static int validate_batch_url (batch_context*const bctx)
                            "%s - error: cycling of the primary url and all urls "
                            "afterwards with URL_USE_CURRENT defined should be the same.\n" 
                            "Check tags URL_DONT_CYCLE values. Either cycle or don't cycle\n"
-                           "for both primary and \"use current\" urls.\n", __func__);
+                           "for both the primary and the \"use current\" urls.\n", __func__);
                   return -1;
                 }
 
@@ -1432,7 +1468,18 @@ static int validate_batch_url (batch_context*const bctx)
                 break;
             }
         } /* else */
+
     }
+
+  if (cycling_noncycling > 1 || noncycling_cycling > 1)
+  {
+      fprintf (stderr, 
+               "%s - error: this version supports only a single cycling area.\n"
+               "Several non-cycling urls can be before and/or after this cycling area, \n"
+               "e.g. for login and logoff purposes\n", 
+               __func__);
+      return -1;
+  }
       
 
 

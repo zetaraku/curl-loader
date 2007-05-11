@@ -54,7 +54,7 @@ static void print_statistics_data_to_file (FILE* file,
                                            stat_point *sd,
                                            unsigned long period);
 
-static void print_operational_statistics (op_stat_point*const osp);
+static void print_operational_statistics (op_stat_point*const osp, url_context* url_arr);
 
 static void dump_stat_to_screen (char* protocol, 
                                  stat_point* sd, 
@@ -355,10 +355,10 @@ void dump_final_statistics (client_context* cctx)
           seconds_run, bctx->op_total.call_init_count / seconds_run);
 
   dump_statistics (seconds_run, 
-                   &bctx->http_total,  
+                   &bctx->http_total,
                    &bctx->https_total);
 
-  print_operational_statistics (&bctx->op_total);
+  print_operational_statistics (&bctx->op_total, bctx->url_ctx_array);
 
 
   if (bctx->statistics_file)
@@ -423,7 +423,7 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
   fprintf(stdout,"Summary stats since load start (load runs:%d secs, CAPS-average:%ld):\n", 
           seconds_run, bctx->op_total.call_init_count / seconds_run); 
 
-  print_operational_statistics (&bctx->op_total);
+  print_operational_statistics (&bctx->op_total, bctx->url_ctx_array);
   
   dump_statistics (seconds_run, 
                    &bctx->http_total,  
@@ -518,7 +518,7 @@ void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
           (unsigned long ) delta_time/1000, pending_active_and_waiting_clients_num (bctx),
           bctx->op_delta.call_init_count* 1000/delta_time);
 
-  print_operational_statistics (&bctx->op_delta);
+  print_operational_statistics (&bctx->op_delta, bctx->url_ctx_array);
 
   print_snapshot_interval_statistics(delta_time, 
                                      &bctx->http_delta,  
@@ -721,20 +721,21 @@ static void dump_clients (client_context* cctx_array)
 *
 * Return Code/Output - None
 ****************************************************************************************/
-static void print_operational_statistics (op_stat_point*const osp)
+static void print_operational_statistics (op_stat_point*const osp, url_context* url_arr)
 {
+  (void) url_arr;
   if (!osp)
     return;
 
-  fprintf (stdout, " Operations:\tSuccess\t\tFailed\n");
+  fprintf (stdout, " Operations:\t\tSuccess\t\tFailed\n");
 
   if (osp->url_num && osp->url_ok && osp->url_failed)
     {
       unsigned long i;
       for (i = 0; i < osp->url_num; i++)
         {
-          fprintf (stdout, " UAS-%ld:\t\t%ld\t\t%ld\n",
-                   i, osp->url_ok[i], osp->url_failed[i]);
+          fprintf (stdout, "URL%ld:%-12.12s \t%ld\t\t%ld\n",
+                   i, url_arr[i].url_short_name, osp->url_ok[i], osp->url_failed[i]);
         }
     }
 }

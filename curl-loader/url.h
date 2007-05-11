@@ -26,8 +26,11 @@
 
 #include <stddef.h>
 
+
+#define URL_SHORT_NAME_LEN 12
 #define URL_AUTH_STR_LEN 64
 #define FORM_BUFFER_SIZE 256
+
 
 /* 
    Current loading step: login, uas or logoff. If we are in the loading step 
@@ -76,6 +79,8 @@ typedef struct url_context
 {
    /* URL buffer */
   char* url_str;
+
+    char url_short_name [URL_SHORT_NAME_LEN + 1];
 
   /*
     Used instead of URL string. If true, current url will be used and not some
