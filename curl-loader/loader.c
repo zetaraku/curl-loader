@@ -1124,7 +1124,9 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
   char* ipv4_string = 0;
   char ipv6_string[INET6_ADDRSTRLEN+1];
 
-  /* Add secondary IP-addresses to the "loading" network interface. */
+  /* 
+     Add secondary IP-addresses to the "loading" network interface. 
+  */
   if (!(ip_addresses = (char***)calloc (bctx_num, sizeof (char**))))
     {
       fprintf (stderr, "%s - error: failed to allocate ip_addresses.\n", __func__);
@@ -1133,7 +1135,9 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
   
   for (batch_index = 0 ; batch_index < bctx_num ; batch_index++) 
     {
-      /* Allocate array of IP-addresses */
+      /* 
+         Allocate the array of IP-addresses 
+      */
       if (!(ip_addresses[batch_index] = (char**)calloc (bctx_array[batch_index].client_num_max, 
                                                sizeof (char *))))
         {
@@ -1143,44 +1147,53 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
           return -1;
         }
 
-      /* Set them to the batch contexts to remember them. */
-      bctx_array[batch_index].ip_addr_array = ip_addresses[batch_index]; 
+      batch_context* bctx = &bctx_array[batch_index];
 
-      /* Allocate for each client a buffer and snprintf to it the IP-address string.
-       */
-      for (client_index = 0; client_index < bctx_array[batch_index].client_num_max; client_index++)
+      /* 
+         Set them to the batch contexts to remember them. 
+      */
+      bctx->ip_addr_array = ip_addresses[batch_index]; 
+
+      /* 
+         Allocate for each client a buffer and snprintf to it the IP-address string.
+      */
+      for (client_index = 0; client_index < bctx->client_num_max; client_index++)
         {
           if (!(ip_addresses[batch_index][client_index] = 
-                (char*)calloc (bctx_array[batch_index].ipv6 ? 
-                               INET6_ADDRSTRLEN + 1 : INET_ADDRSTRLEN + 1, sizeof (char))))
+                (char*)calloc (bctx->ipv6 ? INET6_ADDRSTRLEN + 1 : 
+                               INET_ADDRSTRLEN + 1, sizeof (char))))
             {
               fprintf (stderr, "%s - allocation of ip_addresses[%d][%d] failed\n", 
                        __func__, batch_index, client_index) ;
               return -1;
             }
 
-          if (bctx_array[batch_index].ipv6 == 0)
+          if (bctx->ipv6 == 0)
             {
-              /* 
-                 Advance the IPv4-address, using client index as the offset. 
-              */
-              in_address.s_addr = htonl (bctx_array[batch_index].ip_addr_min + client_index);
-              if (! (ipv4_string = inet_ntoa (in_address)))
-                {
-                  fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses[%d][%d]\n", 
-                           __func__, batch_index, client_index) ;
-                  return -1;
-                }
+                /* 
+                   When clients are not using common IP, advance the 
+                   IPv4-address, using client index as the offset. 
+                */
+                in_address.s_addr = htonl (bctx->ip_addr_min + 
+                                           (bctx->ip_common ? 0 : client_index));
+         
+                    if (! (ipv4_string = inet_ntoa (in_address)))
+                    {
+                        fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses[%d][%d]\n", 
+                                 __func__, batch_index, client_index) ;
+                        return -1;
+                    }
             }
           else
             {
               /* 
-                 Advance the IPv6-address by incrementing previous address. 
+                 When clients are not using common IP,  advance the 
+                 IPv6-address by incrementing previous address. 
               */
-              if (client_index == 0)
+              if (client_index == 0 || bctx->ip_common)
                 {
-                  memcpy (&in6_prev, &bctx_array[batch_index].ipv6_addr_min, sizeof (in6_prev));
-                  memcpy (&in6_new, &bctx_array[batch_index].ipv6_addr_min, sizeof (in6_new));
+                  memcpy (&in6_prev, &bctx->ipv6_addr_min, sizeof (in6_prev));
+                  memcpy (&in6_new, &bctx->ipv6_addr_min, sizeof (in6_new));
                 }
               else
                 {
@@ -1192,7 +1205,7 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
                     }
                 }
 
-              if (!inet_ntop (AF_INET6, &in6_new, ipv6_string, sizeof (ipv6_string)))
+              if (! inet_ntop (AF_INET6, &in6_new, ipv6_string, sizeof (ipv6_string)))
                 {
                   fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses[%d][%d]\n", 
                            __func__, batch_index, client_index) ;
@@ -1206,20 +1219,20 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
             }
 
           snprintf (ip_addresses[batch_index][client_index], 
-                    bctx_array[batch_index].ipv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN, 
+                    bctx->ipv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN, 
                     "%s", 
-                    bctx_array[batch_index].ipv6 ? ipv6_string : ipv4_string);
+                    bctx->ipv6 ? ipv6_string : ipv4_string);
         }
 
       /* 
          Add all the addresses to the network interface as the secondary 
          ip-addresses, using netlink userland-kernel interface.
       */
-      if (add_secondary_ip_addrs (bctx_array[batch_index].net_interface,
-                                  bctx_array[batch_index].client_num_max, 
+      if (add_secondary_ip_addrs (bctx->net_interface,
+                                  bctx->client_num_max, 
                                   (const char** const) ip_addresses[batch_index], 
-                                  bctx_array[batch_index].cidr_netmask,
-                                  bctx_array[batch_index].scope) == -1)
+                                  bctx->cidr_netmask,
+                                  bctx->scope) == -1)
         {
           fprintf (stderr, 
                    "%s - error: add_secondary_ip_addrs() - failed for batch = %d\n", 
@@ -1227,6 +1240,7 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
           return -1;
         }
     }
+
   return 0;
 }
 

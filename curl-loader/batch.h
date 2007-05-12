@@ -85,6 +85,8 @@ typedef struct batch_context
   /* Number of clients to start with */
   int client_num_start;
 
+
+
   /* 
       Clients added per second for the loading start phase.
   */
@@ -100,6 +102,9 @@ typedef struct batch_context
   long ip_addr_min;
   /* Maximum IPv4-address of a client in the batch (host order).*/
   long ip_addr_max;
+
+  /* Same ip-address is used by all clients, when ip_addr_min eq p_addr_max */
+  int ip_common;
 
   /* 
      CIDR netmask number from 0 to 128, like 16 or 24, etc. If the input netmask is

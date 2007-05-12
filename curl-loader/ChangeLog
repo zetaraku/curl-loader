@@ -1,3 +1,74 @@
+version 0.31 -?
+
+*  Added an option to configure a single common ip-address for all clients.
+    When IP_ADDR_MIN and IP_ADDR_MAX configured values are the same
+     it will be interpreted both for IPV4 and IPV6 as a signal to re-use the IP for
+     all clients. If the address does not exist, it will be added to the interface specified
+    by the tag INTERFACE.
+	
+*   New tag TIMER_TCP_CONN_SETUP provides an option to over-write a global
+   configurable default and to configure for a url a timeout for TCP connection establishment
+   (including resolving).
+	
+* Added new taq CONNECTION_REESTABLISH will enable to change the default 
+   behavior and to close/re-open TCP connection.
+	
+* Tags simplified to support:
+   - POST (in future also PUT) for any url;
+   - make several subsequest POST-ings;
+   - provide a more flexible configuration with multiple-Logins, Logoffs,
+     and authentications.
+
+* Tag URLS_NUM, a rename of UAS_URLS_NUM, moved to section
+   General. Sections LOGIN and LOGOFF removed, UAS section renamed
+   to URL-section
+	
+   Tag URL_USE_CURRENT will serve to enable POST/PUT on a previous
+   url, e.g. obtained by the previous GET/POST/PUT. Thus, old tags 
+   <LOGIN/LOGOFF>CYCLING are not in need any more.
+	
+   Tag URL_DONT_CYCLE will mark a url as not-cycled, which should be fetched
+   only once.
+	
+   Tag CUSTOM_HEADER renamed to HEADER and moved to the URL-section
+   level. Thus, headers of each url could be independently customized.
+	
+   Tags USERNAME and PASSWORD moved to the URL level to support for
+   authentication and/or POST-ing of credentials for every URL.
+	
+   Tag URL_SHORT_NAME is a newly added tag to provide a short up to 12
+   character name to appear in statistics presentation.
+	
+   Taq REQUEST_TYPE is a rename of LOGIN_REQ_TYPE, but should appear
+   with every URL with valid strings "GET", "POST" and "PUT", Worth to mention,
+   that "GET" is no more a default and should appear explicitly. Another point is
+   that GET+POST to be arranged in 2 separate URL setting of GET with the next
+   url with POST and tag URL_USE_CURRENT to re-use the fetched url 
+	
+   Taq FORM_STRING is a rename of LOGIN_POST_STR, whereas to control the
+   type there is a tag FORM_USAGE_TYPE to be defined explicitly.
+	
+   Tag FORM_RECORDS_FILE is a rename of CREDETIALS_FILE.
+	
+   Tag UPLOAD_FILE is a newly added tag to support in future method PUT.
+	
+   New tags WEB_AUTH_METHOD, WEB_AUTH_CREDENTIALS, PROXY_AUTH_METHOD
+   and PROXY_AUTH_CREDENTIALS will support explicitly web and proxy authentication.
+
+   New taq CONNECTION_REESTABLISH will enable to change the default behavior and 
+   to close/re-open TCP connection.
+
+   New tag TIMER_TCP_CONN_SETUP provides an option to over-write a global
+   configurable default and to configure for a url a timeout for TCP connection establishment
+   (including resolving).
+
+   Tag TIMER_URL_COMPLETION is a rename of tags 
+   <LOGIN/UAS/LOGOFF>_URL_MAX_TIME and will be in msec, not in seconds as before.
+
+   Tag TIMER_AFTER_URL_SLEEP is a rename of tags
+    <LOGIN/UAS/LOGOFF>_URL_INTERLEAVE_TIME
+   
+
 version 0.30 "stable", 26/04/2007, svn-325
 
 * Memory consumption per virtial client decreased from 60-65 K
