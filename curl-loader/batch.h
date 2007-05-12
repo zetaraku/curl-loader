@@ -133,7 +133,7 @@ typedef struct batch_context
   /* Number of total urls, should be more or equal to 1 */
   int urls_num;
   
-  /* Array of all UAS url contexts */
+  /* Array of all url contexts */
   url_context* url_ctx_array;
 
   /* 

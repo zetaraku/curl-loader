@@ -85,9 +85,9 @@ typedef struct op_stat_point
 {
   /* Number of url-counters in the below arrays */
   unsigned long url_num;
-  /* Array of UAS-url counters for successful fetches */
+  /* Array of url counters for successful fetches */
   unsigned long* url_ok;
-  /* Array of UAS-url counters for failed fetches */
+  /* Array of url counters for failed fetches */
   unsigned long* url_failed;
 
   /* Used for CAPS calculation */
@@ -145,7 +145,7 @@ void op_stat_point_reset (op_stat_point* point);
 * 		fields for counters
 *
 * Input -       *point      -  pointer to the op_stat_point, where counter will be added
-*               url_num -  number of UAS urls, which can be 0, if UAS is not relevant
+*               url_num -  number of urls
 * Return Code/Output - None
 ****************************************************************************************/
 int op_stat_point_init (op_stat_point* point, size_t url_num);
@@ -170,8 +170,8 @@ void op_stat_point_release (op_stat_point* point);
 * 					to be updated
 *               current_state         - current state of a client
 *               prev_state            - previous state of a client
-*               current_url_index - current uas url index of a the client
-*               prev_uas_url_index    - previous uas url index of a the client
+*               current_url_index - current url index of a the client
+*               prev_uas_url_index    - previous url index of a the client
 *
 * Return Code/Output - None
 ****************************************************************************************/
@@ -179,7 +179,7 @@ void op_stat_update (op_stat_point* op_stat,
                      int current_state, 
                      int prev_state,
                      size_t current_url_index,
-                     size_t prev_uas_url_index);
+                     size_t prev_url_index);
 
 void op_stat_call_init_count_inc (op_stat_point* op_stat);
 

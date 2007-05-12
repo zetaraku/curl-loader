@@ -405,7 +405,7 @@ static void next_load_cb_hyper (int fd, short kind, void *userp)
 /****************************************************************************************
  * Function name - user_activity_hyper
  *
- * Description - Simulates user-activities, like login, uas, logoff, using HYPER mode
+ * Description - Simulates user-activities using HYPER mode
  * Input -       *cctx_array - array of client contexts (related to a certain batch of clients)
  *
  * Return Code/Output - On Success - 0, on Error -1

@@ -210,7 +210,7 @@ void op_stat_point_release (op_stat_point* point)
 * 		fields for counters
 *
 * Input -       *point      - pointer to the op_stat_point, where counter will be added
-*               url_num - number of UAS urls, which can be 0, if UAS is not relevant
+*               url_num - number of urls
 *
 * Return Code/Output - None
 ****************************************************************************************/
@@ -248,8 +248,8 @@ int op_stat_point_init (op_stat_point* point, size_t url_num)
 * Input -       *point                - pointer to the op_stat_point, where counters to be updated
 *               current_state         - current state of a client
 *               prev_state            - previous state of a client
-*               current_url_index - current uas url index of a the client
-*               prev_url_index    - previous uas url index of a the client
+*               current_url_index - current url index of a the client
+*               prev_url_index    - previous url index of a the client
 *
 * Return Code/Output - None
 ****************************************************************************************/

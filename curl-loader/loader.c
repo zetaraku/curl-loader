@@ -435,12 +435,12 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
     }
   
   /* Set the index to client for the smooth and hyper modes */
-  if (url_ctx->url_uas_num >= 0)
+  if (url_ctx->url_ind >= 0)
   {
-    cctx->url_curr_index = url_ctx->url_uas_num;
+    cctx->url_curr_index = url_ctx->url_ind;
   }
   
-  bctx->url_index = url_ctx->url_uas_num;
+  bctx->url_index = url_ctx->url_ind;
 
   curl_easy_setopt (handle, CURLOPT_DNS_CACHE_TIMEOUT, -1);
 
@@ -1071,7 +1071,7 @@ static void free_batch_data_allocations (batch_context* bctx)
       bctx->cctx_array = NULL;
     }
 
-  /* Free the allocated UAS url contexts*/
+  /* Free the allocated url contexts*/
   if (bctx->url_ctx_array && bctx->urls_num)
     {
       /* Free all URL-strings */

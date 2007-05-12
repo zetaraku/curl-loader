@@ -715,8 +715,8 @@ static int url_parser (batch_context*const bctx, char*const value)
     if ((int)bctx->url_index >= bctx->urls_num)
     {
         fprintf (stderr, 
-                 "%s - error: URL_NUM (%d) is below uas-urls number in conf-file.\n",
-                 __func__, bctx->url_index);
+                 "%s - error: nuber of urls above the value of URLS_NUM value.\n",
+                 __func__);
         return -1;
     }
     
@@ -738,7 +738,7 @@ static int url_parser (batch_context*const bctx, char*const value)
     strcpy(bctx->url_ctx_array[bctx->url_index].url_str, value);
     bctx->url_ctx_array[bctx->url_index].url_appl_type = 
       url_schema_classification (value);
-    bctx->url_ctx_array[bctx->url_index].url_uas_num = bctx->url_index;
+    bctx->url_ctx_array[bctx->url_index].url_ind = bctx->url_index;
     
     return 0;
 }
@@ -1255,7 +1255,7 @@ static int validate_batch (batch_context*const bctx)
 
     if (validate_batch_url (bctx) == -1)
     {
-        fprintf (stderr, "%s - error: failed to validate batch section UAS.\n", 
+        fprintf (stderr, "%s - error: failed to validate batch section URL.\n", 
                  __func__);
         return -1;
     }

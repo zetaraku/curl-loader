@@ -47,7 +47,7 @@ static int mperform_smooth (batch_context* bctx,
 /******************************************************************************
  * Function name - user_activity_smooth
  *
- * Description - Simulates user-activities, like login, uas, logoff, using SMOOTH-MODE
+ * Description - Simulates user-activities using SMOOTH-MODE
  * Input -       *cctx_array - array of client contexts (related to a certain batch of clients)
  * Return Code/Output - On Success - 0, on Error -1
  *******************************************************************************/

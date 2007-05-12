@@ -32,19 +32,6 @@
 #define FORM_BUFFER_SIZE 256
 
 
-/* 
-   Current loading step: login, uas or logoff. If we are in the loading step 
-   login, pick up the login url; whin in logoff, take the logoff url. 
-   Being in UAS step, pick up the next url according to <url_uas_num>. 
-*/
-typedef enum url_load_step
-  {
-    URL_LOAD_UNDEF = 0, /*calloc sets it */
-    URL_LOAD_LOGIN,
-    URL_LOAD_UAS,
-    URL_LOAD_LOGOFF,
-  } url_load_step;
-
 /*
   Application types of URLs.
 */
@@ -209,7 +196,7 @@ typedef struct url_context
   /*
     Our index in the url array
   */
-  long url_uas_num;
+  long url_ind;
 
 } url_context;
 
