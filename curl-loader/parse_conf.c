@@ -112,6 +112,8 @@ static int web_auth_credentials_parser (batch_context*const bctx, char*const val
 static int proxy_auth_method_parser (batch_context*const bctx, char*const value);
 static int proxy_auth_credentials_parser (batch_context*const bctx, char*const value);
 
+
+static int timer_tcp_conn_setup_parser (batch_context*const bctx, char*const value);
 static int timer_url_completion_parser (batch_context*const bctx, char*const value);
 static int timer_after_url_sleep_parser (batch_context*const bctx, char*const value);
 
@@ -159,6 +161,7 @@ static const tag_parser_pair tp_map [] =
     {"PROXY_AUTH_METHOD", proxy_auth_method_parser},
     {"PROXY_AUTH_CREDENTIALS", proxy_auth_credentials_parser},
 
+    {"TIMER_TCP_CONN_SETUP", timer_tcp_conn_setup_parser},
     {"TIMER_URL_COMPLETION", timer_url_completion_parser},
     {"TIMER_AFTER_URL_SLEEP", timer_after_url_sleep_parser},
 
@@ -1124,6 +1127,19 @@ static int proxy_auth_credentials_parser (batch_context*const bctx, char*const v
   return 0;
 }
 
+static int timer_tcp_conn_setup_parser (batch_context*const bctx, char*const value)
+{
+    long timer = atol (value);
+
+    if (timer <= 0 || timer > 50)
+    {
+        fprintf(stderr, 
+                "%s error: input of the timer is expected  to be from 1 up to 50 seconds.\n", __func__);
+        return -1;
+    }
+    bctx->url_ctx_array[bctx->url_index].connect_timeout= timer;
+    return 0;
+}
 static int timer_url_completion_parser (batch_context*const bctx, char*const value)
 {
     bctx->url_ctx_array[bctx->url_index].timer_url_completion = atol (value);
