@@ -1,60 +1,65 @@
-01/03/2007
+Last updated: 13/05/2007
 
-a. To support above 2 tokens (up to 8) in FORM_RECORDS_FILE.
+1. To support above 2 tokens (up to 8) in FORM_RECORDS_FILE.
     Tokenize the input in cycle.
 
-b. POST forms improvement and adding more flexebility.
+2. POST forms improvement and adding more flexebility.
    Support for more flexible API for POST forms:
     http://curl.haxx.se/libcurl/c/curl_formadd.html
 
-c. Support for a single/common IP-address for all clients
+3. Support for a single/common IP-address for all clients
 
-d. PUT option support with file transfer and PUT after GET.
+4. PUT option support with file transfer and PUT after GET.
 
-e. Add a url-based tag STOP_ON_ERROR to schedule or not to
+5. An option to download a url not only once a cycle, but according to its
+   "Weight" -several times prior to going to the next url.
+
+6. Add a url-based tag STOP_ON_ERROR to schedule or not to
     schedule a client for more cycles, when an error condition detected 
 
-f. ERROR_RESPONSE_CODES - add a list or codes considered
+7. ERROR_RESPONSE_CODES - add a list or codes considered
    as errors, or not considered as error conditions on a per-url bases. 
    By default all HTTP 5xx codes and 4xx -401-407 are considered as errors.
    Plus means add to a url errors list, where minus means remove from a
    url error list.
    Something like ERROR_RESPONSE_CODES="+100+101-500-503"
 
-g. ERROR_RESPONSE_BODY - a regular expression pattern for a 
+8. ERROR_RESPONSE_BODY - a regular expression pattern for a
     search in a response body. If not found - error. Look in Apache
    JMeter.
 
-h. Aleksandar Lazic <al-curlloader@none.at> suggested:
-to make configurable a number of TCP connections, that our
-virtual client can use (the default is up to 5), whether the 
-connections are persistant or closed after each request-response 
-and, if persistant, what is the number of request-responses
-till the connection to be closed and re-established. 
+9. ERROR_HEADER and ERROR_HEADER_VALUE -  whether we get a 
+    certain header and whether value matches a regular expression pattern
 
-Another proposal of Aleks is to make configurable HTTP 1.1 or 1.0, that
-we will not implement unless it becomes a feature required by many
-users.
+10. Logging to files headers and bodies of responses, e.g. to directory
+     a URL_SHORT_NAME/<cycle>-<resp-num>.hdr and <cycle>-<resp-num>.body
 
-We can add configurable CURLOPT_MAXCONNECTS number
-and play with CURLOPT_FRESH_CONNECT/CURLOPT_FORBID_REUSE
-options and optionally to enhance them to make configurable number
-of request-responses via a tcp-connection till the connection renewal.
-We can add to libcurl a new option - something like 
-CURLOPT_CONNECTION_REUSENUM to pass a <max_number> of 
-requests till connection refresh.
+11. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
+   a number of TCP connections, that our virtual client can use (the default is up to 5), 
+   and, if persistant, what is the number of request-responses till the connection to be 
+   closed and re-established. 
 
-httperf sessions - is a reference application.
+  Another proposal of Aleks is to make configurable HTTP 1.1 or 1.0, that
+  we will not implement unless it becomes a feature required by many users.
 
-f. Cookies - add an option to add a per-url cookie
+  We can add to libcurl a new option - something like 
+  CURLOPT_CONNECTION_REUSENUM to pass a <max_number> of requests till 
+  connection refresh.
 
-g. Respect a url-fetch timeout. If not accomplished till a certain time - stop it (? remove
-a handle), mark in statistics as a timeout statistics.
+   httperf sessions - is a reference application.
 
-Add to statistics of URL-Timeout
+12. Cookies - add an option to add a per-url cookie
+
+13. Add an option to limit throughput per client.
+
+14. Respect a url-fetch timeout. If not accomplished till a certain time - stop it (? remove
+     a handle), mark in statistics as a timeout statistics.
+
+    Add to statistics of URL-Timeout
 
 
-1. Performance improvements:
+
+15 . Performance improvements:
 
 - cached memory allocators, using libcurl API 
    (Aleksandar Lazic <al-curlloader@none.at>):
@@ -68,31 +73,33 @@ Add to statistics of URL-Timeout
    http://www.hoard.org/
    http://www.cs.umass.edu/%7Eemery/hoard/asplos2000.pdf
 
-2. Configuration/making improvements: moving all source-files
+16. Configuration/making improvements: moving all source-files
     to src directory etc.
 
-3. X.509 client certificates per each https, ftps url. Client certificate
+17. X.509 client certificates per each https, ftps url. Client certificate
     for each client?
 
-4. Support for CAPS (calls per second) defined mode. Currently, we are 
+18. Support for CAPS (calls per second) defined mode. Currently, we are 
    supporting only a certain number of virtual clients and CAPS is the derived
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter. 
 
-5. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like.
+19. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like.
 
-6. Testbed for 20K, 50K and 100K clients. We need a more powerful HW.
+20. Testbed for 20K, 50K and 100K clients. We need a more powerful HW:
+      2-4 CPUs/cores and 4-8 GB of memory
 
-7. Testing and better support for FTP and FTPS.
+21. Testing and better support for FTP and FTPS. An option to configure
+      FTP-active, whereas the default is passive.
 
-8. HTTP GET filled forms for login credentials (they are sent using url). 
+22. HTTP GET filled forms for login credentials (they are sent using url).
 
-9. Dynamic allocation of form post buffers. Current static
+23. Dynamic allocation of form post buffers. Current static
        allocation uses too much memory reserves.
 
-10. Template-guided output of configurable statistics 
+24. Template-guided output of configurable statistics 
 (what user wishes with desired string, names) to statistics file.
 
-11. Random time intervals, e.g 100-200 (from 100 to 200 msec).
+25. Random time intervals, e.g 100-200 (from 100 to 200 msec).
 
-12. Support for telnet, SFTP, SSH, etc
+26. Support for more protocols: telnet, SFTP, SSH, etc
