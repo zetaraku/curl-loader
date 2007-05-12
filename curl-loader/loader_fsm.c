@@ -840,7 +840,7 @@ static int pick_up_next_url (client_context* cctx)
           return -1; // finita la-comedia
         }
       // take the next url
-      return cctx->url_curr_index++;
+      return ++cctx->url_curr_index;
     }
 
   const int fc_url = bctx->first_cycling_url;
@@ -848,7 +848,7 @@ static int pick_up_next_url (client_context* cctx)
   
   if (! bctx->cycling_completed && ((int)cctx->url_curr_index < lc_url))
     {
-      return cctx->url_curr_index++;
+      return ++cctx->url_curr_index;
     }
   
   /*
@@ -869,7 +869,7 @@ static int pick_up_next_url (client_context* cctx)
               return -1; // finita la-comedia
             }
           // take the next url
-          return cctx->url_curr_index++;
+          return ++cctx->url_curr_index;
         }
       else
         {
