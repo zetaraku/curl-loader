@@ -46,6 +46,13 @@ requests till connection refresh.
 
 httperf sessions - is a reference application.
 
+f. Cookies - add an option to add a per-url cookie
+
+g. Respect a url-fetch timeout. If not accomplished till a certain time - stop it (? remove
+a handle), mark in statistics as a timeout statistics.
+
+Add to statistics of URL-Timeout
+
 
 1. Performance improvements:
 

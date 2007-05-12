@@ -52,9 +52,6 @@ long snapshot_statistics_timeout = 3; /* Seconds */
 */
 long logfile_rewind_size = 1024;
 
-/* Non-zero - dont reuse connections */
-int reuse_connection_forbidden = 0;
-
 /* Whether to stdout the downloaded file body */
 int output_to_stdout = 0;
 
@@ -168,8 +165,7 @@ int parse_command_line (int argc, char *argv [])
           output_to_stdout = 1;
           break;
 
-        case 'r': /* Means - reuse connections, dont close and re-open. */
-          reuse_connection_forbidden = 1;
+        case 'r':
           break;
 
         case 's': /* Stderr printout of client messages (instead of to a batch logfile). */

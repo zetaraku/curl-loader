@@ -449,8 +449,8 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
                     CURLOPT_CONNECTTIMEOUT, 
                     url_ctx->connect_timeout ? url_ctx->connect_timeout : connect_timeout);
 
-  /* Define the connection re-use policy. When passed 1, dont re-use */
-  curl_easy_setopt (handle, CURLOPT_FRESH_CONNECT, reuse_connection_forbidden);
+  /* Define the connection re-use policy. When passed 1, re-establish */
+  curl_easy_setopt (handle, CURLOPT_FRESH_CONNECT, url_ctx->connection_reestablish);
 
   /* 
      If DNS resolving is necesary, global DNS cache is enough,

@@ -181,11 +181,17 @@ typedef struct url_context
   
   char* proxy_auth_credentials;
 
+
+    /*
+
+    */
+  long connection_reestablish; 
+
     /*
      Maximum time to estblish TCP connection with server (including resolving).
      If zero, the global connect_timeout default is taken.
    */
-  unsigned long connect_timeout;
+  long connect_timeout;
 
   
    /*

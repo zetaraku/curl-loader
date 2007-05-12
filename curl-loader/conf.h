@@ -67,12 +67,6 @@ extern long snapshot_statistics_timeout;
 extern long logfile_rewind_size;
 
 /* 
-   Zero - means reuse connections, any non-zero means 
-   don't re-use, close and re-connect. 
-*/
-extern int reuse_connection_forbidden;
-
-/* 
    Whether to print to stdout the body of the downloaded file.
    Used for debugging.
 */
