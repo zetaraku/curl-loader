@@ -146,7 +146,6 @@ main (int argc, char *argv [])
       return -1;
     }
 
-
    /*
     * De-facto in full we are supporting only a single batch.
     * TODO: test env for all batches.
@@ -450,7 +449,7 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
                     url_ctx->connect_timeout ? url_ctx->connect_timeout : connect_timeout);
 
   /* Define the connection re-use policy. When passed 1, re-establish */
-  curl_easy_setopt (handle, CURLOPT_FRESH_CONNECT, url_ctx->connection_reestablish);
+  curl_easy_setopt (handle, CURLOPT_FRESH_CONNECT, url_ctx->fresh_connect);
 
   /* 
      If DNS resolving is necesary, global DNS cache is enough,
@@ -460,7 +459,7 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
 
      curl_easy_setopt (handle, CURLOPT_DNS_USE_GLOBAL_CACHE, 1); 
   */
-     
+  
   curl_easy_setopt (handle, CURLOPT_VERBOSE, 1);
   curl_easy_setopt (handle, CURLOPT_DEBUGFUNCTION, 
                     client_tracing_function);
@@ -943,8 +942,8 @@ int client_tracing_function (CURL *handle,
 
           default :
             fprintf(cctx->file_output, 
-                    "%ld %s:<= WARNING: parsing error: wrong status code \"%s\".\n", 
-                    cctx->cycle_num, cctx->client_name, (char*) data);
+                    "%ld %s:<= WARNING: parsing error: wrong response code (FTP?) %ld .\n", 
+                    cctx->cycle_num, cctx->client_name, response_status /*(char*) data*/);
             /* FTP breaks it: - cctx->client_state = CSTATE_ERROR; */
             break;
           }

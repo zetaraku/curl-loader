@@ -112,7 +112,7 @@ static int web_auth_credentials_parser (batch_context*const bctx, char*const val
 static int proxy_auth_method_parser (batch_context*const bctx, char*const value);
 static int proxy_auth_credentials_parser (batch_context*const bctx, char*const value);
 
-static int connection_reestablish_parser (batch_context*const bctx, char*const value);
+static int fresh_connect_parser (batch_context*const bctx, char*const value);
 
 static int timer_tcp_conn_setup_parser (batch_context*const bctx, char*const value);
 static int timer_url_completion_parser (batch_context*const bctx, char*const value);
@@ -162,7 +162,7 @@ static const tag_parser_pair tp_map [] =
     {"PROXY_AUTH_METHOD", proxy_auth_method_parser},
     {"PROXY_AUTH_CREDENTIALS", proxy_auth_credentials_parser},
 
-    {"CONNECTION_REESTABLISH", connection_reestablish_parser},
+    {"FRESH_CONNECT", fresh_connect_parser},
 
     {"TIMER_TCP_CONN_SETUP", timer_tcp_conn_setup_parser},
     {"TIMER_URL_COMPLETION", timer_url_completion_parser},
@@ -1130,7 +1130,7 @@ static int proxy_auth_credentials_parser (batch_context*const bctx, char*const v
   return 0;
 }
 
-static int connection_reestablish_parser (batch_context*const bctx, char*const value)
+static int fresh_connect_parser (batch_context*const bctx, char*const value)
 {
     long boo = atol (value);
 
@@ -1140,7 +1140,7 @@ static int connection_reestablish_parser (batch_context*const bctx, char*const v
                 "%s error: boolean input 0 or 1 is expected\n", __func__);
         return -1;
     }
-    bctx->url_ctx_array[bctx->url_index].connection_reestablish = boo;
+    bctx->url_ctx_array[bctx->url_index].fresh_connect = boo;
     return 0;
 }
 

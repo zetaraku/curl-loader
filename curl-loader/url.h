@@ -172,7 +172,7 @@ typedef struct url_context
     /*
 
     */
-  long connection_reestablish; 
+  long fresh_connect; 
 
     /*
      Maximum time to estblish TCP connection with server (including resolving).
