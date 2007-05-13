@@ -1322,22 +1322,31 @@ static int validate_batch_general (batch_context*const bctx)
           }
       }
 
-    if (bctx->ip_addr_min && (bctx->ip_addr_min == bctx->ip_addr_max))
-        {
-            bctx->ip_common =1;
-        }
-    
-    if (!bctx->ipv6)
+    if (! bctx->ipv6)
       {
-          if (! bctx->ip_common)
+        if (bctx->ip_addr_min && (bctx->ip_addr_min == bctx->ip_addr_max))
           {
-              if ((bctx->ip_addr_max - bctx->ip_addr_min + 1) < bctx->client_num_max)
+            bctx->ip_common =1;
+          }
+        else
+          {
+            if ((bctx->ip_addr_max - bctx->ip_addr_min + 1) < bctx->client_num_max)
               {
-                  fprintf (stderr, "%s - error: range of IPv4 addresses is less than number of clients.\n"
-                           "Please, increase IP_ADDR_MAX.\n", __func__);
-                  return -1;
+                fprintf (stderr, "%s - error: range of IPv4 addresses is less than number of clients.\n"
+                         "Please, increase IP_ADDR_MAX.\n", __func__);
+                return -1;
               }
           }
+      }
+    else
+      {
+        // IPv6
+        if (! memcmp (&bctx->ipv6_addr_min, 
+                      &bctx->ipv6_addr_max, 
+                      sizeof (bctx->ipv6_addr_min)))
+          {
+            bctx->ip_common =1;
+          } 
       }
 
     if (bctx->cycles_num < 1)

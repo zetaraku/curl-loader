@@ -1,5 +1,6 @@
 version 0.31 -?
 
+	
 * FTP tested and improved. Minor bug fixed in loader.c
   ftp.conf file corrected by adding FRESH_CONNECT tag.
   Added a new file ftp_http.conf.
