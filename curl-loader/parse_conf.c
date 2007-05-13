@@ -715,7 +715,7 @@ static int url_parser (batch_context*const bctx, char*const value)
     if ((int)bctx->url_index >= bctx->urls_num)
     {
         fprintf (stderr, 
-                 "%s - error: nuber of urls above the value of URLS_NUM value.\n",
+                 "%s - error: number of urls above the value of URLS_NUM value.\n",
                  __func__);
         return -1;
     }

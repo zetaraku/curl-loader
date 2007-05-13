@@ -54,7 +54,9 @@ static void print_statistics_data_to_file (FILE* file,
                                            stat_point *sd,
                                            unsigned long period);
 
-static void print_operational_statistics (op_stat_point*const osp, url_context* url_arr);
+static void print_operational_statistics (op_stat_point*const osp_curr,
+                                          op_stat_point*const osp_total,
+                                          url_context* url_arr);
 
 static void dump_stat_to_screen (char* protocol, 
                                  stat_point* sd, 
@@ -339,11 +341,11 @@ void dump_final_statistics (client_context* cctx)
 
   stat_point_add (&bctx->http_total, &bctx->http_delta);
   stat_point_add (&bctx->https_total, &bctx->https_delta); 
-  op_stat_point_add (&bctx->op_delta, &bctx->op_total);
+  //op_stat_point_add (&bctx->op_delta, &bctx->op_total);
     
-  fprintf(stdout,"==================================================\n");
+  fprintf(stdout,"\n==================================================\n");
   fprintf(stdout,"End of the test for batch: %-10.10s\n", bctx->batch_name); 
-  fprintf(stdout,"==================================================\n");
+  fprintf(stdout,"==================================================\n\n");
   
   now = get_tick_count();
 
@@ -351,16 +353,19 @@ void dump_final_statistics (client_context* cctx)
   if (!seconds_run)
     return;
   
-  fprintf(stdout,"Test total duration was %d seconds and CAPS average %ld:\n", 
+  fprintf(stdout,"\nTest total duration was %d seconds and CAPS average %ld:\n", 
           seconds_run, bctx->op_total.call_init_count / seconds_run);
 
   dump_statistics (seconds_run, 
                    &bctx->http_total,
                    &bctx->https_total);
 
-  op_stat_point_add (&bctx->op_total, &bctx->op_delta );
+  op_stat_point_add (&bctx->op_total, &bctx->op_delta);
+  op_stat_point_reset (&bctx->op_delta);
   
-  print_operational_statistics (&bctx->op_total, bctx->url_ctx_array);
+  print_operational_statistics (&bctx->op_delta, 
+                                &bctx->op_total, 
+                                bctx->url_ctx_array);
 
 
   if (bctx->statistics_file)
@@ -422,10 +427,11 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
     }
 
   fprintf(stdout,"-----------------------------------------------------\n");
+
   fprintf(stdout,"Summary stats since load start (load runs:%d secs, CAPS-average:%ld):\n", 
           seconds_run, bctx->op_total.call_init_count / seconds_run); 
 
-  print_operational_statistics (&bctx->op_total, bctx->url_ctx_array);
+  //print_operational_statistics (&bctx->op_total, bctx->url_ctx_array);
   
   dump_statistics (seconds_run, 
                    &bctx->http_total,  
@@ -516,11 +522,25 @@ void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
 
   fprintf(stdout,"============  loading batch is: %-10.10s ==================\n",
           bctx->batch_name);
-  fprintf(stdout,"Last interval stats (interval:%ld sec, clients:%d, CAPS:%ld):\n",
+
+  /*
+    Operational statistics
+  */
+  op_stat_point_add (&bctx->op_total, &bctx->op_delta );
+
+  print_operational_statistics (&bctx->op_delta, 
+                                &bctx->op_total, 
+                                bctx->url_ctx_array);
+
+
+
+  fprintf(stdout,"-----------------------------------------------------\n");
+
+  fprintf(stdout,"Last interval stats (interval:%ld sec, clients:%d, CAPS-current:%ld):\n",
           (unsigned long ) delta_time/1000, pending_active_and_waiting_clients_num (bctx),
           bctx->op_delta.call_init_count* 1000/delta_time);
 
-  print_operational_statistics (&bctx->op_delta, bctx->url_ctx_array);
+  op_stat_point_reset (&bctx->op_delta);
 
   print_snapshot_interval_statistics(delta_time, 
                                      &bctx->http_delta,  
@@ -550,9 +570,6 @@ void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
 
   stat_point_reset (&bctx->http_delta); 
   stat_point_reset (&bctx->https_delta);
-
-  op_stat_point_add (&bctx->op_total, &bctx->op_delta );
-  op_stat_point_reset (&bctx->op_delta);
         
   bctx->last_measure = now_time;
 }
@@ -713,31 +730,35 @@ static void dump_clients (client_context* cctx_array)
   fclose (ct_file);
 }
 
-/****************************************************************************************
+/***********************************************************************************
 * Function name - print_operational_statistics
 *
 * Description - Prints to stdout number of login, UAS - for each URL and logoff operations
 *               success and failure numbers
 *
-* Input -       *osp - pointer to the operational statistics point
+* Input -       *osp_curr - pointer to the current operational statistics point
+*               *osp_total - pointer to the current operational statistics point
 *
 * Return Code/Output - None
-****************************************************************************************/
-static void print_operational_statistics (op_stat_point*const osp, url_context* url_arr)
+*************************************************************************************/
+static void print_operational_statistics (op_stat_point*const osp_curr,
+                                          op_stat_point*const osp_total,
+                                          url_context* url_arr)
 {
-  (void) url_arr;
-  if (!osp)
+  if (!osp_curr || !osp_total)
     return;
 
-  fprintf (stdout, " Operations:\t\tSuccess\t\tFailed\n");
+  fprintf (stdout, " Operations:\t\t Success\t\t Failed\n");
 
-  if (osp->url_num && osp->url_ok && osp->url_failed)
+  if (osp_curr->url_num && (osp_curr->url_num == osp_total->url_num))
     {
       unsigned long i;
-      for (i = 0; i < osp->url_num; i++)
+      for (i = 0; i < osp_curr->url_num; i++)
         {
-          fprintf (stdout, "URL%ld:%-12.12s \t%ld\t\t%ld\n",
-                   i, url_arr[i].url_short_name, osp->url_ok[i], osp->url_failed[i]);
+          fprintf (stdout, "URL%ld:%-12.12s\t%-6ld %-8ld\t\t%-6ld %-8ld\n",
+                   i, url_arr[i].url_short_name, 
+                   osp_curr->url_ok[i], osp_total->url_ok[i],
+                   osp_curr->url_failed[i], osp_total->url_failed[i]);
         }
     }
 }
