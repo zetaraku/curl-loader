@@ -358,6 +358,8 @@ void dump_final_statistics (client_context* cctx)
                    &bctx->http_total,
                    &bctx->https_total);
 
+  op_stat_point_add (&bctx->op_total, &bctx->op_delta );
+  
   print_operational_statistics (&bctx->op_total, bctx->url_ctx_array);
 
 
