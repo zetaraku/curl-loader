@@ -435,7 +435,7 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
   //print_operational_statistics (&bctx->op_total, bctx->url_ctx_array);
   
   dump_statistics (seconds_run, 
-                   &bctx->http_total,  
+                   &bctx->http_total,
                    &bctx->https_total);
 
   fprintf(stdout,"=============================================================\n");
