@@ -99,6 +99,7 @@ int user_activity_smooth (client_context* cctx_array)
     }
 
   dump_final_statistics (cctx_array);
+  screen_release ();
 
   /* 
      ======= Release resources =========================

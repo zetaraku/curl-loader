@@ -401,7 +401,7 @@ void dump_final_statistics (client_context* cctx)
            "You may add -v and -u options to the command line for more verbouse output to %s.log file.\n",
            bctx->batch_name, bctx->batch_name, bctx->batch_name, bctx->batch_name);
 
-  screen_release ();
+  //  screen_release ();
 }
 
 /****************************************************************************************

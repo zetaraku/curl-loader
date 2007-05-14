@@ -503,6 +503,7 @@ static int on_exit_hyper (batch_context* bctx)
     still_running =0;
 
   dump_final_statistics (bctx->cctx_array);
+  screen_release ();
 
   /* 
      ======= Release resources =========================
