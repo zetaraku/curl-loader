@@ -367,8 +367,8 @@ int add_loading_clients (batch_context* bctx)
     }
   else 
     {
-      clients_to_sched = bctx->clients_initial_inc ?
-        min (bctx->clients_initial_inc, bctx->client_num_max - bctx->clients_current_sched_num) :
+      clients_to_sched = bctx->clients_rampup_inc ?
+        min (bctx->clients_rampup_inc, bctx->client_num_max - bctx->clients_current_sched_num) :
         bctx->client_num_max;
     }
 
@@ -403,7 +403,7 @@ int add_loading_clients (batch_context* bctx)
 
   bctx->clients_current_sched_num += clients_to_sched;
 
-  if (bctx->clients_initial_inc)
+  if (bctx->clients_rampup_inc)
     {
       if (bctx->clients_current_sched_num < bctx->client_num_max)
         {

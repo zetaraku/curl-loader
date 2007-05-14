@@ -90,7 +90,7 @@ typedef struct batch_context
   /* 
       Clients added per second for the loading start phase.
   */
-  long clients_initial_inc;
+  long clients_rampup_inc;
   
    /* Name of the network interface to be used for loading, e.g. "eth0", "eth1:16" */
   char net_interface[16];
@@ -191,7 +191,7 @@ typedef struct batch_context
 
   /* 
      Number of already scheduled clients. Used to schedule new
-     clients in a gradual fashion, when <clients_initial_inc> is positive. 
+     clients in a gradual fashion, when <clients_rampup_inc> is positive. 
   */
   int clients_current_sched_num;
 

@@ -80,12 +80,12 @@ typedef struct tag_parser_pair
 static int batch_name_parser (batch_context*const bctx, char*const value);
 static int clients_num_max_parser (batch_context*const bctx, char*const value);
 static int clients_num_start_parser (batch_context*const bctx, char*const value);
+static int clients_rampup_inc_parser (batch_context*const bctx, char*const value);
 static int interface_parser (batch_context*const bctx, char*const value);
 static int netmask_parser (batch_context*const bctx, char*const value);
 static int ip_addr_min_parser (batch_context*const bctx, char*const value);
 static int ip_addr_max_parser (batch_context*const bctx, char*const value);
 static int cycles_num_parser (batch_context*const bctx, char*const value);
-static int clients_initial_inc_parser (batch_context*const bctx, char*const value);
 static int user_agent_parser (batch_context*const bctx, char*const value);
 static int urls_num_parser (batch_context*const bctx, char*const value);
 
@@ -130,7 +130,7 @@ static const tag_parser_pair tp_map [] =
     {"BATCH_NAME", batch_name_parser},
     {"CLIENTS_NUM_MAX", clients_num_max_parser},
     {"CLIENTS_NUM_START", clients_num_start_parser},
-    {"CLIENTS_INITIAL_INC", clients_initial_inc_parser},
+    {"CLIENTS_RAMPUP_INC", clients_rampup_inc_parser},
     {"INTERFACE", interface_parser},
     {"NETMASK", netmask_parser},
     {"IP_ADDR_MIN", ip_addr_min_parser},
@@ -654,13 +654,13 @@ static int cycles_num_parser (batch_context*const bctx, char*const value)
     }
     return 0;
 }
-static int clients_initial_inc_parser (batch_context*const bctx, char*const value)
+static int clients_rampup_inc_parser (batch_context*const bctx, char*const value)
 {
-    bctx->clients_initial_inc = atol (value);
-    if (bctx->clients_initial_inc < 0)
+    bctx->clients_rampup_inc = atol (value);
+    if (bctx->clients_rampup_inc < 0)
     {
         fprintf (stderr, 
-                 "%s - error: clients_initial_inc (%s) should be a zero or positive number\n", 
+                 "%s - error: clients_rampup_inc (%s) should be a zero or positive number\n", 
                  __func__, value);
         return -1;
     }
@@ -1288,9 +1288,9 @@ static int validate_batch_general (batch_context*const bctx)
         fprintf (stderr, "%s - error: CLIENT_NUM_START is less than 0.\n", __func__);
         return -1;
     }
-    if (bctx->clients_initial_inc < 0)
+    if (bctx->clients_rampup_inc < 0)
     {
-        fprintf (stderr, "%s - error: CLIENTS_INITIAL_INC is negative.\n",__func__);
+        fprintf (stderr, "%s - error: CLIENTS_RAMPUP_INC is negative.\n",__func__);
         return -1;
     }
 

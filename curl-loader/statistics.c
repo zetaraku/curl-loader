@@ -443,7 +443,7 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
       (bctx->stop_client_num_gradual_increase == 0))
     {
       fprintf(stdout," Automatic: adding %ld clients/sec. Stop inc and manual [M].\n",
-              bctx->clients_initial_inc);
+              bctx->clients_rampup_inc);
     }
   else
     {
@@ -453,7 +453,7 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
               bctx->client_num_max, current_clients);
 
       if (bctx->stop_client_num_gradual_increase && 
-          bctx->clients_initial_inc &&
+          bctx->clients_rampup_inc &&
           current_clients < bctx->client_num_max)
         {
           fprintf(stdout," Automatic: [A].\n");

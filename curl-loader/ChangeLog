@@ -27,7 +27,11 @@ version 0.31 -?
    - provide a more flexible configuration with multiple-Logins, Logoffs,
      and authentications.
 
-* Tag URLS_NUM, a rename of UAS_URLS_NUM, moved to section
+* Tag CLIENTS_NUM renamed to CLIENTS_NUM_MAX
+
+   Tag CLIENTS_INITIAL_INC renamed to CLIENTS_RAMPUP_INC
+
+  Tag URLS_NUM, a rename of UAS_URLS_NUM, moved to section
   General. Sections LOGIN and LOGOFF removed, UAS section renamed
   to URL-section
 	
