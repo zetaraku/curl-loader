@@ -7,59 +7,60 @@ Last updated: 13/05/2007
    Support for more flexible API for POST forms:
     http://curl.haxx.se/libcurl/c/curl_formadd.html
 
-3. Support for a single/common IP-address for all clients
+3. PUT option support with file transfer and PUT after GET.
 
-4. PUT option support with file transfer and PUT after GET.
-
-5. An option to download a url not only once a cycle, but according to its
+4. An option to download a url not only once a cycle, but according to its
    "Weight" -several times prior to going to the next url.
 
-6. Add a url-based tag STOP_ON_ERROR to schedule or not to
-    schedule a client for more cycles, when an error condition detected 
+5. Add a url-based tag STOP_ON_ERROR to schedule or not to
+    schedule a client for more cycles, when an error condition detected.
+   Now we have a global such option, whereas URLs may have different
+   level of importance.
 
-7. ERROR_RESPONSE_CODES - add a list or codes considered
+6. ERROR_RESPONSE_CODES - add a list or codes considered
    as errors, or not considered as error conditions on a per-url bases. 
    By default all HTTP 5xx codes and 4xx -401-407 are considered as errors.
    Plus means add to a url errors list, where minus means remove from a
    url error list.
    Something like ERROR_RESPONSE_CODES="+100+101-500-503"
 
-8. ERROR_RESPONSE_BODY - a regular expression pattern for a
+7. ERROR_RESPONSE_BODY - a regular expression pattern for a
     search in a response body. If not found - error. Look in Apache
    JMeter.
 
-9. ERROR_HEADER and ERROR_HEADER_VALUE -  whether we get a 
+8. ERROR_HEADER and ERROR_HEADER_VALUE -  whether we get a 
     certain header and whether value matches a regular expression pattern
 
-10. Logging to files headers and bodies of responses, e.g. to directory
+9. Logging to files headers and bodies of responses, e.g. to directory
      a URL_SHORT_NAME/<cycle>-<resp-num>.hdr and <cycle>-<resp-num>.body
+    Memory-mapped files are effective for logging, but always we know the size in
+    advance. Mapping -re-mapping and truncation, if taken too much, may be 
+    required.
 
-11. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
+10. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
    a number of TCP connections, that our virtual client can use (the default is up to 5), 
    and, if persistant, what is the number of request-responses till the connection to be 
    closed and re-established. 
-
   Another proposal of Aleks is to make configurable HTTP 1.1 or 1.0, that
   we will not implement unless it becomes a feature required by many users.
-
   We can add to libcurl a new option - something like 
   CURLOPT_CONNECTION_REUSENUM to pass a <max_number> of requests till 
   connection refresh.
+  Note, that httperf sessions - is a reference application.
 
-   httperf sessions - is a reference application.
+11. Cookies - add an option to add a per-url cookie. Currently, we just enable any
+     cookies set by a server. Probably, users may wish to use a very specific
+    and known in advance cookie.
 
-12. Cookies - add an option to add a per-url cookie
+12 Add an option to limit throughput per client. Libcurl is already supporting it.
 
-13. Add an option to limit throughput per client.
-
-14. Respect a url-fetch timeout. If not accomplished till a certain time - stop it (? remove
+13. Respect a url-fetch timeout. If not accomplished till a certain time - stop it (? remove
      a handle), mark in statistics as a timeout statistics.
 
-    Add to statistics of URL-Timeout
+    Add number of fetches with the expired URL-Timeout to the 
+   Operational Statistics of our loading GUI.
 
-
-
-15 . Performance improvements:
+14 . Performance improvements:
 
 - cached memory allocators, using libcurl API 
    (Aleksandar Lazic <al-curlloader@none.at>):
@@ -73,33 +74,33 @@ Last updated: 13/05/2007
    http://www.hoard.org/
    http://www.cs.umass.edu/%7Eemery/hoard/asplos2000.pdf
 
-16. Configuration/making improvements: moving all source-files
+15. Configuration/making improvements: moving all source-files
     to src directory etc.
 
-17. X.509 client certificates per each https, ftps url. Client certificate
+16. X.509 client certificates per each https, ftps url. Client certificate
     for each client?
 
-18. Support for CAPS (calls per second) defined mode. Currently, we are 
+17. Support for CAPS (calls per second) defined mode. Currently, we are 
    supporting only a certain number of virtual clients and CAPS is the derived
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter. 
 
-19. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like.
+18. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like.
 
-20. Testbed for 20K, 50K and 100K clients. We need a more powerful HW:
+19. Testbed for 20K, 50K and 100K clients. We need a more powerful HW:
       2-4 CPUs/cores and 4-8 GB of memory
 
-21. Testing and better support for FTP and FTPS. An option to configure
+20. Testing and better support for FTP and FTPS. An option to configure
       FTP-active, whereas the default is passive.
 
-22. HTTP GET filled forms for login credentials (they are sent using url).
+21. HTTP GET filled forms for login credentials (they are sent using url).
 
-23. Dynamic allocation of form post buffers. Current static
+22. Dynamic allocation of form post buffers. Current static
        allocation uses too much memory reserves.
 
-24. Template-guided output of configurable statistics 
+23. Template-guided output of configurable statistics 
 (what user wishes with desired string, names) to statistics file.
 
-25. Random time intervals, e.g 100-200 (from 100 to 200 msec).
+24. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec).
 
-26. Support for more protocols: telnet, SFTP, SSH, etc
+25. Support for more protocols: telnet, SFTP, SSH, etc

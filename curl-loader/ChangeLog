@@ -1,5 +1,8 @@
 version 0.31 -?
 
+* Loading Console GUI with statistics presentation improved.
+   Current and summary operational number are presented
+   together: first number is currect, seconds is the summary. 
 	
 * FTP tested and improved. Minor bug fixed in loader.c
   ftp.conf file corrected by adding FRESH_CONNECT tag.
@@ -18,7 +21,7 @@ version 0.31 -?
   configurable default and to configure for a url a timeout for TCP connection 
   establishment (including resolving).
 	
-* Added new taq CONNECTION_REESTABLISH will enable to change the default 
+* Added new taq FRESH_CONNECT will enable to change the default 
   behavior and to close/re-open TCP connection.
 	
 * Tags simplified to support:
@@ -46,7 +49,7 @@ version 0.31 -?
   level. Thus, headers of each url could be independently customized.
 	
   Tags USERNAME and PASSWORD moved to the URL level to support for
-  authentication and/or POST-ing of credentials for every URL.
+  multiple authentications and/or POST-ing of credentials for every URL.
 	
   Tag URL_SHORT_NAME is a newly added tag to provide a short up to 12
   character name to appear in statistics presentation.
