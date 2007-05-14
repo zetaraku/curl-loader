@@ -34,8 +34,9 @@
 #include "statistics.h"
 #include "screen.h"
 
-#define SECURE_APPL_STR "Sec-Appl"
-#define UNSECURE_APPL_STR "Appl"
+#define UNSECURE_APPL_STR "H/F   "
+#define SECURE_APPL_STR "H/F/S "
+
 
 static void
 dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
@@ -428,7 +429,7 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
 
   fprintf(stdout,"-----------------------------------------------------\n");
 
-  fprintf(stdout,"Summary stats since load start (load runs:%d secs, CAPS-average:%ld):\n", 
+  fprintf(stdout,"Summary stats (runs:%d secs, CAPS-average:%ld):\n", 
           seconds_run, bctx->op_total.call_init_count / seconds_run); 
 
   //print_operational_statistics (&bctx->op_total, bctx->url_ctx_array);
@@ -536,7 +537,7 @@ void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
 
   fprintf(stdout,"-----------------------------------------------------\n");
 
-  fprintf(stdout,"Last interval stats (interval:%ld sec, clients:%d, CAPS-current:%ld):\n",
+  fprintf(stdout,"Interval stats (latest:%ld sec, clients:%d, CAPS-curr:%ld):\n",
           (unsigned long ) delta_time/1000, pending_active_and_waiting_clients_num (bctx),
           bctx->op_delta.call_init_count* 1000/delta_time);
 
