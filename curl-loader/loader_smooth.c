@@ -36,7 +36,7 @@
 #include "batch.h"
 #include "client.h"
 #include "conf.h"
-//#include "heap.h"
+#include "screen.h"
 
 
 static int mget_url_smooth (batch_context* bctx);

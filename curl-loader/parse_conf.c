@@ -1109,13 +1109,15 @@ static int upload_file_parser  (batch_context*const bctx, char*const value)
       strncpy (bctx->url_ctx_array[bctx->url_index].upload_file,
                value, 
                string_len -1);
+
+      bctx->url_ctx_array[bctx->url_index].upload_file_size = statbuf.st_size;
     }
     return 0;
 }
 
 static int web_auth_method_parser (batch_context*const bctx, char*const value)
 {
-    (void) bctx; (void) value;
+  (void) bctx; (void) value;
   return 0;
 }
 static int web_auth_credentials_parser (batch_context*const bctx, char*const value)

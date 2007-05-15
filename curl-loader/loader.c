@@ -424,6 +424,10 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
   /* Set the url */
   if (url_ctx->url_str && url_ctx->url_str[0])
     {
+      /* 
+         Note, target URL for PUT should include a file
+         name, not only a directory 
+      */
       curl_easy_setopt (handle, CURLOPT_URL, url_ctx->url_str);
     }
   else
@@ -565,19 +569,61 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
         {
           if (!cctx->post_data)
             {            
-              fprintf (stderr,
-                       "%s - error: post_data is NULL.\n",
-                       __func__);
+              fprintf (stderr, "%s - error: post_data is NULL.\n", __func__);
               return -1;
             }
           else
             {
               if (set_client_url_post_data (cctx, url_ctx) == -1)
                 {
-                  fprintf (stderr,"%s - error: set_client_url_post_data() failed.\n",
+                  fprintf (stderr,
+                           "%s - error: set_client_url_post_data() failed.\n",
                            __func__);
                   return -1;
                 }
+            }
+        }
+      else if (url_ctx->req_type == HTTP_REQ_TYPE_PUT)
+        {
+          if (!url_ctx->upload_file)
+            {            
+              fprintf (stderr, "%s - error: upload file is NULL.\n", __func__);
+              return -1;
+            }
+          else
+            {
+              /* do we want to use our own read function ? */
+              //curl_easy_setopt(handle, CURLOPT_READFUNCTION, read_callback);
+
+              /* HTTP PUT method */
+              curl_easy_setopt(handle, CURLOPT_PUT, 1);
+
+              if (! url_ctx->upload_file_ptr)
+                {
+                  if (! (url_ctx->upload_file_ptr = 
+                         fopen (url_ctx->upload_file, "rb")))
+                    {
+                      fprintf (stderr, 
+                               "%s - error: failed to open() %s with errno %d.\n", 
+                               __func__, url_ctx->upload_file, errno);
+                      return -1;
+                    }
+                }
+
+              /* 
+                 Note, target URL for PUT should include a file
+                 name, not only a directory 
+              */
+
+              /* now specify which file to upload */
+              curl_easy_setopt(handle, CURLOPT_READDATA, 
+                               url_ctx->upload_file_ptr);
+
+              /* provide the size of the upload, we specicially typecast the value
+                 to curl_off_t since we must be sure to use the correct data size */
+              curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE,
+                               (curl_off_t) url_ctx->upload_file_size);
+              
             }
         }
 

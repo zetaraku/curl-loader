@@ -36,7 +36,7 @@
 #include "client.h"
 #include "conf.h"
 #include "cl_alloc.h"
-//#include "heap.h"
+#include "screen.h"
 
 
 #define TIMER_NEXT_LOAD 20000

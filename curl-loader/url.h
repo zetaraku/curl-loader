@@ -155,9 +155,14 @@ typedef struct url_context
   size_t form_records_num;
 
   /*
-    Nme of the file (with a path, if required) to upload.
+    Name of the file (with a path, if required) to upload.
   */
   char* upload_file;
+
+  /* Size of the file to upload */
+  off_t upload_file_size;
+
+  FILE* upload_file_ptr;
 
   int web_auth_method;
   
