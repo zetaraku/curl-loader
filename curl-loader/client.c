@@ -40,6 +40,14 @@ void first_hdr_req_inc (client_context* cctx)
 {
   cctx->first_hdr_req++;
 }
+int first_hdr_1xx (client_context* cctx)
+{
+  return cctx->first_hdr_1xx;
+}
+void first_hdr_1xx_inc (client_context* cctx)
+{
+  cctx->first_hdr_1xx++;
+}
 int first_hdr_2xx (client_context* cctx)
 {
   return cctx->first_hdr_2xx;
@@ -80,16 +88,23 @@ void first_hdr_5xx_inc (client_context* cctx)
 */
 void first_hdrs_clear_all (client_context* cctx)
 {
-  cctx->first_hdr_req = cctx->first_hdr_2xx = cctx->first_hdr_3xx = cctx->first_hdr_4xx = 
-      cctx->first_hdr_5xx = 0;
+  cctx->first_hdr_req = cctx->first_hdr_1xx = cctx->first_hdr_2xx = 
+    cctx->first_hdr_3xx = cctx->first_hdr_4xx = cctx->first_hdr_5xx = 0;
 }
 void first_hdrs_clear_non_req (client_context* cctx)
 {
-  cctx->first_hdr_2xx = cctx->first_hdr_3xx = cctx->first_hdr_4xx = cctx->first_hdr_5xx = 0;
+  cctx->first_hdr_1xx = cctx->first_hdr_2xx = cctx->first_hdr_3xx = 
+    cctx->first_hdr_4xx = cctx->first_hdr_5xx = 0;
+}
+void first_hdrs_clear_non_1xx (client_context* cctx)
+{
+  cctx->first_hdr_req = cctx->first_hdr_2xx = cctx->first_hdr_3xx = 
+    cctx->first_hdr_4xx = cctx->first_hdr_5xx = 0;
 }
 void first_hdrs_clear_non_2xx (client_context* cctx)
 {
-  cctx->first_hdr_req = cctx->first_hdr_3xx = cctx->first_hdr_4xx = cctx->first_hdr_5xx = 0;
+  cctx->first_hdr_req = cctx->first_hdr_3xx = cctx->first_hdr_4xx = 
+    cctx->first_hdr_5xx = 0;
 }
 void first_hdrs_clear_non_3xx (client_context* cctx)
 {
@@ -134,29 +149,35 @@ void stat_req_inc (client_context* cctx)
   cctx->is_https ? cctx->bctx->https_delta.requests++ :
     cctx->bctx->http_delta.requests++;
 }
+void stat_1xx_inc (client_context* cctx)
+{
+  cctx->st.resp_1xx++;
+  cctx->is_https ? cctx->bctx->https_delta.resp_1xx++ :
+    cctx->bctx->http_delta.resp_1xx++;
+}
 void stat_2xx_inc (client_context* cctx)
 {
-  cctx->st.resp_oks++;
-  cctx->is_https ? cctx->bctx->https_delta.resp_oks++ :
-    cctx->bctx->http_delta.resp_oks++;
+  cctx->st.resp_2xx++;
+  cctx->is_https ? cctx->bctx->https_delta.resp_2xx++ :
+    cctx->bctx->http_delta.resp_2xx++;
 }
 void stat_3xx_inc (client_context* cctx)
 {
-  cctx->st.resp_redirs++;
-  cctx->is_https ? cctx->bctx->https_delta.resp_redirs++ :
-    cctx->bctx->http_delta.resp_redirs++;
+  cctx->st.resp_3xx++;
+  cctx->is_https ? cctx->bctx->https_delta.resp_3xx++ :
+    cctx->bctx->http_delta.resp_3xx++;
 }
 void stat_4xx_inc (client_context* cctx)
 {
-  cctx->st.resp_cl_errs++;
-  cctx->is_https ? cctx->bctx->https_delta.resp_cl_errs++ :
-    cctx->bctx->http_delta.resp_cl_errs++;
+  cctx->st.resp_4xx++;
+  cctx->is_https ? cctx->bctx->https_delta.resp_4xx++ :
+    cctx->bctx->http_delta.resp_4xx++;
 }
 void stat_5xx_inc (client_context* cctx)
 {
-  cctx->st.resp_serv_errs++;
-  cctx->is_https ? cctx->bctx->https_delta.resp_serv_errs++ :
-    cctx->bctx->http_delta.resp_serv_errs++;
+  cctx->st.resp_5xx++;
+  cctx->is_https ? cctx->bctx->https_delta.resp_5xx++ :
+    cctx->bctx->http_delta.resp_5xx++;
 }
 
 void stat_appl_delay_add (client_context* cctx, unsigned long resp_timestamp)
@@ -205,8 +226,8 @@ void dump_client (FILE* file, client_context* cctx)
   fprintf (file, 
            "%s,cycles:%ld,cstate:%d,b-in:%lld,b-out:%lld,req:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,err:%ld\n", 
            cctx->client_name, cctx->cycle_num, cctx->client_state, 
-           cctx->st.data_in,  cctx->st.data_out, cctx->st.requests, cctx->st.resp_oks,
-           cctx->st.resp_redirs, cctx->st.resp_cl_errs, cctx->st.resp_serv_errs, 
+           cctx->st.data_in,  cctx->st.data_out, cctx->st.requests, cctx->st.resp_2xx,
+           cctx->st.resp_3xx, cctx->st.resp_4xx, cctx->st.resp_5xx, 
            cctx->st.other_errs);
   fflush (file);
 }

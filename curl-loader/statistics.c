@@ -82,10 +82,12 @@ void stat_point_add (stat_point* left, stat_point* right)
   left->data_out += right->data_out;
   
   left->requests += right->requests;
-  left->resp_oks += right->resp_oks;
-  left->resp_redirs += right->resp_redirs;
-  left->resp_cl_errs += right->resp_cl_errs;
-  left->resp_serv_errs += right->resp_serv_errs;
+
+  left->resp_1xx += right->resp_1xx;
+  left->resp_2xx += right->resp_2xx;
+  left->resp_3xx += right->resp_3xx;
+  left->resp_4xx += right->resp_4xx;
+  left->resp_5xx += right->resp_5xx;
   left->other_errs += right->other_errs;
   
   const int total_points = left->appl_delay_points + right->appl_delay_points;
@@ -126,14 +128,12 @@ void stat_point_reset (stat_point* p)
     return;
 
   p->data_in = p->data_out = 0;
-  p->requests = p->resp_redirs = p->resp_oks = p->resp_cl_errs = 
-      p->resp_serv_errs = p->other_errs = 0;
+  p->requests = p->resp_1xx = p->resp_2xx = p->resp_3xx = p->resp_4xx = 
+      p->resp_5xx = p->other_errs = 0;
 
-  p->appl_delay_points = 0;
-  p->appl_delay = 0;
+  p->appl_delay_points = p->appl_delay_2xx_points = 0;
+  p->appl_delay = p->appl_delay_2xx = 0;
 
-  p->appl_delay_2xx_points = 0;
-  p->appl_delay_2xx = 0;
 }
 
 /****************************************************************************************
@@ -524,15 +524,12 @@ void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
   fprintf(stdout,"============  loading batch is: %-10.10s ==================\n",
           bctx->batch_name);
 
-  /*
-    Operational statistics
-  */
+  /*Operational statistics*/
   op_stat_point_add (&bctx->op_total, &bctx->op_delta );
 
   print_operational_statistics (&bctx->op_delta, 
                                 &bctx->op_total, 
                                 bctx->url_ctx_array);
-
 
 
   fprintf(stdout,"-----------------------------------------------------\n");
@@ -618,11 +615,11 @@ static void dump_stat_to_screen (char* protocol,
                                  stat_point* sd, 
                                  unsigned long period)
 {
-  fprintf(stdout, "%sReq:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,Err:%ld,"
-          "D:%ldms,D-2xx:%ldms,T-i:%lldB/s,T-o:%lldB/s\n",
-          protocol, sd->requests, sd->resp_oks, sd->resp_redirs, sd->resp_cl_errs,
-          sd->resp_serv_errs, sd->other_errs, sd->appl_delay, sd->appl_delay_2xx,
-          sd->data_in/period, sd->data_out/period);
+  fprintf(stdout, "%sReq:%ld,1xx:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,Err:%ld,"
+          "D:%ldms,D-2xx:%ldms,Ti:%lldB/s,To:%lldB/s\n",
+          protocol, sd->requests, sd->resp_1xx, sd->resp_2xx, sd->resp_3xx,
+          sd->resp_4xx, sd->resp_5xx, sd->other_errs, sd->appl_delay, 
+          sd->appl_delay_2xx, sd->data_in/period, sd->data_out/period);
 
     //fprintf (stdout, "Appl-Delay-Points %d, Appl-Delay-2xx-Points %d \n", 
   //         sd->appl_delay_points, sd->appl_delay_2xx_points);
@@ -638,7 +635,7 @@ static void dump_stat_to_screen (char* protocol,
 void print_statistics_header (FILE* file)
 {
     fprintf (file, 
-             "Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out\n");
+             "RunTime(sec),Appl,Clients,Req,1xx,2xx,3xx,4xx,5xx,Err,D,D-2xx,Ti,To\n");
     fflush (file);
 }
 
@@ -653,7 +650,7 @@ void print_statistics_header (FILE* file)
 ****************************************************************************************/
 static void print_statistics_footer_to_file (FILE* file)
 {
-    fprintf (file, "*, *, *, *, *, *, *, *, *, *, *, *, *\n");
+    fprintf (file, "*, *, *, *, *, *, *, *, *, *, *, *, *, *\n");
     fflush (file);
 }
 
@@ -685,9 +682,9 @@ static void print_statistics_data_to_file (FILE* file,
         period = 1;
       }
 
-    fprintf (file, "%ld, %s, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %lld, %lld\n",
-             timestamp, prot, clients_num, sd->requests, sd->resp_oks,
-             sd->resp_redirs, sd->resp_cl_errs, sd->resp_serv_errs, 
+    fprintf (file, "%ld, %s, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %lld, %lld\n",
+             timestamp, prot, clients_num, sd->requests, sd->resp_1xx, sd->resp_2xx,
+             sd->resp_3xx, sd->resp_4xx, sd->resp_5xx, 
              sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, 
              sd->data_in/period, sd->data_out/period);
     fflush (file);

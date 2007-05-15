@@ -161,6 +161,7 @@ typedef struct client_context
      updated only once on the first header of req/resp.
   */
   int first_hdr_req;
+  int first_hdr_1xx;
   int first_hdr_2xx;
   int first_hdr_3xx;
   int first_hdr_4xx;
@@ -189,6 +190,9 @@ typedef struct client_context
 int first_hdr_req (client_context* cctx);
 void first_hdr_req_inc (client_context* cctx);
 
+int first_hdr_1xx (client_context* cctx);
+void first_hdr_1xx_inc (client_context* cctx);
+
 int first_hdr_2xx (client_context* cctx);
 void first_hdr_2xx_inc (client_context* cctx);
 
@@ -203,6 +207,7 @@ void first_hdr_5xx_inc (client_context* cctx);
 
 void first_hdrs_clear_all (client_context* cctx);
 void first_hdrs_clear_non_req (client_context* cctx);
+void first_hdrs_clear_non_1xx (client_context* cctx);
 void first_hdrs_clear_non_2xx (client_context* cctx);
 void first_hdrs_clear_non_3xx (client_context* cctx);
 void first_hdrs_clear_non_4xx (client_context* cctx);
@@ -212,6 +217,7 @@ void stat_data_out_add (client_context* cctx, unsigned long bytes);
 void stat_data_in_add (client_context* cctx, unsigned long bytes);
 void stat_err_inc (client_context* cctx);
 void stat_req_inc (client_context* cctx);
+void stat_1xx_inc (client_context* cctx);
 void stat_2xx_inc (client_context* cctx);
 void stat_3xx_inc (client_context* cctx);
 void stat_4xx_inc (client_context* cctx);

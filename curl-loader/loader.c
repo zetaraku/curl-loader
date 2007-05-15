@@ -929,16 +929,27 @@ int client_tracing_function (CURL *handle,
         
         switch (response_module)
           {
+
           case 1: /* 100-Continue and 101 responses */
-            if (verbose_logging)
-              fprintf(cctx->file_output, "%ld %s:!! %ld CONTINUE: eff-url: %s, url: %s\n", 
-                      cctx->cycle_num, cctx->client_name, response_status,
-                      url_print ? url : "", url_diff ? url_target : "");
-            first_hdrs_clear_all (cctx);
+            if (! first_hdr_1xx (cctx))
+              {
+                if (verbose_logging)
+                  fprintf(cctx->file_output, "%ld %s:!! %ld CONTINUE: eff-url: %s, url: %s\n", 
+                          cctx->cycle_num, cctx->client_name, response_status,
+                          url_print ? url : "", url_diff ? url_target : "");
+
+                /* First header of 1xx response */
+                first_hdr_1xx_inc (cctx);
+                stat_1xx_inc (cctx); /* Increment number of 1xx responses */
+                const unsigned long time_1xx_resp = get_tick_count ();
+                stat_appl_delay_add (cctx, time_1xx_resp);
+              }
+            
+            first_hdrs_clear_non_1xx (cctx);
             break;
 
-          case 2: /* 200 OK */
 
+          case 2: /* 200 OK */
             if (! first_hdr_2xx (cctx))
               {
                 if (verbose_logging)
@@ -959,7 +970,6 @@ int client_tracing_function (CURL *handle,
             break;
        
           case 3: /* 3xx REDIRECTIONS */
-
             if (! first_hdr_3xx (cctx))
               {
                 fprintf(cctx->file_output, "%ld %s:!! %ld REDIRECTION: %s: eff-url: %s, url: %s\n", 
@@ -976,7 +986,6 @@ int client_tracing_function (CURL *handle,
             break;
 
           case 4: /* 4xx Client Error */
-
               if (! first_hdr_4xx (cctx))
               {
                 fprintf(cctx->file_output, "%ld %s :!! %ld CLIENT_ERROR : %s: eff-url: %s, url: %s\n", 
@@ -1003,8 +1012,8 @@ int client_tracing_function (CURL *handle,
              first_hdrs_clear_non_4xx (cctx);
              break;
 
-          case 5: /* 5xx Server Error */
 
+          case 5: /* 5xx Server Error */
             if (! first_hdr_5xx (cctx))
               {
                 fprintf(cctx->file_output, "%ld %s :!! %ld SERVER_ERROR : %s: eff-url: %s, url: %s\n", 

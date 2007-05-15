@@ -45,17 +45,20 @@ typedef struct stat_point
    /* Number of requests received */
   unsigned long requests;
 
+  /* Number of 1xx responses */
+  unsigned long resp_1xx;
+
   /* Number of 2xx responses */
-  unsigned long resp_oks;
+  unsigned long resp_2xx;
 
   /* Number of 3xx redirections */
-  unsigned long resp_redirs;
+  unsigned long resp_3xx;
 
   /* Number of 4xx responses */
-  unsigned long resp_cl_errs;
+  unsigned long resp_4xx;
 
   /* Number of 5xx responses */
-  unsigned long resp_serv_errs;
+  unsigned long resp_5xx;
 
   /* Errors of resolving, connecting, internal errors, etc. */
   unsigned long other_errs;

@@ -1,13 +1,12 @@
 Last updated: 13/05/2007
 
-1. To support above 2 tokens (up to 8) in FORM_RECORDS_FILE.
-    Tokenize the input in cycle.
-
-2. POST forms improvement and adding more flexebility.
-   Support for more flexible API for POST forms:
-    http://curl.haxx.se/libcurl/c/curl_formadd.html
-
-3. PUT option support with file transfer and PUT after GET.
+1. POST forms improvement and adding more flexebility.
+    a.) Support for more flexible API for POST forms:
+         http://curl.haxx.se/libcurl/c/curl_formadd.html
+    b.) Dynamic allocation of form post buffers. Current static
+        allocation uses too much memory reserves.
+    c.) Support more than current 2 tokens (up to 8) in 
+        FORM_RECORDS_FILE. Tokenize the input in cycle. 
 
 4. An option to download a url not only once a cycle, but according to its
    "Weight" -several times prior to going to the next url.
@@ -90,13 +89,9 @@ Last updated: 13/05/2007
 19. Testbed for 20K, 50K and 100K clients. We need a more powerful HW:
       2-4 CPUs/cores and 4-8 GB of memory
 
-20. Testing and better support for FTP and FTPS. An option to configure
-      FTP-active, whereas the default is passive.
-
 21. HTTP GET filled forms for login credentials (they are sent using url).
 
-22. Dynamic allocation of form post buffers. Current static
-       allocation uses too much memory reserves.
+
 
 23. Template-guided output of configurable statistics 
 (what user wishes with desired string, names) to statistics file.

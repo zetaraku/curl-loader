@@ -1,5 +1,18 @@
 version 0.31 -?
 
+* Added statistics for 1xx HTTP responses.
+	
+* Authentication we and proxy re-worked to make authentication
+   method configurable using tags WEB_AUTH_METHOD and
+   PROXY_AUTH_METHOD. Credentials may be specified by
+   the tags WEB_AUTH_CREDENTIALS and PROXY_AUTH_CREDENTIALS.
+   When no credentials are specified, we are building them using username
+  and password as the syntax <username>:<password>
+
+* HTTP PUT support added. URL should contain a filename,
+   not only the directory. A path to upload file should be specified by
+  the tag UPLOAD_FILE.
+
 * Loading Console GUI with statistics presentation improved.
    Current and summary operational number are presented
    together: first number is currect, seconds is the summary. 
@@ -67,8 +80,9 @@ version 0.31 -?
 	
   Tag UPLOAD_FILE is a newly added tag to support in future method PUT.
 	
-  New tags WEB_AUTH_METHOD, WEB_AUTH_CREDENTIALS, PROXY_AUTH_METHOD
-  and PROXY_AUTH_CREDENTIALS will support explicitly web and proxy authentication.
+  New tags WEB_AUTH_METHOD, WEB_AUTH_CREDENTIALS, 
+  PROXY_AUTH_METHOD and PROXY_AUTH_CREDENTIALS will support 
+  explicitly web and proxy authentication.
 
   New taq FRESH_CONNECT will enable to change the default behavior and 
   to close/re-open TCP connection.
@@ -77,10 +91,12 @@ version 0.31 -?
   configurable default and to configure for a url a timeout for TCP connection 
   establishment (including resolving).
 
-  Tag TIMER_URL_COMPLETION is a rename of tags <LOGIN/UAS/LOGOFF>_URL_MAX_TIME 
+  Tag TIMER_URL_COMPLETION is a rename of tags 
+  <LOGIN/UAS/LOGOFF>_URL_MAX_TIME 
   and will be in msec, not in seconds as before.
 
-  Tag TIMER_AFTER_URL_SLEEP is a rename of tags <LOGIN/UAS/LOGOFF>_URL_INTERLEAVE_TIME
+  Tag TIMER_AFTER_URL_SLEEP is a rename of tags 
+  <LOGIN/UAS/LOGOFF>_URL_INTERLEAVE_TIME
    
 
 version 0.30 "stable", 26/04/2007, svn-325
