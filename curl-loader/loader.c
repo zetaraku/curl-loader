@@ -593,9 +593,17 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
           curl_easy_setopt(handle, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
         }
     }
-  else
+    else if (url_ctx->url_appl_type == URL_APPL_FTP ||
+             url_ctx->url_appl_type == URL_APPL_FTPS)
     {
-      /* FTP-specific setup. Place here */
+      /* FTP-specific setup.*/
+
+      if (url_ctx->ftp_active)
+        {
+          curl_easy_setopt(handle, 
+                           CURLOPT_FTPPORT, 
+                           bctx->ip_addr_array [cctx->client_index]);
+        }
     }
 
   return 0;

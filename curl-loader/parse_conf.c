@@ -118,6 +118,8 @@ static int timer_tcp_conn_setup_parser (batch_context*const bctx, char*const val
 static int timer_url_completion_parser (batch_context*const bctx, char*const value);
 static int timer_after_url_sleep_parser (batch_context*const bctx, char*const value);
 
+static int ftp_active_parser (batch_context*const bctx, char*const value);
+
 
 static fparser find_tag_parser (const char* tag);
 
@@ -167,6 +169,8 @@ static const tag_parser_pair tp_map [] =
     {"TIMER_TCP_CONN_SETUP", timer_tcp_conn_setup_parser},
     {"TIMER_URL_COMPLETION", timer_url_completion_parser},
     {"TIMER_AFTER_URL_SLEEP", timer_after_url_sleep_parser},
+
+    {"FTP_ACTIVE", ftp_active_parser},
 
     {NULL, 0}
 };
@@ -1168,6 +1172,17 @@ static int timer_after_url_sleep_parser (batch_context*const bctx, char*const va
     return 0;
 }
 
+static int ftp_active_parser (batch_context*const bctx, char*const value)
+{
+  long status = atol (value);
+  if (status < 0 || status > 1)
+    {
+      fprintf(stderr, "%s error: ether 0 or 1 are allowed.\n", __func__);
+      return -1;
+    }
+  bctx->url_ctx_array[bctx->url_index].ftp_active = status;
+  return 0;
+}
 
 static url_appl_type 
 url_schema_classification (const char* const url)

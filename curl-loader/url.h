@@ -189,6 +189,8 @@ typedef struct url_context
   /* Time to relax/sleep after fetching this url (msec).*/
   unsigned long timer_after_url_sleep;
 
+  /* When positive, means ftp active. */
+  int ftp_active;
 
   /* Application type of url, e.g. HTTP, HTTPS, FTP, etc */
   url_appl_type url_appl_type;
