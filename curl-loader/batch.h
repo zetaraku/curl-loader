@@ -38,7 +38,7 @@
 #define BATCH_NAME_EXTRA_SIZE 6
 #define POST_BUFFER_SIZE 256
 
-#define CUSTOM_HTTP_HDRS_MAX_NUM 16
+#define CUSTOM_HDRS_MAX_NUM 64
 
 typedef enum form_usagetype
 {

@@ -497,7 +497,38 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
     }
 
   /* Without the buffer set, we do not get any errors in tracing function. */
-  curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer);    
+  curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer); 
+
+  if (url_ctx->upload_file)
+    {
+      if (! url_ctx->upload_file_ptr)
+        {
+          if (! (url_ctx->upload_file_ptr = fopen (url_ctx->upload_file, "rb")))
+            {
+              fprintf (stderr, 
+                       "%s - error: failed to open() %s with errno %d.\n", 
+                       __func__, url_ctx->upload_file, errno);
+              return -1;
+            }
+        }
+      
+      /* Enable uploading */
+      
+      curl_easy_setopt(handle, CURLOPT_UPLOAD, 1);
+      
+      /* 
+         Do we want to use our own read function ? On windows - MUST.
+         curl_easy_setopt(handle, CURLOPT_READFUNCTION, read_callback);
+      */
+      
+      /* Now specify which file to upload */
+      curl_easy_setopt(handle, CURLOPT_READDATA, 
+                       url_ctx->upload_file_ptr);
+      
+      /* Provide the size of the upload */
+      curl_easy_setopt(handle, CURLOPT_INFILESIZE, 
+                       (long) url_ctx->upload_file_size);
+    }
 
   /* 
      Application (url) specific setups, like HTTP-specific, FTP-specific, etc. 
@@ -553,7 +584,7 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
       curl_easy_setopt (handle, CURLOPT_USERAGENT, bctx->user_agent);
 
       /*
-        Setup the custom HTTP headers, if appropriate.
+        Setup the custom (HTTP) headers, if appropriate.
       */
       if (url_ctx->custom_http_hdrs && url_ctx->custom_http_hdrs_num)
         {
@@ -585,45 +616,23 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
         }
       else if (url_ctx->req_type == HTTP_REQ_TYPE_PUT)
         {
-          if (!url_ctx->upload_file)
+          if (!url_ctx->upload_file || ! url_ctx->upload_file_ptr)
             {            
-              fprintf (stderr, "%s - error: upload file is NULL.\n", __func__);
+              fprintf (stderr, 
+                       "%s - error: upload file is NULL or cannot be opened.\n", 
+                       __func__);
               return -1;
             }
           else
             {
-              /* do we want to use our own read function ? */
-              //curl_easy_setopt(handle, CURLOPT_READFUNCTION, read_callback);
-
-              /* HTTP PUT method */
-              curl_easy_setopt(handle, CURLOPT_PUT, 1);
-
-              if (! url_ctx->upload_file_ptr)
-                {
-                  if (! (url_ctx->upload_file_ptr = 
-                         fopen (url_ctx->upload_file, "rb")))
-                    {
-                      fprintf (stderr, 
-                               "%s - error: failed to open() %s with errno %d.\n", 
-                               __func__, url_ctx->upload_file, errno);
-                      return -1;
-                    }
-                }
+              // Upload is enabled earlier.
 
               /* 
+                 HTTP PUT method.
                  Note, target URL for PUT should include a file
                  name, not only a directory 
               */
-
-              /* now specify which file to upload */
-              curl_easy_setopt(handle, CURLOPT_READDATA, 
-                               url_ctx->upload_file_ptr);
-
-              /* provide the size of the upload, we specicially typecast the value
-                 to curl_off_t since we must be sure to use the correct data size */
-              curl_easy_setopt(handle, CURLOPT_INFILESIZE_LARGE,
-                               (curl_off_t) url_ctx->upload_file_size);
-              
+              curl_easy_setopt(handle, CURLOPT_PUT, 1);
             }
         }
 
@@ -671,7 +680,7 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
     else if (url_ctx->url_appl_type == URL_APPL_FTP ||
              url_ctx->url_appl_type == URL_APPL_FTPS)
     {
-      /* FTP-specific setup.*/
+      /***********  FTP-specific setup. *****************/
 
       if (url_ctx->ftp_active)
         {
@@ -679,6 +688,17 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
                            CURLOPT_FTPPORT, 
                            bctx->ip_addr_array [cctx->client_index]);
         }
+
+      /*
+        Send custom FTP headers after the transfer.
+      */
+      if (url_ctx->custom_http_hdrs && url_ctx->custom_http_hdrs_num)
+        {
+          curl_easy_setopt (handle, CURLOPT_POSTQUOTE, 
+                            url_ctx->custom_http_hdrs);
+        }
+
+      
     }
 
   return 0;
@@ -732,7 +752,6 @@ static int init_client_post_buffer (client_context* cctx, url_context* url)
   switch (url->form_usage_type)
     {
     case FORM_USAGETYPE_UNIQUE_USERS_AND_PASSWORDS:
-
       /*
         For each client init post buffer, containing username and password 
         with uniqueness added via added to the base username and password
@@ -762,7 +781,6 @@ static int init_client_post_buffer (client_context* cctx, url_context* url)
       break;
 
     case FORM_USAGETYPE_SINGLE_USER:
-
       /* All clients have the same login_username and password.*/
       snprintf (cctx->post_data,
                 POST_DATA_BUF_SIZE,

@@ -803,43 +803,45 @@ static int url_dont_cycle_parser (batch_context*const bctx, char*const value)
 }
 static int header_parser (batch_context*const bctx, char*const value)
 {
-  const char colomn = ':';
   size_t hdr_len;
-  
   if (!value || !(hdr_len = strlen (value)))
     {
       fprintf (stderr, "%s - error: wrong input.\n", __func__);
       return -1;
     }
+  
+  const char colomn = ':';
+  url_context* url = &bctx->url_ctx_array[bctx->url_index];
 
-  if (!strchr (value, colomn))
+  if (url->url_appl_type == URL_APPL_HTTP || 
+      url->url_appl_type == URL_APPL_HTTPS)
     {
-      fprintf (stderr, 
-               "%s - error: HTTP protocol requires \"%c\" colomn symbol" 
-               " in HTTP headers.\n", __func__, colomn);
-      return -1;
+      if (!strchr (value, colomn))
+        {
+          fprintf (stderr, 
+                   "%s - error: HTTP protocol requires \"%c\" colomn symbol" 
+                   " in HTTP headers.\n", __func__, colomn);
+          return -1;
+        }
     }
 
-  if (bctx->url_ctx_array[bctx->url_index].custom_http_hdrs_num >= 
-      CUSTOM_HTTP_HDRS_MAX_NUM)
+  if (url->custom_http_hdrs_num >= CUSTOM_HDRS_MAX_NUM)
     {
       fprintf (stderr, 
                "%s - error: number of custom HTTP headers is limited to %d.\n", 
-               __func__, CUSTOM_HTTP_HDRS_MAX_NUM);
+               __func__, CUSTOM_HDRS_MAX_NUM);
       return -1;
     }
 
-  if (!(bctx->url_ctx_array[bctx->url_index].custom_http_hdrs = 
-        curl_slist_append (
-                           bctx->url_ctx_array[bctx->url_index].custom_http_hdrs,
-                           value)))
+  if (!(url->custom_http_hdrs = curl_slist_append (url->custom_http_hdrs,
+                                                   value)))
     {
       fprintf (stderr, "%s - error: failed to append the header \"%s\"\n", 
                __func__, value);
       return -1;
     }
   
-  bctx->url_ctx_array[bctx->url_index].custom_http_hdrs_num++;
+  url->custom_http_hdrs_num++;
 
   return 0;
 }
