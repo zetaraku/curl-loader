@@ -3,8 +3,7 @@
 *
 * 2006 Copyright (c) 
 * Robert Iakobashvili, <coroberti@gmail.com>
-* All rights reserved.
-*
+* All rights reserved.*
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation; either version 2 of the License, or
@@ -44,6 +43,7 @@
 #define BATCH_MAX_CLIENTS_NUM 4096
 
 #define NON_APPLICABLE_STR ""
+#define NON_APPLICABLE_STR_2 "N/A"
 
 #define REQ_GET "GET"
 #define REQ_POST "POST"
@@ -54,6 +54,12 @@
 #define FT_SINGLE_USER "SINGLE_USER"
 #define FT_RECORDS_FROM_FILE "RECORDS_FROM_FILE"
 #define FT_AS_IS "AS_IS"
+
+#define AUTH_BASIC "BASIC"
+#define AUTH_DIGEST "DIGEST"
+#define AUTH_GSS_NEGOTIATE "GSS_NEGOTIATE"
+#define AUTH_NTLM "NTLM"
+#define AUTH_ANY "ANY"
 
 
 /*
@@ -867,8 +873,8 @@ static int username_parser (batch_context*const bctx, char*const value)
 {
   if (strlen (value) <= 0)
     {
-      fprintf(stderr, "%s - warning: empty USERNAME\"%s\"\n", 
-              __func__, value);
+      fprintf(stderr, "%s - warning: empty USERNAME \n", 
+              __func__);
       return 0;
     }
 
@@ -882,8 +888,8 @@ static int password_parser (batch_context*const bctx, char*const value)
 {
   if (strlen (value) <= 0)
     {
-      fprintf(stderr, "%s - warning: empty PASSWORD\"%s\"\n", 
-              __func__, value);
+      fprintf(stderr, "%s - warning: empty PASSWORD\n", 
+              __func__);
       return 0;
     } 
   strncpy (bctx->url_ctx_array[bctx->url_index].password, 
@@ -947,7 +953,8 @@ static int form_string_parser (batch_context*const bctx, char*const value)
       return -1;
     }
 
-  if (strcmp (value, NON_APPLICABLE_STR) || strcmp (value, "N/A"))
+  if (strcmp (value, NON_APPLICABLE_STR) || 
+      strcmp (value, NON_APPLICABLE_STR_2))
     {
       /*count "%s%d" and "%s" sub-stritngs*/
 
@@ -1064,8 +1071,9 @@ static int form_records_file_parser (batch_context*const bctx, char*const value)
       if (! (bctx->url_ctx_array[bctx->url_index].form_records_file = 
              (char *) calloc (string_len, sizeof (char))))
         {
-          fprintf(stderr, "%s error: failed to allocate memory for form_records_file with errno %d.\n",  
-                  __func__, errno);
+          fprintf(stderr, 
+                  "%s error: failed to allocate memory for form_records_file" 
+                  "with errno %d.\n",  __func__, errno);
           return -1;
         }
 
@@ -1117,22 +1125,121 @@ static int upload_file_parser  (batch_context*const bctx, char*const value)
 
 static int web_auth_method_parser (batch_context*const bctx, char*const value)
 {
-  (void) bctx; (void) value;
+  url_context* url = &bctx->url_ctx_array[bctx->url_index];
+
+  if (!strcmp (value, NON_APPLICABLE_STR))
+    {
+      url->web_auth_method = AUTHENTICATION_NO;
+      return 0;
+    }
+
+  if (!strcmp (value, AUTH_BASIC))
+      url->web_auth_method = AUTHENTICATION_BASIC;
+  else if (!strcmp (value, AUTH_DIGEST))
+      url->web_auth_method = AUTHENTICATION_DIGEST;
+  else if (!strcmp (value, AUTH_GSS_NEGOTIATE))
+    url->web_auth_method = AUTHENTICATION_GSS_NEGOTIATE;
+  else if (!strcmp (value, AUTH_NTLM))
+    url->web_auth_method = AUTHENTICATION_NTLM;
+  else if (!strcmp (value, AUTH_ANY))
+    url->web_auth_method = AUTHENTICATION_ANY;
+  else
+    {
+      fprintf (stderr, 
+               "\n%s - error: WEB_AUTH_METHOD (%s) is not valid. \n"
+               "Please, use: %s, %s \n" "%s, %s, %s\n",
+               __func__, value, AUTH_BASIC, AUTH_DIGEST, AUTH_GSS_NEGOTIATE,
+               AUTH_NTLM, AUTH_ANY);
+      return -1;
+    }
+    
   return 0;
 }
 static int web_auth_credentials_parser (batch_context*const bctx, char*const value)
 {
-  (void) bctx; (void) value;
+  size_t string_len = 0;
+
+  if (! (string_len = strlen (value)))
+    {
+      fprintf(stderr, "%s - warning: empty WEB_AUTH_CREDENTIALS\n", 
+              __func__);
+      return 0;
+    }
+
+  string_len++;
+  
+  if ((bctx->url_ctx_array[bctx->url_index].web_auth_credentials = 
+       (char *) calloc (string_len, sizeof (char))))
+    {
+      fprintf(stderr, 
+                  "%s error: failed to allocate memory for WEB_AUTH_CREDENTIALS" 
+                  "with errno %d.\n",  __func__, errno);
+      return -1;
+    }
+
+  strncpy (bctx->url_ctx_array[bctx->url_index].web_auth_credentials, 
+           value, 
+           string_len -1);
+  
   return 0;
 }
 static int proxy_auth_method_parser (batch_context*const bctx, char*const value)
 {
-  (void) bctx; (void) value;
+  url_context* url = &bctx->url_ctx_array[bctx->url_index];
+
+  if (!strcmp (value, NON_APPLICABLE_STR))
+    {
+      url->proxy_auth_method = AUTHENTICATION_NO;
+      return 0;
+    }
+
+  if (!strcmp (value, AUTH_BASIC))
+      url->proxy_auth_method = AUTHENTICATION_BASIC;
+  else if (!strcmp (value, AUTH_DIGEST))
+      url->proxy_auth_method = AUTHENTICATION_DIGEST;
+  else if (!strcmp (value, AUTH_GSS_NEGOTIATE))
+    url->proxy_auth_method = AUTHENTICATION_GSS_NEGOTIATE;
+  else if (!strcmp (value, AUTH_NTLM))
+    url->proxy_auth_method = AUTHENTICATION_NTLM;
+  else if (!strcmp (value, AUTH_ANY))
+    url->proxy_auth_method = AUTHENTICATION_ANY;
+  else
+    {
+      fprintf (stderr, 
+               "\n%s - error: PROXY_AUTH_METHOD (%s) is not valid. \n"
+               "Please, use: %s, %s \n" "%s, %s, %s\n",
+               __func__, value, AUTH_BASIC, AUTH_DIGEST, AUTH_GSS_NEGOTIATE,
+               AUTH_NTLM, AUTH_ANY);
+      return -1;
+    }
   return 0;
 }
 static int proxy_auth_credentials_parser (batch_context*const bctx, char*const value)
 {
-  (void) bctx; (void) value;
+  size_t string_len = 0;
+
+  if (! (string_len = strlen (value)))
+    {
+      fprintf(stderr, "%s - warning: empty PROXY_AUTH_CREDENTIALS\n", 
+              __func__);
+      return 0;
+    }
+
+  string_len++;
+  
+  if ((bctx->url_ctx_array[bctx->url_index].proxy_auth_credentials = 
+       (char *) calloc (string_len, sizeof (char))))
+    {
+      fprintf(stderr, 
+                  "%s error: failed to allocate memory for PROXY_AUTH_CREDENTIALS" 
+                  "with errno %d.\n",  __func__, errno);
+      return -1;
+    }
+
+  strncpy (bctx->url_ctx_array[bctx->url_index].proxy_auth_credentials, 
+           value, 
+           string_len -1);
+
   return 0;
 }
 

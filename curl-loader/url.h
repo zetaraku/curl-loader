@@ -46,6 +46,16 @@ typedef enum url_appl_type
   URL_APPL_TELNET,
 }url_appl_type;
 
+typedef enum authentication_method
+  {
+    AUTHENTICATION_NO = CURLAUTH_NONE, /* set by calloc */
+    AUTHENTICATION_BASIC = CURLAUTH_BASIC,
+    AUTHENTICATION_DIGEST = CURLAUTH_DIGEST,
+    AUTHENTICATION_GSS_NEGOTIATE = CURLAUTH_GSSNEGOTIATE,
+    AUTHENTICATION_NTLM = CURLAUTH_NTLM,
+    AUTHENTICATION_ANY = CURLAUTH_ANY,
+  } authentication_method;
+
 /* Currently, only username and password - 2 records */
 #define FORM_RECORDS_MAX_TOKENS_NUM 2
 
@@ -162,15 +172,25 @@ typedef struct url_context
   /* Size of the file to upload */
   off_t upload_file_size;
 
+  /* File pointer to the open file */
   FILE* upload_file_ptr;
 
-  int web_auth_method;
+  /* Web authentication method. If 0 - no Web authentication */
+  authentication_method  web_auth_method;
   
+  /* 
+     Username:password. If NULL, username and password are
+     combined to make it
+  */
   char* web_auth_credentials;
 
-
-  int proxy_auth_method;
+  /* Proxy authentication method. If 0 - no proxy authentication */
+  authentication_method  proxy_auth_method;
   
+  /* 
+     Username:password. If NULL, username and password are
+     combined to make it
+  */
   char* proxy_auth_credentials;
 
 
@@ -194,7 +214,7 @@ typedef struct url_context
   /* Time to relax/sleep after fetching this url (msec).*/
   unsigned long timer_after_url_sleep;
 
-  /* When positive, means ftp active. */
+  /* When positive, means ftp active. The default is passive. */
   int ftp_active;
 
   /* Application type of url, e.g. HTTP, HTTPS, FTP, etc */

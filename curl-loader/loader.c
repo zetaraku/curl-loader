@@ -627,17 +627,46 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
             }
         }
 
-      if (url_ctx->username[0])
+      if (url_ctx->web_auth_method)
         {
-          char userpwd[256];
-          sprintf (userpwd, "%s:%s", url_ctx->username, url_ctx->password);
+          if (!url_ctx->web_auth_credentials)
+            {
+              if (!url_ctx->username || !url_ctx->password)
+                {
+                  return -1;
+                }
 
-          curl_easy_setopt(handle, CURLOPT_USERPWD, userpwd);
-          curl_easy_setopt(handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-          
-          curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, userpwd);
-          curl_easy_setopt(handle, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
+              char web_userpwd[256];
+              sprintf (web_userpwd, "%s:%s", url_ctx->username, url_ctx->password);
+              curl_easy_setopt(handle, CURLOPT_USERPWD, web_userpwd);
+            }
+          else
+            {
+              curl_easy_setopt(handle, CURLOPT_USERPWD, url_ctx->web_auth_credentials);
+            }
+          curl_easy_setopt(handle, CURLOPT_HTTPAUTH, url_ctx->web_auth_method);
         }
+
+      if (url_ctx->proxy_auth_method)
+        {
+          if (!url_ctx->proxy_auth_credentials)
+            {
+              if (!url_ctx->username || !url_ctx->password)
+                {
+                  return -1;
+                }
+
+              char proxy_userpwd[256];
+              sprintf (proxy_userpwd, "%s:%s", url_ctx->username, url_ctx->password);
+              curl_easy_setopt(handle, CURLOPT_USERPWD, proxy_userpwd);
+            }
+          else
+            {
+              curl_easy_setopt(handle, CURLOPT_USERPWD, url_ctx->proxy_auth_credentials);
+            }
+          curl_easy_setopt(handle, CURLOPT_HTTPAUTH, url_ctx->proxy_auth_method);
+        }
+
     }
     else if (url_ctx->url_appl_type == URL_APPL_FTP ||
              url_ctx->url_appl_type == URL_APPL_FTPS)
@@ -1102,60 +1131,111 @@ static int alloc_init_client_contexts (batch_context* bctx,
 static void free_batch_data_allocations (batch_context* bctx)
 {
   int i;
-
+  
   /* 
      Free client contexts 
   */
   if (bctx->cctx_array)
     {
-      for (i = 0 ; i < bctx->client_num_max ; i++)
-        {
-          if (bctx->cctx_array[i].handle)
-            curl_easy_cleanup(bctx->cctx_array[i].handle);
-          
-          /* Free client POST-buffers */ 
-          if (bctx->cctx_array[i].post_data)
-            {
+       for (i = 0 ; i < bctx->client_num_max ; i++)
+         {
+           if (bctx->cctx_array[i].handle)
+             curl_easy_cleanup(bctx->cctx_array[i].handle);
+           
+           /* Free client POST-buffers */ 
+           if (bctx->cctx_array[i].post_data)
+             {
               free (bctx->cctx_array[i].post_data);
               bctx->cctx_array[i].post_data = NULL;
-            }
+             }
+           
+           free(bctx->cctx_array);
+           bctx->cctx_array = NULL;
+         }
+     }
+       
+   /* 
+      Free url contexts
+   */
+   if (bctx->url_ctx_array)
+     {
+       /* Free all URL objects */
 
-      free(bctx->cctx_array);
-      bctx->cctx_array = NULL;
-    }
-
-  /* Free the allocated url contexts*/
-  if (bctx->url_ctx_array && bctx->urls_num)
-    {
-      /* Free all URL-strings */
-      for (i = 0 ; i < bctx->urls_num; i++)
-        {
-          if (bctx->url_ctx_array[i].url_str)
-            {
-              /* Free url string */
-              free (bctx->url_ctx_array[i].url_str);
-              bctx->url_ctx_array[i].url_str = NULL ;
-                
-              /* Free custom HTTP headers. */
-              if (bctx->url_ctx_array[i].custom_http_hdrs)
-                {
-                  curl_slist_free_all(bctx->url_ctx_array[i].custom_http_hdrs);
-                  bctx->url_ctx_array[i].custom_http_hdrs = NULL;
-                }
-
-              /* Free login credentials. */
-              if (bctx->url_ctx_array[i].form_records_file)
-                {
-                  free (bctx->url_ctx_array[i].form_records_file);
-                  bctx->url_ctx_array[i].form_records_file = NULL;
-                }
-            }
-        }
-
-      /* Free URL context array */
-      free (bctx->url_ctx_array);
-      bctx->url_ctx_array = NULL;
-    }
+       for (i = 0 ; i < bctx->urls_num; i++)
+         {
+           url_context* url = &bctx->url_ctx_array[i];
+           
+           /* Free url string */
+           free (url->url_str);
+           url->url_str = NULL ;
+           
+           /* Free custom HTTP headers. */
+           if (url->custom_http_hdrs)
+             {
+               curl_slist_free_all(url->custom_http_hdrs);
+               url->custom_http_hdrs = NULL;
+             }
+           
+           /* Free Form records file (credentials). */
+           if (url->form_records_file)
+             {
+               free (url->form_records_file);
+               url->form_records_file = NULL;
+             }
+           
+           /* Free form_records_array */
+           if (url->form_records_array)
+             {
+               int j;
+               for (j = 0; j < bctx->client_num_max; j++)
+                 {
+                   int m;
+                   for (m = 0; m < FORM_RECORDS_MAX_TOKENS_NUM; m++)
+                     { 
+                       if (url->form_records_array[j].form_tokens[m])
+                         {
+                           free (url->form_records_array[j].form_tokens[m]);
+                           url->form_records_array[j].form_tokens[m] = NULL;
+                         }
+                     }
+                 }
+               
+               free (url->form_records_array);
+               url->form_records_array = NULL;
+             }
+           
+           /* Free upload file */
+           if (url->upload_file)
+             {
+               free (url->upload_file);
+               url->upload_file = NULL;
+             }
+           
+           /* Close file pointer of upload file */
+           if (url->upload_file_ptr)
+             {
+               fclose (url->upload_file_ptr);
+               url->upload_file_ptr = NULL;
+             }
+           
+           /* Free web-authentication credentials */
+           if (url->web_auth_credentials)
+             {
+               free (url->web_auth_credentials);
+               url->web_auth_credentials = NULL;
+             }
+           
+           /* Free proxy-authentication credentials */
+           if (url->proxy_auth_credentials)
+             {
+               free (url->proxy_auth_credentials);
+               url->proxy_auth_credentials = NULL;
+             }
+         }
+       
+       /* Free URL context array */
+       free (bctx->url_ctx_array);
+       bctx->url_ctx_array = NULL;
     }
 
 }
