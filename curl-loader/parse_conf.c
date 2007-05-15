@@ -1138,7 +1138,8 @@ static int web_auth_method_parser (batch_context*const bctx, char*const value)
   else if (!strcmp (value, AUTH_DIGEST))
       url->web_auth_method = AUTHENTICATION_DIGEST;
   else if (!strcmp (value, AUTH_GSS_NEGOTIATE))
-    url->web_auth_method = AUTHENTICATION_GSS_NEGOTIATE;
+    url->web_auth_method = 
+      AUTHENTICATION_GSS_NEGOTIATE;
   else if (!strcmp (value, AUTH_NTLM))
     url->web_auth_method = AUTHENTICATION_NTLM;
   else if (!strcmp (value, AUTH_ANY))
@@ -1148,8 +1149,8 @@ static int web_auth_method_parser (batch_context*const bctx, char*const value)
       fprintf (stderr, 
                "\n%s - error: WEB_AUTH_METHOD (%s) is not valid. \n"
                "Please, use: %s, %s \n" "%s, %s, %s\n",
-               __func__, value, AUTH_BASIC, AUTH_DIGEST, AUTH_GSS_NEGOTIATE,
-               AUTH_NTLM, AUTH_ANY);
+               __func__, value, AUTH_BASIC, AUTH_DIGEST, 
+               AUTH_GSS_NEGOTIATE, AUTH_NTLM, AUTH_ANY);
       return -1;
     }
     
@@ -1168,12 +1169,22 @@ static int web_auth_credentials_parser (batch_context*const bctx, char*const val
 
   string_len++;
   
-  if ((bctx->url_ctx_array[bctx->url_index].web_auth_credentials = 
+  if (!(bctx->url_ctx_array[bctx->url_index].web_auth_credentials = 
        (char *) calloc (string_len, sizeof (char))))
     {
       fprintf(stderr, 
                   "%s error: failed to allocate memory for WEB_AUTH_CREDENTIALS" 
                   "with errno %d.\n",  __func__, errno);
+      return -1;
+    }
+
+  const char separator = ':';
+  if (!strchr (value, separator))
+    {
+      fprintf(stderr, 
+                  "%s error: separator (%c) of username and password to be "
+              "present in the credentials string \"%s\"\n", 
+              __func__, separator, value);
       return -1;
     }
 
@@ -1227,12 +1238,22 @@ static int proxy_auth_credentials_parser (batch_context*const bctx, char*const v
 
   string_len++;
   
-  if ((bctx->url_ctx_array[bctx->url_index].proxy_auth_credentials = 
+  if (! (bctx->url_ctx_array[bctx->url_index].proxy_auth_credentials = 
        (char *) calloc (string_len, sizeof (char))))
     {
       fprintf(stderr, 
                   "%s error: failed to allocate memory for PROXY_AUTH_CREDENTIALS" 
                   "with errno %d.\n",  __func__, errno);
+      return -1;
+    }
+
+  const char separator = ':';
+  if (!strchr (value, separator))
+    {
+      fprintf(stderr, 
+                  "%s error: separator (%c) of username and password to be "
+              "present in the credentials string \"%s\"\n", 
+              __func__, separator, value);
       return -1;
     }
 
