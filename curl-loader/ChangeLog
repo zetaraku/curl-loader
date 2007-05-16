@@ -1,13 +1,13 @@
 version 0.31 -?
 
-* Added statistics for 1xx HTTP responses.
+* Added statistics for 1xx HTTP responses (100 and 101).
 	
-* Authentication we and proxy re-worked to make authentication
+* Authentication (web and proxy) re-worked to make authentication
    method configurable using tags WEB_AUTH_METHOD and
    PROXY_AUTH_METHOD. Credentials may be specified by
    the tags WEB_AUTH_CREDENTIALS and PROXY_AUTH_CREDENTIALS.
    When no credentials are specified, we are building them using username
-  and password as the syntax <username>:<password>
+   and password as the syntax <username>:<password>
 
 * HTTP PUT support added. URL should contain a filename,
    not only the directory. A path to upload file should be specified by
@@ -18,8 +18,10 @@ version 0.31 -?
    together: first number is currect, seconds is the summary. 
 	
 * FTP tested and improved. Minor bug fixed in loader.c
-  ftp.conf file corrected by adding FRESH_CONNECT tag.
+  File ftp.conf file corrected by adding FRESH_CONNECT tag.
   Added a new file ftp_http.conf.
+  FTP uploading tested to be supported.
+  File ftp_upload.conf configuration added.
    
   Note, that proftpd as well as other servers have a few DOS protection
   options. Take care to configure them properly and look also in your server
