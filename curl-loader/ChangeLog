@@ -13,7 +13,7 @@ version 0.31 -?
    not only the directory. A path to upload file should be specified by
   the tag UPLOAD_FILE.
 
-* Loading Console GUI with statistics presentation improved.
+* Load Status GUI with statistics presentation improved.
    Current and summary operational number are presented
    together: first number is currect, seconds is the summary. 
 	
@@ -100,6 +100,12 @@ version 0.31 -?
 
   Tag TIMER_AFTER_URL_SLEEP is a rename of tags 
   <LOGIN/UAS/LOGOFF>_URL_INTERLEAVE_TIME
+
+* Storming mode - discontinued
+
+* Support for multiple batches, using threads, dicontinued.
+   The feature may be used internally to shared load among
+   several thread, when using the tool at SMP/multi-core HW.
    
 
 version 0.30 "stable", 26/04/2007, svn-325
