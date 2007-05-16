@@ -72,9 +72,8 @@ static int setup_url (client_context* cctx);
  *
  * Description - Allocates and initializes timer waiting queue
  *
- *Input               size -  maximum possible size of the queue
+ *Input          size - maximum possible size of the queue
  *Input/Output   **wq - waiting queue to be allocated, initialized and returned back
- *
  * Return Code/Output - On success -0, on error -1
  ******************************************************************************/
 int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq)
@@ -90,9 +89,9 @@ int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq)
     }
   
   if (tq_init (tq,
-               size,               /* tq size */
-               10,                             /* tq increase step; 0 - means don't increase */
-               size /* number of nodes to prealloc */
+               size,     /* tq size */
+               10,       /* tq increase step; 0 - means don't increase */
+               size      /* number of nodes to prealloc */
                ) == -1)
     {
       fprintf (stderr, "%s - error: failed to initialize waiting queue.\n", __func__);
@@ -110,9 +109,8 @@ int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq)
  *
  * Description - Really inits timers and adds initial clients to load
  *
- *Input               *bctx - pointer to a batch context
- *                   now-time  - current timestamp
- *
+ *Input          *bctx - pointer to a batch context
+ *               now-time  - current timestamp
  * Return Code/Output - On success -0, on error -1
  ******************************************************************************/
 int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
@@ -170,8 +168,7 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
       clients_num_inc_timer_node.func_timer = 
         handle_gradual_increase_clients_num_timer;
 
-      if ((clients_num_inc_id = tq_schedule_timer (
-                                                   bctx->waiting_queue, 
+      if ((clients_num_inc_id = tq_schedule_timer (bctx->waiting_queue, 
                                                    &clients_num_inc_timer_node)) == -1)
         {
           fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
@@ -187,7 +184,7 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
  *
  * Description - Cancels scheduled periodic timers
  *
- *Input               *twq - pointer to timer waiting queue
+ * Input         *twq - pointer to timer waiting queue
  * Return Code/Output - On success -0, on error -1
  ***************************************************************************/
 int cancel_periodic_timers (timer_queue* twq)
@@ -214,7 +211,7 @@ int cancel_periodic_timers (timer_queue* twq)
 }
 
 
-/****************************************************************************************
+/*****************************************************************************
  * Function name - load_next_step
  *
  * Description - Called at initialization and further after url-fetch completion 
@@ -224,10 +221,11 @@ int cancel_periodic_timers (timer_queue* twq)
  *
  * Input -       *cctx - pointer to the client context
  *               now_time -  current timestamp in msec
- *Input/Output   sched_now - when true, the client is scheduled right now without timer queue.
+ * Input/Output  sched_now - when true, the client is scheduled right now without 
+ * 			     timer queue.
  *
  * Return Code/Output - CSTATE enumeration with the state of loading
- ****************************************************************************************/
+ ******************************************************************************/
 int load_next_step (client_context* cctx,
                     unsigned long now_time,
                     int* sched_now)
@@ -261,13 +259,14 @@ int load_next_step (client_context* cctx,
      Initialize virtual client's CURL handle for the next step of loading by calling
      load_<state-name>_state() function relevant for a particular client state.
   */
-  rval_load = load_state_func_table[cctx->client_state+1](cctx, &interleave_waiting_time);
+  rval_load = load_state_func_table[cctx->client_state+1](cctx, 
+  							  &interleave_waiting_time);
 
 
   /* Update operational statistics */
-  op_stat_update (
-                  &bctx->op_delta, 
-                  (recoverable_error_state == CSTATE_ERROR) ? recoverable_error_state : rval_load, 
+  op_stat_update (&bctx->op_delta, 
+                  (recoverable_error_state == CSTATE_ERROR) ? 
+		  	recoverable_error_state : rval_load, 
                   cctx->preload_state,
                   cctx->url_curr_index,
                   cctx->preload_url_curr_index);
@@ -296,7 +295,8 @@ int load_next_step (client_context* cctx,
       /* Schedule the client immediately */
       if (client_add_to_load (bctx, cctx) == -1)
         {
-          fprintf (stderr, "%s - error: client_add_to_load () failed .\n", __func__);
+          fprintf (stderr, "%s - error: client_add_to_load () failed .\n", 
+	  __func__);
           return -1;
         }
       else
@@ -321,13 +321,13 @@ int load_next_step (client_context* cctx,
         }
 
       //fprintf (stderr, "%s - scheduled client to wq with wtime %ld\n", 
-      //				 __func__, interleave_waiting_time);
+      // __func__, interleave_waiting_time);
     }
 
   return rval_load;
 }
 
-/****************************************************************************************
+/******************************************************************************
  * Function name - add_loading_clients
  *
  * Description - Initialization of our virtual clients (CURL handles)
@@ -336,7 +336,7 @@ int load_next_step (client_context* cctx,
  *
  * Input -       *bctx - pointer to the batch of contexts
  * Return Code/Output - On Success - 0, on error or request to unreg timer - (-1)
- ****************************************************************************************/
+ *******************************************************************************/
 int add_loading_clients (batch_context* bctx)
 {
   long clients_to_sched = 0;
@@ -368,7 +368,8 @@ int add_loading_clients (batch_context* bctx)
   else 
     {
       clients_to_sched = bctx->clients_rampup_inc ?
-        min (bctx->clients_rampup_inc, bctx->client_num_max - bctx->clients_current_sched_num) :
+        min (bctx->clients_rampup_inc, bctx->client_num_max - 
+		bctx->clients_current_sched_num) :
         bctx->client_num_max;
     }
 
@@ -414,15 +415,15 @@ int add_loading_clients (batch_context* bctx)
   return 0;
 }
 
-/****************************************************************************************
+/*******************************************************************************
  * Function name - add_loading_clients_num
  *
  * Description - Adding a number of clients to load
  *
  * Input -       *bctx - pointer to the batch of contexts
- *                  add_number - number of clients to add to load
+ *               add_number - number of clients to add to load
  * Return Code/Output - On Success - 0, on error  (-1)
- ****************************************************************************************/
+ *******************************************************************************/
 int add_loading_clients_num (batch_context* bctx, int add_number)
 {
   int scheduled_now = 0;
@@ -439,7 +440,8 @@ int add_loading_clients_num (batch_context* bctx, int add_number)
   
   /* Calculate number of the new clients to schedule. */
   const long clients_to_sched = min (add_number, 
-                                  bctx->client_num_max - bctx->clients_current_sched_num); 
+                                     bctx->client_num_max - 
+				     bctx->clients_current_sched_num); 
 
   //fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_to_sched);
 
@@ -457,7 +459,8 @@ int add_loading_clients_num (batch_context* bctx, int add_number)
                           bctx->start_time,
                           &scheduled_now) == -1)
         {  
-          fprintf(stderr,"%s error: load_next_step() initial failed\n", __func__);
+          fprintf(stderr,"%s error: load_next_step() initial failed\n", 
+	  __func__);
           return -1;
       }
     }
@@ -468,21 +471,22 @@ int add_loading_clients_num (batch_context* bctx, int add_number)
 }
 
 
-/****************************************************************************************
+/*******************************************************************************
  * Function name - dispatch_expired_timers
  *
  * Description - Fetches from the waiting timer queue timers and dispatches them
- *               by calling timer-node specific handle_timeout () method. Among other expired timers
- *               dispatches waiting clients (kept in timer-queue to respect url interleave timeouts),
- *               where func_timer () function of client timer-node adds the clients to our 
- *               loading machinery.
+ *               by calling timer-node specific handle_timeout () method. Among 
+ *               other expired timers dispatches waiting clients (kept in 
+ *               timer-queue to respect url interleave timeouts), where 
+ *               func_timer () function of client timer-node adds the clients 
+ *               to our loading machinery.
  *
  * Input -       *bctx - pointer to the batch of contexts;
  *               now_time -  current time passed in msec
- *
- * Return Code/Output - On Success - 0 or positive number eq to the num of scheduled timers, 
- *                                   on Error -1
- ****************************************************************************************/
+ * Return Code/Output - On Success - 0 or positive number eq to the num of 
+ *                                   scheduled timers, 
+ *                      on Error -1
+ *******************************************************************************/
 int
 dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
 {
@@ -519,16 +523,16 @@ dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
   return count;
 }
 
-/****************************************************************************************
+/******************************************************************************
  * Function name - client_add_to_load
  *
- * Description - Adds client context to the batch context multiple handle for loading
+ * Description - Adds client context to the batch context multiple handle 
+ *               for loading
  *
  * Input -       *bctx - pointer to the batch context
  *               *cctx - pointer to the client context
- *
  * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
+ *******************************************************************************/
 int client_add_to_load (batch_context* bctx, client_context* cctx)
 {
   /* Remember the previous state and url index: fur operational statistics */
@@ -539,7 +543,7 @@ int client_add_to_load (batch_context* bctx, client_context* cctx)
   if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
     {
       bctx->active_clients_count++;
-      //fprintf (stderr, "%s - client added.\n", __func__);
+      // fprintf (stderr, "%s - client added.\n", __func__);
     }
   else
     {
@@ -550,17 +554,17 @@ int client_add_to_load (batch_context* bctx, client_context* cctx)
   return 0;
 }
 
-/****************************************************************************************
+/******************************************************************************
  * Function name - client_remove_from_load
  *
- * Description - Removes client context to from the kept in batch context multiple handle,
- * 		 thus, removing the client from the loading machinery
+ * Description - Removes client context to from the kept in batch context 
+ * 		 multiple handle, thus, removing the client from the loading 
+ * 		 machinery
  *
  * Input -       *bctx - pointer to the batch context
  *               *cctx - pointer to the client context
- *
  * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
+ *****************************************************************************/
 int client_remove_from_load (batch_context* bctx, client_context* cctx)
 {
   if (curl_multi_remove_handle (bctx->multiple_handle, cctx->handle) == CURLM_OK)
@@ -581,7 +585,7 @@ int client_remove_from_load (batch_context* bctx, client_context* cctx)
 }
 
 
-/****************************************************************************************
+/******************************************************************************
  * Function name - handle_gradual_increase_clients_num_timer
  *
  * Description - Handling of one second timer to increase gradually number of 
@@ -590,9 +594,8 @@ int client_remove_from_load (batch_context* bctx, client_context* cctx)
  * Input -       *timer_node - pointer to timer_node structure
  *               *pvoid_param - pointer to some extra data; here batch context
  *               *ulong_param - some extra data.
- *
  * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
+ ******************************************************************************/
 int handle_gradual_increase_clients_num_timer  (timer_node* timer_node, 
                                                 void* pvoid_param, 
                                                 unsigned long ulong_param)
@@ -619,7 +622,6 @@ int handle_gradual_increase_clients_num_timer  (timer_node* timer_node,
  * Input -        *timer_node - pointer to timer node structure
  *                *pvoid_param - pointer to some extra data; here batch context
  *                *ulong_param - some extra data.
- *
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/
 int handle_logfile_rewinding_timer  (timer_node* timer_node, 
@@ -652,8 +654,8 @@ int handle_logfile_rewinding_timer  (timer_node* timer_node,
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/
 int handle_screen_input_timer  (timer_node* timer_node, 
-                                     void* pvoid_param, 
-                                     unsigned long ulong_param)
+                                void* pvoid_param, 
+                                unsigned long ulong_param)
 {
   batch_context* bctx = (batch_context *) pvoid_param;
   (void) timer_node;
@@ -693,7 +695,7 @@ int handle_cctx_timer (timer_node* timer_node,
 /****************************************************************************************
  * Function name - pending_active_and_waiting_clients_num
  *
- * Description - Returns the sum of active and waiting (for load scheduling) clients
+ * Description -  Returns the sum of active and waiting (for load scheduling) clients
  *
  * Input -       *bctx - pointer to the batch context
  *
@@ -720,9 +722,10 @@ static int fetching_first_cycling_url (client_context* cctx)
 /*******************************************************************************
  * Function name - advance_cycle_num
  *
- * Description - Advances number of cycles, when the full cycle is done with all url-fetches
+ * Description - Advances number of cycles, when the full cycle is done 
+ *               with all url-fetches
+ *               
  * Input -       *cctx - pointer to the client context
- *
  * Return Code/Output - None
  ********************************************************************************/
 static void advance_cycle_num (client_context* cctx)
@@ -780,11 +783,12 @@ static int setup_url (client_context* cctx)
 /*****************************************************************************
  * Function name - load_init_state
  *
- * Description - Called by load_next_step () for setting up of the very first url to fetch
+ * Description - Called by load_next_step () for setting up of the very 
+ *               first url to fetch
  *
- * Input -       *cctx - pointer to the client context
- *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
- *
+ * Input -       *cctx      - pointer to the client context
+ *               *wait_msec - pointer to time to wait till next scheduling (
+ *                            interleave time).
  * Return Code/Output - CSTATE enumeration with the state of loading
  *******************************************************************************/
 static int load_init_state (client_context* cctx, unsigned long *wait_msec)
@@ -798,12 +802,12 @@ static int load_init_state (client_context* cctx, unsigned long *wait_msec)
  * Function name - load_error_state
  *
  * Description - Called by load_next_step () for the client in CSTATE_ERROR. 
- *               If the global flag <error_recovery_client> is not false, re-schedules 
- *               the client for next cycle of loading.
+ *               If the global flag <error_recovery_client> is not false, 
+ *               re-schedules the client for next cycle of loading.
  *
- * Input -       *cctx - pointer to the client context
- *               *wait_msec - pointer to time to wait till next scheduling (interleave time).
- *
+ * Input -       *cctx      - pointer to the client context
+ *               *wait_msec - pointer to time to wait till next scheduling 
+ *                            (interleave time).
  * Return Code/Output - CSTATE enumeration with the state of loading
  ********************************************************************************/
 static int load_error_state (client_context* cctx, unsigned long *wait_msec)
