@@ -234,10 +234,6 @@ typedef struct url_context
 
   char* dir_log;
 
-  FILE* logfile_headers;
-
-  FILE* logfile_bodies;
-
 } url_context;
 
 

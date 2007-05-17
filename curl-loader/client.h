@@ -151,6 +151,10 @@ typedef struct client_context
   */
   char* post_data;
 
+  FILE* logfile_headers;
+
+  FILE* logfile_bodies;
+
 
   /* 
      Counter of the headers going in or out.  For the first header in request

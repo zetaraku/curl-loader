@@ -503,21 +503,21 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
                 cctx->cycle_num
                 );
 
-      if (url->logfile_bodies)
+      if (cctx->logfile_bodies)
         {
-          fclose (url->logfile_bodies);
-          url->logfile_bodies = NULL;
+          fclose (cctx->logfile_bodies);
+          cctx->logfile_bodies = NULL;
         }
 
-      if (!(url->logfile_bodies = fopen (body_file, "w")))
+      if (!(cctx->logfile_bodies = fopen (body_file, "w")))
         {
           fprintf (stderr, "%s - error: fopen () failed with errno %d.\n",
                    __func__, errno);
           return -1;
         }
       
-      curl_easy_setopt (handle, CURLOPT_WRITEDATA, url->logfile_bodies);
-      //curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION, writefunction);
+      curl_easy_setopt (handle, CURLOPT_WRITEDATA, cctx->logfile_bodies);
+      curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION, writefunction);
     }
   else
     {
@@ -538,20 +538,20 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
                 cctx->cycle_num
                 );
 
-      if (url->logfile_headers)
+      if (cctx->logfile_headers)
         {
-          fclose (url->logfile_headers);
-          url->logfile_headers = NULL;
+          fclose (cctx->logfile_headers);
+          cctx->logfile_headers = NULL;
         }
 
-      if (!(url->logfile_headers = fopen (hdr_file, "w")))
+      if (!(cctx->logfile_headers = fopen (hdr_file, "w")))
         {
           fprintf (stderr, "%s - error: fopen () failed with errno %d.\n",
                    __func__, errno);
           return -1;
         }
-       curl_easy_setopt (handle, CURLOPT_WRITEHEADER, url->logfile_headers);
-       //curl_easy_setopt (handle, CURLOPT_HEADERFUNCTION, writefunction);
+       curl_easy_setopt (handle, CURLOPT_WRITEHEADER, cctx->logfile_headers);
+       curl_easy_setopt (handle, CURLOPT_HEADERFUNCTION, writefunction);
     }
 
   curl_easy_setopt (handle, CURLOPT_SSL_VERIFYPEER, 0);
@@ -1230,19 +1230,36 @@ static void free_batch_data_allocations (batch_context* bctx)
     {
        for (i = 0 ; i < bctx->client_num_max ; i++)
          {
-           if (bctx->cctx_array[i].handle)
-             curl_easy_cleanup(bctx->cctx_array[i].handle);
-           
-           /* Free client POST-buffers */ 
-           if (bctx->cctx_array[i].post_data)
+           client_context* cctx = &bctx->cctx_array[i];
+
+           if (cctx->handle)
              {
-              free (bctx->cctx_array[i].post_data);
-              bctx->cctx_array[i].post_data = NULL;
+               curl_easy_cleanup (cctx->handle);
+               cctx->handle = NULL;
              }
            
-           free(bctx->cctx_array);
-           bctx->cctx_array = NULL;
-         }
+           /* Free client POST-buffers */ 
+           if (cctx->post_data)
+             {
+               free (cctx->post_data);
+               cctx->post_data = NULL;
+             }
+           
+           if (cctx->logfile_headers)
+             {
+               fclose (cctx->logfile_headers);
+                cctx->logfile_headers= NULL;
+             }
+
+           if (cctx->logfile_bodies)
+             {
+               fclose (cctx->logfile_bodies);
+               cctx->logfile_bodies = NULL;
+             }
+         }/* from for */
+
+       free(bctx->cctx_array);
+       bctx->cctx_array = NULL;
      }
        
    /* 
@@ -1327,18 +1344,6 @@ static void free_batch_data_allocations (batch_context* bctx)
              {
                free (url->dir_log);
                url->dir_log = NULL;
-             }
-
-           if (url->logfile_headers)
-             {
-               fclose (url->logfile_headers);
-               url->logfile_headers = NULL;
-             }
-
-           if (url->logfile_bodies)
-             {
-               fclose (url->logfile_bodies);
-               url->logfile_bodies = NULL;
              }
          }
        
