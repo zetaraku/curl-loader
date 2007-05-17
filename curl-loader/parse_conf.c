@@ -734,24 +734,35 @@ static int url_parser (batch_context*const bctx, char*const value)
         return -1;
     }
     
-    if ((url_length = strlen (value)) <= 0)
+    if (! (url_length = strlen (value)))
     {
-        fprintf(stderr, "%s - warning: empty url is OK only "
-                "when URL_USE_CURRENT tag defined\n", __func__);
-        return 0;
+        if (! bctx->url_index)
+        {
+            fprintf(stderr, "%s - error: empty url is OK not as the first url\n", __func__);
+            return -1;
+        }
+
+        /* Inherits application type of the primary url */
+        bctx->url_ctx_array[bctx->url_index].url_appl_type = 
+            bctx->url_ctx_array[bctx->url_index -1].url_appl_type;
+    }
+    else 
+    {
+        if (! (bctx->url_ctx_array[bctx->url_index].url_str = 
+               (char *) calloc (url_length +1, sizeof (char))))
+        {
+            fprintf (stderr,
+                     "%s - error: allocation failed for url string \"%s\"\n", 
+                     __func__, value);
+            return -1;
+        }
+
+        strcpy(bctx->url_ctx_array[bctx->url_index].url_str, value);
+
+        bctx->url_ctx_array[bctx->url_index].url_appl_type = 
+            url_schema_classification (value);
     }
     
-    if (! (bctx->url_ctx_array[bctx->url_index].url_str = 
-           (char *) calloc (url_length +1, sizeof (char))))
-    {
-        fprintf (stderr,
-                 "%s - error: allocation failed for url string \"%s\"\n", 
-                 __func__, value);
-        return -1;
-    }
-    strcpy(bctx->url_ctx_array[bctx->url_index].url_str, value);
-    bctx->url_ctx_array[bctx->url_index].url_appl_type = 
-      url_schema_classification (value);
     bctx->url_ctx_array[bctx->url_index].url_ind = bctx->url_index;
     
     return 0;
