@@ -33,7 +33,7 @@ Last updated: 13/05/2007
     certain header and whether value matches a regular expression pattern
 
 9. Logging to files headers and bodies of responses, e.g. to directory
-     a URL_SHORT_NAME/<cycle>-<resp-num>.hdr and <cycle>-<resp-num>.body
+     a <batch-name>/<url-index>/<cycle>.hdr and <cycle>.body
     Memory-mapped files are effective for logging, but always we know the size in
     advance. Mapping -re-mapping and truncation, if taken too much, may be 
     required.

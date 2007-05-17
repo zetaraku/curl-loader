@@ -217,6 +217,13 @@ typedef struct url_context
   /* When positive, means ftp active. The default is passive. */
   int ftp_active;
 
+  int log_resp_headers;
+
+  int log_resp_bodies;
+
+
+  /************* Assisting Elements    *************/
+
   /* Application type of url, e.g. HTTP, HTTPS, FTP, etc */
   url_appl_type url_appl_type;
 
@@ -224,6 +231,12 @@ typedef struct url_context
     Our index in the url array
   */
   long url_ind;
+
+  char* dir_log;
+
+  FILE* logfile_headers;
+
+  FILE* logfile_bodies;
 
 } url_context;
 

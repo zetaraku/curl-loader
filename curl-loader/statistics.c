@@ -518,6 +518,7 @@ void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
   if (stop_loading)
     {
       dump_final_statistics (bctx->cctx_array);
+      screen_release ();
       exit (1); 
     }
 

@@ -1,5 +1,19 @@
 version 0.31 -?
 
+* Added an option to log response body-bytes and headers to 
+   files. To log body bytes add tag LOG_RESP_BODIES=1 to your
+   configuration file. To log headers add LOG_RESP_HEADERS=1.
+   See log_hdr_body.conf as an example.
+
+   Directory <batch-name> is created with subdirs url0, url1, url<n>
+   Each url subdir contains files named
+   cl-<client-num>-cycle-<cycle-num>.body or
+   cl-<client-num>-cycle-<cycle-num>.hdr respectively.
+
+   Note, that output to file is currenly done in a most simple way
+   and seriously impacts performance. Use it only with a small number
+   of clients and for a few cycles.
+
 * Added statistics for 1xx HTTP responses (100 and 101).
 	
 * Authentication (web and proxy) re-worked to make authentication

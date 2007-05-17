@@ -125,6 +125,8 @@ static int timer_url_completion_parser (batch_context*const bctx, char*const val
 static int timer_after_url_sleep_parser (batch_context*const bctx, char*const value);
 
 static int ftp_active_parser (batch_context*const bctx, char*const value);
+static int log_resp_headers_parser (batch_context*const bctx, char*const value);
+static int log_resp_bodies_parser (batch_context*const bctx, char*const value);
 
 
 static fparser find_tag_parser (const char* tag);
@@ -177,6 +179,8 @@ static const tag_parser_pair tp_map [] =
     {"TIMER_AFTER_URL_SLEEP", timer_after_url_sleep_parser},
 
     {"FTP_ACTIVE", ftp_active_parser},
+    {"LOG_RESP_HEADERS", log_resp_headers_parser},
+    {"LOG_RESP_BODIES", log_resp_bodies_parser},
 
     {NULL, 0}
 };
@@ -1316,6 +1320,29 @@ static int ftp_active_parser (batch_context*const bctx, char*const value)
   return 0;
 }
 
+static int log_resp_headers_parser (batch_context*const bctx, char*const value)
+{
+  long status = atol (value);
+  if (status < 0 || status > 1)
+    {
+      fprintf(stderr, "%s error: ether 0 or 1 are allowed.\n", __func__);
+      return -1;
+    }
+  bctx->url_ctx_array[bctx->url_index].log_resp_headers = status;
+  return 0;
+}
+static int log_resp_bodies_parser (batch_context*const bctx, char*const value)
+{
+  long status = atol (value);
+  if (status < 0 || status > 1)
+    {
+      fprintf(stderr, "%s error: ether 0 or 1 are allowed.\n", __func__);
+      return -1;
+    }
+  bctx->url_ctx_array[bctx->url_index].log_resp_bodies = status;
+  return 0;
+}
+
 static url_appl_type 
 url_schema_classification (const char* const url)
 {
@@ -1435,6 +1462,13 @@ static int validate_batch_general (batch_context*const bctx)
         fprintf (stderr, "%s - error: CLIENT_NUM_START is less than 0.\n", __func__);
         return -1;
     }
+    if (bctx->client_num_start > bctx->client_num_max)
+      {
+        fprintf (stderr, 
+                 "%s - error: CLIENT_NUM_START (%d) is less than CLIENT_NUM_MAX (%d).\n", 
+                 __func__, bctx->client_num_start, bctx->client_num_max);
+        return -1;
+      }
     if (bctx->clients_rampup_inc < 0)
     {
         fprintf (stderr, "%s - error: CLIENTS_RAMPUP_INC is negative.\n",__func__);
@@ -1705,6 +1739,59 @@ static int post_validate_init (batch_context*const bctx)
           fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
                    bctx->batch_name, __func__);
           return -1;
+        }
+    }
+
+  const mode_t mode= S_IRWXU|S_IRWXG|S_IRWXO;
+  
+  char dir_log_resp[256];
+  memset (dir_log_resp, 0, sizeof (dir_log_resp));
+
+  snprintf (dir_log_resp, sizeof (dir_log_resp) -1, 
+                  "./%s", bctx->batch_name);
+
+  if(mkdir (dir_log_resp, mode) == -1 && errno !=EEXIST )
+    {
+      fprintf (stderr, 
+               "%s - error: mkdir () failed with errno %d to create dir \"%s\".\n",
+               __func__, errno, dir_log_resp);
+      return -1;
+    }
+
+  int k = 0;
+  for (k = 0; k < bctx->urls_num; k++)
+    {
+      url_context* url = &bctx->url_ctx_array[k];
+
+      if (url->log_resp_bodies || url->log_resp_headers)
+        {
+          memset (dir_log_resp, 0, sizeof (dir_log_resp));
+
+          snprintf (dir_log_resp, 
+                  sizeof (dir_log_resp) -1, 
+                  "./%s/url%ld/", 
+                    bctx->batch_name, 
+                    url->url_ind);
+
+          if(mkdir (dir_log_resp, mode) == -1 && errno !=EEXIST )
+            {
+              fprintf (stderr, "%s - error: mkdir () failed with errno %d.\n",
+                       __func__, errno);
+              return -1;
+            }
+
+          const size_t dir_log_len = strlen (dir_log_resp) + 1;
+
+          if (! (url->dir_log = calloc (dir_log_len, sizeof (char))))
+            {
+              fprintf (stderr, "%s - error:  calloc () failed with errno %d.\n",
+                       __func__, errno);
+              return -1;
+            }
+          else
+            {
+              strncpy (url->dir_log, dir_log_resp, dir_log_len -1);
+            }
         }
     }
   

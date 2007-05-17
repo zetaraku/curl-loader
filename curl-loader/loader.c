@@ -176,9 +176,10 @@ main (int argc, char *argv [])
   if (! threads_run)
     {
       fprintf (stderr, "\nRUNNING WITHOUT THREADS\n\n");
-      sleep (1) ;
+      sleep (1);
       batch_function (&bc_arr[0]);
 	 fprintf (stderr, "Exited batch_function\n");
+     screen_release ();
     }
   else
     {
@@ -389,6 +390,12 @@ int setup_curl_handle (client_context*const cctx, url_context* url)
   return 0;
 }
 
+size_t writefunction( void *ptr, size_t size, size_t nmemb, void *stream)
+{
+  fwrite(ptr,size,nmemb,stream);
+  return(nmemb*size);
+}
+
 /****************************************************************************
 * Function name - setup_curl_handle_init
 *
@@ -397,15 +404,15 @@ int setup_curl_handle (client_context*const cctx, url_context* url)
 *               (HTTP/FTP) initialization.
 *
 * Input -       *cctx        - pointer to client context, containing CURL handle pointer;
-*               *url_ctx     - pointer to url-context, containing all url-related information;
+*               *url     - pointer to url-context, containing all url-related information;
 * Return Code/Output - On Success - 0, on Error -1
 ******************************************************************************/
-int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
+int setup_curl_handle_init (client_context*const cctx, url_context* url)
 {
   batch_context* bctx = cctx->bctx;
   CURL* handle = cctx->handle;
 
-  if (!cctx || !url_ctx)
+  if (!cctx || !url)
     {
       return -1;
     }
@@ -422,13 +429,13 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
   curl_easy_setopt (handle, CURLOPT_NOSIGNAL, 1);
     
   /* Set the url */
-  if (url_ctx->url_str && url_ctx->url_str[0])
+  if (url->url_str && url->url_str[0])
     {
       /* 
          Note, target URL for PUT should include a file
          name, not only a directory 
       */
-      curl_easy_setopt (handle, CURLOPT_URL, url_ctx->url_str);
+      curl_easy_setopt (handle, CURLOPT_URL, url->url_str);
     }
   else
     {
@@ -437,23 +444,23 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
       exit (-1);
     }
   
-  /* Set the index to client for the smooth and hyper modes */
-  if (url_ctx->url_ind >= 0)
+  /* Set the index to client */
+  if (url->url_ind >= 0)
   {
-    cctx->url_curr_index = url_ctx->url_ind;
+    cctx->url_curr_index = url->url_ind;
   }
   
-  bctx->url_index = url_ctx->url_ind;
+  bctx->url_index = url->url_ind;
 
   curl_easy_setopt (handle, CURLOPT_DNS_CACHE_TIMEOUT, -1);
 
   /* Set the connection timeout */
   curl_easy_setopt (handle, 
                     CURLOPT_CONNECTTIMEOUT, 
-                    url_ctx->connect_timeout ? url_ctx->connect_timeout : connect_timeout);
+                    url->connect_timeout ? url->connect_timeout : connect_timeout);
 
   /* Define the connection re-use policy. When passed 1, re-establish */
-  curl_easy_setopt (handle, CURLOPT_FRESH_CONNECT, url_ctx->fresh_connect);
+  curl_easy_setopt (handle, CURLOPT_FRESH_CONNECT, url->fresh_connect);
 
   /* 
      If DNS resolving is necesary, global DNS cache is enough,
@@ -477,12 +484,74 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
 #if 0
   curl_easy_setopt(handle, CURLOPT_PROGRESSFUNCTION, prog_cb);
   curl_easy_setopt(handle, CURLOPT_PROGRESSDATA, cctx);
+  if (loading_mode == LOAD_MODE_HYPER)
+    {
+      curl_easy_setopt (handle, CURLOPT_WRITEDATA, cctx);
+    }
 #endif
+  
+  if (url->log_resp_bodies && url->dir_log)
+    {
+      // open the file
+      char body_file[256];
+      memset (body_file, 0, sizeof (body_file));
 
-  if (!output_to_stdout)
+      snprintf (body_file, sizeof (body_file) -1, 
+                "%s/cl-%d-cycle-%ld.body",
+                url->dir_log,
+                cctx->client_index,
+                cctx->cycle_num
+                );
+
+      if (url->logfile_bodies)
+        {
+          fclose (url->logfile_bodies);
+          url->logfile_bodies = NULL;
+        }
+
+      if (!(url->logfile_bodies = fopen (body_file, "w")))
+        {
+          fprintf (stderr, "%s - error: fopen () failed with errno %d.\n",
+                   __func__, errno);
+          return -1;
+        }
+      
+      curl_easy_setopt (handle, CURLOPT_WRITEDATA, url->logfile_bodies);
+      //curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION, writefunction);
+    }
+  else
     {
       curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION,
                         do_nothing_write_func);
+    }
+
+  if (url->log_resp_headers && url->dir_log)
+    {
+      // open the file
+      char hdr_file[256];
+      memset (hdr_file, 0, sizeof (hdr_file));
+
+      snprintf (hdr_file, sizeof (hdr_file) -1, 
+                "%s/cl-%d-cycle-%ld.hdr",
+                url->dir_log,
+                cctx->client_index,
+                cctx->cycle_num
+                );
+
+      if (url->logfile_headers)
+        {
+          fclose (url->logfile_headers);
+          url->logfile_headers = NULL;
+        }
+
+      if (!(url->logfile_headers = fopen (hdr_file, "w")))
+        {
+          fprintf (stderr, "%s - error: fopen () failed with errno %d.\n",
+                   __func__, errno);
+          return -1;
+        }
+       curl_easy_setopt (handle, CURLOPT_WRITEHEADER, url->logfile_headers);
+       //curl_easy_setopt (handle, CURLOPT_HEADERFUNCTION, writefunction);
     }
 
   curl_easy_setopt (handle, CURLOPT_SSL_VERIFYPEER, 0);
@@ -491,23 +560,18 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
   /* Set the private pointer to be used by the smooth-mode. */
   curl_easy_setopt (handle, CURLOPT_PRIVATE, cctx);
 
-  if (loading_mode == LOAD_MODE_HYPER)
-    {
-      curl_easy_setopt (handle, CURLOPT_WRITEDATA, cctx);
-    }
-
   /* Without the buffer set, we do not get any errors in tracing function. */
   curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer); 
 
-  if (url_ctx->upload_file)
+  if (url->upload_file)
     {
-      if (! url_ctx->upload_file_ptr)
+      if (! url->upload_file_ptr)
         {
-          if (! (url_ctx->upload_file_ptr = fopen (url_ctx->upload_file, "rb")))
+          if (! (url->upload_file_ptr = fopen (url->upload_file, "rb")))
             {
               fprintf (stderr, 
                        "%s - error: failed to open() %s with errno %d.\n", 
-                       __func__, url_ctx->upload_file, errno);
+                       __func__, url->upload_file, errno);
               return -1;
             }
         }
@@ -523,17 +587,17 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
       
       /* Now specify which file to upload */
       curl_easy_setopt(handle, CURLOPT_READDATA, 
-                       url_ctx->upload_file_ptr);
+                       url->upload_file_ptr);
       
       /* Provide the size of the upload */
       curl_easy_setopt(handle, CURLOPT_INFILESIZE, 
-                       (long) url_ctx->upload_file_size);
+                       (long) url->upload_file_size);
     }
 
   /* 
      Application (url) specific setups, like HTTP-specific, FTP-specific, etc. 
   */
-  if (setup_curl_handle_appl (cctx, url_ctx) == -1)
+  if (setup_curl_handle_appl (cctx, url) == -1)
     {
       fprintf (stderr,
                "%s - error: setup_curl_handle_appl () failed .\n",
@@ -550,18 +614,18 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url_ctx)
 * Description - Application/url-type specific setup for a single curl handle (client)
 *
 * Input -       *cctx       - pointer to client context, containing CURL handle pointer;
-*               *url_ctx    - pointer to url-context, containing all url-related information;
+*               *url    - pointer to url-context, containing all url-related information;
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
+int setup_curl_handle_appl (client_context*const cctx, url_context* url)
 {
     batch_context* bctx = cctx->bctx;
     CURL* handle = cctx->handle;
     
-    cctx->is_https = (url_ctx->url_appl_type == URL_APPL_HTTPS);
+    cctx->is_https = (url->url_appl_type == URL_APPL_HTTPS);
     
-    if (url_ctx->url_appl_type == URL_APPL_HTTPS ||
-        url_ctx->url_appl_type == URL_APPL_HTTP)
+    if (url->url_appl_type == URL_APPL_HTTPS ||
+        url->url_appl_type == URL_APPL_HTTP)
     {
         
         /* HTTP-specific initialization */
@@ -586,17 +650,17 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
       /*
         Setup the custom (HTTP) headers, if appropriate.
       */
-      if (url_ctx->custom_http_hdrs && url_ctx->custom_http_hdrs_num)
+      if (url->custom_http_hdrs && url->custom_http_hdrs_num)
         {
           curl_easy_setopt (handle, CURLOPT_HTTPHEADER, 
-                            url_ctx->custom_http_hdrs);
+                            url->custom_http_hdrs);
         }
       
       /* Enable cookies. This is important for various authentication schemes. */
       curl_easy_setopt (handle, CURLOPT_COOKIEFILE, "");
       
       /* Make POST, using post buffer, if requested. */
-      if (url_ctx->req_type == HTTP_REQ_TYPE_POST)
+      if (url->req_type == HTTP_REQ_TYPE_POST)
         {
           if (!cctx->post_data)
             {            
@@ -605,7 +669,7 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
             }
           else
             {
-              if (set_client_url_post_data (cctx, url_ctx) == -1)
+              if (set_client_url_post_data (cctx, url) == -1)
                 {
                   fprintf (stderr,
                            "%s - error: set_client_url_post_data() failed.\n",
@@ -614,9 +678,9 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
                 }
             }
         }
-      else if (url_ctx->req_type == HTTP_REQ_TYPE_PUT)
+      else if (url->req_type == HTTP_REQ_TYPE_PUT)
         {
-          if (!url_ctx->upload_file || ! url_ctx->upload_file_ptr)
+          if (!url->upload_file || ! url->upload_file_ptr)
             {            
               fprintf (stderr, 
                        "%s - error: upload file is NULL or cannot be opened.\n", 
@@ -636,53 +700,53 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
             }
         }
 
-      if (url_ctx->web_auth_method)
+      if (url->web_auth_method)
         {
-          if (!url_ctx->web_auth_credentials)
+          if (!url->web_auth_credentials)
             {
-              if (!url_ctx->username || !url_ctx->password)
+              if (!url->username || !url->password)
                 {
                   return -1;
                 }
 
               char web_userpwd[256];
-              sprintf (web_userpwd, "%s:%s", url_ctx->username, url_ctx->password);
+              sprintf (web_userpwd, "%s:%s", url->username, url->password);
               curl_easy_setopt(handle, CURLOPT_USERPWD, web_userpwd);
             }
           else
             {
-              curl_easy_setopt(handle, CURLOPT_USERPWD, url_ctx->web_auth_credentials);
+              curl_easy_setopt(handle, CURLOPT_USERPWD, url->web_auth_credentials);
             }
-          curl_easy_setopt(handle, CURLOPT_HTTPAUTH, url_ctx->web_auth_method);
+          curl_easy_setopt(handle, CURLOPT_HTTPAUTH, url->web_auth_method);
         }
 
-      if (url_ctx->proxy_auth_method)
+      if (url->proxy_auth_method)
         {
-          if (!url_ctx->proxy_auth_credentials)
+          if (!url->proxy_auth_credentials)
             {
-              if (!url_ctx->username || !url_ctx->password)
+              if (!url->username || !url->password)
                 {
                   return -1;
                 }
 
               char proxy_userpwd[256];
-              sprintf (proxy_userpwd, "%s:%s", url_ctx->username, url_ctx->password);
+              sprintf (proxy_userpwd, "%s:%s", url->username, url->password);
               curl_easy_setopt(handle, CURLOPT_USERPWD, proxy_userpwd);
             }
           else
             {
-              curl_easy_setopt(handle, CURLOPT_USERPWD, url_ctx->proxy_auth_credentials);
+              curl_easy_setopt(handle, CURLOPT_USERPWD, url->proxy_auth_credentials);
             }
-          curl_easy_setopt(handle, CURLOPT_HTTPAUTH, url_ctx->proxy_auth_method);
+          curl_easy_setopt(handle, CURLOPT_HTTPAUTH, url->proxy_auth_method);
         }
 
     }
-    else if (url_ctx->url_appl_type == URL_APPL_FTP ||
-             url_ctx->url_appl_type == URL_APPL_FTPS)
+    else if (url->url_appl_type == URL_APPL_FTP ||
+             url->url_appl_type == URL_APPL_FTPS)
     {
       /***********  FTP-specific setup. *****************/
 
-      if (url_ctx->ftp_active)
+      if (url->ftp_active)
         {
           curl_easy_setopt(handle, 
                            CURLOPT_FTPPORT, 
@@ -692,10 +756,10 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url_ctx)
       /*
         Send custom FTP headers after the transfer.
       */
-      if (url_ctx->custom_http_hdrs && url_ctx->custom_http_hdrs_num)
+      if (url->custom_http_hdrs && url->custom_http_hdrs_num)
         {
           curl_easy_setopt (handle, CURLOPT_POSTQUOTE, 
-                            url_ctx->custom_http_hdrs);
+                            url->custom_http_hdrs);
         }
 
       
@@ -1257,6 +1321,24 @@ static void free_batch_data_allocations (batch_context* bctx)
              {
                free (url->proxy_auth_credentials);
                url->proxy_auth_credentials = NULL;
+             }
+
+           if (url->dir_log)
+             {
+               free (url->dir_log);
+               url->dir_log = NULL;
+             }
+
+           if (url->logfile_headers)
+             {
+               fclose (url->logfile_headers);
+               url->logfile_headers = NULL;
+             }
+
+           if (url->logfile_bodies)
+             {
+               fclose (url->logfile_bodies);
+               url->logfile_bodies = NULL;
              }
          }
        
