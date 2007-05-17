@@ -7,6 +7,8 @@ Last updated: 13/05/2007
         allocation uses too much memory reserves.
     c.) Support more than current 2 tokens (up to 8) in 
         FORM_RECORDS_FILE. Tokenize the input in cycle. 
+    d.) Support Multi-post forms, suggested by 
+          Jeremy Hicks jehicks@novell.com
 
 4. An option to download a url not only once a cycle, but according to its
    "Weight" -several times prior to going to the next url.
