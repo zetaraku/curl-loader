@@ -32,8 +32,9 @@ Last updated: 13/05/2007
 8. ERROR_HEADER and ERROR_HEADER_VALUE -  whether we get a 
     certain header and whether value matches a regular expression pattern
 
-9. Logging to files headers and bodies of responses, e.g. to directory
-     a <batch-name>/<url-index>/<cycle>.hdr and <cycle>.body
+9. Logging to files headers and bodies of responses exists. We may wish to improve
+    it on a certain stage by using memory-mapped files from our custom write
+    finctions. 
     Memory-mapped files are effective for logging, but always we know the size in
     advance. Mapping -re-mapping and truncation, if taken too much, may be 
     required.
