@@ -1,17 +1,20 @@
-Last updated: 13/05/2007
+Last updated: 18/05/2007
 
-1. POST forms improvement and adding more flexebility.
-    a.) Support for more flexible API for POST forms:
-         http://curl.haxx.se/libcurl/c/curl_formadd.html
-    b.) Dynamic allocation of form post buffers. Current static
-        allocation uses too much memory reserves.
-    c.) Support more than current 2 tokens (up to 8) in 
-        FORM_RECORDS_FILE. Tokenize the input in cycle. 
-    d.) Support Multi-post forms, suggested by 
-          Jeremy Hicks jehicks@novell.com
 
-4. An option to download a url not only once a cycle, but according to its
-   "Weight" -several times prior to going to the next url.
+Nearest release 0.31:
+
+1. Multi-post forms, suggested by Jeremy Hicks jehicks@novell.com
+    http://curl.haxx.se/libcurl/c/curl_formadd.html
+
+2. URL-Timeout. Respect a url-fetch timeout. If not accomplished till a certain time - 
+    stop it and mark it statistics as a URL-Timeout Exceeded.
+
+   Add number of fetches with the expired URL-Timeout to the 
+   Operational Statistics of our loading GUI.
+
+3. HTTP GET filled forms for login credentials (they are sent using url).
+
+4. Testing of HTTP PUT support
 
 5. Add a url-based tag STOP_ON_ERROR to schedule or not to
     schedule a client for more cycles, when an error condition detected.
@@ -25,44 +28,17 @@ Last updated: 13/05/2007
    url error list.
    Something like ERROR_RESPONSE_CODES="+100+101-500-503"
 
-7. ERROR_RESPONSE_BODY - a regular expression pattern for a
-    search in a response body. If not found - error. Look in Apache
-   JMeter.
-
-8. ERROR_HEADER and ERROR_HEADER_VALUE -  whether we get a 
-    certain header and whether value matches a regular expression pattern
-
-9. Logging to files headers and bodies of responses exists. We may wish to improve
-    it on a certain stage by using memory-mapped files from our custom write
-    finctions. 
-    Memory-mapped files are effective for logging, but always we know the size in
-    advance. Mapping -re-mapping and truncation, if taken too much, may be 
-    required.
-
-10. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
-   a number of TCP connections, that our virtual client can use (the default is up to 5), 
-   and, if persistant, what is the number of request-responses till the connection to be 
-   closed and re-established. 
-  Another proposal of Aleks is to make configurable HTTP 1.1 or 1.0, that
-  we will not implement unless it becomes a feature required by many users.
-  We can add to libcurl a new option - something like 
-  CURLOPT_CONNECTION_REUSENUM to pass a <max_number> of requests till 
-  connection refresh.
-  Note, that httperf sessions - is a reference application.
-
-11. Cookies - add an option to add a per-url cookie. Currently, we just enable any
+7. Cookies - add an option to add a per-url cookie. Currently, we just enable any
      cookies set by a server. Probably, users may wish to use a very specific
     and known in advance cookie.
 
-12 Add an option to limit throughput per client. Libcurl is already supporting it.
+8 Add an option to limit throughput per client. Libcurl is already supporting it.
 
-13. Respect a url-fetch timeout. If not accomplished till a certain time - stop it (? remove
-     a handle), mark in statistics as a timeout statistics.
+---------------------------------------------------------------------------------------------------- 
 
-    Add number of fetches with the expired URL-Timeout to the 
-   Operational Statistics of our loading GUI.
+Next releases:
 
-14 . Performance improvements:
+0. Performance improvements:
 
 - cached memory allocators, using libcurl API 
    (Aleksandar Lazic <al-curlloader@none.at>):
@@ -76,29 +52,64 @@ Last updated: 13/05/2007
    http://www.hoard.org/
    http://www.cs.umass.edu/%7Eemery/hoard/asplos2000.pdf
 
-15. Configuration/making improvements: moving all source-files
+- Testbed for 50K and 100K clients. We need a more powerful HW:
+      2-4 CPUs/cores and 4-8 GB of memory
+
+1. Dynamic allocation of form post buffers. Current static
+   allocation uses too much memory reserves.
+
+2. Support more than current 2 tokens (up to 8) in 
+    FORM_RECORDS_FILE. Tokenize the input in cycle. 
+
+3. An option to download a url not only once a cycle, but according to its
+   "Weight" -several times prior to going to the next url.
+
+4. ERROR_RESPONSE_BODY - a regular expression pattern for a
+    search in a response body. If not found - error. Look in Apache
+   JMeter.
+
+5. ERROR_HEADER and ERROR_HEADER_VALUE -  whether we get a 
+    certain header and whether value matches a regular expression pattern
+
+6. Logging to files headers and bodies of responses exists. We may wish to improve
+    it on a certain stage by using memory-mapped files from our custom write
+    finctions. 
+    Memory-mapped files are effective for logging, but always we know the size in
+    advance. Mapping -re-mapping and truncation, if taken too much, may be 
+    required.
+
+7. HIDDEN fields are widely used to keep the session. We may wish to support it.
+
+8. HTML analyses. libcurl example is using libtidy in:
+   http://www.koders.com/c/fid7923BF828D0534D6B747ED138FCDD50DCFD13B3F.aspx
+
+9. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
+   a number of TCP connections, that our virtual client can use (the default is up to 5), 
+   and, if persistant, what is the number of request-responses till the connection to be 
+   closed and re-established. 
+  Another proposal of Aleks is to make configurable HTTP 1.1 or 1.0, that
+  we will not implement unless it becomes a feature required by many users.
+  We can add to libcurl a new option - something like 
+  CURLOPT_CONNECTION_REUSENUM to pass a <max_number> of requests till 
+  connection refresh.
+  Note, that httperf sessions - is a reference application.
+
+10. Configuration/making improvements: moving all source-files
     to src directory etc.
 
-16. X.509 client certificates per each https, ftps url. Client certificate
+11. X.509 client certificates per each https, ftps url. Client certificate
     for each client?
 
-17. Support for CAPS (calls per second) defined mode. Currently, we are 
+12. Support for CAPS (calls per second) defined mode. Currently, we are 
    supporting only a certain number of virtual clients and CAPS is the derived
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter. 
 
-18. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like.
+13. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like.
 
-19. Testbed for 20K, 50K and 100K clients. We need a more powerful HW:
-      2-4 CPUs/cores and 4-8 GB of memory
-
-21. HTTP GET filled forms for login credentials (they are sent using url).
-
-
-
-23. Template-guided output of configurable statistics 
+14. Template-guided output of configurable statistics 
 (what user wishes with desired string, names) to statistics file.
 
-24. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec).
+15. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec).
 
-25. Support for more protocols: telnet, SFTP, SSH, etc
+16. Support for more protocols: telnet, SFTP, SSH, etc
