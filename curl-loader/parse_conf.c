@@ -293,8 +293,10 @@ static int add_param_to_batch (
   fparser parser = 0;
   if (! (parser = find_tag_parser (str_buff)))
   {
-      fprintf (stderr, "%s - warning: unknown tag %s.\n",__func__, str_buff);
-      return 0;
+      fprintf (stderr, "%s - error: unknown tag %s.\n"
+               "\nATTENTION: If the tag not misspelled, read README.Migration file.\n\n",
+               __func__, str_buff);
+      return -1;
   }
 
   /* Removing LWS, TWS and comments from the value */
