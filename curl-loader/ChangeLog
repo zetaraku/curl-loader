@@ -34,6 +34,7 @@ version 0.31 -?
 * FTP tested and improved. Minor bug fixed in loader.c
   File ftp.conf file corrected by adding FRESH_CONNECT tag.
   Added a new file ftp_http.conf.
+  Added a tag to support active FTP: FTP_ACTIVE
   FTP uploading tested to be supported.
   File ftp_upload.conf configuration added.
    
@@ -93,7 +94,7 @@ version 0.31 -?
   Taq FORM_STRING is a rename of LOGIN_POST_STR, whereas to control the
   type there is a tag FORM_USAGE_TYPE to be defined explicitly.
 	
-  Tag FORM_RECORDS_FILE is a rename of CREDETIALS_FILE.
+  Tag FORM_RECORDS_FILE is a rename of CREDENTIALS_FILE.
 	
   Tag UPLOAD_FILE is a newly added tag to support in future method PUT.
 	
