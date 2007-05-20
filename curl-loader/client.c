@@ -232,12 +232,6 @@ void dump_client (FILE* file, client_context* cctx)
   fflush (file);
 }
 
-void set_timer_handling_func (client_context* cctx, handle_timer ht)
-{
-  if (!cctx)
-    return;
 
-  cctx->tn.func_timer = ht;
-}
 
 

@@ -313,6 +313,7 @@ int load_next_step (client_context* cctx,
          placing it to the timer queue. 
       */
       cctx->tn.next_timer = now_time + interleave_waiting_time;
+      cctx->tn.func_timer = handle_cctx_sleeping_timer;
 		
       if (tq_schedule_timer (bctx->waiting_queue, (struct timer_node *) cctx) == -1)
         {
@@ -668,7 +669,7 @@ int handle_screen_input_timer  (timer_node* timer_node,
 }
 
 /****************************************************************************************
- * Function name - handle_cctx_timer
+ * Function name - handle_cctx_sleeping_timer
  *
  * Description - Handling of timer for a client waiting in the waiting queue to 
  *               respect url interleave timeout. Schedules the client to perform 
@@ -680,7 +681,7 @@ int handle_screen_input_timer  (timer_node* timer_node,
  *
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/
-int handle_cctx_timer (timer_node* timer_node, 
+int handle_cctx_sleeping_timer (timer_node* timer_node, 
                        void* pvoid_param,
                        unsigned long ulong_param)
 {

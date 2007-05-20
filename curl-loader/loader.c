@@ -76,7 +76,7 @@ static void* batch_function (void *batch_data);
 static int initial_handles_init (struct client_context*const cdata);
 static int setup_curl_handle_appl (struct client_context*const cctx,  url_context* url_ctx);
 static int init_client_post_buffer (client_context* cctx, url_context* url);
-static int alloc_init_client_contexts (batch_context* bctx, FILE* output_file);
+static int init_client_contexts (batch_context* bctx, FILE* output_file);
 static void free_batch_data_allocations (struct batch_context* bctx);
 static int ipv6_increment(const struct in6_addr *const src, 
                           struct in6_addr *const dest);
@@ -277,9 +277,9 @@ static void* batch_function (void * batch_data)
   }
   
   /* 
-     Allocate and init objects, containing client-context information.
+     Init the objects, containing client-context information.
   */
-  if (alloc_init_client_contexts (bctx, log_file) == -1)
+  if (init_client_contexts (bctx, log_file) == -1)
     {
       fprintf (stderr, "%s - \"%s\" - failed to allocate or init client_contexts.\n", 
                __func__, bctx->batch_name);
@@ -1155,7 +1155,7 @@ int client_tracing_function (CURL *handle,
 
 
 /****************************************************************************************
-* Function name - alloc_init_client_contexts
+* Function name - init_client_contexts
 *
 * Description - Allocate and initialize client contexts
 * 
@@ -1164,7 +1164,7 @@ int client_tracing_function (CURL *handle,
 *
 * Return Code -  On Success - 0, on Error -1
 ****************************************************************************************/
-static int alloc_init_client_contexts (batch_context* bctx,
+static int init_client_contexts (batch_context* bctx,
                                        FILE* log_file)
 {
   int i;
@@ -1174,39 +1174,37 @@ static int alloc_init_client_contexts (batch_context* bctx,
   */
   for (i = 0 ; i < bctx->client_num_max ; i++)
     {
-      /* 
-         Set the timer handling function, which is used by the smooth 
-         loading mode. 
-      */
-      set_timer_handling_func (&bctx->cctx_array[i], handle_cctx_timer);
+      client_context* cctx = &bctx->cctx_array[i];
 
       /* 
          Build client name for logging, based on sequence number and 
          ip-address for each simulated client. 
       */
-      bctx->cctx_array[i].cycle_num = 0;
+      cctx->cycle_num = 0;
 
-      snprintf(bctx->cctx_array[i].client_name, 
-               sizeof(bctx->cctx_array[i].client_name) - 1, 
+      snprintf(cctx->client_name, sizeof(cctx->client_name) - 1, 
                "%d (%s) ", 
                i + 1, 
                bctx->ip_addr_array[i]);
 
-       /* 
+      /* Mark timer-ids as non-valid. */
+      cctx->tid_sleeping = cctx->tid_max_url = -1;
+
+       /*
          Set index of the client within the batch.
          Useful to get the client's CURL handle from bctx. 
       */
-      bctx->cctx_array[i].client_index = i;
-      bctx->cctx_array[i].url_curr_index = 0; /* Actually zeroed by calloc. */
+      cctx->client_index = i;
+      cctx->url_curr_index = 0; /* Actually zeroed by calloc. */
       
       /* Set output stream for each client to be either batch logfile or stderr. */
-      bctx->cctx_array[i].file_output = stderr_print_client_msg ? stderr : log_file;
+      cctx->file_output = stderr_print_client_msg ? stderr : log_file;
 
       /* 
          Set pointer in client to its batch object. The pointer will be used to get 
          configuration and set back statistics to batch.
       */
-      bctx->cctx_array[i].bctx = bctx;
+      cctx->bctx = bctx;
     }
 
   return 0;
