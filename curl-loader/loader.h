@@ -194,7 +194,7 @@ int handle_screen_input_timer  (struct timer_node* timer_node,
                                 unsigned long ulong_param);
 
 /****************************************************************************************
- * Function name - handle_cctx_timer
+ * Function name - handle_cctx_sleeping_timer
  *
  * Description - Handling of timer for a client waiting in the waiting queue to 
  *               respect url interleave timeout. Schedules the client to perform 
@@ -206,7 +206,7 @@ int handle_screen_input_timer  (struct timer_node* timer_node,
  *
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/
-int handle_cctx_timer (struct timer_node* timer_node, 
+int handle_cctx_sleeping_timer (struct timer_node* timer_node, 
                        void* pvoid_param,
                        unsigned long ulong_param);
 
@@ -377,7 +377,7 @@ int user_activity_hyper (struct client_context*const cctx_array);
 ****************************************************************************************/
 int user_activity_smooth (struct client_context*const cctx_array);
 
-int handle_cctx_timer (struct timer_node*, void*, unsigned long);
+int handle_cctx_sleeping_timer (struct timer_node*, void*, unsigned long);
 
 extern int stop_loading;
 

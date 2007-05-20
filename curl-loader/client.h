@@ -86,8 +86,16 @@ typedef struct client_context
     Inheritance from timer_node to enable its usage in the timer-queue.
     We can use it as a timer_node without disclosing all other
     structure of client_context.
+
+    Used for the client two timers:
+    - sleeping after url timer;
+    - limiting maximum url fetching time (inc resolving and connecting);
   */
   timer_node tn;
+
+  long tid_sleeping;
+
+  long tid_max_url;
 
    /*
       <Current Cycle Num> space <Client Sequence Num> space <Client IP-address> 
@@ -247,7 +255,7 @@ extern int stop_loading;
            typeof (b) _b = (b); \
          _a < _b ? _a : _b; })
 
-void set_timer_handling_func (client_context* cctx, handle_timer);
+//void set_timer_handling_func (client_context* cctx, handle_timer);
 
 
 
