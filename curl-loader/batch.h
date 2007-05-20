@@ -181,6 +181,8 @@ typedef struct batch_context
   /* Counter used mainly by smooth mode: active clients */
   int active_clients_count;
 
+  int sleeping_clients_count;
+
   /* 
      Whether to do gradual increase of loading clients to prevent
      a simulteneous huge flow of client requests to server.

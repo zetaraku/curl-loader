@@ -95,7 +95,7 @@ typedef struct client_context
 
   long tid_sleeping;
 
-  long tid_max_url;
+  long tid_url_completion;
 
    /*
       <Current Cycle Num> space <Client Sequence Num> space <Client IP-address> 
@@ -228,6 +228,7 @@ void first_hdrs_clear_non_5xx (client_context* cctx);
 void stat_data_out_add (client_context* cctx, unsigned long bytes);
 void stat_data_in_add (client_context* cctx, unsigned long bytes);
 void stat_err_inc (client_context* cctx);
+void stat_url_timeout_err_inc (client_context* cctx);
 void stat_req_inc (client_context* cctx);
 void stat_1xx_inc (client_context* cctx);
 void stat_2xx_inc (client_context* cctx);

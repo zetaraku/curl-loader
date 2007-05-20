@@ -1188,7 +1188,7 @@ static int init_client_contexts (batch_context* bctx,
                bctx->ip_addr_array[i]);
 
       /* Mark timer-ids as non-valid. */
-      cctx->tid_sleeping = cctx->tid_max_url = -1;
+      cctx->tid_sleeping = cctx->tid_url_completion = -1;
 
        /*
          Set index of the client within the batch.

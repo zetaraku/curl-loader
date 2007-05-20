@@ -66,6 +66,22 @@ static int fetching_first_cycling_url (client_context* cctx);
 static void advance_cycle_num (client_context* cctx);
 static int setup_url (client_context* cctx);
 
+static int handle_screen_input_timer (timer_node* tn, 
+                                       void* pvoid_param, 
+                                      unsigned long ulong_param);
+static int handle_logfile_rewinding_timer  (timer_node* tn, 
+                                            void* pvoid_param, 
+                                            unsigned long ulong_param);
+static int handle_gradual_increase_clients_num_timer  (timer_node* tn,
+                                                       void* pvoid_param, 
+                                                       unsigned long ulong_param);
+static int handle_cctx_sleeping_timer (timer_node* tn,
+                                void* pvoid_param, 
+                                unsigned long ulong_param);
+static int handle_cctx_url_completion_timer (timer_node* tn,
+                                void* pvoid_param, 
+                                unsigned long ulong_param);
+
 
 /*****************************************************************************
  * Function name - alloc_init_timer_waiting_queue
@@ -148,7 +164,8 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
     }
 
   bctx->start_time = bctx->last_measure = now_time;
-  bctx->active_clients_count = 0;
+  bctx->active_clients_count = bctx->sleeping_clients_count =0;
+  
   
 
   if (add_loading_clients (bctx) == -1)
@@ -235,6 +252,15 @@ int load_next_step (client_context* cctx,
   unsigned long interleave_waiting_time = 0;
 
   *sched_now = 0;
+
+  /*
+    Cancel the url completion timer, if it was scheduled.
+  */
+  if (cctx->tid_url_completion != -1)
+    {
+      tq_cancel_timer (bctx->waiting_queue, cctx->tid_url_completion);
+      cctx->tid_url_completion = -1;
+    }
 	
   /* Remove handle from the multiple handle, if it was added there before. */
   if (cctx->client_state != CSTATE_INIT)
@@ -293,7 +319,7 @@ int load_next_step (client_context* cctx,
   if (!interleave_waiting_time)
     {
       /* Schedule the client immediately */
-      if (client_add_to_load (bctx, cctx) == -1)
+      if (client_add_to_load (bctx, cctx, now_time) == -1)
         {
           fprintf (stderr, "%s - error: client_add_to_load () failed .\n", 
 	  __func__);
@@ -315,10 +341,15 @@ int load_next_step (client_context* cctx,
       cctx->tn.next_timer = now_time + interleave_waiting_time;
       cctx->tn.func_timer = handle_cctx_sleeping_timer;
 		
-      if (tq_schedule_timer (bctx->waiting_queue, (struct timer_node *) cctx) == -1)
+      if ((cctx->tid_sleeping = tq_schedule_timer (bctx->waiting_queue, 
+                                             (struct timer_node *) cctx)) == -1)
         {
           fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
           return -1;
+        }
+      else
+        {
+          bctx->sleeping_clients_count++;
         }
 
       //fprintf (stderr, "%s - scheduled client to wq with wtime %ld\n", 
@@ -532,9 +563,12 @@ dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
  *
  * Input -       *bctx - pointer to the batch context
  *               *cctx - pointer to the client context
+ *               now_time - current time in msec
  * Return Code/Output - On success -0, on error - (-1)
  *******************************************************************************/
-int client_add_to_load (batch_context* bctx, client_context* cctx)
+int client_add_to_load (batch_context* bctx, 
+                        client_context* cctx,
+                        unsigned long now_time)
 {
   /* Remember the previous state and url index: fur operational statistics */
   cctx->preload_state = cctx->client_state;
@@ -543,6 +577,24 @@ int client_add_to_load (batch_context* bctx, client_context* cctx)
   /* Schedule the client immediately */
   if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
     {
+      const unsigned long timer_url_completion =  
+        bctx->url_ctx_array[cctx->url_curr_index].timer_url_completion;
+
+      if (timer_url_completion)
+        {
+          cctx->tn.next_timer = now_time + timer_url_completion;
+          cctx->tn.func_timer = handle_cctx_url_completion_timer;
+          
+          if ((cctx->tid_url_completion = tq_schedule_timer (bctx->waiting_queue, 
+                                                 (struct timer_node *) cctx)) == -1)
+            {
+              fprintf (stderr, 
+                       "%s - error: tq_schedule_timer () failed for url-completion.\n", 
+                       __func__);
+              return -1;
+            }
+        }
+
       bctx->active_clients_count++;
       // fprintf (stderr, "%s - client added.\n", __func__);
     }
@@ -597,9 +649,9 @@ int client_remove_from_load (batch_context* bctx, client_context* cctx)
  *               *ulong_param - some extra data.
  * Return Code/Output - On success -0, on error - (-1)
  ******************************************************************************/
-int handle_gradual_increase_clients_num_timer  (timer_node* timer_node, 
-                                                void* pvoid_param, 
-                                                unsigned long ulong_param)
+static int handle_gradual_increase_clients_num_timer  (timer_node* timer_node, 
+                                                       void* pvoid_param, 
+                                                       unsigned long ulong_param)
 {
   batch_context* bctx = (batch_context *) pvoid_param;
   (void) timer_node;
@@ -625,9 +677,9 @@ int handle_gradual_increase_clients_num_timer  (timer_node* timer_node,
  *                *ulong_param - some extra data.
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/
-int handle_logfile_rewinding_timer  (timer_node* timer_node, 
-                                     void* pvoid_param, 
-                                     unsigned long ulong_param)
+static int handle_logfile_rewinding_timer  (timer_node* timer_node, 
+                                            void* pvoid_param, 
+                                            unsigned long ulong_param)
 {
   batch_context* bctx = (batch_context *) pvoid_param;
   (void) timer_node;
@@ -654,9 +706,9 @@ int handle_logfile_rewinding_timer  (timer_node* timer_node,
  *
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/
-int handle_screen_input_timer  (timer_node* timer_node, 
-                                void* pvoid_param, 
-                                unsigned long ulong_param)
+static int handle_screen_input_timer (timer_node* timer_node, 
+                                       void* pvoid_param, 
+                                       unsigned long ulong_param)
 {
   batch_context* bctx = (batch_context *) pvoid_param;
   (void) timer_node;
@@ -668,29 +720,67 @@ int handle_screen_input_timer  (timer_node* timer_node,
   return 0;
 }
 
-/****************************************************************************************
+/*************************************************************************
  * Function name - handle_cctx_sleeping_timer
  *
  * Description - Handling of timer for a client waiting in the waiting queue to 
  *               respect url interleave timeout. Schedules the client to perform 
  *               the next loading operation.
  *
- * Input -       *timer_node - pointer to timer node structure
+ * Input -       *tn - pointer to timer node structure
  *               *pvoid_param - pointer to some extra data; here batch context
  *               *ulong_param - some extra data.
- *
  * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
-int handle_cctx_sleeping_timer (timer_node* timer_node, 
+ ***************************************************************************/
+int handle_cctx_sleeping_timer (timer_node* tn, 
                        void* pvoid_param,
                        unsigned long ulong_param)
 {
-  client_context* cctx = (client_context *) timer_node;
+  client_context* cctx = (client_context *) tn;
   batch_context* bctx = cctx->bctx;
   (void)pvoid_param;
   (void)ulong_param;
 
-  return client_add_to_load (bctx, cctx);
+  bctx->sleeping_clients_count--;
+  const unsigned long now_time = get_tick_count ();
+
+  return client_add_to_load (bctx, cctx, now_time);
+}
+
+/*************************************************************************
+ * Function name - handle_cctx_sleeping_timer
+ *
+ * Description - Handling of timer for a client waiting in the waiting queue to 
+ *               respect url interleave timeout. Schedules the client to perform 
+ *               the next loading operation.
+ *
+ * Input -       *tn - pointer to timer node structure
+ *               *pvoid_param - pointer to some extra data; here batch context
+ *               *ulong_param - some extra data.
+ * Return Code/Output - On success -0, on error - (-1)
+ ***************************************************************************/
+static int handle_cctx_url_completion_timer (timer_node* tn,
+                                void* pvoid_param, 
+                                unsigned long ulong_param)
+{
+  client_context* cctx = (client_context *) tn;
+  batch_context* bctx = cctx->bctx;
+  (void)pvoid_param;
+  (void)ulong_param;
+  int sched_now;
+
+  cctx->tid_url_completion = -1;
+
+  op_stat_timeouted (&bctx->op_delta, cctx->url_curr_index);
+
+  stat_url_timeout_err_inc (cctx);
+
+  cctx->client_state = CSTATE_ERROR;
+
+  //return client_remove_from_load (bctx, cctx);
+  const unsigned long now_time = get_tick_count ();
+
+  return load_next_step (cctx, now_time, &sched_now);
 }
 
 /****************************************************************************************
@@ -705,8 +795,7 @@ int handle_cctx_sleeping_timer (timer_node* timer_node,
 int pending_active_and_waiting_clients_num (batch_context* bctx)
 {
   return bctx->waiting_queue ? 
-    (bctx->active_clients_count + tq_size (bctx->waiting_queue) - 
-     PERIODIC_TIMERS_NUMBER - bctx->do_client_num_gradual_increase) :
+    (bctx->active_clients_count + bctx->sleeping_clients_count) :
     bctx->active_clients_count;
 }
 

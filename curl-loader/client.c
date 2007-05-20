@@ -143,6 +143,13 @@ void stat_err_inc (client_context* cctx)
   cctx->is_https ? cctx->bctx->https_delta.other_errs++ :
     cctx->bctx->http_delta.other_errs++;
 }
+
+void stat_url_timeout_err_inc (client_context* cctx)
+{
+  cctx->st.url_timeout_errs++;
+  cctx->is_https ? cctx->bctx->https_delta.url_timeout_errs++ :
+    cctx->bctx->http_delta.url_timeout_errs++;
+}
 void stat_req_inc (client_context* cctx)
 {
   cctx->st.requests++;
@@ -224,11 +231,11 @@ void dump_client (FILE* file, client_context* cctx)
 	 return;
 
   fprintf (file, 
-           "%s,cycles:%ld,cstate:%d,b-in:%lld,b-out:%lld,req:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,err:%ld\n", 
+           "%s,cycles:%ld,cstate:%d,b-in:%lld,b-out:%lld,req:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,err:%ld,T-err:%ld\n", 
            cctx->client_name, cctx->cycle_num, cctx->client_state, 
            cctx->st.data_in,  cctx->st.data_out, cctx->st.requests, cctx->st.resp_2xx,
            cctx->st.resp_3xx, cctx->st.resp_4xx, cctx->st.resp_5xx, 
-           cctx->st.other_errs);
+           cctx->st.other_errs, cctx->st.url_timeout_errs);
   fflush (file);
 }
 

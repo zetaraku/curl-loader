@@ -1,7 +1,7 @@
 /*
-*     batch.h
+*     statistics.h
 *
-* 2006 Copyright (c) 
+* 2006-2007 Copyright (c) 
 * Robert Iakobashvili, <coroberti@gmail.com>
 * Michael Moser,  <moser.michael@gmail.com>                 
 * All rights reserved.
@@ -63,6 +63,12 @@ typedef struct stat_point
   /* Errors of resolving, connecting, internal errors, etc. */
   unsigned long other_errs;
 
+    /* 
+       URL Timeout errors of not accomplishing url fetch prior to the 
+       url-completion timer being expired .
+    */
+  unsigned long url_timeout_errs;
+
    /* Num of data points used to calculate average application delay */
   int appl_delay_points;
   /* Average delay in msec between request and response */
@@ -88,10 +94,15 @@ typedef struct op_stat_point
 {
   /* Number of url-counters in the below arrays */
   unsigned long url_num;
+
   /* Array of url counters for successful fetches */
   unsigned long* url_ok;
+
   /* Array of url counters for failed fetches */
   unsigned long* url_failed;
+
+  /* Array of url counters for timeouted fetches */
+  unsigned long* url_timeouted;
 
   /* Used for CAPS calculation */
   unsigned long call_init_count;
@@ -183,6 +194,8 @@ void op_stat_update (op_stat_point* op_stat,
                      int prev_state,
                      size_t current_url_index,
                      size_t prev_url_index);
+
+void op_stat_timeouted (op_stat_point* op_stat, size_t url_index);
 
 void op_stat_call_init_count_inc (op_stat_point* op_stat);
 

@@ -148,69 +148,6 @@ int rewind_logfile_above_maxsize (FILE* filepointer);
 
 
 /****************************************************************************************
- * Function name - handle_gradual_increase_clients_num_timer
- *
- * Description - Handling of one second timer to increase gradually number of 
- *               loading clients.
- *
- * Input -       *timer_node - pointer to timer_node structure
- *               *pvoid_param - pointer to some extra data; here batch context
- *               *ulong_param - some extra data.
- *
- * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
-int handle_gradual_increase_clients_num_timer  (struct timer_node* timer_node, 
-                                                void* pvoid_param, 
-                                                unsigned long ulong_param);
-
-/****************************************************************************************
- * Function name - handle_logfile_rewinding_timer
- *
- * Description -   Handling of logfile controlling periodic timer
- *
- * Input -        *timer_node - pointer to timer node structure
- *                *pvoid_param - pointer to some extra data; here batch context
- *                *ulong_param - some extra data.
- *
- * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
-int handle_logfile_rewinding_timer  (struct timer_node* timer_node, 
-                                     void* pvoid_param, 
-                                     unsigned long ulong_param);
-
-/****************************************************************************************
- * Function name - handle_screen_input_timer
- *
- * Description -   Handling of screen imput
- *
- * Input -        *timer_node - pointer to timer node structure
- *                *pvoid_param - pointer to some extra data; here batch context
- *                *ulong_param - some extra data.
- *
- * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
-int handle_screen_input_timer  (struct timer_node* timer_node, 
-                                void* pvoid_param, 
-                                unsigned long ulong_param);
-
-/****************************************************************************************
- * Function name - handle_cctx_sleeping_timer
- *
- * Description - Handling of timer for a client waiting in the waiting queue to 
- *               respect url interleave timeout. Schedules the client to perform 
- *               the next loading operation.
- *
- * Input -       *timer_node - pointer to timer node structure
- *               *pvoid_param - pointer to some extra data; here batch context
- *               *ulong_param - some extra data.
- *
- * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
-int handle_cctx_sleeping_timer (struct timer_node* timer_node, 
-                       void* pvoid_param,
-                       unsigned long ulong_param);
-
-/****************************************************************************************
  * Function name - pending_active_and_waiting_clients_num
  *
  * Description - Returns the sum of active and waiting (for load scheduling) clients
@@ -243,10 +180,12 @@ int client_remove_from_load (struct batch_context* bctx, struct client_context* 
  *
  * Input -       *bctx - pointer to the batch context
  *               *cctx - pointer to the client context
- *
+ *               now_time - current time in msec
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/
-int client_add_to_load (struct batch_context* bctx, struct client_context* cctx);
+int client_add_to_load (struct batch_context* bctx, 
+                        struct client_context* cctx,
+                        unsigned long now_time);
 
 
 
@@ -376,8 +315,6 @@ int user_activity_hyper (struct client_context*const cctx_array);
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int user_activity_smooth (struct client_context*const cctx_array);
-
-int handle_cctx_sleeping_timer (struct timer_node*, void*, unsigned long);
 
 extern int stop_loading;
 

@@ -89,6 +89,7 @@ void stat_point_add (stat_point* left, stat_point* right)
   left->resp_4xx += right->resp_4xx;
   left->resp_5xx += right->resp_5xx;
   left->other_errs += right->other_errs;
+  left->url_timeout_errs += right->url_timeout_errs;
   
   const int total_points = left->appl_delay_points + right->appl_delay_points;
 
@@ -129,7 +130,7 @@ void stat_point_reset (stat_point* p)
 
   p->data_in = p->data_out = 0;
   p->requests = p->resp_1xx = p->resp_2xx = p->resp_3xx = p->resp_4xx = 
-      p->resp_5xx = p->other_errs = 0;
+      p->resp_5xx = p->other_errs = p->url_timeout_errs =0;
 
   p->appl_delay_points = p->appl_delay_2xx_points = 0;
   p->appl_delay = p->appl_delay_2xx = 0;
@@ -158,6 +159,7 @@ void op_stat_point_add (op_stat_point* left, op_stat_point* right)
     {
       left->url_ok[i] += right->url_ok[i];
       left->url_failed[i] += right->url_failed[i];
+      left->url_timeouted[i] += right->url_timeouted[i];
     }
   
   left->call_init_count += right->call_init_count;
@@ -180,7 +182,7 @@ void op_stat_point_reset (op_stat_point* point)
       size_t i;
       for ( i = 0; i < point->url_num; i++)
         {
-          point->url_ok[i] = point->url_failed[i] = 0;
+          point->url_ok[i] = point->url_failed[i] = point->url_timeouted[i] = 0;
         }
     }
     /* Don't null point->url_num ! */
@@ -198,10 +200,22 @@ void op_stat_point_reset (op_stat_point* point)
 void op_stat_point_release (op_stat_point* point)
 {
   if (point->url_ok)
-    free (point->url_ok);
+    {
+      free (point->url_ok);
+      point->url_ok = NULL;
+    }
 
   if (point->url_failed)
-    free (point->url_failed);
+    {
+      free (point->url_failed);
+      point->url_failed = NULL;
+    }
+
+    if (point->url_timeouted)
+    {
+      free (point->url_timeouted);
+      point->url_timeouted = NULL;
+    }
 
   memset (point, 0, sizeof (op_stat_point));
 }
@@ -225,7 +239,9 @@ int op_stat_point_init (op_stat_point* point, size_t url_num)
    if (url_num)
     { 
       if (!(point->url_ok = calloc (url_num, sizeof (unsigned long))) ||
-          !(point->url_failed = calloc (url_num, sizeof (unsigned long))))
+          !(point->url_failed = calloc (url_num, sizeof (unsigned long))) ||
+          !(point->url_timeouted = calloc (url_num, sizeof (unsigned long)))
+          )
         {
           goto allocation_failed;
         }
@@ -263,35 +279,42 @@ void op_stat_update (op_stat_point* op_stat,
                      size_t prev_url_index)
 {
   (void) current_url_index;
+  
 
   if (!op_stat)
     return;
 
-  switch (prev_state)
+  if (prev_state == CSTATE_URLS)
     {
-    case CSTATE_URLS:
+      /*
       if (current_state != CSTATE_URLS)
         {
-          /* 
-             If loading has advanced to the next state, update operational 
-             statistics counters of the last UAS URL (sometimes, the last is also
-             the first and the only)
-          */
+          
+          // If loading has advanced to the next state, update operational 
+          // statistics counters of the last URL (sometimes, the last is also
+          // the first and the only)
           (current_state == CSTATE_ERROR) ? 
             op_stat->url_failed[op_stat->url_num-1]++ : 
             op_stat->url_ok[op_stat->url_num-1]++;
         }
       else
+      */
         {
            (current_state == CSTATE_ERROR) ? 
              op_stat-> url_failed[prev_url_index]++ : 
              op_stat->url_ok[prev_url_index]++;
         }
-      break;
-
     }
   
   return;
+}
+
+void op_stat_timeouted (op_stat_point* op_stat, size_t url_index)
+{
+    if (!op_stat)
+    return;
+
+    op_stat-> url_timeouted[url_index]++;
 }
 
 void op_stat_call_init_count_inc (op_stat_point* op_stat)
@@ -344,9 +367,11 @@ void dump_final_statistics (client_context* cctx)
   stat_point_add (&bctx->https_total, &bctx->https_delta); 
   //op_stat_point_add (&bctx->op_delta, &bctx->op_total);
     
-  fprintf(stdout,"\n==================================================\n");
+  fprintf(stdout,"\n==================================================="
+          "====================================\n");
   fprintf(stdout,"End of the test for batch: %-10.10s\n", bctx->batch_name); 
-  fprintf(stdout,"==================================================\n\n");
+  fprintf(stdout,"======================================================"
+          "=================================\n\n");
   
   now = get_tick_count();
 
@@ -427,7 +452,7 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
       seconds_run = 1;
     }
 
-  fprintf(stdout,"-----------------------------------------------------\n");
+  fprintf(stdout,"--------------------------------------------------------------------------------\n");
 
   fprintf(stdout,"Summary stats (runs:%d secs, CAPS-average:%ld):\n", 
           seconds_run, bctx->op_total.call_init_count / seconds_run); 
@@ -438,7 +463,8 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
                    &bctx->http_total,
                    &bctx->https_total);
 
-  fprintf(stdout,"=============================================================\n");
+  fprintf(stdout,"============================================================"
+          "=====================\n");
 
   if (bctx->do_client_num_gradual_increase && 
       (bctx->stop_client_num_gradual_increase == 0))
@@ -465,7 +491,8 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
         }
     }
 
-  fprintf(stdout,"=============================================================\n");
+  fprintf(stdout,"============================================================"
+          "=====================\n");
   fflush (stdout);
   
   //fprintf (stderr, "%s do_client %d, stop_client %d.\n", 
@@ -522,18 +549,19 @@ void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
       exit (1); 
     }
 
-  fprintf(stdout,"============  loading batch is: %-10.10s ==================\n",
+  fprintf(stdout,"============  loading batch is: %-10.10s ===================="
+          "==================\n",
           bctx->batch_name);
 
   /*Operational statistics*/
   op_stat_point_add (&bctx->op_total, &bctx->op_delta );
 
-  print_operational_statistics (&bctx->op_delta, 
+  print_operational_statistics (&bctx->op_delta,
                                 &bctx->op_total, 
                                 bctx->url_ctx_array);
 
 
-  fprintf(stdout,"-----------------------------------------------------\n");
+  fprintf(stdout,"--------------------------------------------------------------------------------\n");
 
   fprintf(stdout,"Interval stats (latest:%ld sec, clients:%d, CAPS-curr:%ld):\n",
           (unsigned long ) delta_time/1000, pending_active_and_waiting_clients_num (bctx),
@@ -616,10 +644,10 @@ static void dump_stat_to_screen (char* protocol,
                                  stat_point* sd, 
                                  unsigned long period)
 {
-  fprintf(stdout, "%sReq:%ld,1xx:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,Err:%ld,"
+  fprintf(stdout, "%sReq:%ld,1xx:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,Err:%ld,T-Err:%ld,"
           "D:%ldms,D-2xx:%ldms,Ti:%lldB/s,To:%lldB/s\n",
           protocol, sd->requests, sd->resp_1xx, sd->resp_2xx, sd->resp_3xx,
-          sd->resp_4xx, sd->resp_5xx, sd->other_errs, sd->appl_delay, 
+          sd->resp_4xx, sd->resp_5xx, sd->other_errs, sd->url_timeout_errs, sd->appl_delay, 
           sd->appl_delay_2xx, sd->data_in/period, sd->data_out/period);
 
     //fprintf (stdout, "Appl-Delay-Points %d, Appl-Delay-2xx-Points %d \n", 
@@ -636,7 +664,7 @@ static void dump_stat_to_screen (char* protocol,
 void print_statistics_header (FILE* file)
 {
     fprintf (file, 
-             "RunTime(sec),Appl,Clients,Req,1xx,2xx,3xx,4xx,5xx,Err,D,D-2xx,Ti,To\n");
+             "RunTime(sec),Appl,Clients,Req,1xx,2xx,3xx,4xx,5xx,Err,T-Err,D,D-2xx,Ti,To\n");
     fflush (file);
 }
 
@@ -683,10 +711,10 @@ static void print_statistics_data_to_file (FILE* file,
         period = 1;
       }
 
-    fprintf (file, "%ld, %s, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %lld, %lld\n",
+    fprintf (file, "%ld, %s, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %ld, %lld, %lld\n",
              timestamp, prot, clients_num, sd->requests, sd->resp_1xx, sd->resp_2xx,
              sd->resp_3xx, sd->resp_4xx, sd->resp_5xx, 
-             sd->other_errs, sd->appl_delay, sd->appl_delay_2xx, 
+             sd->other_errs, sd->url_timeout_errs, sd->appl_delay, sd->appl_delay_2xx, 
              sd->data_in/period, sd->data_out/period);
     fflush (file);
 }
@@ -747,17 +775,18 @@ static void print_operational_statistics (op_stat_point*const osp_curr,
   if (!osp_curr || !osp_total)
     return;
 
-  fprintf (stdout, " Operations:\t\t Success\t\t Failed\n");
+  fprintf (stdout, " Operations:\t\t Success\t\t Failed\t\t\tTimeouted\n");
 
   if (osp_curr->url_num && (osp_curr->url_num == osp_total->url_num))
     {
       unsigned long i;
       for (i = 0; i < osp_curr->url_num; i++)
         {
-          fprintf (stdout, "URL%ld:%-12.12s\t%-6ld %-8ld\t\t%-6ld %-8ld\n",
+          fprintf (stdout, "URL%ld:%-12.12s\t%-6ld %-8ld\t\t%-6ld %-8ld\t\t%-6ld %-8ld\n",
                    i, url_arr[i].url_short_name, 
                    osp_curr->url_ok[i], osp_total->url_ok[i],
-                   osp_curr->url_failed[i], osp_total->url_failed[i]);
+                   osp_curr->url_failed[i], osp_total->url_failed[i],
+                   osp_curr->url_timeouted[i], osp_total->url_timeouted[i]);
         }
     }
 }
