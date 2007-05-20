@@ -1679,14 +1679,13 @@ static int validate_batch_url (batch_context*const bctx)
           if (url->url_appl_type == URL_APPL_HTTP || 
               url->url_appl_type == URL_APPL_HTTPS)
             {
-              if (url->req_type != HTTP_REQ_TYPE_POST ||
-                  url->req_type != HTTP_REQ_TYPE_PUT)
+              if (url->req_type == HTTP_REQ_TYPE_GET)
                 {
                   fprintf (stderr, 
-                           "%s - error: URL_USE_CURRENT tag works, when " 
+                           "%s - WARNING: URL_USE_CURRENT tag works, when " 
                            "REQUEST_TYPE is POST or PUT.\n"
-                           "Y do not need to care about 3xx redirections after GET.\n", __func__);
-                  return -1;
+                           "Normally, one has no need to care about 3xx redirections after GET.\n", __func__);
+                  sleep (5);
                 }
             }
           */
