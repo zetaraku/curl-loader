@@ -1312,12 +1312,58 @@ static int timer_tcp_conn_setup_parser (batch_context*const bctx, char*const val
 }
 static int timer_url_completion_parser (batch_context*const bctx, char*const value)
 {
-    bctx->url_ctx_array[bctx->url_index].timer_url_completion = atol (value);
+  const long timer = atol (value);
+
+    if (timer < 0)
+    {
+        fprintf(stderr, 
+                "%s error: negative value provided %ld.\n" 
+                "The timer is expected  to be 20 msec and more.\n", 
+                __func__, timer);
+        return -1;
+    }
+
+    if (timer > 0 && timer < 20)
+      {
+         fprintf(stderr, 
+                "%s error: the timer should be either 0 or 20 msec and more.\n"
+                 "Note, that since version 0.31 the timer is in msec and enforced by\n"
+                 "monitoring time of each url fetching and cancelling, when it \n"
+                 "takes msec above the timer. Operation statistics provides a view\n"
+                 "on what happens as URL-Timeouted and statistics T-Err counter.\n"
+                 "To preserve the previous behavior without the timer enforcement,\n"
+                 "please, place 0 value here.\n",
+                __func__);
+        return -1;
+      }
+
+    bctx->url_ctx_array[bctx->url_index].timer_url_completion = timer;
+
     return 0;
 }
 static int timer_after_url_sleep_parser (batch_context*const bctx, char*const value)
 {
-    bctx->url_ctx_array[bctx->url_index].timer_after_url_sleep = atol (value);
+    const long timer = atol (value);
+
+    if (timer < 0)
+    {
+        fprintf(stderr, 
+                "%s error: negative value provided %ld.\n" 
+                "The timer is expected  to be either 0 or 20 msec and more.\n", 
+                __func__, timer);
+        return -1;
+    }
+
+    if (timer > 0 && timer < 20)
+      {
+         fprintf(stderr, 
+                 "%s error: the timer should be either 0 or 20 msec and more.\n",
+                __func__);
+        return -1;
+      }
+
+    bctx->url_ctx_array[bctx->url_index].timer_after_url_sleep = timer;
+
     return 0;
 }
 

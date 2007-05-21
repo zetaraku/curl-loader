@@ -83,6 +83,12 @@ static int handle_cctx_url_completion_timer (timer_node* tn,
                                 unsigned long ulong_param);
 
 
+static int client_remove_from_load (batch_context* bctx, client_context* cctx);
+static int client_add_to_load (batch_context* bctx, 
+                               client_context* cctx,
+                               unsigned long now_time);
+
+
 /*****************************************************************************
  * Function name - alloc_init_timer_waiting_queue
  *
@@ -566,9 +572,9 @@ dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
  *               now_time - current time in msec
  * Return Code/Output - On success -0, on error - (-1)
  *******************************************************************************/
-int client_add_to_load (batch_context* bctx, 
-                        client_context* cctx,
-                        unsigned long now_time)
+static int client_add_to_load (batch_context* bctx, 
+                               client_context* cctx,
+                               unsigned long now_time)
 {
   /* Remember the previous state and url index: fur operational statistics */
   cctx->preload_state = cctx->client_state;
@@ -618,7 +624,7 @@ int client_add_to_load (batch_context* bctx,
  *               *cctx - pointer to the client context
  * Return Code/Output - On success -0, on error - (-1)
  *****************************************************************************/
-int client_remove_from_load (batch_context* bctx, client_context* cctx)
+static int client_remove_from_load (batch_context* bctx, client_context* cctx)
 {
   if (curl_multi_remove_handle (bctx->multiple_handle, cctx->handle) == CURLM_OK)
     {
@@ -771,13 +777,22 @@ static int handle_cctx_url_completion_timer (timer_node* tn,
 
   cctx->tid_url_completion = -1;
 
+  // Increment operational statistics
   op_stat_timeouted (&bctx->op_delta, cctx->url_curr_index);
 
+  // Considering url completion timeout as an error
+  // TODO - make it configurable
   stat_url_timeout_err_inc (cctx);
-
   cctx->client_state = CSTATE_ERROR;
 
-  //return client_remove_from_load (bctx, cctx);
+  if (verbose_logging)
+    {
+      fprintf (cctx->file_output, 
+               "%ld %s !! URL_COMPLETION_TIMEOUT: url: %s\n", 
+              cctx->cycle_num, cctx->client_name, 
+              bctx->url_ctx_array[cctx->url_curr_index].url_str);
+    }
+
   const unsigned long now_time = get_tick_count ();
 
   return load_next_step (cctx, now_time, &sched_now);

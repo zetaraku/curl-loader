@@ -1220,6 +1220,14 @@ static int init_client_contexts (batch_context* bctx,
 static void free_batch_data_allocations (batch_context* bctx)
 {
   int i;
+
+  if (! bctx)
+    {
+      return;
+    }
+
+  op_stat_point_release (&bctx->op_delta);
+  op_stat_point_release (&bctx->op_total);
   
   /* 
      Free client contexts 

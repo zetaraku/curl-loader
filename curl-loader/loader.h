@@ -160,36 +160,6 @@ int pending_active_and_waiting_clients_num (struct batch_context* bctx);
 
 
 /****************************************************************************************
- * Function name - client_remove_from_load
- *
- * Description - Removes client context to from the kept in batch context multiple handle,
- * 		 thus, removing the client from the loading machinery
- *
- * Input -       *bctx - pointer to the batch context
- *               *cctx - pointer to the client context
- *
- * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
-int client_remove_from_load (struct batch_context* bctx, struct client_context* cctx);
-
-
-/****************************************************************************************
- * Function name - client_add_to_load
- *
- * Description - Adds client context to the batch context multiple handle for loading
- *
- * Input -       *bctx - pointer to the batch context
- *               *cctx - pointer to the client context
- *               now_time - current time in msec
- * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
-int client_add_to_load (struct batch_context* bctx, 
-                        struct client_context* cctx,
-                        unsigned long now_time);
-
-
-
-/****************************************************************************************
  * Function name - load_next_step
  *
  * Description - Called at initialization and further after url-fetch completion 
@@ -199,10 +169,8 @@ int client_add_to_load (struct batch_context* bctx,
  *
  * Input -       *cctx - pointer to the client context
  *                   now_time -  current timestamp in msec
- *
- *Input/Output -  sched_now - when true, the client is scheduled right now without timer queue.
- *
- * Return Code/Output - CSTATE enumeration with the state of loading
+  *Input/Output -  sched_now - when true, the client is scheduled right now without timer queue.
+  * Return Code/Output - CSTATE enumeration with the state of loading
  ****************************************************************************************/
 int load_next_step (struct client_context* cctx,
                     unsigned long now_time,
