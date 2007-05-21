@@ -1,38 +1,32 @@
 Last updated: 18/05/2007
 
 
-Nearest release 0.31:
+Nearest release 0.31 may hopefully include: 
 
 1. Multi-post forms, suggested by Jeremy Hicks jehicks@novell.com
     http://curl.haxx.se/libcurl/c/curl_formadd.html
 
-2. URL-Timeout. Respect a url-fetch timeout. If not accomplished till a certain time - 
-    stop it and mark it statistics as a URL-Timeout Exceeded.
+2. HTTP GET filled forms for login credentials (they are sent using url).
 
-   Add number of fetches with the expired URL-Timeout to the 
-   Operational Statistics of our loading GUI.
+3. Testing of HTTP PUT support, e.g. file upload. See put.conf
 
-3. HTTP GET filled forms for login credentials (they are sent using url).
-
-4. Testing of HTTP PUT support
-
-5. Add a url-based tag STOP_ON_ERROR to schedule or not to
+4. Add a url-based tag STOP_ON_ERROR to schedule or not to
     schedule a client for more cycles, when an error condition detected.
-   Now we have a global such option, whereas URLs may have different
-   level of importance.
+   Now we have  such option as a global one, whereas URLs may have 
+   different level of importance.
 
-6. ERROR_RESPONSE_CODES - add a list or codes considered
+5. ERROR_RESPONSE_CODES - add a list or codes considered
    as errors, or not considered as error conditions on a per-url bases. 
    By default all HTTP 5xx codes and 4xx -401-407 are considered as errors.
    Plus means add to a url errors list, where minus means remove from a
    url error list.
    Something like ERROR_RESPONSE_CODES="+100+101-500-503"
 
-7. Cookies - add an option to add a per-url cookie. Currently, we just enable any
+6. Cookies - add an option to add a per-url cookie. Currently, we just enable any
      cookies set by a server. Probably, users may wish to use a very specific
     and known in advance cookie.
 
-8 Add an option to limit throughput per client. Libcurl is already supporting it.
+7. Add an option to limit throughput per client. Libcurl is already supporting it.
 
 ---------------------------------------------------------------------------------------------------- 
 
@@ -53,16 +47,16 @@ Next releases:
    http://www.cs.umass.edu/%7Eemery/hoard/asplos2000.pdf
 
 - Testbed for 50K and 100K clients. We need a more powerful HW:
-      2-4 CPUs/cores and 4-8 GB of memory
+    2-4 CPUs/cores and 4-8 GB of memory
 
-1. Dynamic allocation of form post buffers. Current static
+1. Dynamic allocation of the form post buffers. Current static
    allocation uses too much memory reserves.
 
 2. Support more than current 2 tokens (up to 8) in 
     FORM_RECORDS_FILE. Tokenize the input in cycle. 
 
 3. An option to download a url not only once a cycle, but according to its
-   "Weight" -several times prior to going to the next url.
+   "Weight", e.g. several times prior to going to the next url.
 
 4. ERROR_RESPONSE_BODY - a regular expression pattern for a
     search in a response body. If not found - error. Look in Apache
@@ -92,7 +86,7 @@ Next releases:
   We can add to libcurl a new option - something like 
   CURLOPT_CONNECTION_REUSENUM to pass a <max_number> of requests till 
   connection refresh.
-  Note, that httperf sessions - is a reference application.
+  Note, that httperf (sessions) is a reference application.
 
 10. Configuration/making improvements: moving all source-files
     to src directory etc.
@@ -103,13 +97,15 @@ Next releases:
 12. Support for CAPS (calls per second) defined mode. Currently, we are 
    supporting only a certain number of virtual clients and CAPS is the derived
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
-   and virtual clients number to be the derived parameter. 
+   and virtual clients number to be the derived parameter;
 
-13. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like.
+13. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like;
 
 14. Template-guided output of configurable statistics 
-(what user wishes with desired string, names) to statistics file.
+   (what user wishes with desired string, names) to statistics file;
 
-15. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec).
+15. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec);
 
-16. Support for more protocols: telnet, SFTP, SSH, etc
+16. Support for more protocols: telnet, SFTP, SCP, SSH, etc;
+
+17. Support for more HTTP and FTP features.
