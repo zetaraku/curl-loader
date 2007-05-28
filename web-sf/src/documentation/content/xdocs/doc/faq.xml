@@ -45,9 +45,8 @@ Note, that each virtual client takes about 30-35 K memory in user-space plus som
 memory in kernel mainly for send and recv buffers. <br/>
 <br/>
 Our PC with Pentium-4 2.4 GHz and 480 MB memory is capable to support 3000-4000 simultaneously
-loading clients. To reach 10K simultaneously loading clients a PC with dual 3.0 GHz Intel or 2.2 GHz 
-AMD and 1-2 GB memory is recommended, but for some configurations a single high-end CPU like
-Xeon or Opteron could be enough.<br/>
+loading clients. To reach 10K simultaneously loading clients we would recommend a PC with a
+single 3.2 GHz Intel or 2.2 GHz AMD and 1-2 GB of memory.<br/>
 <br/>
 When loading from a multi-CPU (or multi-core) systems, a loading model with the number of
 curl-loader processes equal to the number of CPUs may be most effective and deliver even higher
@@ -64,7 +63,7 @@ tuning, optimizing and getting our advise - the sky is the limit.
 Which operating systems are supported by curl-loader?
       </question>
       <answer>
-You can use any operating system of your choice, providing this it is linux with kernel 2.4 or 2.6.
+You can use any operating system of your choice, providing that this is linux with kernel 2.4 or 2.6.
        </answer>
     </faq>
     <faq id="pre-requirements">
@@ -132,16 +131,10 @@ curl-loader using -f commmand line option, e.g.<br/>
         Yet another option to start is by running "$make menuconfig" configuration GUI. 
         The dialog window will guide you and create your configuration file in conf-user directory. 
         A limitation of the menu-guided configuration, is that it enables 
-        to create only a single UAS URL.<br/>
+        to create only a single URL.<br/>
         If you need more that a single UAS url, copy your batch file from the conf-user
         directory  to some other place and  edit it by adding as much url tag series 
-        (below) as you need, but don't forget to update UAS_URLS_NUM accordingly.<br/>
-         The UAS url tag series:<br/>
-         UAS_URL=<br/>
-         UAS_URL_USERNAME=<br/>
-         UAS_URL_PASSWORD=<br/>
-         UAS_URL_MAX_TIME =<br/>
-         UAS_URL_INTERLEAVE_TIME =<br/>
+        (below) as you need, but don't forget to update URLS_NUM accordingly.<br/>
          <br/>
          For more details you may look at the next FAQ guidelines.
         </p>
@@ -154,11 +147,9 @@ curl-loader using -f commmand line option, e.g.<br/>
       <answer>
         <p>
 Configuration file or "batch configuration file" consists from tag=value
-strings, groupped into 4 sections:<br/>
+strings, groupped into 2 sections:<br/>
 - General;<br/>
-- Login;<br/>
-- UAS (user activity simulation by fetching urls and waiting for timeouts);<br/>
-- Logoff;<br/>
+- URL;<br/>
 <br/>
 Configuration file should possess at least one client batch defined
 with the following params in each batch:<br/>

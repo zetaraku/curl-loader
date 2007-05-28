@@ -56,11 +56,12 @@
 5000-15000 simultaneously loading clients, all from a single curl-loader process.
 Actual number of clients may be several times (if not tens) higher than the number of 
 simultaneously loading clients and is limited only by memory. Each client performs 
-loading from its own source IP-address;
+loading from its own source IP-address or, as an option, all clients share the same 
+IP-address;
       </p>
       <p>
-- Loading modes: smooth, hyper and storming. Gradual increase of virtual clients
-number at loading start is an option for the smooth and hyper modes;
+- Rampup of the virtual clients number at loading start in either automatic or
+manual mode;
       </p>
       <p>
 - IPv4 and IPv6 addresses and URIs;
@@ -69,13 +70,13 @@ number at loading start is an option for the smooth and hyper modes;
 - HTTP 1.1, HTTPS, FTP, FTPS, TLS/SSL;
       </p>
       <p>
-- HTTP authentication login with POST or GET+POST methods. Unique configurable 
-username and password for each virtual client as well as configurable posted 
-string (post-forms) are the options. Another option is loading of users with credentials 
-from a text file;
+- HTTP user authentication login with POST or POST after GET methods. 
+Unique configurable username and password for each virtual client as well as 
+configurable posted string (post-forms) are the options. Another option is 
+loading of users with credentials from a text file;
       </p>
       <p>
-- HTTP logooff with POST, GET+POST, or GET (cookies); POST logoff with
+- HTTP user logooff with POST, POST after GET, or GET (cookies); POST logoff with
 configurable posted string (post-forms);
       </p>
       <p>
@@ -89,25 +90,30 @@ Basic, Digest (RFC2617) and NTLM supported;
 - HTTP cookies and DNS caches;
       </p>
       <p>
-- Full customization of HTTP/FTP headers;
+- Full customization of client request HTTP/FTP headers for each url;
       </p>
       <p>
-- TCP connections reuse or re-establishment is configurable;
+- TCP connections reuse or re-establishment is configurable on per url bases;
       </p>
       <p>
-- Unlimited configurable number of UAS URLs and inter-URL waiting time 
-for the smooth and hyper mode; 
+- Unlimited configurable number of URLs. Mixing of HTTP, HTTPS, FTP 
+and FTPS urls in a single batch of client configuration;
       </p>
       <p>
-- Mixing of HTTP, HTTPS, FTP and FTPS urls in a single batch of client configuration;   
+- Connection establishment timers for each URL;
       </p>
       <p>
-- Logfile with configurable verbousness of tracing with output for 
-each virtual client. The logfile is atomatically rewinded, when reaching 
-configurable size to prevent disk crashes;
+- URL completion timers can be set and enforced for each client;
       </p>
       <p>
-- File with status and statistics per each virtual client;
+- Inter/after URL "sleeping" timers;
+      </p>
+      <p>
+- Logfile with tracing activities for each virtual client. The logfile is atomatically 
+rewinded, when reaching configurable size preventing disk crashes;
+      </p>
+      <p>
+- Logging of responses (headers and bodies) to files.
       </p>
       <p>
 - Dialog GUI guided creation of configuration files and well as pre-cooked 
@@ -115,6 +121,9 @@ configuration examples;
       </p>
       <p>
 - Load Status GUI and load status output to file;
+      </p>
+      <p>
+- Status and statistics per each virtual client logged to file;
       </p>
       <p>
 - Detailed loading statistics at Load Status GUI and to file;
@@ -137,8 +146,9 @@ configuration examples;
     <section id="authors">
       <title>Authors</title>
       <p>
-         Robert Iakobashvili (coroberti et gmail.com) and Michael Moser (moser.michael et gmail.com), both
-         from Israel.
+         The tool is written and supported by Robert Iakobashvili and Michael Moser both 
+         from State of Israel. Please, use the link to the mailing list provided in Support 
+         section to contact us and to get support for the tool.
       </p>
      </section>
      <section id="success-usage">
@@ -177,7 +187,6 @@ configuration examples;
     url with a gigabyte file, thus, creating a permanent heavy-load 
     traffic, containing thousands of tcp-streams at the gateway in the middle.  
       </p>
-
     </section>
   </body>
 </document>
