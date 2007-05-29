@@ -11,20 +11,21 @@
       </question>
       <answer>
       Batch is a group of clients with the same characteristics and 
-      loading behavior. Configuration file has one (normally) or more batches.
+      loading behavior. Batch configuration file is a test plan for a 
+      batch of clients.
        </answer>
     </faq>
-   <faq id="uas">
+
+    <faq id="batch-file">
       <question>
-     What means UAS?
+     What is the batch configuration file?
       </question>
       <answer>
-      UAS - user activity simulation - fetching url, sleeping, another url -sleeping
-      cycles, simulating actual user activity.
+      Batch configuration file is a test plan for a batch of clients.
        </answer>
     </faq>
-  </faqsection>
 
+  </faqsection>
   <faqsection id="Hardware">
     <title>Hardware Requirements</title>
     <faq id="MinHW">
@@ -46,7 +47,7 @@ memory in kernel mainly for send and recv buffers. <br/>
 <br/>
 Our PC with Pentium-4 2.4 GHz and 480 MB memory is capable to support 3000-4000 simultaneously
 loading clients. To reach 10K simultaneously loading clients we would recommend a PC with a
-single 3.2 GHz Intel or 2.2 GHz AMD and 1-2 GB of memory.<br/>
+single 3.2 GHz Intel or 2.2 GHz AMD and 1.5-2 GB of memory.<br/>
 <br/>
 When loading from a multi-CPU (or multi-core) systems, a loading model with the number of
 curl-loader processes equal to the number of CPUs may be most effective and deliver even higher
@@ -68,7 +69,7 @@ You can use any operating system of your choice, providing that this is linux wi
     </faq>
     <faq id="pre-requirements">
       <question>
-        What are the building pre-requirements?
+What are the building pre-requirements?
       </question>
       <answer>
         General C development environment with bash, gcc, make, etc on a linux machine
@@ -149,129 +150,225 @@ curl-loader using -f commmand line option, e.g.<br/>
 Configuration file or "batch configuration file" consists from tag=value
 strings, groupped into 2 sections:<br/>
 - General;<br/>
-- URL;<br/>
+- URLs;<br/>
 <br/>
-Configuration file should possess at least one client batch defined
-with the following params in each batch:<br/>
+Section General contains common for the batch parameters, whereas
+section URLs contains one or more URL subsections each starting
+with a certain URL and containing more tags.<br/>
 <br/>
+An example of a simple configuration file to be used for 
+traffic generation client side against e.g. lighttpd web server:
 ----------------------------------------------------------------------------<br/>
-########### GENERAL SECTION ################################<br/>
-BATCH_NAME= bulk_batch     # The name of the batch. Logfile - bulk_batch.log<br/>
-CLIENTS_NUM_MAX=300                 # Max number of clients, same as CLIENTS_NUM<br/>
-CLIENTS_NUM_START=100              # Number of clients to start with.<br/>
-CLIENTS_INITIAL_INC=5 # Clients to be added each second till CLIENTS_NUM_MAX<br/>
-INTERFACE = eth0           # Name of the network interface from which to load <br/>
-NETMASK=255.255.240.0       # Netmask either as an IPv4 dotted string or as a CIDR number<br/>
-IP_ADDR_MIN= 192.168.1.1   # Client addresses range starting address<br/>
-IP_ADDR_MAX= 192.168.5.255 # Client addresses range last address<br/>
-CYCLES_NUM= 100            # Number of loading cycles to run, -1 means forever<br/>
-USER_AGENT=""      # User-Agent HTTP header quoted string. <br/>
-                                       #When empty string or missed - MSIE-6 default<br/>
-CUSTOM_HEADER="My-header1: header1" # Up to 16 custom headers.<br/>
+########### GENERAL SECTION ##################<br/>
+BATCH_NAME= 10K-clients<br/>  
+CLIENTS_NUM_MAX=10000<br/>
+CLIENTS_NUM_START=100<br/>
+CLIENTS_RAMPUP_INC=50<br/>
+INTERFACE   =eth0<br/>    
+NETMASK=255.255.0.0 <br/> 
+IP_ADDR_MIN= 192.168.1.1<br/>
+IP_ADDR_MAX= 192.168.53.255<br/>
+CYCLES_NUM= -1<br/>
+URLS_NUM= 1<br/>
 <br/>
-#<br/>
-########### LOGIN SECTION ##################################<br/>
-LOGIN=n           # If 'y' or 'Y', login enabled, all other tags of the <br/>
-                  # section to be filled. If 'n' or 'N' - comment out others<br/>
-#LOGIN_USERNAME=  # Redundant tag, use LOGIN_URL_USERNAME instead<br/>
-#LOGIN_PASSWORD=  # Redundant tag, use LOGIN_URL_PASSWORD instead<br/>
-#LOGIN_REQ_TYPE=  # To be either GET+POST, POST or GET. Depricated.<br/>
-                       # Use instead LOGIN_REQ_TYPE_GET_POST, LOGIN_REQ_TYPE_POST<br/>
-                       # or LOGIN_REQ_TYPE_GET tags by using tag=y to enable <br/> 
-#<br/>
-#LOGIN_CREDENTIALS_FILE=""# A file with strings &lt;user&gt;&lt;separator&gt;&lt;password&gt;<br/> 
-#LOGIN_POST_STR=  # POST string matrix. See below.<br/>
+########### URLs SECTION #######################<br/>
 <br/>
-#LOGIN_URL=                 # A valid http or https url to be used for login<br/>
-#LOGIN_URL_USERNAME="" # Username for login url<br/>
-#LOGIN_URL_PASSWORD=""  # Password for login url<br/>
-#LOGIN_URL_MAX_TIME=        # Maximum batch time in seconds to login<br/>
-#LOGIN_URL_INTERLEAVE_TIME= # Time in msec to sleep after login<br/>
-#LOGIN_CYCLING=             # If 'y' login should be run in cycles, and not <br/>
-                            # just done only once<br/>
+URL=http://localhost/index.html<br/>
+URL_SHORT_NAME="local-index"<br/>
+REQUEST_TYPE=GET<br/>
+TIMER_URL_COMPLETION = 0<br/>
+TIMER_AFTER_URL_SLEEP = 0<br/>
 <br/>
-########### UAS SECTION ####################################<br/>
-UAS=y            # If 'y' or 'Y', login enabled, and other lines of the section to be filled<br/>
-UAS_URLS_NUM = 2 # Number of urls<br/>
 <br/>
-UAS_URL=ftp://anonymous:stam@localhost/curl-7.16.0.tar.gz # Rather large file<br/>
-#UAS_URL_USERNAME="" # Username for this particular UAS url<br/>
-#UAS_URL_PASSWORD=""  # Password for this particular UAS url<br/>
-UAS_URL_MAX_TIME = 20        # Maximum batch time in seconds to fetch the url<br/>
-UAS_URL_INTERLEAVE_TIME = 0  # Time in msec to sleep after fetching the url<br/>
+The name of the batch is "10K-clients" with the maximum number of clients 
+to be 10000; load to be started with initial 100 clients and each seconds will be added 50
+clients more.<br/>
 <br/>
-UAS_URL= http://localhost/apache2-default/index.html<br/>
-#UAS_URL_USERNAME="" # Username for this particular UAS url<br/>
-#UAS_URL_PASSWORD=""  # Password for this particular UAS url<br/>
-UAS_URL_MAX_TIME = 4        # Maximum batch time in seconds to fetch the url<br/>
-UAS_URL_INTERLEAVE_TIME = 0 # Time in msec to sleep after fetching the url<br/>
+For load will be used network interface eth0 with unique IP-address for each
+client taken from 192.168.1.1 up to 192.168.53.255 and netmask 255.255.0.0.
+Number of cycles is to be performed by each client in not limited (CYCLES_NUM= -1)
+and will go forward till user presses Cntl-C to stop the load. Each client fetches
+a single url (URLS_NUM= 1) http://localhost/index.html.<br/>
 <br/>
-# You may add any number of urls providing 5-tags for each url as above,<br/>
-# but do not forget to update the UAS_URLS_NUM.<br/>
-<br/>
-########### LOGOFF SECTION #################################<br/>
-LOGOFF=n                 # If 'y' or 'Y', login enabled, and other tags of the <br/>
-                         # section to be filled. If 'n' or 'N' - comment out others<br/>
-#LOGOFF_REQ_TYPE=        # To be GET, GET+POST, or POST. Depricated.<br/>
-                           # Use instead LOGOFF_REQ_TYPE_GET_POST, LOGOFF_REQ_TYPE_POST<br/>
-                           # or LOGOFF_REQ_TYPE_GET tags by using tag=y to enable<br/>
-#LOGOFF_POST_STR=        # String to be used for logoff, like "op=logoff"<br/>
+The url is named as "local-index" and the name that will be used for Load Status GUI.
+The url will be fetched using HTTP GET, and the operation will not be limited
+in time (TIMER_URL_COMPLETION = 0). If we would like to limit this operation,
+we could place here some number in milli-seconds, e.g. 3000 to be monitored and
+enforced and reported, if missed, at Load Status GUI and other statistics. After
+completing fetching url each client waits/sleeps for 0 ms 
+(TIMER_AFTER_URL_SLEEP = 0, which means, that actually does not wait/sleep) 
+and makes the next URL fetch.  <br/>
  <br/>
-#LOGOFF_URL=             # A valid http or https url to be used for logoff<br/>
-#LOGOFF_URL_USERNAME="" # Username for logoff url<br/>
-#LOGOFF_URL_PASSWORD=""  # Password for logoff url<br/>
-#LOGOFF_URL_MAX_TIME=    # Maximum batch time in seconds to logoff<br/>
-#LOGOFF_URL_INTERLEAVE_TIME= # Time in msec to sleep after logoff<br/>
-#LOGOFF_CYCLING=         # If 'y' login should be run in cycles, and not just done only once<br/>
+<br/>
+Yet a one more example of a configuration file to be used login to a web-service,
+performing some activity and logoff is below:<br/>
+<br/>
+########### GENERAL SECTION ###################<br/>
+BATCH_NAME=web-service<br/>
+CLIENTS_NUM_MAX=100<br/>
+CLIENTS_RAMPUP_INC=2<br/>
+INTERFACE=eth0 <br/>   
+NETMASK=24  <br/>
+IP_ADDR_MIN=192.168.0.2<br/>
+IP_ADDR_MAX=192.168.0.2<br/>
+URLS_NUM=4<br/>
+CYCLES_NUM= 200<br/>
+<br/>
+########### URLs SECTION #######################<br/>
+<br/>
+### Login URL -  cycling <br/>
+<br/>
+# GET-part<br/>
+# <br/>
+URL=http://192.168.0.1:8888/vax/root/Admin<br/>
+URL_SHORT_NAME="Login-GET"<br/>
+REQUEST_TYPE=GET<br/>
+TIMER_URL_COMPLETION = 10000<br/>
+TIMER_AFTER_URL_SLEEP =5000<br/>
+<br/>
+# POST-part<br/>
+# <br/>
+URL=""<br/>
+URL_SHORT_NAME="Login-POST"<br/>
+URL_USE_CURRENT=1<br/>
+USERNAME= admin<br/>
+PASSWORD= admin-passphrase<br/>
+REQUEST_TYPE=POST<br/>
+FORM_USAGE_TYPE= SINGLE_USER<br/>
+FORM_STRING= username=%s&password=%s <br/>
+TIMER_URL_COMPLETION = 4000  <br/>
+TIMER_AFTER_URL_SLEEP =1000 <br/>
+ <br/>
+### Cycling URL <br/>
+# <br/>
+URL=http://192.168.0.1:8888/vax/Admin/ServiceList.do<br/>
+URL_SHORT_NAME="Service List"<br/>
+REQUEST_TYPE=GET<br/>
+TIMER_URL_COMPLETION = 3000<br/>
+TIMER_AFTER_URL_SLEEP =1000<br/>
+<br/>
+### Logoff URL - cycling, uses GET and cookies to logoff.<br/>
+#<br/>
+URL=http://192.168.0.1:8888/vax/Admin/Logout.do<br/>
+URL_SHORT_NAME="Logoff"<br/>
+REQUEST_TYPE=GET<br/>
+TIMER_URL_COMPLETION = 0<br/>
+TIMER_AFTER_URL_SLEEP =1000<br/>
+<br/>
+<br/>
+The name of the batch is "web-service", maximum number of clients 100,
+load to be started with initial 2 client and each seconds will be added 2
+clients more.<br/>
+<br/>
+For load will be used network interface eth0 the same IP-address for each
+client 192.168.0.2 and netmask 255.255.255.0 (24 in CIDR notation). If we
+would like to assign to each client a unique IP, it could be done by providing
+a range of at least 100 IP-address, e.g. IP_ADDR_MIN=192.168.0.10 and 
+IP_ADDR_MAX=192.168.0.110.
+Number of cycles is to be performed by each client is limited to 200, and the load
+stops, when each client does 200 cycles. Each client fetches up to 4 urls, specified 
+in section  URLs<br/>
+<br/>
+The first URL operation, which is doing each simulated user/client is login. Login is
+performed by GET-ing the page (with 3xx HTTP redirections handled inside)
+with the first url http://192.168.0.1:8888/vax/root/Admin, called shortly "Login-GET". 
+Maximum time, that we consider appropriate for this operation is 10000 msecs. 
+The 2000 msec "sleep" timer simulates here the time spended by user to fill the 
+username and password to the POST-form received by the GET.<br/>
+<br/>
+The second url is empty and is used for POST-ing to the "current" url, using the form.
+Such empty string urls are allowed only, when URL_USE_CURRENT=1 is specified.
+The url is named as "Login-POST". Username "admin" and password "admin-passphrase"
+are used as the single user type and "filled" to the FORM_STRING= username=%s&password=%s. 
+After "filling", the resulting form, which is sent to the web-service is 
+"username=admin&password=admin-passphrase". There are other options available for FORM_STRING, 
+such as unique generated users, unique generated passwords or credentials loaded from a file; 
+these options will be described later. The maximum time allowed for the POST is 4000 msecs, 
+and the time of waiting/sleeping till the next url is 1000 msecs. 
+Worth to mention, that when the authentication is accomplished successfully,
+server sets to client cookies and redirects the client to the service page, which is the next url
+(note, that all redirections are handled internally).
+ <br/>
+ <br/>
+The third url is http://192.168.0.1:8888/vax/Admin/ServiceList.do with a short name
+"Service List". After the url is done a client comes to the forth url 
+http://192.168.0.1:8888/vax/Admin/Logout.do to for a logoff. This batch (testing plan)
+does not control and limit the time spended for logoff, which is indicated by
+TIMER_URL_COMPLETION = 0. After doing a 1000 msecs sleeping, a client comes
+back to the first url to repeat the sequence till the number of cycles is expired. <br/>
+ <br/>
+If we would like, that login and logoff to be done for each client only one, we would
+add to the first, second and forth url the tag URL_DONT_CYCLE=1 to mark the urls
+ as not-cycled to be fetched only once. <br/>
+ <br/>
+
+        <p>
+Note, that both quotted and non-quotted string are supported as the tags values.<br/>
+<br/>
+For more examples, please, look at the files in "conf-examples" directory.<br/>
         </p>
+      </answer>
+    </faq>
+
+    <faq id="tag-description">
+      <question>
+        What are the exact meanings of all these tags?
+      </question>
+      <answer>
+<br/>
+Tags of the sections GENERAL:<br/>
+<br/>
+BATCH_NAME - a short string to be provided. The string will be
+used to create logfile, statistics file and client dump files with the
+same name as the batch-name and extensions .log, .txt and .ctx, respectively.<br/>
+<br/>
+CLIENTS_NUM_MAX - a maximum number of clients to be used for load.
+Any positive number is valid here. Note, that each loading client requires 30-35 K
+of RAM plus some non-pageable memory in kernel. We have already tried loads
+with up to 20000 clients. Loads above 1000 client normally start with a some
+lower starting number, managed by the next tag CLIENTS_NUM_START and
+ramped-up each second by adding CLIENTS_RAMPUP_INC clients to the load.<br/>
+<br/>
+CLIENTS_NUM_START - number of clients to start the load with. If the tag is 
+not present or zero, CLIENTS_RAMPUP_INC value will be taken instead. 
+If neither CLIENTS_NUM_START nor CLIENTS_RAMPUP_INC are present
+or have positive value, the loader will take CLIENTS_NUM_MAX as the number
+of clients to start the load.<br/>
+<br/>
+CLIENTS_RAMPUP_INC - number of clients to be added to the load in the automatical
+mode every second till CLIENTS_NUM_MAX number will be reached. For machines
+with a single CPU we would recommend not to keep the number above 50-100, whereas
+for dual-CPU machines you can keep it as large as 200-300.<br/>
+<br/>
+INTERFACE - name of the loading network interface. Find your interfaces by running
+/sbin/ifconfig.<br/>
+ <br/>
+NETMASK - netmask for the loading clients IP-addresses (from IP_ADDR_MIN to 
+IP_ADDR_MAX). For IPv4 you can use either quad-dotted netmask string or CIDR 
+number from 0-32. For IPv6 only CIDR values from 0 to 128 are supported.<br/>
+<br/>
+IP_ADDR_MIN and IP_ADDR_MAX are the interval of IP-addresses to be used
+for the clients. The interval of the addresses should be large enough to supply
+a dedicated IP for each client. Another mode, that can be used is the same IP
+for all clients; when IP_ADDR_MIN and IP_ADDR_MAX contain the same valid
+address, it will be used for all clients.<br/>
+<br/>
+CYCLES_NUM is the number of cycles to be performed. Any positive value is
+valid here as well as (-1), which means cycle indefinetely. Loading can be normally
+stopped at any moment by pressing Cntl-C; all statistics will be collected properly and files
+closed to contain necessary information. Note, that cycling relates only to the URLs not
+containing tag URL_DONT_CYCLE = 1. Curl-loader enables two optional non-cycling
+areas: the first before the cycling url/s area and the second after it.<br/>
+<br/>
+USER_AGENT provides an option to over-write the default MSIE-6-like HTTP header
+User-Agent. Place here a quotted string to emulate the browser, that you need.
+The header is entered globally. If you need an option to customize it on a per-URL bases,
+please, use tag HEADER="User-Agent: the string of my favorite browser".<br/>
+<br/>
+URLS_NUM is the number of urls to be used in URLs Section, which is next.
+
         <p>
-Worth to mention, that each batch configuration should contain all tags from
-the section GENERAL as well as LOGIN, UAS and LOGOFF section tags. <br/>
-<br/>
-When LOGIN, UAS or LOGOFF is set as 'y' (yes), all tags for that section should 
-appear (uncommented) and to be set to some valid values (empty string "" to be used 
-not to define LOGIN_POST_STR and LOGOFF_POST_STR tags, when POST 
-is not applicable). <br/>
-<br/>
-In the case, that LOGIN, UAS or LOGOFF section tag is 
-disabled by setting 'n' (no) value, thus, all the tags of the disabled section 
-may appear with with empty strings "", without values or may be
-commented out by '#'.
-        </p>
-        <p>
-Tag LOGIN_POST_STR:<br/>
-To generate multiple unique users with unique passwords, use the string like<br/>
-"user=%s%d&amp;password=%s%d". First '%s' will be substituted by the <br/>
-value of LOGIN_USERNAME tag and '%d' by the client number. Second '%s' will<br/>
-be substituted by LOGIN_PASSWORD tag value and second '%d' by the same client<br/>
-number. For example, if LOGIN_USERNAME=robert, LOGIN_PASSWORD=stam<br/>
-and LOGIN_POST_STR "user=%s%d&amp;password=%s%d", the final POST string, <br/>
-used for the client number 1, will be  "user=robert1 password;=stam1".<br/>
-<br/>
-In this case LOGIN_USERNAME and LOGIN_PASSWORD strings are used just <br/>
-as base-words for generating unique user credentials by appending an number.<br/>
-To use the username and password 'as as', provide LOGIN_POST_STR without <br/>
-%d symbols, e.g. "user=%s&amp;secret=%s". Thus, all clients will have the same<br/>
-POST credentials with the string looking like "user=robert&amp; secret=stam".<br/>
-<br/>
-The option without %d symbols to be used also, when LOGIN_CREDENTIALS_FILE is defined,<br/>
-because the credentials uniqueness is ensured by the file content.<br/>
-Another allowed syntax serves to generate unique user, all using with the same password:
-"user=%s%d&amp;secret=%s".<br/>
-<br/>
-Note, that the words like 'username', 'user', 'password', 'secret', etc are<br/> 
-those fields, that login users are required to fill in their POST page.<br/>
-<br/>
-       </p>
-        <p>
-Tag  CLIENTS_INITIAL_INC:<br/>
-serves to increase clients number gradually at the initial phase of loading. 
-Use the tag in GENERAL section to specify number of loading clients to be 
-added each second till the total number reaches the number specified by 
-CLIENTS_NUM tag.<br/>
-       </p>
-        <p>
-Tag CUSTOM_HEADER:<br/>
+HEADER:<br/>
 is assisting to customize/add/over-write HTTP/FTP headers. 
 Up to 16 custom HTTP/FTP headers are allowed.  If a header already exits by default, 
 the custom header over-writes it. USER_AGENT tag is for User-Agent header only, 
@@ -279,7 +376,7 @@ whereas by CUSTOM_HEADER may be added or over-written any header (including
 User-Agent). An example of batch configuration is ./conf-examples/custom_hdrs.conf.
        </p>
         <p>
-Tag LOGIN_CREDENTIALS_FILE: <br/>
+LOGIN_CREDENTIALS_FILE: <br/>
 specifies the path to the file with credentials (full-path or relative to curl-loader). 
 A text file with usernames and passwords with the structure of each string like: 
 &lt;user&gt;&lt;separator&gt;&lt;password&gt;can be used as an input. 
@@ -288,11 +385,6 @@ use as separators between username and password. An example of batch configurati
 is ./conf-examples/credentials_fr_file.conf and an example of credentials is in 
 ./conf-examples/credentials.cred.
       </p>
-        <p>
-Note, that both quotted and non-quotted string are supported as the tags values.<br/>
-<br/>
-For more examples, please, look at the files in "conf-examples" directory.<br/>
-        </p>
       </answer>
     </faq>
 
@@ -306,57 +398,30 @@ For more examples, please, look at the files in "conf-examples" directory.<br/>
             filled and posted by POST);<br/>
           - POST only;<br/>
            - GET only.<br/>
-           <br/>
-           Both UAS and Login URLs are coming with an option to configure username 
-           and password. The difference is that for UAS only GET method is currently allowed in 
-           and username&amp;password are intended to support Web or Proxy Authentication 
-           (see below). <br/>
-           Login and Logoff urls allow POSTing user credentials via configurable POST forms as 
-           well as configuring a unique username and password for each virtual client by appending 
-           a sequence number to the username and password basewords. When Login url fetching is 
-           challenged by Web or Proxy Authentication it will use user credentials specified/generated
-           as described. <br/>
-           <br/>
-          Does somebody really needs PUT or POST methods as an option for UAS urls? <br/>
-          If yes, please, signal it to us.<br/>
           <br/>
          The loader supports HTTP Web Authentication and Proxy Authentication.
          The supported authentication methods are Basic, Digest (RFC2617) and NTLM.
          When responded 401 or 407, libcurl will choose the most safe method
-         from those, supported by the server.<br/>
+         from those, supported by the server, unless the batch configuration (test plan)
+         is explicitly indicating the method to be used by the tags WEB_AUTH_METHOD 
+         and/or PROXY_AUTH_METHOD.<br/>
          To support GSS Web-Authentication, add in Makefile building of libcurl
          against appropriate GSS library, see libcurl pages for detailed instructions.<br/>
       </answer>
     </faq>
-
-    <faq id="login-logoff-uas">
-      <question>
-        When is better to use Login/Logoff section and when UAS?
-      </question>
-      <answer>
-        Login and Logoff section enable usage of POST-ed credentials, whereas UAS urls are 
-        using only GET method.<br/>
-        <br/>
-        Another business case for Login url is that it may be either used either in cycling or in
-        non-cycling mode, whereas UAS urls are always cycled.<br/>
-        When e.g. proxy authentication is the first operation to be performed and only once,
-        non-cycling Login url may be useful.<br/>
-        <br/>
-     </answer>
-     </faq>
    </faqsection>
 
-    <faq id="ftp">
+<faq id="ftp">
       <question>
-     What about FTP load?
+     What about FTP load and mixed FTP/HTTP load?
       </question>
       <answer>
 To generate FTP/FTPS load, please, use UAS section and pass user credentials
-via ftp-url according to the RFC 1738 like:<br/>
-ftp://username:password@hostname:port/etc-str<br/>
-Please, look at conf-examples/ftp.conf<br/>
+via ftp-url according to the RFC 1738 like: ftp://username:password@hostname:port/etc-str<br/>
+Please, look at the examples in conf-examples directory, e.g. ftp.conf, ftp_http.conf, 
+ftp_upload.conf.<br/>
       </answer>
-     </faq>
+</faq>
 
   <faqsection id="Running">
     <title>Running Load</title>
@@ -395,8 +460,7 @@ like /etc/security/limits.conf, etc
         -i[ntermediate (snapshot) statistics time interval (default 3 sec)]<br/>
         -f[ilename of configuration to run (batches of clients)]<br/>
         -l[ogfile max size in MB (default 1024). On the size reached, file pointer is rewinded]<br/>
-        -m[ode of loading, 0 - hyper (heavy loads), 1 - storming, 2 - smooth (the default)]<br/>
-        -o[utput to stdout bodies of downloaded files - attn!- bulky]<br/>
+        -m[ode of loading, 0 - hyper (the default, epoll () based ), 1 - smooth (select () based)]<br/>
         -r[euse connections disabled. Closes TCP-connections and re-open them. Try with and without]<br/>
         -s[tderr printout of client messages instead of to logfile - attn!- bulky]<br/>
         -t[hreads enable - enables threads, each runs a batch of clients]<br/>
@@ -426,29 +490,11 @@ like /etc/security/limits.conf, etc
      Which loading modes are supported?
       </question>
       <answer>
-The default loading mode is a so-called "smooth" (by default or -m2 command line), 
-where each client spends as much time as wishes and starts another url or 
-another cycle only after completing the previous url. When a client loading is
-terminated due to some reason, e.g. connection timeout, the default behavior
-is to schedule loading for this client at the next cycle. If -e option is passed to
-command line, the client will not be re-scheduled any more, which is usefull
-to get indication of errors by monitoring drop in number of active clients. Look
-in the logfile for errors, and when connection timeout error appears, adjust the
-connection timeout using -c command line option. Note, that the smooth mode
-is suitable for login-logoff cycles of load.<br/>
+Hyper-mode (command line -m0) is the default mode . The mode is using for event 
+demultiplexing epoll() or /dev/epoll. <br/>
 <br/>
-Hyper-mode (command line -m0) is currently considered as an experimental, but 
-steadily finds more and more usage, particularly for heavy loads. The mode is basically
-the same as the smooth mode, but is using for event demultiplexing epoll() or
-/dev/epoll instead of poll(). The mode is promising to deliver more loading clients from a 
-single process/thread.<br/>
-<br/>
-Another loading mode is called "storming" (-m1 command line), where all clients 
-of a batch are starting together. They are expected to finish their job within
-a certain timeout. After the timeout the clients either accomplished fetching url, 
-or are cutted and disconnected; thus, a new loading cycle begins. Storming mode 
-is better to use, when login operation is done once and not in cycles, or when the 
-tool is used just as a traffic generator or to generate "storming" bursts of requests.<br/>
+Another loading mode is called "smoothing" (-m1 command line) is basically the same
+as hyper, but uses poll() system call for demultiplexing.
 <br/>
        </answer>
        </faq>
@@ -460,37 +506,50 @@ tool is used just as a traffic generator or to generate "storming" bursts of req
       <answer>
 curl-loader outputs to the console loading status and statistics as the "standing" 
 ouput, where the upper part is for the latest interval and below is the average 
-numbers since load start. The example is here:<br/>
-<br/>
-<!--<pre>  -->
-=====================================================<br/>
-Last interval stats (interval:3 sec, clients:10, CAPS:3):<br/>
- Operations:    Success         Failed<br/>
- LOGIN:         4               1<br/>
- UAS-0:         3               0<br/>
- LOGOFF:        2               0<br/>
-AppReq:10,2xx:5,3xx:4,4xx:0,5xx:1,Err:0,D:20ms,D-2xx:12ms,T-i:12015B/s,T-o:35511B/s<br/>
-Sec-AppReq:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,D:0ms,D-2xx:0ms,T-i:0B/s,T-o:0B/s<br/>
------------------------------------------------------<br/>
-Summary stats since load start (load runs:24 secs, CAPS-average:4):<br/>
- Operations:    Success         Failed<br/>
- LOGIN:         0               32<br/>
- UAS-0:         0               0<br/>
- LOGOFF:        0               0<br/>
-AppReq:95,2xx:47,3xx:48,4xx:0,5xx:3,Err:1,D:31ms,D-2xx:15ms,T-i:113921B/s,T-o:330215B/s<br/>
-Sec-AppReq:0,2xx:0,3xx:0,4xx:0,5xx:0,Err:0,D:0ms,D-2xx:0ms,T-in:0B/s,T-out:0B/s<br/>
-=====================================================<br/>
-<!-- </pre> -->
+numbers since load start. 
 A copy of the output is also saved in the file &lt;batch-name&gt;.txt<br/>
        </answer>
        </faq>
+
+    <faq id="connect-timeout">
+      <question>
+     Why I am getting "Connection time-out after 5108 ms" -like errors?
+      </question>
+      <answer>
+This means, that the connections  cannot be established within  5 seconds 
+(which is the default). If some of clients are getting such errors, this means, 
+that the server is overloaded and cannot establish TCP connection within 
+the time. Y may wish to increase the connection timeout globally by e.g. -c 10 or to
+specify an increased timeout using tag TIMER_TCP_CONN_SETUP=10.<br/>
+<br/>
+When all your clients have such errors, in most cases this is due either to 
+resolving or routing problems or other network problems.
+Y can set any addresses to your clients in IP_ADDR_MIN and IP_ADDR_MAX tags, 
+providing, that you ensure a smooth route from client and from server for the 
+addresses you use.<br/>
+<br/>
+Please, start with a single client and see that it works, than progress further.
+When you are specifying any addresses here, they are added by curl-loader
+initialization to the network interface of your choice and may be seen by the command:<br/>
+#/sbin/ip addr<br/>
+<br/>
+Command ping (man ping) has an option -I to force the ping to be issued from
+a certain ip-address. To test, that your routing is OK, you may use, e.g.:<br/>
+#ping -I &lt"the client address you wish to use"&gt url-taget<br/>
+<br/>
+When it works - it will be OK.
+Y may also wish to read a bit into the linux routing/networking and DNS resolving
+HOWTOS.<br/>
+<br/>
+       </answer>
+    </faq>
 
   <faq id="logfile">
       <question>
      Where is the detaled log of all virtual clients activities and how to read it?
       </question>
       <answer>
-DETAILED LOGFILE is written to the file named:<br/>
+Detailed log is written to the file named:<br/>
 &lt;batch-name&gt;.log:<br/>
 <br/>
 The semantics of logfile output, using command line options -v (verbous) and -u 
@@ -518,13 +577,16 @@ the rewinding file size by using command line option:<br/>
       </question>
       <answer>
 Currently HTTP/HTTPS statistics includes the following counters:<br/>
+   - run-time in seconds;<br/>
    - requests num;<br/>
+   - 1xx success num;<br/>
    - 2xx success num;<br/>
    - 3xx redirects num;<br/>
    - client 4xx errors num;<br/>
    - server 5xx errors num;<br/>
    - other errors num, like resolving, tcp-connect, server closing or 
      empty responses number;<br/>
+   - url completion time expiration errors;
    - average application server Delay (msec), estimated as the time between 
      HTTP request and HTTP response without taking into the account network
      latency (RTT);<br/>
@@ -543,22 +605,22 @@ file.<br/>
 <br/>
 Some strings from the file:<br/>
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------<br/>
-Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out<br/>
-2, Appl , 100, 155, 0, 96, 0, 0, 1154, 1154, 2108414, 15538<br/>
-2, Sec-Appl, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
-4, Appl, 100, 75, 32, 69, 0, 0, 1267, 1559, 1634656, 8181<br/>
-4, Sec-Appl, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+Run-Time,Appl,Clients,Req,1xx,2xx,3xx,4xx,5xx,Err,T-Err,D,D-2xx,T-In,T-Out<br/>
+2, Appl , 100, 155, 0, 0, 96, 0, 0, 0, 0, 1154, 1154, 2108414, 15538<br/>
+2, Sec-Appl, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+4, Appl, 100, 75, 0, 32, 69, 0, 0, 0, 0, 1267, 1559, 1634656, 8181<br/>
+4, Sec-Appl, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
 <br/>
 Cutted here<br/>
 <br/>
-36, Appl , 39, 98, 35, 58, 0, 0, 869, 851, 1339168, 11392<br/>
-36, Sec-Appl, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
-38, Appl , 3, 91, 44, 62, 0, 0, 530, 587, 1353899, 10136<br/>
-38, Sec-Appl, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+36, Appl , 39, 98, 0, 35, 58, 0, 0, 0, 0, 869, 851, 1339168, 11392<br/>
+36, Sec-Appl, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+38, Appl , 3, 91, 0, 44, 62, 0, 0, 0, 0, 530, 587, 1353899, 10136<br/>
+38, Sec-Appl, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
 *, *, *, *, *, *, *, *, *, *, *, *<br/>
-Run-Time,Appl,Clients,Req,2xx,3xx,4xx,5xx,Err,Delay,Delay-2xx,Thr-In,Thr-Out<br/>
-38, Appl , 0, 2050, 643, 1407, 0, 213, 725, 812, 1610688, 11706<br/>
-38, Sec-Appl, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
+Run-Time,Appl,Clients,Req,1xx,2xx,3xx,4xx,5xx,Err,T-Err,D,D-2xx,T-In,T-Out<br/>
+38, Appl , 0, 2050, 0, 643, 1407, 0, 213, 0, 0, 725, 812, 1610688, 11706<br/>
+38, Sec-Appl, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0<br/>
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------<br/>
 The bottom strings after asterisks are for final averages.<br/>
 <br/>
@@ -598,6 +660,7 @@ error state will not be scheduled for load any more. <br/>
 
   <faqsection id="Advanced">
     <title>Advanced Issues</title>
+
     <faq id="performance">
       <question>
      What about performance?
@@ -615,12 +678,7 @@ The mode uses epoll() syscall (via libevent library) for demultiplexing. <br/>
      How to run a really big load?
       </question>
       <answer>
-0. Try the default smooth and hyper (experimental) modes and see, what is 
-more appropriate for you. Smooth mode is stable and tested well. Hyper is less 
-restrictive about the allowed number of clients, but still requires more development 
-and optimization.<br/>
-<br/>
-Every big load starts with a small load. First, see, that you have a working 
+0. Every big load starts with a small load. First, see, that you have a working 
 configuration file. Run it with a 1-2-3 clients and commandline option -v, and
 look into the l&lt;batch-name&gt;.log logfile.<br/>
 Look into the HW issues, duscussed in the FAQs and mind, that
@@ -648,7 +706,7 @@ time in the time-wait state), by setting, optionally, something like this:<br/>
 <br/>
 Correct, if required, the value of CURL_LOADER_FD_SETSIZE (set to 20000 in 
 Makefile) to control the maximum fd, that may be used for select. This is not required
-to be cared about for hyper mode.<br/>
+to be cared about for the default hyper mode.<br/>
 <br/>
 Increase the maximum number of open descriptors in your linux system, if required,
 using linux HOWTOS.<br/>
@@ -679,10 +737,10 @@ this is not helpful and may be even "crashful". Please, use in your configuratio
 batch files non-overlapping ranges of IP-addresses, else libcurl virtual clients 
 will compete for the IP-addresses to bind to.<br/>
 <br/>
-Use CLIENTS_INITIAL_INC tag in smooth or hyper mode to increase number of your 
+Use CLIENTS_RAMPUP_INC tag in smooth or hyper mode to increase number of your 
 clients gradually at start-up in order not boom the server and not to burn out the CPU
 at your loading machine. Addition of new clients is a CPU-expensive operation, therefore
-keep CLIENTS_INITIAL_INC below 100-200 clients per second.<br/>
+keep CLIENTS_RAMPUP_INC below 100 clients per second.<br/>
 <br/>
 7. Connections re-use.<br/>
 <br/>
@@ -696,7 +754,9 @@ re-opened for the next request. <br/>
 Run the first loading attempt with a small number of clients using command-line 
 options -v (verbose) and -u (url in logs). Grep to look for the errors and their reasons. 
 If an error is "Connection timeout", you may try to increase the connection establishment
-timeout (the default is 5 seconds), using -c command-line option.<br/>
+timeout (the default is 5 seconds), using -c command-line option. When all your clients
+fail to connect with "Connection timeout" error, this may be due to routing or resolving 
+problems.<br/>
 If any assistance required, please, don't hesitate to contact us using 
 PROBLEM-REPORTING form in the download tarball.<br/>
 <br/>
@@ -734,7 +794,7 @@ for each curl-loader process.<br/>
 How to calculate CAPS numbers for a load?
       </question>
       <answer>
-When number of clients is defined by CLIENTS_NUM tag, number of
+When number of clients is defined by CLIENTS_NUM_MAX tag, number of
 CAPS (call attempts per seconds) is resulting from the clients number and 
 load duration for each cycle, comprising from:<br/>
 - login time with possible redirections and sleeping after login interval;<br/>
