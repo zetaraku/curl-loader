@@ -10,9 +10,8 @@
      What is the batch?
       </question>
       <answer>
-      Batch is a group of clients with the same characteristics and 
-      loading behavior. Batch configuration file is a test plan for a 
-      batch of clients.
+      Batch is a group of clients (virtual clients emulating real clients) with 
+     the same characteristics and loading behavior.
        </answer>
     </faq>
 
@@ -141,12 +140,13 @@ curl-loader using -f commmand line option, e.g.<br/>
         </p>
       </answer>
     </faq>
-    <faq id="conf-file-details">
+    
+<faq id="conf-file-details">
       <question>
         What are the loading configuration file tags and semantics?
       </question>
       <answer>
-        <p>
+       <p>
 Configuration file or "batch configuration file" consists from tag=value
 strings, groupped into 2 sections:<br/>
 - General;<br/>
@@ -204,6 +204,7 @@ Yet a one more example of a configuration file to be used login to a web-service
 performing some activity and logoff is below:<br/>
 <br/>
 ########### GENERAL SECTION ###################<br/>
+#<br/>
 BATCH_NAME=web-service<br/>
 CLIENTS_NUM_MAX=100<br/>
 CLIENTS_RAMPUP_INC=2<br/>
@@ -235,7 +236,7 @@ USERNAME= admin<br/>
 PASSWORD= admin-passphrase<br/>
 REQUEST_TYPE=POST<br/>
 FORM_USAGE_TYPE= SINGLE_USER<br/>
-FORM_STRING= username=%s&password=%s <br/>
+FORM_STRING= username=%s&amp;password=%s <br/>
 TIMER_URL_COMPLETION = 4000  <br/>
 TIMER_AFTER_URL_SLEEP =1000 <br/>
  <br/>
@@ -260,7 +261,7 @@ The name of the batch is "web-service", maximum number of clients 100,
 load to be started with initial 2 client and each seconds will be added 2
 clients more.<br/>
 <br/>
-For load will be used network interface eth0 the same IP-address for each
+For load will be used network interface eth0 and the same IP-address for each
 client 192.168.0.2 and netmask 255.255.255.0 (24 in CIDR notation). If we
 would like to assign to each client a unique IP, it could be done by providing
 a range of at least 100 IP-address, e.g. IP_ADDR_MIN=192.168.0.10 and 
@@ -279,9 +280,9 @@ username and password to the POST-form received by the GET.<br/>
 The second url is empty and is used for POST-ing to the "current" url, using the form.
 Such empty string urls are allowed only, when URL_USE_CURRENT=1 is specified.
 The url is named as "Login-POST". Username "admin" and password "admin-passphrase"
-are used as the single user type and "filled" to the FORM_STRING= username=%s&password=%s. 
+are used as the single user type and "filled" to the FORM_STRING= username=%s&amp;password=%s. 
 After "filling", the resulting form, which is sent to the web-service is 
-"username=admin&password=admin-passphrase". There are other options available for FORM_STRING, 
+"username=admin&amp;password=admin-passphrase". There are other options available for FORM_STRING, 
 such as unique generated users, unique generated passwords or credentials loaded from a file; 
 these options will be described later. The maximum time allowed for the POST is 4000 msecs, 
 and the time of waiting/sleeping till the next url is 1000 msecs. 
@@ -302,7 +303,6 @@ add to the first, second and forth url the tag URL_DONT_CYCLE=1 to mark the urls
  as not-cycled to be fetched only once. <br/>
  <br/>
 
-        <p>
 Note, that both quotted and non-quotted string are supported as the tags values.<br/>
 <br/>
 For more examples, please, look at the files in "conf-examples" directory.<br/>
@@ -351,7 +351,11 @@ IP_ADDR_MIN and IP_ADDR_MAX are the interval of IP-addresses to be used
 for the clients. The interval of the addresses should be large enough to supply
 a dedicated IP for each client. Another mode, that can be used is the same IP
 for all clients; when IP_ADDR_MIN and IP_ADDR_MAX contain the same valid
-address, it will be used for all clients.<br/>
+address, it will be used for all clients. If the IP-addresses specified by the tags do not exist,
+curl-loader adds them as the secondary IP-addresses to the loading network interface.<br/>
+Remember, that you should ensure smooth routing from the addresses used to server
+and from server back to the client addresses. Another route to ensure, when is appropriate,
+is to/from DNS server for resolving.<br/>
 <br/>
 CYCLES_NUM is the number of cycles to be performed. Any positive value is
 valid here as well as (-1), which means cycle indefinetely. Loading can be normally
@@ -365,26 +369,151 @@ User-Agent. Place here a quotted string to emulate the browser, that you need.
 The header is entered globally. If you need an option to customize it on a per-URL bases,
 please, use tag HEADER="User-Agent: the string of my favorite browser".<br/>
 <br/>
-URLS_NUM is the number of urls to be used in URLs Section, which is next.
-
-        <p>
-HEADER:<br/>
-is assisting to customize/add/over-write HTTP/FTP headers. 
-Up to 16 custom HTTP/FTP headers are allowed.  If a header already exits by default, 
-the custom header over-writes it. USER_AGENT tag is for User-Agent header only, 
-whereas by CUSTOM_HEADER may be added or over-written any header (including
-User-Agent). An example of batch configuration is ./conf-examples/custom_hdrs.conf.
-       </p>
-        <p>
-LOGIN_CREDENTIALS_FILE: <br/>
-specifies the path to the file with credentials (full-path or relative to curl-loader). 
-A text file with usernames and passwords with the structure of each string like: 
-&lt;user&gt;&lt;separator&gt;&lt;password&gt;can be used as an input. 
-According to RFC1738, only reserved ':', '@', '/' and probably ' ' (space) are safe to 
-use as separators between username and password. An example of batch configuration 
-is ./conf-examples/credentials_fr_file.conf and an example of credentials is in 
-./conf-examples/credentials.cred.
-      </p>
+URLS_NUM is the number of urls to be used in URLs Section.<br/>
+<br/>
+<br/>
+Tags of the sections URLs:<br/>
+<br/>
+URL - is the first tag of each url-subsection and marks beginning of a new
+url. The tag should be either a valid url or an empty string, which is allowed
+only when URL_USE_CURRENT=1 presents. "Current url" is used for example, when 
+POST-ing at the url, resulting from the previous GET. HTTP redirections
+are handled internally and there is no need to use "current url" approach for that
+purpose. Note, that URL used for file uploading should include a filename and
+not only a directory.<br/>
+<br/>
+URL_SHORT_NAME - an optional up to 12 ASCII string long name, which will appear on a Load
+Status GUI. It improves appearance of the current status at the console. Recommended
+to configure it.<br/>
+<br/>
+URL_USE_CURRENT - used in combination with an empty string URL="" to indicate,
+that the current url, fetched by the previous operation, should be used."Current url" is 
+useful e.g., when POST-ing at the url, resulting from the previous GET. Note, that 
+HTTP redirections are handled internally and there is no need to use "current url" 
+approach for that purpose. <br/>
+<br/>
+URL_DONT_CYCLE - marks a url as non-cycling. Curl-loader enables two optional 
+non-cycling areas: the first before the cycling url/s area and the second after it.
+The first non-cycling area may be used for login, authentication, etc. single time
+operations, whereas the second non-cycling area is due to a single time logoff, for example.<br/>
+<br/>
+REQUEST_TYPE - HTTP request method to be choosen from GET, POST or PUT.<br/>
+<br/>
+UPLOAD_FILE - filename, including path, to the file to be used for uploading.
+The path should be taken from the curl-loader place, e.g. ./conf-examples/bax.conf <br/>
+<br/>
+HEADER - is assisting to customize/add/over-write HTTP/FTP headers. 
+If a header already exits by default, the custom header over-writes it. 
+USER_AGENT tag is for User-Agent header only, whereas by HEADER may be added 
+or over-written any header (including User-Agent). Look for example at 
+./conf-examples/custom_hdrs.conf.<br/>
+<br/>
+USERNAME and PASSWORD are the tags to provide credentials for the login operations.
+The strings may be used either as is or as the base-words to append numbers and
+to generate some unique credentials. The behavior is governed by the tag 
+FORM_USAGE_TYPE. Note, that PASSWORD may be an empty string.<br/>
+<br/>
+FORM_USAGE_TYPE governs user login process. "UNIQUE_USERS_AND_PASSWORDS" 
+is used to generate unique usernames and passwords by appending client sequence numbers 
+(starting from 1) to USERNAME and PASSWORD tags within FORM_STRING template. 
+"UNIQUE_USERS_SAME_PASSWORD" to be used when generating unique users with 
+the same password. "SINGLE_USER" is useful, when all clients are making login using the 
+same USERNAME and PASSWORD. "RECORDS_FROM_FILE" means, that user credentials 
+to be loaded from the file specified by FORM_RECORDS_FILE value. "AS_IS" means, that
+the FORM_STRING template to be used just AS IS and without any usernames or passwords 
+either from the relevant tags or from file.<br/>
+<br/>
+<br/>
+FORM_STRING is the configurable template form to be used for POST-ing credentials
+ot any other records.<br/>
+To generate multiple unique users with unique passwords FORM_USAGE_TYPE=
+"UNIQUE_USERS_AND_PASSWORDS", and the FORM_STRING to be a template like
+"username=%s%d&amp;password=%s%d". First '%s' will be substituted by the 
+value of USERNAME tag and '%d' by the client number. Second '%s' will
+be substituted by PASSWORD tag value and second '%d' by the same client
+number. For example, if USERNAME=robert, PASSWORD=stam
+and FORM_STRING "username=%s%d&amp;password=%s%d", the final POST string, 
+used for the client number 1, will be  "username=robert1&amp;password=stam1".<br/>
+In this case USERNAME and PASSWORD strings are used just 
+as base-words for generating unique user credentials by appending an number.          
+<br/>
+When FORM_USAGE_TYPE="UNIQUE_USERS_SAME_PASSWORD" template
+of FORM string to be something like "username=%s%d&amp;password=%s", where
+only username will be unique using the same approach as described above.
+<br/>
+When FORM_USAGE_TYPE="SINGLE_USER", provide FORM_STRING without 
+%d symbols, e.g. "user=%s&amp;secret=%s". Thus, all clients will have the same
+POST credentials with the string looking like "user=robert&amp;secret=stam". 
+<br/>
+When FORM_USAGE_TYPE= "RECORDS_FROM_FILE" FORM_STRING to be also 
+without %d symbols, because the credentials uniqueness is supposed to be ensured by 
+the file content.<br/>
+FORM_USAGE_TYPE="AS_IS" means, that FORM_STRING will not be validated and
+POST-ed indeed AS IS.<br/>
+<br/>
+<br/>
+FORM_RECORDS_FILE specifies the path to the file with credentials or any other tokens.
+(full-path or relative to curl-loader). A text file with usernames and passwords 
+with the structure of each string like: &lt;teken1&gt;&lt;separator&gt;&lt;token2&gt;
+can be used as an input. According to RFC1738, only reserved ':', '@', '/' and probably 
+' ' (space) are safe to use as separators between username and password. An example of 
+batch configuration is ./conf-examples/post-form-token-fr-file.conf and an 
+example of credentials is in ./conf-examples/credentials.cred.<br/>
+We are planning to extend the file to include in each string up to 8 tokens (2 tokens now).<br/>
+<br/>
+WEB_AUTH_METHOD to be configured from the "BASIC", "DIGEST", "GSS_NEGOTIATE",
+"NTLM" or "ANY". The configured method will be used for authentication on 
+HTTP 401 response. When "ANY" is configured, libcurl will choose a method.
+To use "GSS_NEGOTIATE" the libcurl should be re-compiled with support for GSS.<br/>
+<br/>
+WEB_AUTH_CREDENTIALS to be provided in the form "user:password".
+If not configured, the loader uses USERNAME and PASSWORD tags value
+to synthesize the credentials.<br/>
+<br/>
+PROXY_AUTH_METHOD to be configured from the "BASIC", "DIGEST", "GSS_NEGOTIATE",
+"NTLM" or "ANY". The configured method will be used for authentication on 
+HTTP 407 response. When "ANY" is configured, libcurl will choose a method.
+To use "GSS_NEGOTIATE" the libcurl should be re-compiled with support for GSS.<br/>
+<br/>
+PROXY_AUTH_CREDENTIALS to be provided in the form "user:password".
+If not configured, the loader uses USERNAME and PASSWORD tags value
+to synthesize the credentials.<br/>
+<br/>
+FRESH_CONNECT is used to define on a per url bases, whether the connection 
+should be re-used or closed and re-connected after request-response cycle. 
+When 1, the TCP connection to be re-established. The system default is to keep 
+the connection and re-use it as much as server and protocol allow it. Still the system
+default could be changed by the command-line option -r.<br/>
+<br/>
+TIMER_TCP_CONN_SETUP  is the time in seconds for DNS resolving and TCP 
+connection setup on a per url bases. The global default is 5 seconds, which can 
+be changed using -c command-line option.<br/>
+<br/>
+TIMER_URL_COMPLETION is the time in milli-seconds to allow a 
+url fetching operation, including all internal re-directions. The legal values are 0, 
+which means no limit on url-completion time, or above 20 msecs. When a value of 
+the tag is above 0, we are monitoring the url-fetching and cancelling it, 
+if above the specified milliseconds. The results are presented on the Load Status 
+GUI as the operation "Timeouted" statistics and logged to all statistics files as 
+T-Err number.<br/>
+<br/>
+TIMER_AFTER_URL_SLEEP is the time in milli-secondsfor client to sleep 
+after fetching a URL prior to the next URL to do. Zero (0) means don't wait 
+and schedule client after the URL immediately.<br/>
+<br/>
+FTP_ACTIVE when defined as 1 forced FTP from the default passive to
+the active mode.<br/>
+<br/>
+LOG_RESP_HEADERS when defined as 1 logs response headers to a file.
+Directory &lt;batch-name&gt; is created with subdirs url0, url1, url&lt;n&gt;
+Headers of responses are logged to the files named:
+cl-&lt;client-num&gt;-cycle-&lt;cycle-num&gt;.hdr<br/>
+<br/>
+LOG_RESP_BODIES when defined as 1 logs response headers to a file.
+Directory &lt;batch-name&gt; is created with subdirs url0, url1... url&lt;n&gt;
+Headers of responses are logged to the files named:
+cl-&lt;client-num&gt;-cycle-&lt;cycle-num&gt;.body<br/>
+<br/>
       </answer>
     </faq>
 
@@ -418,6 +547,7 @@ is ./conf-examples/credentials_fr_file.conf and an example of credentials is in
       <answer>
 To generate FTP/FTPS load, please, use UAS section and pass user credentials
 via ftp-url according to the RFC 1738 like: ftp://username:password@hostname:port/etc-str<br/>
+Tag FTP_ACTIVE serves to switch from the default passive FTP to active.
 Please, look at the examples in conf-examples directory, e.g. ftp.conf, ftp_http.conf, 
 ftp_upload.conf.<br/>
       </answer>
@@ -466,12 +596,8 @@ like /etc/security/limits.conf, etc
         -t[hreads enable - enables threads, each runs a batch of clients]<br/>
         -v[erbose output to the logfiles; includes info about headers sent/received]<br/>
         -u[rl logging - logs url names to logfile, when -v verbose option is used]<br/>
+        -w[arnings skip]<br/>
         <br/>
-       For the rare cases, when several batches are specified in the same config file,
-       note, please, that curl-loader without -t runs only the first batch.
-       Thus, running several client batches without threads requires some script starting
-       several curl-loader processes.<br/>
-       <br/>
        Connection Reuse Disable Option (-r):<br/>
        The default behavior of curl-loader after HTTP response is to re-use the 
        tcp-connection for the next request. If you are specifying -r command-line 
@@ -504,9 +630,9 @@ as hyper, but uses poll() system call for demultiplexing.
      How I can monitor loading progress status?
       </question>
       <answer>
-curl-loader outputs to the console loading status and statistics as the "standing" 
-ouput, where the upper part is for the latest interval and below is the average 
-numbers since load start. 
+curl-loader outputs to the console loading status and statistics as the 
+Load Status GUI ouput, where the left colomn is for the latest interval 
+and the right is for the average numbers since load start. 
 A copy of the output is also saved in the file &lt;batch-name&gt;.txt<br/>
        </answer>
        </faq>
@@ -535,7 +661,7 @@ initialization to the network interface of your choice and may be seen by the co
 <br/>
 Command ping (man ping) has an option -I to force the ping to be issued from
 a certain ip-address. To test, that your routing is OK, you may use, e.g.:<br/>
-#ping -I &lt"the client address you wish to use"&gt url-taget<br/>
+#ping -I &lt;the client address you wish to use&gt; url-taget<br/>
 <br/>
 When it works - it will be OK.
 Y may also wish to read a bit into the linux routing/networking and DNS resolving
