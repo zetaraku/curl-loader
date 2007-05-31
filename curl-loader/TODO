@@ -1,14 +1,14 @@
-Last updated: 18/05/2007
+Last updated: 31/05/2007
 
 
-Nearest release 0.31 may hopefully include: 
+Nearest release 0.32 may hopefully include: 
 
 1. Multi-post forms, suggested by Jeremy Hicks jehicks@novell.com
     http://curl.haxx.se/libcurl/c/curl_formadd.html
 
 2. HTTP GET filled forms for login credentials (they are sent using url).
 
-3. Testing of HTTP PUT support, e.g. file upload. See put.conf
+3. More testing of added HTTP PUT support, e.g. file upload. See put.conf
 
 4. Add a url-based tag QUIT_CYCLE_ON_ERROR to schedule or not to
     schedule a client for more cycles, when an error condition detected.

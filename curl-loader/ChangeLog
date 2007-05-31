@@ -1,4 +1,4 @@
-version 0.31 - released 31/05/2007
+version 0.31 - released 31/05/2007, svn 399
 
 * Tag TIMER_URL_COMPLETION is a rename of UAS_URL_MAX_TIME
     now comes in milliseconds and enforced. When a value of the tag is
