@@ -10,7 +10,6 @@ gcc (3 or 4 series), make, etc on a linux machine.
 Building pre-requirements are:
 1. openssl binaries;
 2. openssl development package with include files (on debian package libssl-dev);
-3. ncurses development package;
          
 Adjust Makefile variables to point to the openssl headers and libraries. 
 If you want to specify an openssl development directory with include 
@@ -44,13 +43,6 @@ curl-loader by the -f commmand line option, e.g.
 For more examples, please, look at the files in "conf-examples" directory. You may 
 copy an example file and edit it.
         
-Another option is to start with running "$make menuconfig" configuration GUI, which 
-requires ncurses development package on your system. The dialog window 
-will guide you and create your configuration file in conf-user directory. 
-The current limitation of the menu-guided configuration, is that it enables 
-to create only a single UAS URL.
-
-
       
 
 Environment and System.
