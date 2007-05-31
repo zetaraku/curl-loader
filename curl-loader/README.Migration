@@ -76,7 +76,7 @@ which are handled internally within a single url.
     PASSWORD                                     moved to URL-s, enables better request customization
     LOGIN_REQ_TYPE   ----->  REQUEST_TYPE  - should appear for every URL, GET, POST/PUT
     LOGIN_POST_STR  ----->  FORM_STRING, not valid without FORM_USAGE_TYPE
-    CREDENTIALS_FILE ---->  FORM_RECORDS_FILE is a rename of CREDENTIALS_FILE
+    LOGIN_CREDENTIALS_FILE ---->  FORM_RECORDS_FILE is a rename of CREDENTIALS_FILE
 
     <LOGIN/UAS/LOGOFF>_URL_MAX_TIME              ---> TIMER_URL_COMPLETION
    <LOGIN/UAS/LOGOFF>_URL_INTERLEAVE_TIME ---> TIMER_AFTER_URL_SLEEP

@@ -211,7 +211,6 @@ void print_help ()
   fprintf (stderr, " -o[utput to stdout bodies of downloaded files - attn!- bulky]\n");
   fprintf (stderr, " -r[euse onnections disabled. Close connections and re-open them. Try with and without]\n");
   fprintf (stderr, " -s[tderr printout of client messages instead of to logfile - attn!- bulky]\n");
-  fprintf (stderr, " -t[hreads enable - enables threads, each runs a batch of clients]\n");
   fprintf (stderr, " -v[erbose output to the logfiles; includes info about headers sent/received]\n");
   fprintf (stderr, " -u[rl logging - logs url names to logfile, when -v verbose option is used]\n");
   fprintf (stderr, " -w[arnings skip]\n");

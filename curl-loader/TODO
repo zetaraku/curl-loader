@@ -10,7 +10,7 @@ Nearest release 0.31 may hopefully include:
 
 3. Testing of HTTP PUT support, e.g. file upload. See put.conf
 
-4. Add a url-based tag STOP_ON_ERROR to schedule or not to
+4. Add a url-based tag QUIT_CYCLE_ON_ERROR to schedule or not to
     schedule a client for more cycles, when an error condition detected.
    Now we have  such option as a global one, whereas URLs may have 
    different level of importance.

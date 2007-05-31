@@ -175,15 +175,15 @@ main (int argc, char *argv [])
   
   if (! threads_run)
     {
-      fprintf (stderr, "\nRUNNING WITHOUT THREADS\n\n");
+      fprintf (stderr, "\nRUNNING LOAD\n\n");
       sleep (1);
       batch_function (&bc_arr[0]);
-	 fprintf (stderr, "Exited batch_function\n");
-     screen_release ();
+      fprintf (stderr, "Exited batch_function\n");
+      screen_release ();
     }
   else
     {
-      fprintf (stderr, "\n%s - STARTING THREADS\n\n", __func__);
+      fprintf (stderr, "\n%s - RUNNING LOAD, STARTING THREADS\n\n", __func__);
       sleep (1);
       
       /* Init openssl mutexes and pass two callbacks to openssl. */
