@@ -14,7 +14,6 @@
         Building pre-requirements are:<br/>
           1. openssl binaries;<br/>
           2. openssl development package with include files (on debian package libssl-dev);<br/>
-          3. ncurses development package.<br/>
          <br/>
          Adjust Makefile variables to point to the openssl headers and libraries. 
          If you want to specify an openssl development directory with include 
@@ -45,13 +44,6 @@
         <br/>
         For more examples, please, look at the files in "conf-examples" directory. You may 
         copy an example file and edit it.<br/>
-        <br/>
-        Another option is to start with running "$make menuconfig" configuration GUI, which 
-        requires ncurses development package on your system. The dialog window 
-        will guide you and create your configuration file in conf-user directory. 
-        A limitation of the menu-guided configuration, is that it enables 
-        to create only a single UAS URL.<br/>
-        <br/>
        <p>
     ENVIRONMENT AND SYSTEM.
       </p>

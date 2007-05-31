@@ -75,8 +75,8 @@ What are the building pre-requirements?
         is required.<br/>
         <br/>
         Building pre-requirements are:<br/>
-          1. openssl binaries and openssl development package with include files (on debian libssl-dev);<br/>
-          2. ncurses binaries and development package (on debian e.g. libncurses5-dev).<br/>
+          1. openssl binaries;<br/>
+          2. openssl development package with include files (on debian libssl-dev);<br/>
          <br/>
          Adjust Makefile variables to point to the openssl headers and libraries. 
          To specify an openssl development directory with include files (e.g. crypto.h), 
@@ -126,17 +126,6 @@ curl-loader using -f commmand line option, e.g.<br/>
         <br/>
         For more examples, please, look at the files in "conf-examples" directory. You may 
         copy an example file and edit it by using the next FAQ guidelines.
-        </p>
-         <p>
-        Yet another option to start is by running "$make menuconfig" configuration GUI. 
-        The dialog window will guide you and create your configuration file in conf-user directory. 
-        A limitation of the menu-guided configuration, is that it enables 
-        to create only a single URL.<br/>
-        If you need more that a single UAS url, copy your batch file from the conf-user
-        directory  to some other place and  edit it by adding as much url tag series 
-        (below) as you need, but don't forget to update URLS_NUM accordingly.<br/>
-         <br/>
-         For more details you may look at the next FAQ guidelines.
         </p>
       </answer>
     </faq>
@@ -519,7 +508,7 @@ cl-&lt;client-num&gt;-cycle-&lt;cycle-num&gt;.body<br/>
 
     <faq id="login-logoff">
       <question>
-        How does the configuration support login, logoff and authentication flavors?
+        How does the loader support login, logoff and authentication flavors?
       </question>
       <answer>
        curl-loader performs login and logoff operations using the following HTTP methods:<br/>
@@ -545,8 +534,8 @@ cl-&lt;client-num&gt;-cycle-&lt;cycle-num&gt;.body<br/>
      What about FTP load and mixed FTP/HTTP load?
       </question>
       <answer>
-To generate FTP/FTPS load, please, use UAS section and pass user credentials
-via ftp-url according to the RFC 1738 like: ftp://username:password@hostname:port/etc-str<br/>
+To generate FTP/FTPS load, please, pass user credentials via ftp-url according to 
+the RFC 1738 like: ftp://username:password@hostname:port/etc-str<br/>
 Tag FTP_ACTIVE serves to switch from the default passive FTP to active.
 Please, look at the examples in conf-examples directory, e.g. ftp.conf, ftp_http.conf, 
 ftp_upload.conf.<br/>
@@ -593,7 +582,6 @@ like /etc/security/limits.conf, etc
         -m[ode of loading, 0 - hyper (the default, epoll () based ), 1 - smooth (select () based)]<br/>
         -r[euse connections disabled. Closes TCP-connections and re-open them. Try with and without]<br/>
         -s[tderr printout of client messages instead of to logfile - attn!- bulky]<br/>
-        -t[hreads enable - enables threads, each runs a batch of clients]<br/>
         -v[erbose output to the logfiles; includes info about headers sent/received]<br/>
         -u[rl logging - logs url names to logfile, when -v verbose option is used]<br/>
         -w[arnings skip]<br/>
@@ -632,14 +620,14 @@ as hyper, but uses poll() system call for demultiplexing.
       <answer>
 curl-loader outputs to the console loading status and statistics as the 
 Load Status GUI ouput, where the left colomn is for the latest interval 
-and the right is for the average numbers since load start. 
+and the right is for the summary numbers since load start. 
 A copy of the output is also saved in the file &lt;batch-name&gt;.txt<br/>
        </answer>
        </faq>
 
     <faq id="connect-timeout">
       <question>
-     Why I am getting "Connection time-out after 5108 ms" -like errors?
+     Why I am getting "Connection time-out after 5108 ms" like errors in the log file?
       </question>
       <answer>
 This means, that the connections  cannot be established within  5 seconds 
