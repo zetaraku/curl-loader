@@ -881,7 +881,18 @@ static int setup_url (client_context* cctx)
                   __func__);
           return -1;
         }
+
+      if (url->log_resp_bodies || url->log_resp_headers)
+        {
+          if (set_response_logfile (cctx, url) == -1)
+            {
+              fprintf (stderr,"%s - error: set_response_logfile () failed.\n",
+                       __func__);
+              return -1;
+            }
+        }
     }
+
   return cctx->client_state = CSTATE_URLS;
 }
 

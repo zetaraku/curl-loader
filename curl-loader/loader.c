@@ -441,7 +441,7 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
     {
       fprintf (stderr,"%s - error: empty url provided.\n",
                    __func__);
-      exit (-1);
+      return -1;
     }
   
   /* Set the index to client */
@@ -490,68 +490,14 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
     }
 #endif
   
-  if (url->log_resp_bodies && url->dir_log)
+  if (url->log_resp_bodies || url->log_resp_headers)
     {
-      // open the file
-      char body_file[256];
-      memset (body_file, 0, sizeof (body_file));
-
-      snprintf (body_file, sizeof (body_file) -1, 
-                "%s/cl-%d-cycle-%ld.body",
-                url->dir_log,
-                cctx->client_index,
-                cctx->cycle_num
-                );
-
-      if (cctx->logfile_bodies)
+      if (set_response_logfile (cctx, url) == -1)
         {
-          fclose (cctx->logfile_bodies);
-          cctx->logfile_bodies = NULL;
-        }
-
-      if (!(cctx->logfile_bodies = fopen (body_file, "w")))
-        {
-          fprintf (stderr, "%s - error: fopen () failed with errno %d.\n",
-                   __func__, errno);
+          fprintf (stderr,"%s - error: set_response_logfile () failed.\n",
+                   __func__);
           return -1;
         }
-      
-      curl_easy_setopt (handle, CURLOPT_WRITEDATA, cctx->logfile_bodies);
-      curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION, writefunction);
-    }
-  else
-    {
-      curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION,
-                        do_nothing_write_func);
-    }
-
-  if (url->log_resp_headers && url->dir_log)
-    {
-      // open the file
-      char hdr_file[256];
-      memset (hdr_file, 0, sizeof (hdr_file));
-
-      snprintf (hdr_file, sizeof (hdr_file) -1, 
-                "%s/cl-%d-cycle-%ld.hdr",
-                url->dir_log,
-                cctx->client_index,
-                cctx->cycle_num
-                );
-
-      if (cctx->logfile_headers)
-        {
-          fclose (cctx->logfile_headers);
-          cctx->logfile_headers = NULL;
-        }
-
-      if (!(cctx->logfile_headers = fopen (hdr_file, "w")))
-        {
-          fprintf (stderr, "%s - error: fopen () failed with errno %d.\n",
-                   __func__, errno);
-          return -1;
-        }
-       curl_easy_setopt (handle, CURLOPT_WRITEHEADER, cctx->logfile_headers);
-       curl_easy_setopt (handle, CURLOPT_HEADERFUNCTION, writefunction);
     }
 
   curl_easy_setopt (handle, CURLOPT_SSL_VERIFYPEER, 0);
@@ -763,6 +709,77 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
         }
 
       
+    }
+
+  return 0;
+}
+
+int set_response_logfile (client_context* cctx, url_context* url)
+{
+  CURL* handle = cctx->handle;
+
+  if (url->log_resp_bodies && url->dir_log)
+    {
+      // open the file
+      char body_file[256];
+      memset (body_file, 0, sizeof (body_file));
+
+      snprintf (body_file, sizeof (body_file) -1, 
+                "%s/cl-%d-cycle-%ld.body",
+                url->dir_log,
+                cctx->client_index,
+                cctx->cycle_num
+                );
+
+      if (cctx->logfile_bodies)
+        {
+          fclose (cctx->logfile_bodies);
+          cctx->logfile_bodies = NULL;
+        }
+
+      if (!(cctx->logfile_bodies = fopen (body_file, "w")))
+        {
+          fprintf (stderr, "%s - error: fopen () failed with errno %d.\n",
+                   __func__, errno);
+          return -1;
+        }
+      
+      curl_easy_setopt (handle, CURLOPT_WRITEDATA, cctx->logfile_bodies);
+      curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION, writefunction);
+    }
+  else
+    {
+      curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION,
+                        do_nothing_write_func);
+    }
+
+  if (url->log_resp_headers && url->dir_log)
+    {
+      // open the file
+      char hdr_file[256];
+      memset (hdr_file, 0, sizeof (hdr_file));
+
+      snprintf (hdr_file, sizeof (hdr_file) -1, 
+                "%s/cl-%d-cycle-%ld.hdr",
+                url->dir_log,
+                cctx->client_index,
+                cctx->cycle_num
+                );
+
+      if (cctx->logfile_headers)
+        {
+          fclose (cctx->logfile_headers);
+          cctx->logfile_headers = NULL;
+        }
+
+      if (!(cctx->logfile_headers = fopen (hdr_file, "w")))
+        {
+          fprintf (stderr, "%s - error: fopen () failed with errno %d.\n",
+                   __func__, errno);
+          return -1;
+        }
+       curl_easy_setopt (handle, CURLOPT_WRITEHEADER, cctx->logfile_headers);
+       curl_easy_setopt (handle, CURLOPT_HEADERFUNCTION, writefunction);
     }
 
   return 0;

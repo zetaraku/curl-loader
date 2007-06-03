@@ -90,6 +90,8 @@ int setup_curl_handle_init (struct client_context*const cctx, struct url_context
 ***********************************************************************/
 int set_client_url_post_data (struct client_context* cctx, struct url_context* url);
 
+int set_response_logfile (struct client_context* cctx, struct url_context* url);
+
 
 /*******************************************************************************
 * Function name - add_secondary_ip_to_device
