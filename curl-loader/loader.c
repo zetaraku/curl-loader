@@ -494,10 +494,15 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
     {
       if (set_response_logfile (cctx, url) == -1)
         {
-          fprintf (stderr,"%s - error: set_response_logfile () failed.\n",
+          fprintf (stderr,"%s - error: set_response_logfile () .\n",
                    __func__);
           return -1;
         }
+    }
+  else
+    {
+      curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION,
+                        do_nothing_write_func);
     }
 
   curl_easy_setopt (handle, CURLOPT_SSL_VERIFYPEER, 0);
@@ -746,11 +751,6 @@ int set_response_logfile (client_context* cctx, url_context* url)
       
       curl_easy_setopt (handle, CURLOPT_WRITEDATA, cctx->logfile_bodies);
       curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION, writefunction);
-    }
-  else
-    {
-      curl_easy_setopt (handle, CURLOPT_WRITEFUNCTION,
-                        do_nothing_write_func);
     }
 
   if (url->log_resp_headers && url->dir_log)
