@@ -1306,6 +1306,12 @@ static void free_batch_data_allocations (batch_context* bctx)
                curl_slist_free_all(url->custom_http_hdrs);
                url->custom_http_hdrs = NULL;
              }
+
+           if (url->form_str)
+             {
+               free (url->form_str);
+               url->form_str = NULL;
+             }
            
            /* Free Form records file (credentials). */
            if (url->form_records_file)

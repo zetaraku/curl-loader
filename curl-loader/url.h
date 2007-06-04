@@ -29,7 +29,6 @@
 
 #define URL_SHORT_NAME_LEN 12
 #define URL_AUTH_STR_LEN 64
-#define FORM_BUFFER_SIZE 256
 
 
 /*
@@ -142,7 +141,7 @@ typedef struct url_context
   /* 
      The string to be used as the base for login post message 
   */
-  char form_str [FORM_BUFFER_SIZE + 1];
+  char* form_str;
 
   /*
     The file with strings like "user:password", where separator may be 

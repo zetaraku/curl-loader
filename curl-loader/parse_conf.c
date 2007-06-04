@@ -962,6 +962,15 @@ static int form_string_parser (batch_context*const bctx, char*const value)
   const form_usagetype ftype = 
         bctx->url_ctx_array[bctx->url_index].form_usage_type;
 
+  const size_t value_len = strlen (value);
+
+  if (!value_len)
+    {
+      fprintf(stderr, "%s - error: empty FORM_STRING tag is not supported.\n", 
+              __func__);
+      return -1;
+    }
+
   if (ftype <= FORM_USAGETYPE_START || ftype >= FORM_USAGETYPE_END)
     {
       fprintf(stderr, "%s - error: please, beyond FORM_STRING place the "
@@ -1033,6 +1042,15 @@ static int form_string_parser (batch_context*const bctx, char*const value)
                        __func__);
               return -1;
             }
+        }
+
+      if (! (bctx->url_ctx_array[bctx->url_index].form_str = 
+             calloc (value_len +1, sizeof (char))))
+        {
+          fprintf(stderr, 
+                  "%s - error: failed to allocate memory for FORM_STRING value.\n", 
+                  __func__);
+          return -1;
         }
 
       strncpy (bctx->url_ctx_array[bctx->url_index].form_str,
