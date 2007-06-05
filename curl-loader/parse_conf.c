@@ -357,8 +357,9 @@ static int add_param_to_batch (
 * 
 * Input -       *input        - pointer to the credentials file string
 *               input_len     - length of the <input> string
-*               *bctx         - batch context to which the initia
-* Input/Output  *client_num   - index of the client in the array
+*
+* Input/Output  *form_record   - pointer to the form_records_cdata array
+*               record_num    - index of the record ?
 *               *separator    - the separating symbol initialized by the first string and 
 *                               further used.
 * Return Code/Output - On success - 0, on failure - (-1)
@@ -1056,36 +1057,6 @@ static int form_string_parser (batch_context*const bctx, char*const value)
       strncpy (bctx->url_ctx_array[bctx->url_index].form_str,
                value, 
                sizeof (bctx->url_ctx_array[bctx->url_index].form_str) - 1);
-
-      /*
-        Allocate client contexts, if not allocated before.
-      */
-      if (!bctx->cctx_array)
-      {
-          if (!(bctx->cctx_array  = 
-                (client_context *) cl_calloc (bctx->client_num_max,
-                                                                 sizeof (client_context))))
-          {
-              fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
-                       bctx->batch_name, __func__);
-              return -1;
-          }
-      }
-
-      /*
-        Allocate client buffers for POST-ing login and logoff credentials.
-      */
-      int i;
-      for (i = 0;  i < bctx->client_num_max; i++)
-      {
-          if (! (bctx->cctx_array[i].post_data = 
-                 (char *) calloc (POST_DATA_BUF_SIZE, sizeof (char))))
-          {
-              fprintf (stderr,
-                       "\"%s\" failed to allocate post data buffer.\n", __func__) ;
-              return -1;
-          }
-      }
     }
 
   return 0;
@@ -1735,24 +1706,6 @@ static int validate_batch_url (batch_context*const bctx)
                        "There is no any url to take as \"current\"\n", __func__);
               return -1;
             }
-
-          /*
-            Test, that CURRENT_URL, if HTTP/S  is of req_type POST or PUT;
-          */
-          /*
-          if (url->url_appl_type == URL_APPL_HTTP || 
-              url->url_appl_type == URL_APPL_HTTPS)
-            {
-              if (url->req_type == HTTP_REQ_TYPE_GET)
-                {
-                  fprintf (stderr, 
-                           "%s - WARNING: URL_USE_CURRENT tag works, when " 
-                           "REQUEST_TYPE is POST or PUT.\n"
-                           "Normally, one has no need to care about 3xx redirections after GET.\n", __func__);
-                  sleep (5);
-                }
-            }
-          */
           
           /*
               Test, that cycling or not-cycling status of the 
@@ -1789,8 +1742,6 @@ static int validate_batch_url (batch_context*const bctx)
                __func__);
       return -1;
   }
-      
-
 
   return 0;
 }
@@ -1841,17 +1792,20 @@ static int post_validate_init (batch_context*const bctx)
     {
       url_context* url = &bctx->url_ctx_array[k];
 
+      /* 
+         Create directory and subdirs for responses logfiles,
+         if configured.
+      */
       if (url->log_resp_bodies || url->log_resp_headers)
         {
           memset (dir_log_resp, 0, sizeof (dir_log_resp));
 
-          snprintf (dir_log_resp, 
-                  sizeof (dir_log_resp) -1, 
-                  "./%s/url%ld/", 
+          snprintf (dir_log_resp, sizeof (dir_log_resp) -1, 
+                    "./%s/url%ld/", 
                     bctx->batch_name, 
                     url->url_ind);
 
-          if(mkdir (dir_log_resp, mode) == -1 && errno !=EEXIST )
+          if (mkdir (dir_log_resp, mode) == -1 && errno !=EEXIST )
             {
               fprintf (stderr, "%s - error: mkdir () failed with errno %d.\n",
                        __func__, errno);
@@ -1871,6 +1825,54 @@ static int post_validate_init (batch_context*const bctx)
               strncpy (url->dir_log, dir_log_resp, dir_log_len -1);
             }
         }
+
+      /*
+        Allocate posting buffers for clients (login, logoff other posting), 
+        if at least a single url contains method HTTP POST and 
+        FORM_STRING.
+      */
+      if (url->req_type == HTTP_REQ_TYPE_POST)
+        {
+          int i;
+          for (i = 0;  i < bctx->client_num_max; i++)
+            {
+              client_context* cctx = &bctx->cctx_array[i];
+
+              if (!cctx->post_data && !cctx->post_data_len && url->form_str)
+                {
+                  size_t form_string_len = strlen (url->form_str);
+                  
+                  if (form_string_len)
+                    {
+                      cctx->post_data_len = form_string_len + 1 +
+                        FORM_RECORDS_MAX_TOKENS_NUM*
+                        (FORM_RECORDS_TOKEN_MAX_LEN +
+                         FORM_RECORDS_SEQ_NUM_LEN);
+                      
+                      if (! (cctx->post_data = 
+                             (char *) calloc (cctx->post_data_len, sizeof (char))))
+                        {
+                          fprintf (stderr,
+                                   "\"%s\" failed to allocate post data buffer.\n", __func__) ;
+                          return -1;
+                        }
+                    }
+                }
+            }
+        } /* end of post-ing buffers allocation */
+
+      else if (url->req_type == HTTP_REQ_TYPE_GET && url->form_str)
+        {
+          size_t form_string_len = strlen (url->form_str);
+                  
+          if (form_string_len)
+            {
+              char append_buffer[1024];
+              
+            }
+        }
+
+
     }
   
   /* 

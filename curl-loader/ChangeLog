@@ -1,3 +1,17 @@
+version 0.31 ?
+
+* Buffer for FORM_STRING value to be allocated on-demand
+   and dynamically and not to be limited to 256 bytes as before.
+
+* Bug fixed, that responses logged using LOG_RESP_BODIES=1
+   or LOG_RESP_HEADERS=1 went to the subdirectory of the previous
+   url, when an empty/current url was used, e.g. on POST after GET.
+   Responses logging to files functionality separated to a dedicated function
+   set_response_logfile (struct client_context* cctx, struct url_context* url)
+   The function is called also from the code, where current url obtained by 
+   prev GET is prepared for POST-ing of credentials.
+  
+
 version 0.31 - released 31/05/2007, svn 399
 
 * Tag TIMER_URL_COMPLETION is a rename of UAS_URL_MAX_TIME

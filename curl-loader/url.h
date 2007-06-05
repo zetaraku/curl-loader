@@ -57,6 +57,8 @@ typedef enum authentication_method
 
 /* Currently, only username and password - 2 records */
 #define FORM_RECORDS_MAX_TOKENS_NUM 2
+#define FORM_RECORDS_TOKEN_MAX_LEN 64
+#define FORM_RECORDS_SEQ_NUM_LEN 7 /* Up to 10 000 000 clients */
 
 typedef struct form_records_cdata
 {

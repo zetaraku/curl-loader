@@ -31,8 +31,6 @@
 
 #define CLIENT_NAME_LEN 64
 
-#define POST_DATA_BUF_SIZE 256
-
 /*
   cstates - states of a virtual client.
 
@@ -143,12 +141,6 @@ typedef struct client_context
    /* Number of errors */ 
   int errors_num;
 
-  /* 
-     Flag controlling sequence of GET-POST logins and logoffs.
-     When 0 - do GET, when 1 do POST and set back to 0
-  */
-  //int get_post_count;
-
   /* Whether to update statistics of https or http. What about ftp: TODO */
   int is_https;
  
@@ -158,6 +150,8 @@ typedef struct client_context
      filled <form_str>
   */
   char* post_data;
+
+  size_t post_data_len;
 
   FILE* logfile_headers;
 

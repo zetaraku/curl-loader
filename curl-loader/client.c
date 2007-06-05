@@ -1,7 +1,7 @@
 /*
-*     client.h
+*     client.c
 *
-* 2006 Copyright (c) 
+* 2006-2007 Copyright (c) 
 * Robert Iakobashvili, <coroberti@gmail.com>
 * All rights reserved.
 *

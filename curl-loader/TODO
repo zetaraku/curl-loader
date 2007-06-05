@@ -49,35 +49,31 @@ Next releases:
 - Testbed for 50K and 100K clients. We need a more powerful HW:
     2-4 CPUs/cores and 4-8 GB of memory
 
-1. Dynamic allocation of the form post buffers. Current static
-   allocation uses too much memory reserves.
 
-2. Support more than current 2 tokens (up to 8) in 
+1. Support more than current 2 tokens (up to 8) in 
     FORM_RECORDS_FILE. Tokenize the input in cycle. 
 
-3. An option to download a url not only once a cycle, but according to its
+2. An option to download a url not only once a cycle, but according to its
    "Weight", e.g. several times prior to going to the next url.
 
-4. ERROR_RESPONSE_BODY - a regular expression pattern for a
+3. ERROR_RESPONSE_BODY - a regular expression pattern for a
     search in a response body. If not found - error. Look in Apache
    JMeter.
 
-5. ERROR_HEADER and ERROR_HEADER_VALUE -  whether we get a 
+4. ERROR_HEADER and ERROR_HEADER_VALUE -  whether we get a 
     certain header and whether value matches a regular expression pattern
 
-6. Logging to files headers and bodies of responses exists. We may wish to improve
+5. Logging to files headers and bodies of responses exists. We may wish to improve
     it on a certain stage by using memory-mapped files from our custom write
     finctions. 
     Memory-mapped files are effective for logging, but always we know the size in
     advance. Mapping -re-mapping and truncation, if taken too much, may be 
     required.
 
-7. HIDDEN fields are widely used to keep the session. We may wish to support it.
-
-8. HTML analyses. libcurl example is using libtidy in:
+6. HTML analyses. libcurl example is using libtidy in:
    http://www.koders.com/c/fid7923BF828D0534D6B747ED138FCDD50DCFD13B3F.aspx
 
-9. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
+7. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
    a number of TCP connections, that our virtual client can use (the default is up to 5), 
    and, if persistant, what is the number of request-responses till the connection to be 
    closed and re-established. 
@@ -88,24 +84,24 @@ Next releases:
   connection refresh.
   Note, that httperf (sessions) is a reference application.
 
-10. Configuration/making improvements: moving all source-files
+8. Configuration/making improvements: moving all source-files
     to src directory etc.
 
-11. X.509 client certificates per each https, ftps url. Client certificate
+9. X.509 client certificates per each https, ftps url. Client certificate
     for each client?
 
-12. Support for CAPS (calls per second) defined mode. Currently, we are 
+10. Support for CAPS (calls per second) defined mode. Currently, we are 
    supporting only a certain number of virtual clients and CAPS is the derived
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter;
 
-13. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like;
+11. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like;
 
-14. Template-guided output of configurable statistics 
+12. Template-guided output of configurable statistics 
    (what user wishes with desired string, names) to statistics file;
 
-15. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec);
+13. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec);
 
-16. Support for more protocols: telnet, SFTP, SCP, SSH, etc;
+14. Support for more protocols: telnet, SFTP, SCP, SSH, etc;
 
-17. Support for more HTTP and FTP features.
+15. Support for more HTTP and FTP features.

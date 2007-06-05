@@ -852,18 +852,18 @@ static int setup_url (client_context* cctx)
   url_context* url = &bctx->url_ctx_array[cctx->url_curr_index];
 
   if (! url->url_use_current)
-  {
+    {
       /* 
          Setup a new url. Internally it initializes client POST-ing buffer,
          when url req_type is POST.
-       */
+      */
       if (setup_curl_handle_init (cctx, url) == -1)
-      {
+        {
           fprintf(stderr,"%s error: setup_curl_handle_init - failed\n", 
                   __func__);
           return -1;
-      }
-  }
+        }
+    }
   else
     {
       /*
@@ -881,7 +881,7 @@ static int setup_url (client_context* cctx)
                   __func__);
           return -1;
         }
-
+      
       if (url->log_resp_bodies || url->log_resp_headers)
         {
           if (set_response_logfile (cctx, url) == -1)

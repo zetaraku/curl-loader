@@ -74,8 +74,12 @@ size_t do_nothing_write_func (void *ptr,
 
 static void* batch_function (void *batch_data);
 static int initial_handles_init (struct client_context*const cdata);
-static int setup_curl_handle_appl (struct client_context*const cctx,  url_context* url_ctx);
-static int init_client_post_buffer (client_context* cctx, url_context* url);
+static int setup_curl_handle_appl (struct client_context*const cctx,  
+                                   url_context* url_ctx);
+static int init_client_formed_buffer (client_context* cctx, 
+                                      url_context* url,
+                                      char* buffer,
+                                      size_t buffer_len);
 static int init_client_contexts (batch_context* bctx, FILE* output_file);
 static void free_batch_data_allocations (struct batch_context* bctx);
 static int ipv6_increment(const struct in6_addr *const src, 
@@ -612,9 +616,9 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
       
       /* Make POST, using post buffer, if requested. */
       if (url->req_type == HTTP_REQ_TYPE_POST)
-        {
+        {   
           if (!cctx->post_data)
-            {            
+            {
               fprintf (stderr, "%s - error: post_data is NULL.\n", __func__);
               return -1;
             }
@@ -796,10 +800,13 @@ int set_response_logfile (client_context* cctx, url_context* url)
 ***********************************************************************/
 int set_client_url_post_data (client_context* cctx, url_context* url)
 {
-  if (init_client_post_buffer (cctx, url) == -1)
+  if (init_client_formed_buffer (cctx, 
+                                 url,
+                                 cctx->post_data, 
+                                 cctx->post_data_len) == -1)
     {
       fprintf (stderr,
-               "%s - error: init_client_post_buffers() failed.\n",
+               "%s - error: init_client_formed_buffers() failed.\n",
                __func__);
       return -1;
     }
@@ -810,22 +817,35 @@ int set_client_url_post_data (client_context* cctx, url_context* url)
 }
 
 /***********************************************************************
-* Function name - init_client_post_buffers
+* Function name - init_client_formed_buffer
 *
-* Description - Initialize post form buffers to be used for POST-ing
+* Description - Initialize client buffer controlled by FORM_STRING. The buffers
+*                to be used for POST-ing credentials/tokens or for GET passed tokens.
 * 
 * Input -       *cctx - pointer to client context
 *                *url - pointer to url context
+*                *buffer - the client buffer
+*                *buffer_len - size of the client buffer
 * Return Code/Output - On Success - 0, on Error -1
 *************************************************************************/
-static int init_client_post_buffer (client_context* cctx, url_context* url)
+static int init_client_formed_buffer (client_context* cctx, 
+                                      url_context* url,
+                                      char* buffer,
+                                      size_t buffer_len)
 {
   int i;
 
   if (!url->form_str || !url->form_str[0])
     {
  
-      fprintf (stderr, "%s - error: FORM_STR not defined.\n",
+      fprintf (stderr, "%s - error: FORM_STRING not defined.\n",
+               __func__);
+      return -1;
+    }
+
+  if (!buffer || !buffer_len)
+    {
+      fprintf (stderr, "%s - error: client used formed buffer is NULL or zero length.\n",
                __func__);
       return -1;
     }
@@ -838,8 +858,8 @@ static int init_client_post_buffer (client_context* cctx, url_context* url)
         with uniqueness added via added to the base username and password
         client index.
       */
-      snprintf (cctx->post_data,
-                POST_DATA_BUF_SIZE,
+      snprintf (buffer,
+                buffer_len,
                 url->form_str,
                 url->username,
                 i + 1,
@@ -853,8 +873,8 @@ static int init_client_post_buffer (client_context* cctx, url_context* url)
          added via added to the base username client index. Password is kept
          the same for all users.
       */
-      snprintf (cctx->post_data,
-                POST_DATA_BUF_SIZE,
+      snprintf (buffer,
+                buffer_len,
                 url->form_str,
                 url->username,
                 i + 1,
@@ -863,8 +883,8 @@ static int init_client_post_buffer (client_context* cctx, url_context* url)
 
     case FORM_USAGETYPE_SINGLE_USER:
       /* All clients have the same login_username and password.*/
-      snprintf (cctx->post_data,
-                POST_DATA_BUF_SIZE,
+      snprintf (buffer,
+                buffer_len,
                 url->form_str,
                 url->username,
                 url->password[0] ? url->password : "");
@@ -883,8 +903,8 @@ static int init_client_post_buffer (client_context* cctx, url_context* url)
         const form_records_cdata*const fcd = 
           &url->form_records_array[cctx->client_index];
         
-        snprintf (cctx->post_data, 
-                  POST_DATA_BUF_SIZE, 
+        snprintf (buffer,
+                  buffer_len,
                   url->form_str,
                   fcd->form_tokens[0], 
                   fcd->form_tokens[1] ? fcd->form_tokens[1] : "");
