@@ -760,6 +760,8 @@ static int url_parser (batch_context*const bctx, char*const value)
             return -1;
         }
 
+        bctx->url_ctx_array[bctx->url_index].url_str_len = url_length +1;
+
         strcpy(bctx->url_ctx_array[bctx->url_index].url_str, value);
 
         bctx->url_ctx_array[bctx->url_index].url_appl_type = 
@@ -1054,9 +1056,7 @@ static int form_string_parser (batch_context*const bctx, char*const value)
           return -1;
         }
 
-      strncpy (bctx->url_ctx_array[bctx->url_index].form_str,
-               value, 
-               sizeof (bctx->url_ctx_array[bctx->url_index].form_str) - 1);
+      strncpy (bctx->url_ctx_array[bctx->url_index].form_str, value, value_len);
     }
 
   return 0;
@@ -1685,7 +1685,7 @@ static int validate_batch_url (batch_context*const bctx)
           /*
             Check non-empty URL, when URL_USE_CURRENT is not defined.
           */
-          if (!url->url_str || !strlen (url->url_str))
+          if (!url->url_str || ! url->url_str_len)
             {
               fprintf (stderr, 
                        "%s - error: empty URL in position %d.\n", __func__, k);
@@ -1761,7 +1761,7 @@ static int post_validate_init (batch_context*const bctx)
   */
   if (!bctx->cctx_array)
     {
-      if (!(bctx->cctx_array  = 
+      if (!(bctx->cctx_array =
             (client_context *) cl_calloc (bctx->client_num_max, 
                                           sizeof (client_context))))
         {
@@ -1831,14 +1831,14 @@ static int post_validate_init (batch_context*const bctx)
         if at least a single url contains method HTTP POST and 
         FORM_STRING.
       */
-      if (url->req_type == HTTP_REQ_TYPE_POST)
+      if (url->req_type == HTTP_REQ_TYPE_POST && url->form_str)
         {
           int i;
           for (i = 0;  i < bctx->client_num_max; i++)
             {
               client_context* cctx = &bctx->cctx_array[i];
-
-              if (!cctx->post_data && !cctx->post_data_len && url->form_str)
+              
+              if (!cctx->post_data && !cctx->post_data_len)
                 {
                   size_t form_string_len = strlen (url->form_str);
                   
@@ -1853,7 +1853,8 @@ static int post_validate_init (batch_context*const bctx)
                              (char *) calloc (cctx->post_data_len, sizeof (char))))
                         {
                           fprintf (stderr,
-                                   "\"%s\" failed to allocate post data buffer.\n", __func__) ;
+                                   "\"%s\" error: failed to allocate client post_data buffer.\n", 
+                                   __func__) ;
                           return -1;
                         }
                     }
@@ -1863,15 +1864,33 @@ static int post_validate_init (batch_context*const bctx)
 
       else if (url->req_type == HTTP_REQ_TYPE_GET && url->form_str)
         {
-          size_t form_string_len = strlen (url->form_str);
-                  
-          if (form_string_len)
+          int j;
+          for (j = 0;  j < bctx->client_num_max; j++)
             {
-              char append_buffer[1024];
-              
-            }
-        }
+              client_context* cctx = &bctx->cctx_array[j];
 
+              if (!cctx->get_url_form_data && !cctx->get_url_form_data_len)
+                {
+                  size_t form_string_len = strlen (url->form_str);
+                  
+                  if (form_string_len)
+                    {
+                      cctx->get_url_form_data_len = url->url_str_len + form_string_len + 1 +
+                        FORM_RECORDS_MAX_TOKENS_NUM*
+                        (FORM_RECORDS_TOKEN_MAX_LEN + FORM_RECORDS_SEQ_NUM_LEN);
+                      
+                      if (! (cctx->get_url_form_data = 
+                             (char *) calloc (cctx->get_url_form_data_len, sizeof (char))))
+                        {
+                          fprintf (stderr,
+                                   "\"%s\" error: failed to allocate client get_url_form_data buffer.\n", 
+                                   __func__) ;
+                          return -1;
+                        }
+                    }
+                }
+            }
+        } /* end of get-url-form buffers allocation */
 
     }
   

@@ -153,6 +153,10 @@ typedef struct client_context
 
   size_t post_data_len;
 
+  char* get_url_form_data;
+
+  size_t get_url_form_data_len;
+
   FILE* logfile_headers;
 
   FILE* logfile_bodies;

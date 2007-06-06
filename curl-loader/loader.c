@@ -433,13 +433,45 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
   curl_easy_setopt (handle, CURLOPT_NOSIGNAL, 1);
     
   /* Set the url */
-  if (url->url_str && url->url_str[0])
+  if (url->url_str && url->url_str_len)
     {
       /* 
          Note, target URL for PUT should include a file
          name, not only a directory 
       */
-      curl_easy_setopt (handle, CURLOPT_URL, url->url_str);
+
+      if (url->req_type == HTTP_REQ_TYPE_GET  && url->form_str)
+        {
+          /* 
+             GET url with form fields. If not making searches with a search
+             engine, better to do it encrypted by HTTPS.
+          */
+          if (!cctx->get_url_form_data || !cctx->get_url_form_data_len)
+            {
+              fprintf (stderr,"%s - error: get_url_form_data not allocated/initialized.\n",
+                       __func__);
+              return -1;
+            }
+ 
+          strcpy (cctx->get_url_form_data, url->url_str);
+          
+          if (init_client_formed_buffer (cctx, 
+                                         url, 
+                                         cctx->get_url_form_data + url->url_str_len -1,
+                                         cctx->get_url_form_data_len - url->url_str_len) == -1)
+            {
+              fprintf (stderr,
+                       "%s - error: init_client_formed_buffer() failed for GET form fields.\n",
+                       __func__);
+              return -1;
+            }
+          
+          curl_easy_setopt (handle, CURLOPT_URL, cctx->get_url_form_data);
+        }
+      else
+        {
+          curl_easy_setopt (handle, CURLOPT_URL, url->url_str);
+        }
     }
   else
     {
@@ -614,9 +646,11 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
       /* Enable cookies. This is important for various authentication schemes. */
       curl_easy_setopt (handle, CURLOPT_COOKIEFILE, "");
       
-      /* Make POST, using post buffer, if requested. */
       if (url->req_type == HTTP_REQ_TYPE_POST)
-        {   
+        {
+          /* 
+             Make POST, using post buffer, if requested. 
+          */
           if (!cctx->post_data)
             {
               fprintf (stderr, "%s - error: post_data is NULL.\n", __func__);
@@ -624,6 +658,7 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
             }
           else
             {
+              /* Sets POST as the HTTP request method */
               if (set_client_url_post_data (cctx, url) == -1)
                 {
                   fprintf (stderr,
@@ -911,10 +946,14 @@ static int init_client_formed_buffer (client_context* cctx,
       }
       break;
 
+    case FORM_USAGETYPE_AS_IS:
+      strncpy (buffer, url->form_str, buffer_len);
+      break;
+
     default:
       {
         fprintf (stderr,
-                 "\"%s\" error: none valid bctx->post_str_usertype.\n", 
+                 "\"%s\" error: none-valid url->form_usage_type.\n", 
                  __func__);
         return -1;
       }
@@ -958,7 +997,6 @@ int client_tracing_function (CURL *handle,
 
   if (url_logging)
     {
-
       url_target = cctx->bctx->url_ctx_array[cctx->url_curr_index].url_str;
       
       /* Clients are being redirected back and forth by 3xx redirects. */
@@ -1318,7 +1356,8 @@ static void free_batch_data_allocations (batch_context* bctx)
            
            /* Free url string */
            free (url->url_str);
-           url->url_str = NULL ;
+           url->url_str = NULL;
+           url->url_str_len = 0;
            
            /* Free custom HTTP headers. */
            if (url->custom_http_hdrs)

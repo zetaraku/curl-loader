@@ -1,5 +1,10 @@
 version 0.31 ?
 
+* GET forms are supported now. The example configuration is in
+   ./conf-examples/get-forms.conf
+
+* Fixed bug introduced with dynamic allocation of buffer for FORM_STRING
+	
 * Buffer for FORM_STRING value to be allocated on-demand
    and dynamically and not to be limited to 256 bytes as before.
 

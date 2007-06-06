@@ -78,7 +78,10 @@ typedef struct url_context
    /* URL buffer */
   char* url_str;
 
-    char url_short_name [URL_SHORT_NAME_LEN + 1];
+  size_t url_str_len;
+
+    
+  char url_short_name [URL_SHORT_NAME_LEN + 1];
 
   /*
     Used instead of URL string. If true, current url will be used and not some
