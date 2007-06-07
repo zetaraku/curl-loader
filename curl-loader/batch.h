@@ -35,7 +35,7 @@
 #include "statistics.h"
 
 #define BATCH_NAME_SIZE 64
-#define BATCH_NAME_EXTRA_SIZE 6
+#define BATCH_NAME_EXTRA_SIZE 12
 #define POST_BUFFER_SIZE 256
 
 #define CUSTOM_HDRS_MAX_NUM 64

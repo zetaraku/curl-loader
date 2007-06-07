@@ -554,7 +554,7 @@ static int pre_parser (char** ptr, size_t* len)
 */
 static int batch_name_parser (batch_context*const bctx, char*const value)
 {
-    strncpy (bctx->batch_name, value, sizeof (bctx->batch_name) -1);
+    strncpy (bctx->batch_name, value, BATCH_NAME_SIZE);
     return 0;
 }
 static int clients_num_max_parser (batch_context*const bctx, char*const value)
@@ -1746,58 +1746,41 @@ static int validate_batch_url (batch_context*const bctx)
   return 0;
 }
 
-/****************************************************************************************
-* Function name - post_validate_init
-*
-* Description - Performs post validate initializations of a batch context.
-* 
-* Input -       *bctx - pointer to the initialized batch context to validate
-* Return Code/Output - On success - 0, on failure - (-1)
-****************************************************************************************/
-static int post_validate_init (batch_context*const bctx)
+int create_response_logfiles_dirs (batch_context* bctx)
 {
-  /*
-    Allocate client contexts, if not allocated before.
-  */
-  if (!bctx->cctx_array)
-    {
-      if (!(bctx->cctx_array =
-            (client_context *) cl_calloc (bctx->client_num_max, 
-                                          sizeof (client_context))))
-        {
-          fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
-                   bctx->batch_name, __func__);
-          return -1;
-        }
-    }
-
+  int dir_created_flag = 0;
+  char dir_log_resp[256];
   const mode_t mode= S_IRWXU|S_IRWXG|S_IRWXO;
   
-  char dir_log_resp[256];
   memset (dir_log_resp, 0, sizeof (dir_log_resp));
 
   snprintf (dir_log_resp, sizeof (dir_log_resp) -1, 
                   "./%s", bctx->batch_name);
-
-  if(mkdir (dir_log_resp, mode) == -1 && errno !=EEXIST )
-    {
-      fprintf (stderr, 
-               "%s - error: mkdir () failed with errno %d to create dir \"%s\".\n",
-               __func__, errno, dir_log_resp);
-      return -1;
-    }
 
   int k = 0;
   for (k = 0; k < bctx->urls_num; k++)
     {
       url_context* url = &bctx->url_ctx_array[k];
 
-      /* 
-         Create directory and subdirs for responses logfiles,
-         if configured.
-      */
       if (url->log_resp_bodies || url->log_resp_headers)
         {
+
+          /* Create the directory, if not created before. */
+          if (!dir_created_flag)
+            {  
+              if(mkdir (dir_log_resp, mode) == -1 && errno !=EEXIST )
+                {
+                  fprintf (stderr, 
+                           "%s - error: mkdir () failed with errno %d to create dir \"%s\".\n",
+                           __func__, errno, dir_log_resp);
+                  return -1;
+                }
+              dir_created_flag =1;
+            }
+
+          /* 
+             Create subdirs for responses logfiles, if configured.
+          */
           memset (dir_log_resp, 0, sizeof (dir_log_resp));
 
           snprintf (dir_log_resp, sizeof (dir_log_resp) -1, 
@@ -1825,7 +1808,18 @@ static int post_validate_init (batch_context*const bctx)
               strncpy (url->dir_log, dir_log_resp, dir_log_len -1);
             }
         }
+    }
+  return 0;
+}
 
+int alloc_client_formed_buffers (batch_context* bctx)
+{
+  int k = 0;
+
+  for (k = 0; k < bctx->urls_num; k++)
+    {
+      url_context* url = &bctx->url_ctx_array[k];
+      
       /*
         Allocate posting buffers for clients (login, logoff other posting), 
         if at least a single url contains method HTTP POST and 
@@ -1861,14 +1855,14 @@ static int post_validate_init (batch_context*const bctx)
                 }
             }
         } /* end of post-ing buffers allocation */
-
+      
       else if (url->req_type == HTTP_REQ_TYPE_GET && url->form_str)
         {
           int j;
           for (j = 0;  j < bctx->client_num_max; j++)
             {
               client_context* cctx = &bctx->cctx_array[j];
-
+              
               if (!cctx->get_url_form_data && !cctx->get_url_form_data_len)
                 {
                   size_t form_string_len = strlen (url->form_str);
@@ -1891,13 +1885,15 @@ static int post_validate_init (batch_context*const bctx)
                 }
             }
         } /* end of get-url-form buffers allocation */
-
+      
     }
-  
-  /* 
-     Init operational statistics structures 
-  */
-  if (op_stat_point_init(&bctx->op_delta, 
+
+  return 0;
+}
+
+int init_operational_statistics(batch_context* bctx)
+{
+  if (op_stat_point_init(&bctx->op_delta,
                          bctx->urls_num) == -1)
     {
       fprintf (stderr, "%s - error: init of op_delta failed.\n",__func__);
@@ -1911,10 +1907,63 @@ static int post_validate_init (batch_context*const bctx)
       return -1;
     }
 
+  return 0;
+}
+
+
+/****************************************************************************************
+* Function name - post_validate_init
+*
+* Description - Performs post validate initializations of a batch context.
+* 
+* Input -       *bctx - pointer to the initialized batch context to validate
+* Return Code/Output - On success - 0, on failure - (-1)
+****************************************************************************************/
+static int post_validate_init (batch_context*const bctx)
+{
+  /*
+    Allocate client contexts, if not allocated before.
+  */
+  if (!bctx->cctx_array)
+    {
+      if (!(bctx->cctx_array =
+            (client_context *) cl_calloc (bctx->client_num_max, 
+                                          sizeof (client_context))))
+        {
+          fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
+                   bctx->batch_name, __func__);
+          return -1;
+        }
+    }
+
+  if (create_response_logfiles_dirs (bctx) == -1)
+    {
+      fprintf (stderr, 
+               "\"%s\" - create_response_logfiles_dirs () failed .\n", 
+               __func__);
+      return -1;
+    }
+
+  if (alloc_client_formed_buffers (bctx) == -1)
+    {
+      fprintf (stderr, 
+               "\"%s\" - alloc_client_formed_buffers () failed .\n", 
+               __func__);
+      return -1;
+    }
+ 
+  if (init_operational_statistics (bctx) == -1)
+    {
+      fprintf (stderr, 
+               "\"%s\" - init_operational_statistics () failed .\n", 
+               __func__);
+      return -1;
+    }
+
   /* 
      It should be the last check.
   */
-  fprintf (stderr, "\nThe configuration has been validated successfully.\n\n");
+  fprintf (stderr, "\nThe configuration has been post-validated successfully.\n\n");
 
   /* 
      Check, that this configuration has cycling. 

@@ -40,7 +40,7 @@ int connect_timeout = 5;
 int verbose_logging = 0;
 
 /* Flag, whether to run batches as batch per thread. */
-int threads_run = 0;
+int threads_subbatches_num = 0;
 
 /* 
    Time in seconds between snapshot statistics printouts to
@@ -81,7 +81,7 @@ int parse_command_line (int argc, char *argv [])
 {
   int rget_opt = 0;
 
-    while ((rget_opt = getopt (argc, argv, "c:ehf:i:l:m:op:rstvuw")) != EOF) 
+    while ((rget_opt = getopt (argc, argv, "c:ehf:i:l:m:op:rst:vuw")) != EOF) 
     {
       switch (rget_opt) 
         {
@@ -140,7 +140,7 @@ int parse_command_line (int argc, char *argv [])
         case 'm': /* Modes of loading: SMOOTH and STORMING */
 
             if (!optarg || 
-                ((loading_mode != LOAD_MODE_SMOOTH && 
+                (((loading_mode = atol (optarg)) != LOAD_MODE_SMOOTH && 
                   loading_mode != LOAD_MODE_HYPER )))
             {
               fprintf (stderr, 
@@ -162,8 +162,16 @@ int parse_command_line (int argc, char *argv [])
           stderr_print_client_msg = 1;
           break;
 
-        case 't': /* Run each batch of clients in a dedicated thread. */
-            threads_run = 1;
+        case 't': /* Create sub-batches and run each sub-batch of clients 
+                     in a dedicated thread. */
+          if (!optarg ||
+              (threads_subbatches_num = atoi (optarg)) < 2)
+            {
+              fprintf (stderr, 
+                       "%s error: -t option should be followed by a number >= 2.\n", 
+                       __func__);
+              return -1;
+            }
             break;
 
         case 'v':
@@ -211,6 +219,7 @@ void print_help ()
   fprintf (stderr, " -o[utput to stdout bodies of downloaded files - attn!- bulky]\n");
   fprintf (stderr, " -r[euse onnections disabled. Close connections and re-open them. Try with and without]\n");
   fprintf (stderr, " -s[tderr printout of client messages instead of to logfile - attn!- bulky]\n");
+  fprintf (stderr, " -t[hreads number loading sub-batches of clients]\n");
   fprintf (stderr, " -v[erbose output to the logfiles; includes info about headers sent/received]\n");
   fprintf (stderr, " -u[rl logging - logs url names to logfile, when -v verbose option is used]\n");
   fprintf (stderr, " -w[arnings skip]\n");

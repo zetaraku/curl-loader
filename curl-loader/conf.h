@@ -51,7 +51,7 @@ extern int verbose_logging;
    to your config file configurations for several batches, each with its own unique 
    batch-name.
 */
-extern int threads_run;
+extern int threads_subbatches_num;
 
 /* 
    Time in seconds between intermediate statistics printouts to
@@ -138,6 +138,10 @@ struct batch_context;
 int parse_config_file (char* const filename, 
                        struct batch_context* bctx_array, 
                        size_t bctx_array_size);
+
+int create_response_logfiles_dirs (struct batch_context* bctx);
+int alloc_client_formed_buffers (struct batch_context* bctx);
+int init_operational_statistics(struct batch_context* bctx);
 
 /*
   Prints out usage of the program.

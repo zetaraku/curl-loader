@@ -82,8 +82,13 @@ static int init_client_formed_buffer (client_context* cctx,
                                       size_t buffer_len);
 static int init_client_contexts (batch_context* bctx, FILE* output_file);
 static void free_batch_data_allocations (struct batch_context* bctx);
+static void free_url (url_context* url, int clients_max);
 static int ipv6_increment(const struct in6_addr *const src, 
                           struct in6_addr *const dest);
+static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num);
+static int ip_addr_str_allocate_init (batch_context* bctx, 
+                                      int client_index, 
+                                      char** addr_str);
 
 int stop_loading = 0;
 
@@ -106,7 +111,7 @@ typedef int (*pf_user_activity) (struct client_context*const);
 /*
  * Batch functions for the 3 modes.
 */
-static pf_user_activity ua_array[3] = 
+static pf_user_activity ua_array[2] = 
 { 
   user_activity_hyper,
   user_activity_smooth
@@ -177,7 +182,7 @@ main (int argc, char *argv [])
 
   screen_init ();
   
-  if (! threads_run)
+  if (! threads_subbatches_num)
     {
       fprintf (stderr, "\nRUNNING LOAD\n\n");
       sleep (1);
@@ -196,9 +201,11 @@ main (int argc, char *argv [])
           fprintf (stderr, "%s - error: thread_setup () - failed.\n", __func__);
           return -1;
         }
+
+      create_thr_subbatches (bc_arr, threads_subbatches_num); 
       
       /* Opening threads for the batches of clients */
-      for (i = 0 ; i < batches_num ; i++) 
+      for (i = 0 ; i < threads_subbatches_num ; i++) 
         {
           error = pthread_create (&tid[i], NULL, batch_function, &bc_arr[i]);
 
@@ -210,7 +217,7 @@ main (int argc, char *argv [])
         }
 
       /* Waiting for all the threads to terminate */
-      for (i = 0 ; i < batches_num ; i++) 
+      for (i = 0 ; i < threads_subbatches_num ; i++) 
         {
           error = pthread_join (tid[i], NULL) ;
           fprintf(stderr, "%s - note: Thread %d terminated normally\n", __func__, i) ;
@@ -820,7 +827,6 @@ int set_response_logfile (client_context* cctx, url_context* url)
        curl_easy_setopt (handle, CURLOPT_WRITEHEADER, cctx->logfile_headers);
        curl_easy_setopt (handle, CURLOPT_HEADERFUNCTION, writefunction);
     }
-
   return 0;
 }
 
@@ -1354,94 +1360,101 @@ static void free_batch_data_allocations (batch_context* bctx)
          {
            url_context* url = &bctx->url_ctx_array[i];
            
-           /* Free url string */
-           free (url->url_str);
-           url->url_str = NULL;
-           url->url_str_len = 0;
-           
-           /* Free custom HTTP headers. */
-           if (url->custom_http_hdrs)
-             {
-               curl_slist_free_all(url->custom_http_hdrs);
-               url->custom_http_hdrs = NULL;
-             }
-
-           if (url->form_str)
-             {
-               free (url->form_str);
-               url->form_str = NULL;
-             }
-           
-           /* Free Form records file (credentials). */
-           if (url->form_records_file)
-             {
-               free (url->form_records_file);
-               url->form_records_file = NULL;
-             }
-           
-           /* Free form_records_array */
-           if (url->form_records_array)
-             {
-               int j;
-               for (j = 0; j < bctx->client_num_max; j++)
-                 {
-                   int m;
-                   for (m = 0; m < FORM_RECORDS_MAX_TOKENS_NUM; m++)
-                     { 
-                       if (url->form_records_array[j].form_tokens[m])
-                         {
-                           free (url->form_records_array[j].form_tokens[m]);
-                           url->form_records_array[j].form_tokens[m] = NULL;
-                         }
-                     }
-                 }
-               
-               free (url->form_records_array);
-               url->form_records_array = NULL;
-             }
-           
-           /* Free upload file */
-           if (url->upload_file)
-             {
-               free (url->upload_file);
-               url->upload_file = NULL;
-             }
-           
-           /* Close file pointer of upload file */
-           if (url->upload_file_ptr)
-             {
-               fclose (url->upload_file_ptr);
-               url->upload_file_ptr = NULL;
-             }
-           
-           /* Free web-authentication credentials */
-           if (url->web_auth_credentials)
-             {
-               free (url->web_auth_credentials);
-               url->web_auth_credentials = NULL;
-             }
-           
-           /* Free proxy-authentication credentials */
-           if (url->proxy_auth_credentials)
-             {
-               free (url->proxy_auth_credentials);
-               url->proxy_auth_credentials = NULL;
-             }
-
-           if (url->dir_log)
-             {
-               free (url->dir_log);
-               url->dir_log = NULL;
-             }
+           free_url (url, bctx->client_num_max);
          }
        
        /* Free URL context array */
        free (bctx->url_ctx_array);
        bctx->url_ctx_array = NULL;
     }
-
 }
 
+static void free_url (url_context* url, int clients_max)
+{
+  /* Free url string */
+  if (url->url_str)
+    {
+      free (url->url_str);
+      url->url_str = 0;
+      url->url_str_len = 0;
+    }
+  
+  /* Free custom HTTP headers. */
+  if (url->custom_http_hdrs)
+    {
+      curl_slist_free_all(url->custom_http_hdrs);
+      url->custom_http_hdrs = 0;
+    }
+  
+  if (url->form_str)
+    {
+      free (url->form_str);
+      url->form_str = 0;
+    }
+  
+  /* Free Form records file (credentials). */
+  if (url->form_records_file)
+    {
+      free (url->form_records_file);
+      url->form_records_file = 0;
+    }
+  
+  /* Free form_records_array */
+  if (url->form_records_array)
+    {
+      int j;
+      for (j = 0; j < clients_max; j++)
+        {
+          int m;
+          for (m = 0; m < FORM_RECORDS_MAX_TOKENS_NUM; m++)
+            { 
+              if (url->form_records_array[j].form_tokens[m])
+                {
+                  free (url->form_records_array[j].form_tokens[m]);
+                  url->form_records_array[j].form_tokens[m] = 0;
+                }
+            }
+        }
+      
+      free (url->form_records_array);
+      url->form_records_array = 0;
+    }
+  
+  /* Free upload file */
+  if (url->upload_file)
+    {
+      free (url->upload_file);
+      url->upload_file = 0;
+    }
+  
+  /* Close file pointer of upload file */
+  if (url->upload_file_ptr)
+    {
+      fclose (url->upload_file_ptr);
+      url->upload_file_ptr = 0;
+    }
+  
+  /* Free web-authentication credentials */
+  if (url->web_auth_credentials)
+    {
+      free (url->web_auth_credentials);
+      url->web_auth_credentials = 0;
+    }
+  
+  /* Free proxy-authentication credentials */
+  if (url->proxy_auth_credentials)
+    {
+      free (url->proxy_auth_credentials);
+      url->proxy_auth_credentials = 0;
+    }
+  
+  if (url->dir_log)
+    {
+      free (url->dir_log);
+      url->dir_log = 0;
+    }
+}
+  
 /****************************************************************************************
 * Function name - create_ip_addrs
 *
@@ -1453,11 +1466,7 @@ static void free_batch_data_allocations (batch_context* bctx)
 static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
 {
   int batch_index, client_index; /* Batch and client indexes */
-  struct in_addr in_address;
-  struct in6_addr in6_prev, in6_new;
   char*** ip_addresses =0;
-  char* ipv4_string = 0;
-  char ipv6_string[INET6_ADDRSTRLEN+1];
 
   /* 
      Add secondary IP-addresses to the "loading" network interface. 
@@ -1494,69 +1503,16 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
       */
       for (client_index = 0; client_index < bctx->client_num_max; client_index++)
         {
-          if (!(ip_addresses[batch_index][client_index] = 
-                (char*)calloc (bctx->ipv6 ? INET6_ADDRSTRLEN + 1 : 
-                               INET_ADDRSTRLEN + 1, sizeof (char))))
+          if (ip_addr_str_allocate_init (bctx, 
+                                         client_index, 
+                                         &ip_addresses[batch_index][client_index]) == -1)
             {
-              fprintf (stderr, "%s - allocation of ip_addresses[%d][%d] failed\n", 
-                       __func__, batch_index, client_index) ;
+
+              fprintf (stderr, 
+                       "%s - error: ip_addr_str_allocate_init () - failed, batch [%d], client [%d]\n", 
+                       __func__, batch_index, client_index);
               return -1;
             }
-
-          if (bctx->ipv6 == 0)
-            {
-                /* 
-                   When clients are not using common IP, advance the 
-                   IPv4-address, using client index as the offset. 
-                */
-                in_address.s_addr = htonl (bctx->ip_addr_min + 
-                                           (bctx->ip_common ? 0 : client_index));
-         
-                    if (! (ipv4_string = inet_ntoa (in_address)))
-                    {
-                        fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses[%d][%d]\n", 
-                                 __func__, batch_index, client_index) ;
-                        return -1;
-                    }
-            }
-          else
-            {
-              /* 
-                 When clients are not using common IP,  advance the 
-                 IPv6-address by incrementing previous address. 
-              */
-              if (client_index == 0 || bctx->ip_common)
-                {
-                  memcpy (&in6_prev, &bctx->ipv6_addr_min, sizeof (in6_prev));
-                  memcpy (&in6_new, &bctx->ipv6_addr_min, sizeof (in6_new));
-                }
-              else
-                {
-                  if (ipv6_increment (&in6_prev, &in6_new) == -1)
-                    {
-                      fprintf (stderr, "%s - ipv6_increment() failed for ip_addresses[%d][%d]\n", 
-                               __func__, batch_index, client_index) ;
-                      return -1;
-                    }
-                }
-
-              if (! inet_ntop (AF_INET6, &in6_new, ipv6_string, sizeof (ipv6_string)))
-                {
-                  fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses[%d][%d]\n", 
-                           __func__, batch_index, client_index) ;
-                  return -1;
-                }
-              else
-                {
-                  /* Remember in6_new address in in6_prev */
-                  memcpy (&in6_prev, &in6_new, sizeof (in6_prev));
-                }
-            }
-
-          snprintf (ip_addresses[batch_index][client_index], 
-                    bctx->ipv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN, 
-                    "%s", 
-                    bctx->ipv6 ? ipv6_string : ipv4_string);
         }
 
       /* 
@@ -1575,6 +1531,87 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
           return -1;
         }
     }
+
+  return 0;
+}
+
+static int ip_addr_str_allocate_init (batch_context* bctx, 
+                               int client_index, 
+                               char** addr_str)
+{
+  struct in_addr in_address;
+  struct in6_addr in6_prev, in6_new;
+  char ipv6_string[INET6_ADDRSTRLEN+1];
+  char* ipv4_string = 0;
+  char* ipaddrstr = 0;
+
+  *addr_str = NULL;
+
+  if (! (ipaddrstr = (char*)calloc (bctx->ipv6 ? INET6_ADDRSTRLEN + 1 : 
+                                    INET_ADDRSTRLEN + 1, sizeof (char))))
+    {
+      fprintf (stderr, "%s - allocation of ipaddrstr failed for client %d.\n", 
+               __func__, client_index) ;
+      return -1;
+    }
+  
+  
+  if (bctx->ipv6 == 0)
+    {
+      /* 
+         When clients are not using common IP, advance the 
+         IPv4-address, using client index as the offset. 
+      */
+      in_address.s_addr = htonl (bctx->ip_addr_min + 
+                                 (bctx->ip_common ? 0 : client_index));
+      
+      if (! (ipv4_string = inet_ntoa (in_address)))
+        {
+          fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses of client [%d]\n", 
+                   __func__, client_index) ;
+          return -1;
+        }
+    }
+  else
+    {
+      /* 
+         When clients are not using common IP,  advance the 
+         IPv6-address by incrementing previous address. 
+      */
+      if (client_index == 0 || bctx->ip_common)
+        {
+          memcpy (&in6_prev, &bctx->ipv6_addr_min, sizeof (in6_prev));
+          memcpy (&in6_new, &bctx->ipv6_addr_min, sizeof (in6_new));
+        }
+      else
+        {
+          if (ipv6_increment (&in6_prev, &in6_new) == -1)
+            {
+              fprintf (stderr, "%s - ipv6_increment() failed for ip_address of client [%d]\n", 
+                       __func__, client_index) ;
+              return -1;
+            }
+        }
+      
+      if (! inet_ntop (AF_INET6, &in6_new, ipv6_string, sizeof (ipv6_string)))
+        {
+          fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses of client [%d]\n", 
+                   __func__, client_index) ;
+          return -1;
+        }
+      else
+        {
+          /* Remember in6_new address in in6_prev */
+          memcpy (&in6_prev, &in6_new, sizeof (in6_prev));
+        }
+    }
+  
+  snprintf (ipaddrstr, 
+            bctx->ipv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN, 
+            "%s", 
+            bctx->ipv6 ? ipv6_string : ipv4_string);
+
+  *addr_str = ipaddrstr;
 
   return 0;
 }
@@ -1665,3 +1702,196 @@ static int ipv6_increment(const struct in6_addr *const src,
   return 0;
 }
 
+static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
+{
+
+  if (! bc_arr)
+    {
+      return -1;
+    }
+
+  if (subbatches_num < 2 || subbatches_num > BATCHES_MAX_NUM)
+    {
+      fprintf (stderr, 
+               "%s - error: wrong input.\n", __func__);
+      return -1;
+    }
+
+  batch_context master;
+  memcpy (&master, &bc_arr[0], sizeof (master));
+
+  if (master.client_num_max < subbatches_num)
+    {
+      fprintf (stderr, "%s - error: wrong input CLIENT_NUM_MAX is less than "
+               "the subbatches number (%d).\n", __func__, subbatches_num);
+      return -1;
+    }
+
+  int c_num_max = 0;
+
+
+  int i;
+  for (i = 0 ; i < subbatches_num ; i++) 
+    {
+      sprintf (bc_arr[i].batch_name, "%s_%d", master.batch_name, i);
+      sprintf (bc_arr[i].batch_logfile, "%s.log", bc_arr[i].batch_name);
+      sprintf (bc_arr[i].batch_statistics, "%s.txt", bc_arr[i].batch_name);
+
+      if (i != subbatches_num)
+        {
+          bc_arr[i].client_num_max = master.client_num_max / subbatches_num;
+          c_num_max += bc_arr[i].client_num_max; 
+        }
+      else
+        {
+          bc_arr[i].client_num_max = master.client_num_max - c_num_max;
+        }
+
+      if (master.client_num_start)
+        {
+          bc_arr[i].client_num_start = master.client_num_start / subbatches_num;
+
+          if (! bc_arr[i].client_num_start)
+            bc_arr[i].client_num_start = 1;
+        }
+
+      if (master.clients_rampup_inc)
+        {
+          bc_arr[i].clients_rampup_inc = master.clients_rampup_inc / subbatches_num;
+
+          if (! bc_arr[i].clients_rampup_inc)
+            bc_arr[i].clients_rampup_inc = 1;
+        }
+
+      strcpy(bc_arr[i].net_interface, master.net_interface);
+
+      bc_arr[i].ipv6 = master.ipv6;
+
+      if (! bc_arr[i].ipv6)
+        {
+          bc_arr[i].ip_addr_min = i ? bc_arr[i - 1].ip_addr_max : master.ip_addr_min;
+          bc_arr[i].ip_addr_max = bc_arr[i].ip_addr_min + bc_arr[i].client_num_max;
+        }
+      else
+        {
+          // TODO: IPv6 range
+        }
+
+      bc_arr[i].ip_common = master.ip_common;
+
+      bc_arr[i].cidr_netmask = master.cidr_netmask;
+
+      memcpy (bc_arr[i].scope, master.scope, sizeof (bc_arr[i].scope));
+
+      bc_arr[i].cycles_num = master.cycles_num;
+
+      strncpy (bc_arr[i].user_agent, 
+               master.user_agent, 
+               sizeof (bc_arr[i].user_agent) -1);
+
+      bc_arr[i].urls_num = master.urls_num;
+
+      if (i)
+        {
+          if (! (bc_arr[i].url_ctx_array = 
+                 (url_context *) cl_calloc (bc_arr[i].urls_num, sizeof (url_context))))
+            {
+              fprintf (stderr, 
+                       "%s - error: failed to allocate URL-context array for %d urls\n", 
+                       __func__, bc_arr[i].urls_num);
+              return -1;
+            }
+          memcpy (bc_arr[i].url_ctx_array, 
+                  master.url_ctx_array, 
+                  bc_arr[i].urls_num * sizeof (url_context));
+        }
+
+      bc_arr[i].url_index = master.url_index;
+
+      bc_arr[i].first_cycling_url = master.first_cycling_url;
+
+      bc_arr[i].last_cycling_url = master.last_cycling_url;
+
+      bc_arr[i].cycling_completed = master.cycling_completed;
+
+      /* Zero the pointer to be initialized. */
+      bc_arr[i].multiple_handle = 0;
+
+
+      /* 
+         Allocate the array of IP-addresses. 
+      */
+      /* TODO: memory leak of ip-addresses with the batch bc_arr[0] */
+
+      bc_arr[i].ip_addr_array = 0;
+
+      if (!(bc_arr[i].ip_addr_array = (char**)calloc (bc_arr[i].client_num_max,
+                                               sizeof (char *))))
+        {
+          fprintf (stderr, 
+                   "%s - error: failed to allocate array of ip-addresses for batch %d.\n", 
+                   __func__, i);
+          return -1;
+        }
+      else
+        {
+          int j;
+
+          for (j = 0; j < bc_arr[i].client_num_max; j++)
+            {
+              if (ip_addr_str_allocate_init (&bc_arr[i], j, &bc_arr[i].ip_addr_array[j]) == -1)
+                {
+                  fprintf (stderr, 
+                           "%s - error: ip_addr_str_allocate_init () - failed, batch [%d], client [%d]\n", 
+                           __func__, i, j);
+                  return -1;
+                }
+            }
+        }
+
+      if (i)
+        {
+          bc_arr[i].cctx_array = 0;
+          
+          if (!(bc_arr[i].cctx_array =
+                (client_context *) cl_calloc (bc_arr[i].client_num_max, 
+                                              sizeof (client_context))))
+            {
+              fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
+                       bc_arr[i].batch_name, __func__);
+              return -1;
+            }
+        }
+
+       /* Zero the pointers to be initialized. */
+      bc_arr[i].do_client_num_gradual_increase = master.do_client_num_gradual_increase;
+      bc_arr[i].stop_client_num_gradual_increase = master.stop_client_num_gradual_increase;
+      
+
+      if (create_response_logfiles_dirs (&bc_arr[i]) == -1)
+        {
+          fprintf (stderr, 
+                   "\"%s\" - create_response_logfiles_dirs () failed .\n", 
+                   __func__);
+          return -1;
+        }
+      
+      if (alloc_client_formed_buffers (&bc_arr[i]) == -1)
+        {
+          fprintf (stderr, 
+                   "\"%s\" - alloc_client_formed_buffers () failed .\n", 
+                   __func__);
+          return -1;
+        }
+      
+      if (init_operational_statistics (&bc_arr[i]) == -1)
+        {
+          fprintf (stderr, 
+                   "\"%s\" - init_operational_statistics () failed .\n", 
+                   __func__);
+          return -1;
+        }
+    }
+
+  return 0;
+}
