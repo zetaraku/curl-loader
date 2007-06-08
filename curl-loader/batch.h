@@ -54,6 +54,8 @@ typedef enum form_usagetype
 } form_usagetype;
 
 struct client_context;
+struct event_base;
+struct event;
 
 /**********************
   struct batch_context
@@ -199,6 +201,13 @@ typedef struct batch_context
 
   /*  Waiting queue to keep interleev timeouts in smooth mode */
   timer_queue* waiting_queue;
+
+  /* Event base from event_init () of libevent */
+  struct event_base* eb;
+
+  struct event* timer_event;
+
+  struct event* timer_next_load_event;
 
 
    /*--------------- STATISTICS  --------------------------------------------*/

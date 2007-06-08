@@ -76,8 +76,8 @@ static void update_timeout_hyper (batch_context *bctx);
 static int on_exit_hyper (batch_context* bctx);
 
 
-static struct event timer_event;
-static struct event timer_next_load_event;
+//static struct event timer_event;
+//static struct event timer_next_load_event;
 
 
 /************************************************************************
@@ -225,6 +225,8 @@ static void setsock_hyper(sock_info*sinfo,
     }
 
   event_set( &sinfo->ev, sinfo->sockfd, kind, event_cb_hyper, bctx);
+  event_base_set(bctx->eb, &sinfo->ev);
+  
   sinfo->evset=1;
 
   event_add(&sinfo->ev, NULL);
@@ -362,7 +364,7 @@ static void update_timeout_hyper (batch_context *bctx)
 
   timeout.tv_sec = timeout_ms/1000;
   timeout.tv_usec = (timeout_ms%1000)*1000;
-  evtimer_add(&timer_event, &timeout);
+  evtimer_add (bctx->timer_event, &timeout);
 #endif
 }
 
@@ -399,7 +401,7 @@ static void next_load_cb_hyper (int fd, short kind, void *userp)
   timerclear(&tv);
   tv.tv_usec = TIMER_NEXT_LOAD;
   
-  event_add(&timer_next_load_event, &tv);  
+  event_add (bctx->timer_next_load_event, &tv);  
 }
 
 /****************************************************************************************
@@ -423,14 +425,26 @@ int user_activity_hyper (client_context* cctx_array)
     }
 
   /* Init libevent library */
-  event_init ();
+  bctx->eb = event_init ();
+
+  if (! (bctx->timer_event = cl_calloc (sizeof (struct event), 1)))
+  {
+      fprintf (stderr, "%s - error: timer_event allocation faled.\n", __func__);
+      return -1;
+  }
+
+  if (! (bctx->timer_next_load_event = cl_calloc (sizeof (struct event), 1)))
+  {
+      fprintf (stderr, "%s - error: timer_next_load_event allocation faled.\n", __func__);
+      return -1;
+  }
 
   /* Set the socket callback on multi-handle */ 
-  curl_multi_setopt(bctx->multiple_handle, 
+  curl_multi_setopt (bctx->multiple_handle, 
                     CURLMOPT_SOCKETFUNCTION, 
                     socket_callback);
 
-  curl_multi_setopt(bctx->multiple_handle, CURLMOPT_SOCKETDATA, bctx);
+  curl_multi_setopt (bctx->multiple_handle, CURLMOPT_SOCKETDATA, bctx);
 
 
   still_running = 1; 
@@ -466,18 +480,20 @@ int user_activity_hyper (client_context* cctx_array)
       return -1;
     }
 
-  evtimer_set(&timer_event, timer_cb_hyper, bctx);
+  evtimer_set (bctx->timer_event, timer_cb_hyper, bctx);
+  event_base_set(bctx->eb, bctx->timer_event);
 
   while (CURLM_CALL_MULTI_PERFORM == 
          curl_multi_socket_all(bctx->multiple_handle, &st))
          ;
 
-  evtimer_set(&timer_next_load_event, next_load_cb_hyper, bctx);
+  evtimer_set (bctx->timer_next_load_event, next_load_cb_hyper, bctx);
+  event_base_set(bctx->eb, bctx->timer_next_load_event);
   
   struct timeval tv;
   timerclear(&tv);
   tv.tv_usec = TIMER_NEXT_LOAD;	
-  event_add(&timer_next_load_event, &tv);
+  event_add (bctx->timer_next_load_event, &tv);
 
   dump_snapshot_interval (bctx, now_time);
 
@@ -545,7 +561,8 @@ static int mget_url_hyper (batch_context* bctx)
   update_timeout_hyper (bctx);
 
   /* Run the event loop */
-  event_dispatch();
+  //event_dispatch();
+  event_base_dispatch((struct event_base *) bctx->eb);
 
   fprintf (stderr, "%s - out of event_dispatch () loop.\n", __func__);
 
