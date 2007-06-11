@@ -113,7 +113,7 @@ menuconfig:
 $(LIBEVENT):
 	mkdir -p $(LIBEVENT_BUILD)
 	cd $(LIBEVENT_BUILD); tar zxfv ../../packages/libevent-$(LIBEVENT_VER).tar.gz;
-	cd $(LIBEVENT_MAKE_DIR); ./configure --prefix $(LIBEVENT_BUILD) \
+	cd $(LIBEVENT_MAKE_DIR); patch -p1 < ../patches/libevent-nevent.patch; ./configure --prefix $(LIBEVENT_BUILD) \
 		CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS)"
 	make -C $(LIBEVENT_MAKE_DIR); make -C $(LIBEVENT_MAKE_DIR) install
 	mkdir -p ./inc; mkdir -p ./lib
