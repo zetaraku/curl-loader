@@ -82,8 +82,10 @@ int user_activity_smooth (client_context* cctx_array)
       return -1;
     }
 
-
-  dump_snapshot_interval (bctx, now_time);
+  if (is_batch_group_leader (bctx))
+    {
+      dump_snapshot_interval (bctx, now_time);
+    }
 
   /* 
      ========= Run the loading machinery ================
@@ -210,7 +212,10 @@ static int mperform_smooth (batch_context* bctx,
 
   if ((long)(*now_time - bctx->last_measure) > snapshot_timeout) 
     {
-      dump_snapshot_interval (bctx, *now_time);
+      if (is_batch_group_leader (bctx))
+        {
+          dump_snapshot_interval (bctx, *now_time);
+        }
     }
 
   while( (msg = curl_multi_info_read (mhandle, &msg_num)) != 0)

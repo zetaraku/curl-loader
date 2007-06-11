@@ -30,6 +30,7 @@
 
 #include "batch.h"
 #include "client.h"
+#include "conf.h"
 
 #include "statistics.h"
 #include "screen.h"
@@ -40,7 +41,8 @@
 
 static void
 dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
-                                                     unsigned long now_time);
+                                                     unsigned long now_time,
+                                                     int clients_total_num);
 
 static void dump_statistics (unsigned long period, 
                              stat_point *http, 
@@ -356,16 +358,29 @@ unsigned long get_tick_count ()
 ****************************************************************************************/
 void dump_final_statistics (client_context* cctx)
 {
+  int i;
   batch_context* bctx = cctx->bctx;
   unsigned long now = get_tick_count();
 
+  for (i = 0; i <= threads_subbatches_num; i++)
+    {
+      if (i)
+        {
+          stat_point_add (&bctx->http_delta, &(bctx + i)->http_delta);
+          stat_point_add (&bctx->https_delta, &(bctx + i)->https_delta);
+          
+          /* Other threads statistics - reset just after collecting */
+          stat_point_reset (&(bctx + i)->http_delta); 
+          stat_point_reset (&(bctx + i)->https_delta);
+        }
+    }
+  
   print_snapshot_interval_statistics (now - bctx->last_measure,
 		&bctx->http_delta,  
 		&bctx->https_delta);
 
   stat_point_add (&bctx->http_total, &bctx->http_delta);
   stat_point_add (&bctx->https_total, &bctx->https_delta); 
-  //op_stat_point_add (&bctx->op_delta, &bctx->op_total);
     
   fprintf(stdout,"\n==================================================="
           "====================================\n");
@@ -386,8 +401,18 @@ void dump_final_statistics (client_context* cctx)
                    &bctx->http_total,
                    &bctx->https_total);
 
+
+  for (i = 0; i <= threads_subbatches_num; i++)
+    {
+      if (i)
+        {
+          op_stat_point_add (&bctx->op_delta, &(bctx + i)->op_delta );
+          
+          /* Other threads operational statistics - reset just after collecting */
+          op_stat_point_reset (&(bctx + i)->op_delta);
+        }
+    }
   op_stat_point_add (&bctx->op_total, &bctx->op_delta);
-  op_stat_point_reset (&bctx->op_delta);
   
   print_operational_statistics (&bctx->op_delta, 
                                 &bctx->op_total, 
@@ -425,8 +450,6 @@ void dump_final_statistics (client_context* cctx)
            "- %s.ctx for virtual client based statistics.\n"
            "You may add -v and -u options to the command line for more verbouse output to %s.log file.\n",
            bctx->batch_name, bctx->batch_name, bctx->batch_name, bctx->batch_name);
-
-  //  screen_release ();
 }
 
 /****************************************************************************************
@@ -444,7 +467,18 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
       fprintf(stdout, "\033[2J");
     }
 
-  dump_snapshot_interval_and_advance_total_statistics(bctx, now);
+  int i;
+  int total_current_clients = 0;
+
+  for (i = 0; i <= threads_subbatches_num; i++)
+    {
+      total_current_clients += pending_active_and_waiting_clients_num (bctx + i);
+    }
+
+  dump_snapshot_interval_and_advance_total_statistics (
+                                                       bctx, 
+                                                       now, 
+                                                       total_current_clients);
 
   int seconds_run = (int)(now - bctx->start_time)/ 1000;
   if (!seconds_run)
@@ -456,8 +490,6 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
 
   fprintf(stdout,"Summary stats (runs:%d secs, CAPS-average:%ld):\n", 
           seconds_run, bctx->op_total.call_init_count / seconds_run); 
-
-  //print_operational_statistics (&bctx->op_total, bctx->url_ctx_array);
   
   dump_statistics (seconds_run, 
                    &bctx->http_total,
@@ -494,10 +526,6 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
   fprintf(stdout,"============================================================"
           "=====================\n");
   fflush (stdout);
-  
-  //fprintf (stderr, "%s do_client %d, stop_client %d.\n", 
-  //         __func__, bctx->do_client_num_gradual_increase,
-  //         bctx->stop_client_num_gradual_increase);
 }
 
 /****************************************************************************************
@@ -537,8 +565,10 @@ void print_snapshot_interval_statistics (unsigned long period,
 * Return Code/Output - None
 ****************************************************************************************/
 void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
-                                                          unsigned long now_time)
+                                                          unsigned long now_time,
+                                                          int clients_total_num)
 {
+  int i;
   const unsigned long delta_t = now_time - bctx->last_measure; 
   const unsigned long delta_time = delta_t ? delta_t : 1;
 
@@ -553,7 +583,19 @@ void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
           "==================\n",
           bctx->batch_name);
 
-  /*Operational statistics*/
+  /*Collect the operational statistics*/
+
+  for (i = 0; i <= threads_subbatches_num; i++)
+    {
+      if (i)
+        {
+          op_stat_point_add (&bctx->op_delta, &(bctx + i)->op_delta );
+
+          /* Other threads operational statistics - reset just after collecting */
+          op_stat_point_reset (&(bctx + i)->op_delta);
+        }
+    }
+
   op_stat_point_add (&bctx->op_total, &bctx->op_delta );
 
   print_operational_statistics (&bctx->op_delta,
@@ -564,10 +606,27 @@ void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
   fprintf(stdout,"--------------------------------------------------------------------------------\n");
 
   fprintf(stdout,"Interval stats (latest:%ld sec, clients:%d, CAPS-curr:%ld):\n",
-          (unsigned long ) delta_time/1000, pending_active_and_waiting_clients_num (bctx),
+          (unsigned long ) delta_time/1000, clients_total_num,
           bctx->op_delta.call_init_count* 1000/delta_time);
 
   op_stat_point_reset (&bctx->op_delta);
+
+
+  for (i = 0; i <= threads_subbatches_num; i++)
+    {
+      if (i)
+        {
+          stat_point_add (&bctx->http_delta, &(bctx + i)->http_delta);
+          stat_point_add (&bctx->https_delta, &(bctx + i)->https_delta);
+
+          /* Other threads statistics - reset just after collecting */
+          stat_point_reset (&(bctx + i)->http_delta); 
+          stat_point_reset (&(bctx + i)->https_delta);
+        }
+    }
+
+  stat_point_add (&bctx->http_total, &bctx->http_delta);
+  stat_point_add (&bctx->https_total, &bctx->https_delta);
 
   print_snapshot_interval_statistics(delta_time, 
                                      &bctx->http_delta,  
@@ -580,20 +639,17 @@ void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
       print_statistics_data_to_file (bctx->statistics_file,
                                      timestamp_sec,
                                      UNSECURE_APPL_STR,
-                                     pending_active_and_waiting_clients_num (bctx),
+                                     clients_total_num,
                                      &bctx->http_delta,
                                      delta_time);
     
       print_statistics_data_to_file (bctx->statistics_file, 
                                      timestamp_sec,
                                      SECURE_APPL_STR, 
-                                     pending_active_and_waiting_clients_num (bctx),
+                                     clients_total_num,
                                      &bctx->https_delta,
                                      delta_time);
     }
-
-  stat_point_add (&bctx->http_total, &bctx->http_delta);
-  stat_point_add (&bctx->https_total, &bctx->https_delta);
 
   stat_point_reset (&bctx->http_delta); 
   stat_point_reset (&bctx->https_delta);

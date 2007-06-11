@@ -27,6 +27,7 @@
 
 #include <stddef.h>
 #include <netinet/in.h>
+#include <pthread.h>
 
 #include <curl/curl.h>
 
@@ -165,6 +166,14 @@ typedef struct batch_context
 
   /*------------------------- ASSISTING SECTION ----------------------------*/
 
+  /* 
+     The sequence num of a batch in batch_array. Zero batch is the batch group 
+     leader and is in charge for statistics presentation on behave of all other batches
+  */
+  size_t batch_id;
+
+  pthread_t thread_id;
+
   /* Multiple handle for curl. Contains all curl handles of a batch */
   CURLM *multiple_handle;
   
@@ -236,6 +245,9 @@ typedef struct batch_context
   op_stat_point op_total;
 
 } batch_context;
+
+
+int is_batch_group_leader (batch_context* bctx);
 
 
 

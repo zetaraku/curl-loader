@@ -207,13 +207,21 @@ main (int argc, char *argv [])
       /* Opening threads for the batches of clients */
       for (i = 0 ; i < threads_subbatches_num ; i++) 
         {
+          bc_arr[i].batch_id = i;
           error = pthread_create (&tid[i], NULL, batch_function, &bc_arr[i]);
+          
 
           if (0 != error)
+            {
             fprintf(stderr, "%s - error: Couldn't run thread number %d, errno %d\n", 
-                    __func__, i, error);
+                    __func__, i, errno);
+            }
           else 
-            fprintf(stderr, "%s - note: Thread %d, started normally\n", __func__, i);
+            {
+              bc_arr[i].thread_id = tid[i]; /* Set the thread-id */
+
+              fprintf(stderr, "%s - note: Thread %d, started normally\n", __func__, i);
+            }
         }
 
       /* Waiting for all the threads to terminate */
