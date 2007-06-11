@@ -1,5 +1,12 @@
 version 0.31 ?
 
+* SMP/multi-cores initial support added. When -t <n> command line option 
+   is provided, the batch clients are devided to <n> sub-batches, each in charge
+   for CLIENTS_MAX_NUM / <n> clients. The sub-batches are run from the 
+   independent threads, whereas the statistics is collected by the thread running
+   the group-leader, so-called master thread.
+   
+
 * GET forms are supported now. The example configuration is in
    ./conf-examples/get-forms.conf
 
