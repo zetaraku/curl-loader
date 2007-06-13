@@ -498,18 +498,27 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
   fprintf(stdout,"============================================================"
           "=====================\n");
 
+  long total_clients_rampup_inc = 0;
+  int total_client_num_max = 0;
+  
+  for (i = 0; i <= threads_subbatches_num; i++)
+    {
+      total_clients_rampup_inc += (bctx + i)->clients_rampup_inc;
+      total_client_num_max += (bctx + i)->client_num_max;
+    }
+
   if (bctx->do_client_num_gradual_increase && 
       (bctx->stop_client_num_gradual_increase == 0))
     {
       fprintf(stdout," Automatic: adding %ld clients/sec. Stop inc and manual [M].\n",
-              bctx->clients_rampup_inc);
+              total_clients_rampup_inc);
     }
   else
     {
       const int current_clients = pending_active_and_waiting_clients_num (bctx);
 
       fprintf(stdout," Manual: clients:max[%d],curr[%d]. Inc num: [+|*].",
-              bctx->client_num_max, current_clients);
+              total_client_num_max, total_current_clients);
 
       if (bctx->stop_client_num_gradual_increase && 
           bctx->clients_rampup_inc &&

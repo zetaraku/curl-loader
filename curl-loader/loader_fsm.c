@@ -33,14 +33,6 @@
 #include "screen.h"
 #include "cl_alloc.h"
 
-//static timer_node logfile_timer_node;
-//static timer_node clients_num_inc_timer_node;
-//static timer_node screen_input_timer_node;
-
-//static long logfile_timer_id = -1;
-//static long clients_num_inc_id = -1;
-//static long screen_input_timer_id = -1;
-
 static int load_error_state (client_context* cctx, unsigned long *wait_msec);
 static int load_init_state (client_context* cctx, unsigned long *wait_msec);
 static int load_urls_state (client_context* cctx, unsigned long *wait_msec);
