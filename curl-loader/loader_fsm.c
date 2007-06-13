@@ -186,15 +186,6 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
     {
       /* 
          Schedule the gradual loading clients increase timer.
-
-         Note, that the timer cannot be arranged as a periodic timer,
-         because from its handling function we are scheduling other
-         timers.
-
-         What happens is that till the handling routine returns, the slot
-         is free and can be occupied by the timer we schedule.
-         
-         Thus, it will create a bug with two timers having the same timer-id.
       */
       
       bctx->clients_num_inc_timer_node.next_timer = now_time + 1000;
