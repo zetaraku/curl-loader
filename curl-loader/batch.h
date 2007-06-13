@@ -32,6 +32,7 @@
 #include <curl/curl.h>
 
 #include "timer_queue.h"
+#include "timer_node.h"
 #include "url.h"
 #include "statistics.h"
 
@@ -69,7 +70,6 @@ struct event;
 */
 typedef struct batch_context
 {
-
 
   /*------------------------ GENERAL SECTION ------------------------------ */
 
@@ -208,8 +208,12 @@ typedef struct batch_context
   */
   int clients_current_sched_num;
 
-  /*  Waiting queue to keep interleev timeouts in smooth mode */
+  /*  Waiting queue timeouts in smooth mode */
   timer_queue* waiting_queue;
+
+  timer_node logfile_timer_node;
+  timer_node clients_num_inc_timer_node;
+  timer_node screen_input_timer_node;
 
   /* Event base from event_init () of libevent */
   struct event_base* eb;

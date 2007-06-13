@@ -530,7 +530,7 @@ static int on_exit_hyper (batch_context* bctx)
   if (bctx->waiting_queue)
     {
         /* Cancel periodic timers */
-      cancel_periodic_timers (bctx->waiting_queue);
+      cancel_periodic_timers (bctx);
 
       tq_release (bctx->waiting_queue);
       free (bctx->waiting_queue);

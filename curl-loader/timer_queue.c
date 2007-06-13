@@ -1,7 +1,7 @@
 /*
 *     timer_queue.c
 *
-* 2006 Copyright (c) 
+* 2006-2007 Copyright (C) 
 * Robert Iakobashvili, <coroberti@gmail.com>
 * All rights reserved.
 *
@@ -118,6 +118,9 @@ long tq_schedule_timer (timer_queue*const tq,
         fprintf (stderr, "%s - error: wrong input.\n", __func__);
         return -1;
     }
+
+    // mark timer-id as not valid
+    tnode->timer_id = -1;
     
     if (tnode->period && tnode->period < TQ_RESOLUTION)
     {
@@ -146,7 +149,7 @@ long tq_schedule_timer (timer_queue*const tq,
        Push the new timer node to the heap. Zero passed as an indication, 
        that it is a new timer rather than re-scheduling of a periodic timer.	
     */ 
-    return heap_push (tq, new_hnode, 0);
+    return (tnode->timer_id = heap_push (tq, new_hnode, 0));
 }
 
 /****************************************************************************************
@@ -185,7 +188,8 @@ int tq_cancel_timer (timer_queue*const tq, long timer_id)
         return -1;
     }
     
-    hnode* node = heap_remove_node (h, node_slot);
+    // last zero means - not keeping the timer-id/slot
+    hnode* node = heap_remove_node (h, node_slot, 0);
 
     if (!node)
     {
@@ -228,7 +232,7 @@ int tq_cancel_timers (timer_queue*const tq, struct timer_node* const tnode)
     {
       if (h->heap[index]->ctx == tnode)
         {
-          node = heap_remove_node (h, index);
+          node = heap_remove_node (h, index, 0);
 
           if (node)
             {
@@ -292,7 +296,7 @@ unsigned long tq_time_to_nearest_timer (timer_queue*const tq)
 int tq_remove_nearest_timer (timer_queue*const tq, timer_node** tnode)
 {
   heap* h = (heap *) tq;
-  hnode* node = heap_pop ((heap *const) tq);
+  hnode* node = heap_pop ((heap *const) tq, 0);
 
   if (!node)
     return -1;
@@ -328,7 +332,10 @@ int tq_dispatch_nearest_timer (timer_queue*const tq,
 			       unsigned long now_time)
 {
   heap* h = (heap *) tq;
-  hnode* node = heap_pop ((heap *const) tq);
+  hnode* top_node = heap_top_node ((heap *const) tq);
+
+  hnode* node = heap_pop ((heap *const) tq, 
+                          ((timer_node *) top_node->ctx)->period ? 1 : 0);
   timer_node* tnode = (timer_node *) node->ctx;
 
   int rval = tnode->func_timer (tnode, vp_param, now_time);
@@ -350,6 +357,12 @@ int tq_dispatch_nearest_timer (timer_queue*const tq,
     }
 
  node_return:
+
+  if (tnode->period)
+    {
+      release_kept_timer_id (tq, tnode->timer_id);
+    }
+
   node_reset (node);
   
   if (mpool_return_obj (h->nodes_mpool, (allocatable *)node) == -1)
@@ -359,7 +372,6 @@ int tq_dispatch_nearest_timer (timer_queue*const tq,
 
   return rval;
 }
-
 
 
 /****************************************************************************************
@@ -372,7 +384,7 @@ int tq_dispatch_nearest_timer (timer_queue*const tq,
 ****************************************************************************************/
 int tq_empty (timer_queue*const tq)
 {
-	return heap_empty ((heap *const) tq);
+  return heap_empty ((heap *const) tq);
 }
 
 /****************************************************************************************
@@ -386,4 +398,19 @@ int tq_empty (timer_queue*const tq)
 int tq_size (timer_queue*const tq)
 {
   return heap_size ((heap *const) tq);
+}
+
+int release_kept_timer_id (timer_queue*const tq, long timer_id)
+{
+  heap* h = (heap *) tq;
+
+  if (!tq || timer_id < 0 || (size_t) timer_id > h->max_heap_size)
+    {
+      fprintf (stderr, "%s - error: wrong input.\n", __func__);
+      return -1;
+    }
+
+  release_node_id (h, (size_t) timer_id);
+
+  return 0;
 }

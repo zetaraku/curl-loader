@@ -245,10 +245,10 @@ int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq);
  *
  * Description - Cancels scheduled periodic timers
  *
- *Input               *twq - pointer to timer waiting queue
+ *Input               *bctx - pointer to timer waiting queue
  * Return Code/Output - On success -0, on error -1
  ****************************************************************************/
-int cancel_periodic_timers (timer_queue* twq);
+int cancel_periodic_timers (struct batch_context* bctx);
 
 /*****************************************************************************
  * Function name - init_timers_and_add_initial_clients_to_load

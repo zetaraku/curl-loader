@@ -33,13 +33,13 @@
 #include "screen.h"
 #include "cl_alloc.h"
 
-static timer_node logfile_timer_node;
-static timer_node clients_num_inc_timer_node;
-static timer_node screen_input_timer_node;
+//static timer_node logfile_timer_node;
+//static timer_node clients_num_inc_timer_node;
+//static timer_node screen_input_timer_node;
 
-static long logfile_timer_id = -1;
-static long clients_num_inc_id = -1;
-static long screen_input_timer_id = -1;
+//static long logfile_timer_id = -1;
+//static long clients_num_inc_id = -1;
+//static long screen_input_timer_id = -1;
 
 static int load_error_state (client_context* cctx, unsigned long *wait_msec);
 static int load_init_state (client_context* cctx, unsigned long *wait_msec);
@@ -138,36 +138,46 @@ int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq)
 int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
                                                  unsigned long now_time)
 {
+  //client_context* cctx = bctx->cctx_array;
+
     /* 
      Init logfile rewinding timer and schedule it.
   */
   const unsigned long logfile_timer_msec  = 
     1000*LOGFILE_TEST_TIMER_PERIOD;
 
-  logfile_timer_node.next_timer = now_time + logfile_timer_msec;
-  logfile_timer_node.period = logfile_timer_msec;
-  logfile_timer_node.func_timer = handle_logfile_rewinding_timer;
+  bctx->logfile_timer_node.next_timer = now_time + logfile_timer_msec;
+  bctx->logfile_timer_node.period = logfile_timer_msec;
+  bctx->logfile_timer_node.func_timer = handle_logfile_rewinding_timer;
 
-  if ((logfile_timer_id = tq_schedule_timer (bctx->waiting_queue, 
-                                             &logfile_timer_node)) == -1)
+  if (tq_schedule_timer (bctx->waiting_queue, &bctx->logfile_timer_node) == -1)
     {
       fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
       return -1;
     }
+  //  else
+  //  {
+  //   fprintf (cctx->file_output, "SCHED: %s - logfile_timer_id is %ld.\n", 
+  // __func__, logfile_timer_id);
+  //  }
 
   /* 
      Init screen input testing timer and schedule it.
   */
-  screen_input_timer_node.next_timer = now_time + 3000;
-  screen_input_timer_node.period = 1000;
-  screen_input_timer_node.func_timer = handle_screen_input_timer;
+  bctx->screen_input_timer_node.next_timer = now_time + 3000;
+  bctx->screen_input_timer_node.period = 1000;
+  bctx->screen_input_timer_node.func_timer = handle_screen_input_timer;
 
-  if ((screen_input_timer_id = tq_schedule_timer (bctx->waiting_queue, 
-                                             &screen_input_timer_node)) == -1)
+  if (tq_schedule_timer(bctx->waiting_queue,&bctx->screen_input_timer_node)== -1)
     {
       fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
       return -1;
     }
+  //else
+  //  {
+  //   fprintf (cctx->file_output, "SCHED: %s - screen_input_timer_id is %ld.\n", 
+  //            __func__, screen_input_timer_id);
+  //  }
 
   bctx->start_time = bctx->last_measure = now_time;
   bctx->active_clients_count = bctx->sleeping_clients_count =0;
@@ -183,22 +193,35 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
   if (bctx->do_client_num_gradual_increase)
     {
       /* 
-         Schedule the gradual loading clients increase timer 
+         Schedule the gradual loading clients increase timer.
+
+         Note, that the timer cannot be arranged as a periodic timer,
+         because from its handling function we are scheduling other
+         timers.
+
+         What happens is that till the handling routine returns, the slot
+         is free and can be occupied by the timer we schedule.
+         
+         Thus, it will create a bug with two timers having the same timer-id.
       */
       
-      clients_num_inc_timer_node.next_timer = now_time + 1000;
-      clients_num_inc_timer_node.period = 1000;
-      clients_num_inc_timer_node.func_timer = 
+      bctx->clients_num_inc_timer_node.next_timer = now_time + 1000;
+      bctx->clients_num_inc_timer_node.period = 1000;
+      bctx->clients_num_inc_timer_node.func_timer = 
         handle_gradual_increase_clients_num_timer;
 
-      if ((clients_num_inc_id = tq_schedule_timer (bctx->waiting_queue, 
-                                                   &clients_num_inc_timer_node)) == -1)
+      if (tq_schedule_timer (bctx->waiting_queue, 
+                             &bctx->clients_num_inc_timer_node) == -1)
         {
           fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
           return -1;
         }
+      //else
+      //  {
+      //   fprintf (cctx->file_output, "SCHED: %s - clients_num_inc_id is %ld.\n", 
+      //            __func__, clients_num_inc_id);
+      //  }
     }
-  
   return 0;
 }
 
@@ -207,27 +230,30 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
  *
  * Description - Cancels scheduled periodic timers
  *
- * Input         *twq - pointer to timer waiting queue
+ * Input         *bctx - pointer to batch context
  * Return Code/Output - On success -0, on error -1
  ***************************************************************************/
-int cancel_periodic_timers (timer_queue* twq)
+int cancel_periodic_timers (batch_context* bctx)
 {
-  if (logfile_timer_id != -1)
+  if (bctx->logfile_timer_node.timer_id != -1)
     {
-      tq_cancel_timer (twq, logfile_timer_id);
-      logfile_timer_id = -1;
+      tq_cancel_timer (bctx->waiting_queue, 
+                       bctx->logfile_timer_node.timer_id);
+      bctx->logfile_timer_node.timer_id = -1;
     }
 
-  if (clients_num_inc_id != -1)
+  if (bctx->clients_num_inc_timer_node.timer_id != -1)
     {
-      tq_cancel_timer (twq, clients_num_inc_id);
-      clients_num_inc_id = -1;
+      tq_cancel_timer (bctx->waiting_queue, 
+                       bctx->clients_num_inc_timer_node.timer_id);
+      bctx->clients_num_inc_timer_node.timer_id = -1;
     }
 
-  if (screen_input_timer_id != -1)
+  if (bctx->screen_input_timer_node.timer_id != -1)
     {
-      tq_cancel_timer (twq, screen_input_timer_id);
-      screen_input_timer_id = -1;
+      tq_cancel_timer (bctx->waiting_queue, 
+                       bctx->screen_input_timer_node.timer_id);
+      bctx->screen_input_timer_node.timer_id = -1;
     }
 
   return 0;
@@ -264,7 +290,15 @@ int load_next_step (client_context* cctx,
   */
   if (cctx->tid_url_completion != -1)
     {
+      //if (cctx->tid_url_completion ==  clients_num_inc_id)
+      //{
+      //    fprintf (cctx->file_output, 
+      //             "SCHED: %s - cctx->tid_url_completion ==  clients_num_inc_id.\n", 
+      //             __func__);
+      //  }
+
       tq_cancel_timer (bctx->waiting_queue, cctx->tid_url_completion);
+
       cctx->tid_url_completion = -1;
     }
 	
@@ -345,6 +379,7 @@ int load_next_step (client_context* cctx,
          placing it to the timer queue. 
       */
       cctx->tn.next_timer = now_time + interleave_waiting_time;
+      cctx->tn.period = 0;
       cctx->tn.func_timer = handle_cctx_sleeping_timer;
 		
       if ((cctx->tid_sleeping = tq_schedule_timer (bctx->waiting_queue, 
@@ -355,7 +390,10 @@ int load_next_step (client_context* cctx,
         }
       else
         {
-          bctx->sleeping_clients_count++;
+          //  fprintf (cctx->file_output, "SCHED: %s - cctx->tid_sleeping is %ld.\n", 
+          //             __func__, cctx->tid_sleeping);
+
+           bctx->sleeping_clients_count++;
         }
 
       //fprintf (stderr, "%s - scheduled client to wq with wtime %ld\n", 
@@ -377,6 +415,7 @@ int load_next_step (client_context* cctx,
  *******************************************************************************/
 int add_loading_clients (batch_context* bctx)
 {
+  //client_context* cctx = bctx->cctx_array;
   long clients_to_sched = 0;
   int scheduled_now = 0;
   
@@ -385,6 +424,9 @@ int add_loading_clients (batch_context* bctx)
   */
   if (bctx->stop_client_num_gradual_increase)
     {
+      //fprintf (cctx->file_output, 
+      //         "SCHED: %s - returning on zero >stop_client_num_gradual_increase.\n", 
+      //         __func__);
       return 0; // Returning 0 means do not stop the timer
     }
   
@@ -394,6 +436,12 @@ int add_loading_clients (batch_context* bctx)
   if (bctx->client_num_max <= bctx->clients_current_sched_num)
     {
       bctx->do_client_num_gradual_increase = 0;
+
+      //fprintf (cctx->file_output, 
+      //         "SCHED: do_client_num_gradual_increase = 0 on client_num_max %d" 
+      //        " and clients_current_sched_num %d \n", 
+      //        bctx->client_num_max, bctx->clients_current_sched_num);
+
       return -1; // Returning (-1) means - stop the timer
       }
   
@@ -414,6 +462,10 @@ int add_loading_clients (batch_context* bctx)
 
   //fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_to_sched);
 
+  //fprintf (cctx->file_output, 
+  //             "SCHED: clients_to_sched %ld, bctx->clients_current_sched_num %d.\n", 
+  //         clients_to_sched, bctx->clients_current_sched_num);
+
   /* 
      Schedule new clients by initializing their CURL handle with
      URL, etc. parameters and adding it to MCURL multi-handle.
@@ -431,6 +483,9 @@ int add_loading_clients (batch_context* bctx)
                           &scheduled_now) == -1)
         {  
           fprintf(stderr,"%s error: load_next_step() initial failed\n", __func__);
+          //fprintf (cctx->file_output, 
+          //         "SCHED: %s - load_next_step failed.\n", 
+          //        __func__);
           return -1;
         }
     }
@@ -589,6 +644,7 @@ static int client_add_to_load (batch_context* bctx,
       if (timer_url_completion)
         {
           cctx->tn.next_timer = now_time + timer_url_completion;
+          cctx->tn.period = 0;
           cctx->tn.func_timer = handle_cctx_url_completion_timer;
           
           if ((cctx->tid_url_completion = tq_schedule_timer (bctx->waiting_queue, 
@@ -599,6 +655,12 @@ static int client_add_to_load (batch_context* bctx,
                        __func__);
               return -1;
             }
+          //else
+          // {
+          //   fprintf (cctx->file_output, 
+          //            "SCHED: %s - cctx->tid_url_completion is %ld.\n", 
+          //             __func__, cctx->tid_url_completion);
+          //  }
         }
 
       bctx->active_clients_count++;
@@ -663,12 +725,20 @@ static int handle_gradual_increase_clients_num_timer  (timer_node* timer_node,
   (void) timer_node;
   (void) ulong_param;
 
+  //client_context* cctx = bctx->cctx_array;
+
+  //fprintf (cctx->file_output, "SCHED: %s - entered.\n", __func__);
+
   if (add_loading_clients (bctx) == -1)
     {
       //fprintf (stderr, "%s add_loading_clients () returns -1.\n", __func__);
+      //fprintf (cctx->file_output, 
+      //         "SCHED: %s - add_loading_clients failed.\n", 
+      //         __func__);
       return -1;
     }
 
+  //fprintf (cctx->file_output, "SCHED: %s - returning 0.\n", __func__);
   //fprintf (stderr, "%s - runs.\n", __func__);
   return 0;
 }

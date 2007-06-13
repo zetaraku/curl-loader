@@ -1,7 +1,7 @@
 /*
 *     timer_queue.h
 *
-* 2006 Copyright (c) 
+* 2006-2007 Copyright (C) 
 * Robert Iakobashvili, <coroberti@gmail.com>
 * All rights reserved.
 *
@@ -169,6 +169,8 @@ int tq_empty (timer_queue*const tq);
 * Return Code/Output - On Success - zero or positive number, on error - (-1)
 ****************************************************************************************/
 int tq_size (timer_queue*const tq);
+
+int release_kept_timer_id (timer_queue*const tq, long timer_id);
 
 #endif /* TIMER_QUEUE_H */
 

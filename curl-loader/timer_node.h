@@ -1,7 +1,7 @@
 /*
-*     client.h
+*     timer_node.h
 *
-* 2006 Copyright (c) 
+* 2006-2007 Copyright (c) 
 * Robert Iakobashvili, <coroberti@gmail.com>
 * All rights reserved.
 *
@@ -43,6 +43,8 @@ typedef struct timer_node
   
   /* Function to be called on timer expiration. Trying to be Object Oriented ...*/
   handle_timer func_timer;
+
+  long timer_id;
 } timer_node;
 
 

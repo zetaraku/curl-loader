@@ -1,7 +1,7 @@
 /*
 *     heap.h
 *
-* 2006 Copyright (c) 
+* 2006-2007 Copyright (C) 
 * Robert Iakobashvili, <coroberti@gmail.com>
 * All rights reserved.
 *
@@ -186,7 +186,7 @@ int heap_prealloc (heap*const h, size_t nodes_prealloc);
 * Input -       *h - pointer to an initialized heap
 * Return Code/Output - On success - pointer to hnode, on error - NULL
 ****************************************************************************************/
-hnode* heap_pop (heap*const h);
+hnode* heap_pop (heap*const h, int keep_timer_id );
 
 
 /****************************************************************************************
@@ -218,9 +218,11 @@ hnode* heap_top_node (heap*const h);
 * Description -  Removes node from a certain slot and restores heap structure
 *
 * Input -       *h - pointer to an initialized heap
+*               slot - index of the heap-array (slot), where to remove hnode
+*               reserve_slot - true -means to reserve the slot
 * Return Code/Output - On success -  pointer to the removed node, on error - NULL
 ****************************************************************************************/
-hnode* heap_remove_node (heap*const h, const size_t slot);
+hnode* heap_remove_node (heap*const h, const size_t slot, int reserve_slot);
 
 /****************************************************************************************
 * Function name - heap_empty
@@ -241,5 +243,7 @@ int heap_empty (heap*const h);
 * Return Code/Output - On Success - zero or positive number, on error - (-1)
 ****************************************************************************************/
 int heap_size (heap*const h);
+
+void release_node_id (heap*const h, const size_t node_id);
 
 #endif /* HEAP_H */

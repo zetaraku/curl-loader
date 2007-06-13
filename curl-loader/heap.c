@@ -1,7 +1,7 @@
 /*
  *     heap.c
  *
- * 2006 Copyright (c) 
+ * 2006-2007 Copyright (C) 
  * Robert Iakobashvili, <coroberti@gmail.com>
  * All rights reserved.
  *
@@ -251,7 +251,7 @@ int heap_prealloc (heap*const h, size_t nodes_prealloc)
 * Input -       *h - pointer to an initialized heap
 * Return Code/Output - On success - pointer to hnode, on error - NULL
 ****************************************************************************************/
-hnode* heap_pop (heap*const h)
+hnode* heap_pop (heap*const h, int keep_timer_id)
 {
   if (!h || h->curr_heap_size <= 0)
     {
@@ -259,7 +259,7 @@ hnode* heap_pop (heap*const h)
       return 0;
     }
 	
-  return heap_remove_node (h, 0);
+  return heap_remove_node (h, 0, keep_timer_id);
 }
 
 /****************************************************************************************
@@ -462,9 +462,10 @@ void heap_put_node_to_slot (heap*const h, size_t slot, hnode*const nd)
 *
 * Input -       *h - pointer to an initialized heap
 *               slot - index of the heap-array (slot), where to remove hnode
+*               reserve_slot - true -means to reserve the slot
 * Return Code/Output - On success - a valid hnode, on error - 0
 ****************************************************************************************/
-hnode* heap_remove_node (heap*const h, const size_t slot)
+hnode* heap_remove_node (heap*const h, const size_t slot, int reserve_slot)
 {
   hnode* mved_end_node = 0;
   size_t parent_slot = 0;
@@ -510,15 +511,24 @@ hnode* heap_remove_node (heap*const h, const size_t slot)
     }
 	
   /* Mark the node-id entry as free. */
-  h->ids_arr[removed_node_id] = -1;
-	
-  if (removed_node_id < h->ids_min_free && removed_node_id <= h->ids_last)
+  if (! reserve_slot)
     {
-      h->ids_min_free_restore = h->ids_min_free;
-      h->ids_min_free = removed_node_id;
+      release_node_id (h, removed_node_id);
     }
 
   return removed_node;
+}
+
+
+void release_node_id (heap*const h, const size_t node_id)
+{
+  h->ids_arr [node_id] = -1;
+  
+  if (node_id < h->ids_min_free  &&  node_id <= h->ids_last)
+    {
+      h->ids_min_free_restore = h->ids_min_free;
+      h->ids_min_free = node_id;
+    }
 }
 
 /****************************************************************************************
