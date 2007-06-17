@@ -372,10 +372,22 @@ static int load_form_record_string (char*const input,
 {
   const char separators_supported [] =
     {
-      ':', ' ', '@', '/', '\0'
+      ',',
+      ':',
+      ';',
+      ' ', 
+      '@', 
+      '/', 
+      '\0'
     };
   char* sp = NULL;
   int i;
+
+  if (!input || !input_len)
+    {
+      fprintf (stderr, "%s - error: wrong input\n", __func__);
+      return -1;
+    }
   
   /* 
      Figure out the separator used by the first string analyses 
@@ -405,75 +417,52 @@ static int load_form_record_string (char*const input,
         }
     }
 
-  if ((sp = strchr (input, *separator)))
-    {
-      *sp = '\0'; /* The idea from Igor Potulnitsky */
-    }
-  else
-    {
-      fprintf (stderr, "%s - separator not found.\n", __func__);
-      return -1;
-    }
 
-  char* username = input;
-  char* password = NULL;
+  char *strtokp = 0;
+  char * token;
+  size_t token_count  = 0;
 
-  if ((input_len - (sp - input) - 1) > 0)
+  for (token = strtok_r (input, separator, &strtokp); 
+       token != 0;
+       token = strtok_r (0, separator, &strtokp))
     {
-      sp = sp + 1;
+      size_t token_len = strlen (token);
 
-      if (strlen (sp))
+      if (! token_len)
         {
-          password = sp;
+          fprintf (stderr, "%s - warning: token is empty. \n", __func__);
+        }
+      else if (token_len >= FORM_RECORDS_TOKEN_MAX_LEN)
+        {
+          fprintf (stderr, "%s - error: token is above the allowed "
+                   "FORM_RECORDS_TOKEN_MAX_LEN (%d). \n", 
+                   __func__, FORM_RECORDS_TOKEN_MAX_LEN);
+        }
+      else
+        {
+          if (! (form_record->form_tokens[token_count] = 
+                 calloc (token_len +1, sizeof (char))))
+            {
+              fprintf (stderr, "%s - error: calloc() failed with errno %d\n", 
+                       __func__, errno);
+              return -1;
+            }
+          else
+            {
+              strcpy (form_record->form_tokens[token_count], token);
+            }
+        }
+
+      if (++token_count >= FORM_RECORDS_MAX_TOKENS_NUM)
+        {
+          fprintf (stderr, "%s - warning: tokens number is above" 
+                   " FORM_RECORDS_MAX_TOKENS_NUM (%d). \n", 
+                   __func__, FORM_RECORDS_MAX_TOKENS_NUM);
+          break;
         }
     }
 
-  /*
-    Empty passwords are allowed.
-  */
-  size_t len_username = 0, len_password = 0;
 
-  /* 
-     TODO: The tokens below to be treated in a cycle and up to 8
-     tokens to be supported
-  */
-  if (username)
-  {
-      if (! (len_username = strlen (username)))
-      {
-          fprintf (stderr, "%s - even the very first token of the record is empty. \n", __func__);
-          return -1;
-      }
-
-      if (! (form_record->form_tokens[0] = calloc (len_username +1, sizeof (char))))
-      {
-          fprintf (stderr, "%s - calloc() for username failed with errno %d\n", __func__, errno);
-          return -1;
-      }
-      else
-      {
-          strcpy (form_record->form_tokens[0], username);
-      }
-  }
-
-  if (password)
-  {
-      if (!(len_password = strlen (password)))
-      {
-          return 0;
-      }
-      
-      if (! (form_record->form_tokens[1] = calloc (len_password +1, sizeof (char))))
-      {
-          fprintf (stderr, "%s - calloc() for password failed with errno %d\n", __func__, errno);
-          return -1;
-      }
-      else
-      {
-          strcpy (form_record->form_tokens[1], password);
-      }
-  }
-  
   return 0;
 }
 

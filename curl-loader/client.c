@@ -231,7 +231,7 @@ void dump_client (FILE* file, client_context* cctx)
 	 return;
 
   fprintf (file, 
-           "%s,cycles:%ld,state:%d,-in:%lld,b-out:%lld,req:%ld,1xx:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,err:%ld,T-err:%ld\n", 
+           "%s,cycles:%ld,state:%d,b-in:%lld,b-out:%lld,req:%ld,1xx:%ld,2xx:%ld,3xx:%ld,4xx:%ld,5xx:%ld,err:%ld,T-err:%ld\n", 
            cctx->client_name, cctx->cycle_num, cctx->client_state, 
            cctx->st.data_in,  cctx->st.data_out, cctx->st.requests, 
            cctx->st.resp_1xx, cctx->st.resp_2xx, cctx->st.resp_3xx, cctx->st.resp_4xx, cctx->st.resp_5xx, 
