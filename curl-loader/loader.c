@@ -1782,7 +1782,36 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
         }
       else
         {
-          // TODO: IPv6 range
+          // IPv6 range
+
+          if (! i)
+            {
+              bc_arr[i].ipv6_addr_min = master.ipv6_addr_min; 
+            }
+          else
+            {
+              if (ipv6_increment (&bc_arr[i - 1].ipv6_addr_max, 
+                                  &bc_arr[i].ipv6_addr_min) == -1)
+                {
+                  fprintf (stderr, "%s - error: ipv6_increment()failed\n ", __func__);
+                  return -1;
+                }
+            }
+
+          struct in6_addr in6_temp = bc_arr[i].ipv6_addr_min;
+
+          int k;
+          for (k = 0; k < bc_arr[i].client_num_max; k++)
+            {
+              if (ipv6_increment (&in6_temp, 
+                                  &bc_arr[i].ipv6_addr_max) == -1)
+                {
+                  fprintf (stderr, "%s - error: ipv6_increment()failed\n ", __func__);
+                  return -1;
+                }
+
+              in6_temp = bc_arr[i].ipv6_addr_max;
+            }
         }
 
       bc_arr[i].ip_common = master.ip_common;
