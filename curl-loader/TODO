@@ -6,32 +6,15 @@ Nearest release 0.32 may hopefully include:
 1. Multi-post forms, suggested by Jeremy Hicks jehicks@novell.com
     http://curl.haxx.se/libcurl/c/curl_formadd.html
 
-2. Add a url-based tag QUIT_CYCLE_ON_ERROR to schedule or not to
-    schedule a client for more cycles, when an error condition detected.
-   Now we have  such option as a global one, whereas URLs may have 
-   different level of importance.
-
-3. ERROR_RESPONSE_CODES - add a list or codes considered
+2. ERROR_RESPONSE_CODES - add a list or codes considered
    as errors, or not considered as error conditions on a per-url bases. 
    By default all HTTP 5xx codes and 4xx -401-407 are considered as errors.
    Plus means add to a url errors list, where minus means remove from a
    url error list.
    Something like ERROR_RESPONSE_CODES="+100+101-500-503"
 
-4. Cookies - add an option to add a per-url cookie. Currently, we just enable any
-     cookies set by a server. Probably, users may wish to use a very specific
-    and known in advance cookie.
+3. Add an option to limit throughput per client. Libcurl is already supporting it.
 
-5. Add an option to limit throughput per client. Libcurl is already supporting it.
-
-6. More testing, a couple of presentation/statistics bug-fixes and improvement
-   of statistics is necessary for the recently added adaptation of curl-loader 
-   for SMP/multi- core HW.
-   The clients (and their ip-addresses) are shared among several threads. The
-   first thread reads from others statistics counters, combines them
-   and outputs it to screen and files.
-
-7. Thread affinity for curl-loader SMP/multi- core HW adaptation feature.
 
 
 
@@ -40,6 +23,7 @@ Nearest release 0.32 may hopefully include:
 Next releases:
 
 0. Performance improvements:
+
 - cached memory allocators, using libcurl API 
    (Aleksandar Lazic <al-curlloader@none.at>):
    http://curl.haxx.se/libcurl/c/curl_global_init_mem.html
@@ -50,6 +34,9 @@ Next releases:
 
 - Testbed for 50K and 100K clients. We need a more powerful HW:
     2-4 CPUs/cores and 4-8 GB of memory
+
+- Thread affinity for curl-loader SMP/multi- core HW adaptation feature.
+
 
 1. Support more than current 2 tokens (up to 8) in 
     FORM_RECORDS_FILE. Tokenize the input in cycle. 

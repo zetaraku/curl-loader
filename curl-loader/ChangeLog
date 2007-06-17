@@ -1,12 +1,22 @@
 version 0.31 ?
 
+* Fixed a bug with ramp-up being stopped occasionally a long prior
+   to the clients number reached the desired CLIENTS_MAX_NUM.
+
+  That occured due to the ramp-up timer being cancelled by mistake/bug.
+  What happend is that for periodic timers till the timer handling routine returns, 
+  the slot (timer-id) is free and can be occupied by the timer we schedule in the
+  timer-handling routine.  Thus, it creates a bug with the two timers having the 
+  same timer-id.
+  The fix included reservation of the timer slot for periodic timers. The slot is
+  released explicitly, if the timer-handling routine fails with error (returns -1).
+
 * SMP/multi-cores initial support added. When -t <n> command line option 
    is provided, the batch clients are devided to <n> sub-batches, each in charge
    for CLIENTS_MAX_NUM / <n> clients. The sub-batches are run from the 
    independent threads, whereas the statistics is collected by the thread running
    the group-leader, so-called master thread.
    
-
 * GET forms are supported now. The example configuration is in
    ./conf-examples/get-forms.conf
 
