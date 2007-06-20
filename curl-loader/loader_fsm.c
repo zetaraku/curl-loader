@@ -61,18 +61,18 @@ static int setup_url (client_context* cctx);
 static int handle_screen_input_timer (timer_node* tn, 
                                        void* pvoid_param, 
                                       unsigned long ulong_param);
-static int handle_logfile_rewinding_timer  (timer_node* tn, 
-                                            void* pvoid_param, 
-                                            unsigned long ulong_param);
-static int handle_gradual_increase_clients_num_timer  (timer_node* tn,
-                                                       void* pvoid_param, 
-                                                       unsigned long ulong_param);
+static int handle_logfile_rewinding_timer (timer_node* tn, 
+                                           void* pvoid_param, 
+                                           unsigned long ulong_param);
+static int handle_gradual_increase_clients_num_timer (timer_node* tn,
+                                                      void* pvoid_param, 
+                                                      unsigned long ulong_param);
 static int handle_cctx_sleeping_timer (timer_node* tn,
                                 void* pvoid_param, 
                                 unsigned long ulong_param);
 static int handle_cctx_url_completion_timer (timer_node* tn,
-                                void* pvoid_param, 
-                                unsigned long ulong_param);
+                                             void* pvoid_param, 
+                                             unsigned long ulong_param);
 
 
 static int client_remove_from_load (batch_context* bctx, client_context* cctx);
@@ -108,7 +108,8 @@ int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq)
                size      /* number of nodes to prealloc */
                ) == -1)
     {
-      fprintf (stderr, "%s - error: failed to initialize waiting queue.\n", __func__);
+      fprintf (stderr, "%s - error: failed to initialize waiting queue.\n", 
+      		__func__);
       free (tq);
       return -1;
     }
@@ -147,11 +148,13 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
       fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
       return -1;
     }
-  //  else
-  //  {
-  //   fprintf (cctx->file_output, "SCHED: %s - logfile_timer_id is %ld.\n", 
-  // __func__, logfile_timer_id);
-  //  }
+#if 0
+   else
+    {
+     fprintf (cctx->file_output, "SCHED: %s - logfile_timer_id is %ld.\n", 
+   __func__, logfile_timer_id);
+    }
+#endif
 
   /* 
      Init screen input testing timer and schedule it.
@@ -165,11 +168,13 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
       fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
       return -1;
     }
-  //else
-  //  {
-  //   fprintf (cctx->file_output, "SCHED: %s - screen_input_timer_id is %ld.\n", 
-  //            __func__, screen_input_timer_id);
-  //  }
+#if 0  
+  else
+    {
+     fprintf (cctx->file_output, "SCHED: %s - screen_input_timer_id is %ld.\n", 
+              __func__, screen_input_timer_id);
+    }
+#endif
 
   bctx->start_time = bctx->last_measure = now_time;
   bctx->active_clients_count = bctx->sleeping_clients_count =0;
@@ -199,11 +204,13 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
           fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
           return -1;
         }
-      //else
-      //  {
-      //   fprintf (cctx->file_output, "SCHED: %s - clients_num_inc_id is %ld.\n", 
-      //            __func__, clients_num_inc_id);
-      //  }
+#if 0
+      else
+        {
+         fprintf (cctx->file_output, "SCHED: %s - clients_num_inc_id is %ld.\n", 
+                  __func__, clients_num_inc_id);
+        }
+#endif
     }
   return 0;
 }
@@ -251,11 +258,10 @@ int cancel_periodic_timers (batch_context* bctx)
  *               to client the next url to load, or marks the being at completion state: 
  *               CSTATE_ERROR or CSTATE_FINISHED_OK.
  *
- * Input -       *cctx - pointer to the client context
- *               now_time -  current timestamp in msec
+ * Input -       *cctx     - pointer to the client context
+ *               now_time  - current timestamp in msec
  * Input/Output  sched_now - when true, the client is scheduled right now without 
  * 			     timer queue.
- *
  * Return Code/Output - CSTATE enumeration with the state of loading
  ******************************************************************************/
 int load_next_step (client_context* cctx,
@@ -273,13 +279,14 @@ int load_next_step (client_context* cctx,
   */
   if (cctx->tid_url_completion != -1)
     {
-      //if (cctx->tid_url_completion ==  clients_num_inc_id)
-      //{
-      //    fprintf (cctx->file_output, 
-      //             "SCHED: %s - cctx->tid_url_completion ==  clients_num_inc_id.\n", 
-      //             __func__);
-      //  }
-
+#if 0
+      if (cctx->tid_url_completion ==  clients_num_inc_id)
+      {
+          fprintf (cctx->file_output, 
+                   "SCHED: %s - cctx->tid_url_completion ==  clients_num_inc_id.\n", 
+                   __func__);
+      }
+#endif
       tq_cancel_timer (bctx->waiting_queue, cctx->tid_url_completion);
 
       cctx->tid_url_completion = -1;
@@ -373,14 +380,16 @@ int load_next_step (client_context* cctx,
         }
       else
         {
-          //  fprintf (cctx->file_output, "SCHED: %s - cctx->tid_sleeping is %ld.\n", 
-          //             __func__, cctx->tid_sleeping);
-
+#if 0
+          fprintf (cctx->file_output, "SCHED: %s - cctx->tid_sleeping is %ld.\n", 
+                   __func__, cctx->tid_sleeping);
+#endif
            bctx->sleeping_clients_count++;
         }
-
-      //fprintf (stderr, "%s - scheduled client to wq with wtime %ld\n", 
-      // __func__, interleave_waiting_time);
+#if 0
+      fprintf (stderr, "%s - scheduled client to wq with wtime %ld\n", 
+       __func__, interleave_waiting_time);
+#endif
     }
 
   return rval_load;
@@ -407,9 +416,11 @@ int add_loading_clients (batch_context* bctx)
   */
   if (bctx->stop_client_num_gradual_increase)
     {
-      //fprintf (cctx->file_output, 
-      //         "SCHED: %s - returning on zero >stop_client_num_gradual_increase.\n", 
-      //         __func__);
+ #if 0
+      fprintf (cctx->file_output, 
+               "SCHED: %s - returning on zero >stop_client_num_gradual_increase.\n", 
+              __func__);
+ #endif
       return 0; // Returning 0 means do not stop the timer
     }
   
@@ -419,12 +430,12 @@ int add_loading_clients (batch_context* bctx)
   if (bctx->client_num_max <= bctx->clients_current_sched_num)
     {
       bctx->do_client_num_gradual_increase = 0;
-
-      //fprintf (cctx->file_output, 
-      //         "SCHED: do_client_num_gradual_increase = 0 on client_num_max %d" 
-      //        " and clients_current_sched_num %d \n", 
-      //        bctx->client_num_max, bctx->clients_current_sched_num);
-
+#if 0
+      fprintf (cctx->file_output, 
+               "SCHED: do_client_num_gradual_increase = 0 on client_num_max %d" 
+              " and clients_current_sched_num %d \n", 
+              bctx->client_num_max, bctx->clients_current_sched_num);
+#endif
       return -1; // Returning (-1) means - stop the timer
       }
   
@@ -444,11 +455,11 @@ int add_loading_clients (batch_context* bctx)
 
 
   //fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_to_sched);
-
-  //fprintf (cctx->file_output, 
-  //             "SCHED: clients_to_sched %ld, bctx->clients_current_sched_num %d.\n", 
-  //         clients_to_sched, bctx->clients_current_sched_num);
-
+#if 0
+  fprintf (cctx->file_output, 
+           "SCHED: clients_to_sched %ld, bctx->clients_current_sched_num %d.\n", 
+           clients_to_sched, bctx->clients_current_sched_num);
+#endif
   /* 
      Schedule new clients by initializing their CURL handle with
      URL, etc. parameters and adding it to MCURL multi-handle.
@@ -466,9 +477,11 @@ int add_loading_clients (batch_context* bctx)
                           &scheduled_now) == -1)
         {  
           fprintf(stderr,"%s error: load_next_step() initial failed\n", __func__);
-          //fprintf (cctx->file_output, 
-          //         "SCHED: %s - load_next_step failed.\n", 
-          //        __func__);
+#if 0
+          fprintf (cctx->file_output, 
+                   "SCHED: %s - load_next_step failed.\n", 
+                  __func__);
+#endif
           return -1;
         }
     }
@@ -496,7 +509,7 @@ int add_loading_clients (batch_context* bctx)
  *
  * Description - Adding a number of clients to load
  *
- * Input -       *bctx - pointer to the batch of contexts
+ * Input -       *bctx      - pointer to the batch of contexts
  *               add_number - number of clients to add to load
  * Return Code/Output - On Success - 0, on error  (-1)
  *******************************************************************************/
@@ -605,8 +618,8 @@ dispatch_expired_timers (batch_context* bctx, unsigned long now_time)
  * Description - Adds client context to the batch context multiple handle 
  *               for loading
  *
- * Input -       *bctx - pointer to the batch context
- *               *cctx - pointer to the client context
+ * Input -       *bctx    - pointer to the batch context
+ *               *cctx    - pointer to the client context
  *               now_time - current time in msec
  * Return Code/Output - On success -0, on error - (-1)
  *******************************************************************************/
@@ -638,12 +651,14 @@ static int client_add_to_load (batch_context* bctx,
                        __func__);
               return -1;
             }
-          //else
-          // {
-          //   fprintf (cctx->file_output, 
-          //            "SCHED: %s - cctx->tid_url_completion is %ld.\n", 
-          //             __func__, cctx->tid_url_completion);
-          //  }
+#if 0
+          else
+           {
+             fprintf (cctx->file_output, 
+                      "SCHED: %s - cctx->tid_url_completion is %ld.\n", 
+                       __func__, cctx->tid_url_completion);
+           }
+#endif
         }
 
       bctx->active_clients_count++;
@@ -695,14 +710,14 @@ static int client_remove_from_load (batch_context* bctx, client_context* cctx)
  * Description - Handling of one second timer to increase gradually number of 
  *               loading clients.
  *
- * Input -       *timer_node - pointer to timer_node structure
+ * Input -       *timer_node  - pointer to timer_node structure
  *               *pvoid_param - pointer to some extra data; here batch context
  *               *ulong_param - some extra data.
  * Return Code/Output - On success -0, on error - (-1)
  ******************************************************************************/
-static int handle_gradual_increase_clients_num_timer  (timer_node* timer_node, 
-                                                       void* pvoid_param, 
-                                                       unsigned long ulong_param)
+static int handle_gradual_increase_clients_num_timer (timer_node* timer_node, 
+                                                      void* pvoid_param, 
+                                                      unsigned long ulong_param)
 {
   batch_context* bctx = (batch_context *) pvoid_param;
   (void) timer_node;
@@ -715,9 +730,11 @@ static int handle_gradual_increase_clients_num_timer  (timer_node* timer_node,
   if (add_loading_clients (bctx) == -1)
     {
       //fprintf (stderr, "%s add_loading_clients () returns -1.\n", __func__);
-      //fprintf (cctx->file_output, 
-      //         "SCHED: %s - add_loading_clients failed.\n", 
-      //         __func__);
+#if 0
+      fprintf (cctx->file_output, 
+               "SCHED: %s - add_loading_clients failed.\n", 
+               __func__);
+#endif
       return -1;
     }
 
@@ -731,14 +748,14 @@ static int handle_gradual_increase_clients_num_timer  (timer_node* timer_node,
  *
  * Description -   Handling of logfile controlling periodic timer
  *
- * Input -        *timer_node - pointer to timer node structure
+ * Input -        *timer_node  - pointer to timer node structure
  *                *pvoid_param - pointer to some extra data; here batch context
  *                *ulong_param - some extra data.
  * Return Code/Output - On success -0, on error - (-1)
  ****************************************************************************************/
-static int handle_logfile_rewinding_timer  (timer_node* timer_node, 
-                                            void* pvoid_param, 
-                                            unsigned long ulong_param)
+static int handle_logfile_rewinding_timer (timer_node* timer_node, 
+                                           void* pvoid_param, 
+                                           unsigned long ulong_param)
 {
   batch_context* bctx = (batch_context *) pvoid_param;
   (void) timer_node;
@@ -746,7 +763,8 @@ static int handle_logfile_rewinding_timer  (timer_node* timer_node,
 
   if (rewind_logfile_above_maxsize (bctx->cctx_array->file_output) == -1)
     {
-      fprintf (stderr, "%s - rewind_logfile_above_maxsize() failed .\n", __func__);
+      fprintf (stderr, "%s - rewind_logfile_above_maxsize() failed .\n", 
+      	__func__);
       return -1;
     }
   
@@ -754,20 +772,20 @@ static int handle_logfile_rewinding_timer  (timer_node* timer_node,
   return 0;
 }
 
-/****************************************************************************************
+/******************************************************************************
  * Function name - handle_screen_input_timer
  *
  * Description -   Handling of screen imput
  *
- * Input -        *timer_node - pointer to timer node structure
+ * Input -        *timer_node  - pointer to timer node structure
  *                *pvoid_param - pointer to some extra data; here batch context
  *                *ulong_param - some extra data.
  *
  * Return Code/Output - On success -0, on error - (-1)
- ****************************************************************************************/
+ ******************************************************************************/
 static int handle_screen_input_timer (timer_node* timer_node, 
-                                       void* pvoid_param, 
-                                       unsigned long ulong_param)
+                                      void* pvoid_param, 
+                                      unsigned long ulong_param)
 {
   batch_context* bctx = (batch_context *) pvoid_param;
   (void) timer_node;
@@ -786,14 +804,14 @@ static int handle_screen_input_timer (timer_node* timer_node,
  *               respect url interleave timeout. Schedules the client to perform 
  *               the next loading operation.
  *
- * Input -       *tn - pointer to timer node structure
+ * Input -       *tn          - pointer to timer node structure
  *               *pvoid_param - pointer to some extra data; here batch context
  *               *ulong_param - some extra data.
  * Return Code/Output - On success -0, on error - (-1)
  ***************************************************************************/
 int handle_cctx_sleeping_timer (timer_node* tn, 
-                       void* pvoid_param,
-                       unsigned long ulong_param)
+                                void* pvoid_param,
+                                unsigned long ulong_param)
 {
   client_context* cctx = (client_context *) tn;
   batch_context* bctx = cctx->bctx;
@@ -813,14 +831,14 @@ int handle_cctx_sleeping_timer (timer_node* tn,
  *               respect url interleave timeout. Schedules the client to perform 
  *               the next loading operation.
  *
- * Input -       *tn - pointer to timer node structure
+ * Input -       *tn          - pointer to timer node structure
  *               *pvoid_param - pointer to some extra data; here batch context
  *               *ulong_param - some extra data.
  * Return Code/Output - On success -0, on error - (-1)
  ***************************************************************************/
 static int handle_cctx_url_completion_timer (timer_node* tn,
-                                void* pvoid_param, 
-                                unsigned long ulong_param)
+                                             void* pvoid_param, 
+                                             unsigned long ulong_param)
 {
   client_context* cctx = (client_context *) tn;
   batch_context* bctx = cctx->bctx;

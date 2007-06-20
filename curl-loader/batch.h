@@ -91,7 +91,7 @@ typedef struct batch_context
 
 
   /* 
-      Clients added per second for the loading start phase.
+     Clients added per second for the loading start phase.
   */
   long clients_rampup_inc;
   
@@ -155,12 +155,13 @@ typedef struct batch_context
   */
   int first_cycling_url;
 
- /* 
+  /* 
      Index of the last cycling url. Maximum index of url not marked
      as <dont_cycle>.
   */
   int last_cycling_url;
 
+  /* Indicates, that all cycling operations have been done */
   int cycling_completed;
 
 
@@ -172,6 +173,7 @@ typedef struct batch_context
   */
   size_t batch_id;
 
+  /* Thread id, filled by pthread_create (). Used by pthread_join () syscall */
   pthread_t thread_id;
 
   /* Multiple handle for curl. Contains all curl handles of a batch */
@@ -192,6 +194,7 @@ typedef struct batch_context
   /* Counter used mainly by smooth mode: active clients */
   int active_clients_count;
 
+  /* Number of clients "sleeping" their after url timeout. */
   int sleeping_clients_count;
 
   /* 
@@ -211,19 +214,26 @@ typedef struct batch_context
   /*  Waiting queue timeouts in smooth mode */
   timer_queue* waiting_queue;
 
+  /* The timer-node for timer testing the logfile size */
   timer_node logfile_timer_node;
+
+  /* The timer-node for timer to add more clients during ramp-up period. */
   timer_node clients_num_inc_timer_node;
+
+  /* The timer-node for timer checking user-input at a screen (stdin). */
   timer_node screen_input_timer_node;
 
-  /* Event base from event_init () of libevent */
+  /* Event base from event_init () of libevent. */
   struct event_base* eb;
 
+  /* Pointer to structure used by lebevent. */
   struct event* timer_event;
 
+  /* Pointer to structure used by lebevent. */
   struct event* timer_next_load_event;
 
 
-   /*--------------- STATISTICS  --------------------------------------------*/
+  /*--------------- STATISTICS  --------------------------------------------*/
 
   /* The file to be used for statistics output */
   FILE* statistics_file;

@@ -844,7 +844,7 @@ int set_response_logfile (client_context* cctx, url_context* url)
 * Description - Initialize client post form buffer to be used for a url POST-ing
 * 
 * Input -       *cctx - pointer to client context
-*                *url - pointer to url context
+*               *url - pointer to url context
 * Return Code/Output - On Success - 0, on Error -1
 ***********************************************************************/
 int set_client_url_post_data (client_context* cctx, url_context* url)
@@ -872,9 +872,9 @@ int set_client_url_post_data (client_context* cctx, url_context* url)
 *                to be used for POST-ing credentials/tokens or for GET passed tokens.
 * 
 * Input -       *cctx - pointer to client context
-*                *url - pointer to url context
-*                *buffer - the client buffer
-*                *buffer_len - size of the client buffer
+*               *url - pointer to url context
+*               *buffer - the client buffer
+*               *buffer_len - size of the client buffer
 * Return Code/Output - On Success - 0, on Error -1
 *************************************************************************/
 static int init_client_formed_buffer (client_context* cctx, 
@@ -1263,7 +1263,6 @@ int client_tracing_function (CURL *handle,
 * 
 * Input -       *bctx     - pointer to batch context to be set to all clients  of the batch
 *               *log_file - output file to be used by all clients of the batch
-*
 * Return Code -  On Success - 0, on Error -1
 ****************************************************************************************/
 static int init_client_contexts (batch_context* bctx,
@@ -1563,8 +1562,8 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
 }
 
 static int ip_addr_str_allocate_init (batch_context* bctx, 
-                               int client_index, 
-                               char** addr_str)
+                                      int client_index, 
+                                      char** addr_str)
 {
   struct in_addr in_address;
   struct in6_addr in6_prev, in6_new;
@@ -1663,8 +1662,8 @@ do_nothing_write_func (void *ptr, size_t size, size_t nmemb, void *stream)
 * Function name - rewind_logfile_above_maxsize
 *
 * Description - Rewinds the file pointer, when reaching configurable max-size
-* Input -       *filepointer - file pointer to control and rewind, when necessary
 *
+* Input -       *filepointer - file pointer to control and rewind, when necessary
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int rewind_logfile_above_maxsize (FILE* filepointer)
@@ -1700,7 +1699,6 @@ int rewind_logfile_above_maxsize (FILE* filepointer)
 * 
 * Input -       *src - pointer to the IPv6 address to be used as the source
 * Input/Output  *dest - pointer to the resulted incremented address
-*
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 static int ipv6_increment(const struct in6_addr *const src, 
@@ -1850,7 +1848,8 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
       if (i)
         {
           if (! (bc_arr[i].url_ctx_array = 
-                 (url_context *) cl_calloc (bc_arr[i].urls_num, sizeof (url_context))))
+                 (url_context *) cl_calloc (bc_arr[i].urls_num, 
+		 			    sizeof (url_context))))
             {
               fprintf (stderr, 
                        "%s - error: failed to allocate URL-context array for %d urls\n", 
@@ -1895,10 +1894,12 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
 
           for (j = 0; j < bc_arr[i].client_num_max; j++)
             {
-              if (ip_addr_str_allocate_init (&bc_arr[i], j, &bc_arr[i].ip_addr_array[j]) == -1)
+              if (ip_addr_str_allocate_init (&bc_arr[i], j, 
+	      				     &bc_arr[i].ip_addr_array[j]) == -1)
                 {
                   fprintf (stderr, 
-                           "%s - error: ip_addr_str_allocate_init () - failed, batch [%d], client [%d]\n", 
+                           "%s - error: ip_addr_str_allocate_init () - failed, "
+			   "batch [%d], client [%d]\n", 
                            __func__, i, j);
                   return -1;
                 }
@@ -1920,8 +1921,10 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
         }
 
        /* Zero the pointers to be initialized. */
-      bc_arr[i].do_client_num_gradual_increase = master.do_client_num_gradual_increase;
-      bc_arr[i].stop_client_num_gradual_increase = master.stop_client_num_gradual_increase;
+      bc_arr[i].do_client_num_gradual_increase = 
+      	master.do_client_num_gradual_increase;
+      bc_arr[i].stop_client_num_gradual_increase = 
+      	master.stop_client_num_gradual_increase;
       
 
       if (create_response_logfiles_dirs (&bc_arr[i]) == -1)

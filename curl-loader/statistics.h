@@ -63,10 +63,10 @@ typedef struct stat_point
   /* Errors of resolving, connecting, internal errors, etc. */
   unsigned long other_errs;
 
-    /* 
-       URL Timeout errors of not accomplishing url fetch prior to the 
-       url-completion timer being expired .
-    */
+  /* 
+     URL Timeout errors of not accomplishing url fetch prior to the 
+     url-completion timer being expired .
+  */
   unsigned long url_timeout_errs;
 
    /* Num of data points used to calculate average application delay */
@@ -109,86 +109,87 @@ typedef struct op_stat_point
 
 } op_stat_point;
 
-/****************************************************************************************
+/*******************************************************************************
 * Function name - stat_point_add
 *
 * Description - Adds counters of one stat_point object to another
 * Input -       *left  - pointer to the stat_point, where counter will be added
-*               *right - pointer to the stat_point, which counter will be added to the <left>
+*               *right - pointer to the stat_point, which counter will be added 
+*                        to the <left>
 * Return Code/Output - None
-****************************************************************************************/
+********************************************************************************/
 void stat_point_add (stat_point* left, stat_point* right);
 
-/****************************************************************************************
+/******************************************************************************
 * Function name - stat_point_reset
 *
 * Description - Nulls counters of a stat_point structure
 * 
 * Input -       *point -  pointer to the stat_point
 * Return Code/Output - None
-****************************************************************************************/
+*******************************************************************************/
 void stat_point_reset (stat_point* point);
 
 
-/****************************************************************************************
+/*******************************************************************************
 * Function name - op_stat_point_add
 *
 * Description - Adds counters of one op_stat_point object to another
-* Input -       *left -  pointer to the op_stat_point, where counter will be added
-*               *right -  pointer to the op_stat_point, which counter will be added to the <left>
+* Input -       *left  -  pointer to the op_stat_point, where counter will be added
+*               *right -  pointer to the op_stat_point, which counter will be 
+*                         added to the <left>
 * Return Code/Output - None
-****************************************************************************************/
+********************************************************************************/
 void op_stat_point_add (op_stat_point* left, op_stat_point* right);
 
 
-/****************************************************************************************
+/*******************************************************************************
 * Function name - op_stat_point_reset
 *
 * Description - Nulls counters of an op_stat_point structure
 *
 * Input -       *point -  pointer to the op_stat_point
 * Return Code/Output - None
-****************************************************************************************/
+********************************************************************************/
 void op_stat_point_reset (op_stat_point* point);
 
 
-/****************************************************************************************
+/*******************************************************************************
 * Function name - op_stat_point_init
 *
-* Description - Initializes an allocated op_stat_point by allocating relevant pointer 
-* 		fields for counters
+* Description - Initializes an allocated op_stat_point by allocating relevant 
+*               pointer fields for counters
 *
-* Input -       *point      -  pointer to the op_stat_point, where counter will be added
-*               url_num -  number of urls
+* Input -       *point  -pointer to the op_stat_point, where counter will be added
+*               url_num -number of urls
 * Return Code/Output - None
-****************************************************************************************/
+********************************************************************************/
 int op_stat_point_init (op_stat_point* point, size_t url_num);
 
 
-/****************************************************************************************
+/*******************************************************************************
 * Function name -  op_stat_point_release
 *
 * Description - Releases memory allocated by op_stat_point_init ()
 * 
 * Input -       *point -  pointer to the op_stat_point, where counter will be added
 * Return Code/Output - None
-****************************************************************************************/
+********************************************************************************/
 void op_stat_point_release (op_stat_point* point);
 
-/****************************************************************************************
+/*******************************************************************************
 * Function name -  op_stat_update
 *
 * Description - Updates operation statistics using information from client context
 *
-* Input -       *point                - pointer to the op_stat_point, where counters 
-* 					to be updated
-*               current_state         - current state of a client
-*               prev_state            - previous state of a client
-*               current_url_index - current url index of a the client
-*               prev_uas_url_index    - previous url index of a the client
-*
+* Input -       *point             - pointer to the op_stat_point, where counters 
+* 			             to be updated
+*               current_state      - current state of a client
+*               prev_state         - previous state of a client
+*               current_url_index  - current url index of a the client
+*               prev_uas_url_index - previous url index of a the client
 * Return Code/Output - None
-****************************************************************************************/
+*********************************************************************************/
 void op_stat_update (op_stat_point* op_stat, 
                      int current_state, 
                      int prev_state,

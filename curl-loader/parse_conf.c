@@ -196,10 +196,10 @@ static int validate_batch_url (batch_context*const bctx);
 static int post_validate_init (batch_context*const bctx);
 static int load_form_records_file (batch_context*const bctx, url_context* url);
 static int load_form_record_string (char*const input, 
-                             size_t input_length,
-                             form_records_cdata* form_record,
-                             size_t record_num,
-                             char* separator);
+                                    size_t input_length,
+                                    form_records_cdata* form_record,
+                                    size_t record_num,
+                                    char* separator);
 
 static int add_param_to_batch (char*const input, 
                                size_t input_length,
@@ -253,11 +253,10 @@ static fparser find_tag_parser (const char* tag)
 *
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
-static int add_param_to_batch (
-    char*const str_buff, 
-    size_t  str_len,
-    batch_context*const bctx_array, 
-    int*const batch_num)
+static int add_param_to_batch (char*const str_buff, 
+                               size_t  str_len,
+                               batch_context*const bctx_array, 
+                               int*const batch_num)
 {
   if (!str_buff || !str_len || !bctx_array)
     return -1;
@@ -362,17 +361,17 @@ static int add_param_to_batch (
 * Input -       *input        - pointer to the credentials file string
 *               input_len     - length of the <input> string
 *
-* Input/Output  *form_record   - pointer to the form_records_cdata array
+* Input/Output  *form_record  - pointer to the form_records_cdata array
 *               record_num    - index of the record ?
 *               *separator    - the separating symbol initialized by the first string and 
 *                               further used.
 * Return Code/Output - On success - 0, on failure - (-1)
 ****************************************************************************************/
 static int load_form_record_string (char*const input, 
-                             size_t input_len,
-                             form_records_cdata* form_record, 
-                             size_t record_num,
-                             char* separator)
+                                    size_t input_len,
+                                    form_records_cdata* form_record, 
+                                    size_t record_num,
+                                    char* separator)
 {
   const char separators_supported [] =
     {
@@ -1284,13 +1283,15 @@ static int timer_tcp_conn_setup_parser (batch_context*const bctx, char*const val
     if (timer <= 0 || timer > 50)
     {
         fprintf(stderr, 
-                "%s error: input of the timer is expected  to be from 1 up to 50 seconds.\n", __func__);
+                "%s error: input of the timer is expected  to be from " 
+		"1 up to 50 seconds.\n", __func__);
         return -1;
     }
     bctx->url_ctx_array[bctx->url_index].connect_timeout= timer;
     return 0;
 }
-static int timer_url_completion_parser (batch_context*const bctx, char*const value)
+static int timer_url_completion_parser (batch_context*const bctx, 
+					char*const value)
 {
   const long timer = atol (value);
 
@@ -1321,7 +1322,8 @@ static int timer_url_completion_parser (batch_context*const bctx, char*const val
 
     return 0;
 }
-static int timer_after_url_sleep_parser (batch_context*const bctx, char*const value)
+static int timer_after_url_sleep_parser (batch_context*const bctx, 
+					 char*const value)
 {
     const long timer = atol (value);
 
@@ -1518,14 +1520,15 @@ static int is_non_ws (char*const ptr)
   return ! is_ws (ptr);
 }
 
-/****************************************************************************************
+/******************************************************************************
 * Function name - validate_batch
 *
-* Description - Validates all parameters in the batch. Calls validation functions for all sections.
+* Description - Validates all parameters in the batch. Calls validation 
+*               functions for all sections.
 * 
 * Input -      *bctx - pointer to the initialized batch context to validate
 * Return Code/Output - On success - 0, on failure - (-1)
-****************************************************************************************/
+*******************************************************************************/
 static int validate_batch (batch_context*const bctx)
 {
     if (validate_batch_general (bctx) == -1)
@@ -1545,14 +1548,14 @@ static int validate_batch (batch_context*const bctx)
     return 0;
 }
 
-/****************************************************************************************
+/******************************************************************************
 * Function name - validate_batch_general
 *
 * Description - Validates section general parameters
 * 
 * Input -       *bctx - pointer to the initialized batch context to validate
 * Return Code/Output - On success - 0, on failure - (-1)
-****************************************************************************************/
+********************************************************************************/
 static int validate_batch_general (batch_context*const bctx)
 {
     if (!strlen (bctx->batch_name))
@@ -1567,7 +1570,8 @@ static int validate_batch_general (batch_context*const bctx)
     }
     if (bctx->client_num_start < 0)
     {
-        fprintf (stderr, "%s - error: CLIENT_NUM_START is less than 0.\n", __func__);
+        fprintf (stderr, "%s - error: CLIENT_NUM_START is less than 0.\n", 
+		__func__);
         return -1;
     }
     if (bctx->client_num_start > bctx->client_num_max)
@@ -1657,14 +1661,14 @@ static int validate_batch_general (batch_context*const bctx)
 }
 
 
-/****************************************************************************************
+/******************************************************************************
 * Function name - validate_batch_url
 *
 * Description - Validates section URL parameters
 * 
 * Input -       *bctx - pointer to the initialized batch context to validate
 * Return Code/Output - On success - 0, on failure - (-1)
-****************************************************************************************/
+*******************************************************************************/
 static int validate_batch_url (batch_context*const bctx)
 {
   if (bctx->urls_num < 1)
@@ -1907,7 +1911,8 @@ int alloc_client_formed_buffers (batch_context* bctx)
                              (char *) calloc (cctx->post_data_len, sizeof (char))))
                         {
                           fprintf (stderr,
-                                   "\"%s\" error: failed to allocate client post_data buffer.\n", 
+                                   "\"%s\" error: failed to allocate client "
+				   "post_data buffer.\n", 
                                    __func__) ;
                           return -1;
                         }
@@ -1929,7 +1934,8 @@ int alloc_client_formed_buffers (batch_context* bctx)
                   
                   if (form_string_len)
                     {
-                      cctx->get_url_form_data_len = url->url_str_len + form_string_len + 1 +
+                      cctx->get_url_form_data_len = url->url_str_len + 
+		        form_string_len + 1 +
                         FORM_RECORDS_MAX_TOKENS_NUM*
                         (FORM_RECORDS_TOKEN_MAX_LEN + FORM_RECORDS_SEQ_NUM_LEN);
                       
@@ -1937,8 +1943,8 @@ int alloc_client_formed_buffers (batch_context* bctx)
                              (char *) calloc (cctx->get_url_form_data_len, sizeof (char))))
                         {
                           fprintf (stderr,
-                                   "\"%s\" error: failed to allocate client get_url_form_data buffer.\n", 
-                                   __func__) ;
+                                   "\"%s\" error: failed to allocate client "
+				   "get_url_form_data buffer.\n", __func__) ;
                           return -1;
                         }
                     }
@@ -1971,14 +1977,14 @@ int init_operational_statistics(batch_context* bctx)
 }
 
 
-/****************************************************************************************
+/******************************************************************************
 * Function name - post_validate_init
 *
 * Description - Performs post validate initializations of a batch context.
 * 
 * Input -       *bctx - pointer to the initialized batch context to validate
 * Return Code/Output - On success - 0, on failure - (-1)
-****************************************************************************************/
+*******************************************************************************/
 static int post_validate_init (batch_context*const bctx)
 {
   /*
@@ -2086,8 +2092,8 @@ int parse_config_file (char* const filename,
     {
       fprintf (stderr,
                "%s - failed to find configuration file \"%s\" with errno %d.\n"
-               "If you are using example configurations, note, that directory \"configs\" have "
-               "been renamed to \"conf-examples\".", 
+               "If you are using example configurations, note, that "
+	       	"directory \"configs\" have been renamed to \"conf-examples\".", 
                __func__, filename, errno);
       return -1;
     }
@@ -2172,7 +2178,8 @@ int parse_config_file (char* const filename,
       if (post_validate_init (&bctx_array[k]) == -1)
         {
           fprintf (stderr, 
-                   "%s - error: post_validate_init () for batch %d failed.\n",__func__, k);
+                   "%s - error: post_validate_init () for batch %d failed.\n",
+		   __func__, k);
           return -1;
         }
     }
@@ -2184,8 +2191,8 @@ int parse_config_file (char* const filename,
 /*******************************************************************************
 * Function name - load_form_records_file
 *
-* Description - Itializes client post form buffers, using credentials loaded from file.
-*               To be called after batch context validation.
+* Description - Itializes client post form buffers, using credentials loaded 
+* 		from file. To be called after batch context validation.
 *
 * Input -       *bctx - pointer to the batch context
 *                          
@@ -2211,7 +2218,8 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
   /* 
      Allocate the place to keep form records tokens for clients
   */
-  if (! (url->form_records_array =  calloc (bctx->client_num_max, sizeof (form_records_cdata))))
+  if (! (url->form_records_array =  calloc (bctx->client_num_max, 
+  					    sizeof (form_records_cdata))))
   {
       fprintf (stderr, 
                "%s - failed to allocate memory for url->form_records_array with errno %d.\n", 
@@ -2248,7 +2256,8 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
             {
               fprintf (stderr, 
                        "%s - warning: CLIENTS_NUM (%d) is less than the number of" 
-                       "records is the file form_records_file.\n", __func__, bctx->client_num_max);
+                       "records is the file form_records_file.\n", 
+		       __func__, bctx->client_num_max);
               sleep (3);
               break;
             }
@@ -2260,8 +2269,8 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
                                        &sep) == -1)
           {
               fprintf (stderr, 
-                       "%s - error: load_client_credentials_buffers () failed on records line \"%s\"\n", 
-                       __func__, fgets_buff);
+                       "%s - error: load_client_credentials_buffers () failed "
+		       "on records line \"%s\"\n", __func__, fgets_buff);
               fclose (fp);
               return -1 ;
           }
@@ -2274,8 +2283,8 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
     {
       fprintf (stderr, 
                "%s - error: CLIENTS_NUM (%d) is above the number " 
-               "of records in the form_records_file\nPlease, either decrease the CLIENTS_NUM "
-               "or add more records strings to the file.\n", 
+               "of records in the form_records_file\nPlease, either decrease "
+	       "the CLIENTS_NUM or add more records strings to the file.\n", 
                __func__, bctx->client_num_max);
       fclose (fp);
       return -1 ;
@@ -2367,8 +2376,9 @@ static int print_correct_form_usagetype (form_usagetype ftype, char* value)
 
       fprintf (stderr, 
                "\n%s - error: FORM_STRING value (%s) is not valid. \nPlease, use:\n"
-               "- to generate unique users with unique passwords two \"%%s%%d\" , something like " 
-               "\"user=%%s%%d&password=%%s%%d\" \n", __func__, value);
+               "- to generate unique users with unique passwords two \"%%s%%d\" "
+	       ", something like \"user=%%s%%d&password=%%s%%d\" \n", 
+	       __func__, value);
       break;
 
     case FORM_USAGETYPE_UNIQUE_USERS_SAME_PASSWORD:
@@ -2382,16 +2392,17 @@ static int print_correct_form_usagetype (form_usagetype ftype, char* value)
     case FORM_USAGETYPE_SINGLE_USER:
       fprintf (stderr, 
                "\n%s - error: FORM_STRING  value (%s) is not valid. \nPlease, use:\n"
-               "- for a single configurable user with a password two \"%%s\" , something like "
-                       "\"user=%%s&password=%%s\" \n",__func__, value);
+               "- for a single configurable user with a password two \"%%s\" "
+	       ", something like \"user=%%s&password=%%s\" \n",
+	       __func__, value);
       break;
 
     case FORM_USAGETYPE_RECORDS_FROM_FILE:
       fprintf (stderr, 
                "\n%s - error: FORM_STRING value (%s) is not valid. \nPlease, use:\n"
-               "- to load user credentials (records) from a file two \"%%s\" , something like "
-               "\"user=%%s&password=%%s\" \n and _FILE defined.\n", __func__, value);
-
+               "- to load user credentials (records) from a file two \"%%s\" "
+	       ", something like \"user=%%s&password=%%s\" \n and _FILE defined.\n", 
+	       __func__, value);
       break;
 
     default:

@@ -71,8 +71,9 @@ static void dump_clients (client_context* cctx_array);
 * Function name - stat_point_add
 *
 * Description - Adds counters of one stat_point object to another
-* Input -       *left -  pointer to the stat_point, where counter will be added
-*               *right -  pointer to the stat_point, which counter will be added to the <left>
+* Input -       *left  -pointer to the stat_point, where counter will be added
+*               *right -pointer to the stat_point, which counter will be 
+*                         added to the <left>
 * Return Code/Output - None
 ****************************************************************************************/
 void stat_point_add (stat_point* left, stat_point* right)
@@ -98,7 +99,7 @@ void stat_point_add (stat_point* left, stat_point* right)
   if (total_points > 0)
     {
       left->appl_delay = (left->appl_delay * left->appl_delay_points  + 
-                          right->appl_delay * right->appl_delay_points) / total_points;
+                 right->appl_delay * right->appl_delay_points) / total_points;
 
       left->appl_delay_points = total_points;
     }
@@ -110,7 +111,7 @@ void stat_point_add (stat_point* left, stat_point* right)
   if (total_points_2xx > 0)
     {
       left->appl_delay_2xx = (left->appl_delay_2xx * left->appl_delay_2xx_points  + 
-                          right->appl_delay_2xx * right->appl_delay_2xx_points) / total_points_2xx;
+                 right->appl_delay_2xx * right->appl_delay_2xx_points) / total_points_2xx;
       left->appl_delay_2xx_points = total_points_2xx;
     }
   else
@@ -143,8 +144,9 @@ void stat_point_reset (stat_point* p)
 * Function name - op_stat_point_add
 *
 * Description - Adds counters of one op_stat_point object to another
-* Input -       *left -  pointer to the op_stat_point, where counter will be added
-*               *right -  pointer to the op_stat_point, which counter will be added to the <left>
+* Input -       *left  -  pointer to the op_stat_point, where counter will be added
+*               *right -  pointer to the op_stat_point, which counter will be added 
+*                         to the <left>
 * Return Code/Output - None
 ****************************************************************************************/
 void op_stat_point_add (op_stat_point* left, op_stat_point* right)
@@ -266,11 +268,11 @@ int op_stat_point_init (op_stat_point* point, size_t url_num)
 *
 * Description - Updates operation statistics using information from client context
 *
-* Input -       *point                - pointer to the op_stat_point, where counters to be updated
-*               current_state         - current state of a client
-*               prev_state            - previous state of a client
-*               current_url_index - current url index of a the client
-*               prev_url_index    - previous url index of a the client
+* Input -       *point           - pointer to the op_stat_point, where counters to be updated
+*               current_state    - current state of a client
+*               prev_state       - previous state of a client
+*               current_url_index- current url index of a the client
+*               prev_url_index   - previous url index of a the client
 *
 * Return Code/Output - None
 ****************************************************************************************/
@@ -432,8 +434,9 @@ void dump_final_statistics (client_context* cctx)
            "- %s.log for errors and traces;\n"
            "- %s.txt for loading statistics;\n"
            "- %s.ctx for virtual client based statistics.\n"
-           "You may add -v and -u options to the command line for more verbouse output to %s.log file.\n",
-           bctx->batch_name, bctx->batch_name, bctx->batch_name, bctx->batch_name);
+           "You may add -v and -u options to the command line for more "
+	   "verbouse output to %s.log file.\n", bctx->batch_name, bctx->batch_name, 
+	   bctx->batch_name, bctx->batch_name);
 }
 
 /****************************************************************************************
@@ -441,7 +444,7 @@ void dump_final_statistics (client_context* cctx)
 *
 * Description - Dumps summary statistics since the start of load
 * Input -       *bctx - pointer to batch structure
-*               now -  current time in msec since epoch
+*               now   - current time in msec since epoch
 * Return Code/Output - None
 ****************************************************************************************/
 void dump_snapshot_interval (batch_context* bctx, unsigned long now)
@@ -459,8 +462,7 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
       total_current_clients += pending_active_and_waiting_clients_num (bctx + i);
     }
 
-  dump_snapshot_interval_and_advance_total_statistics (
-                                                       bctx, 
+  dump_snapshot_interval_and_advance_total_statistics (bctx, 
                                                        now, 
                                                        total_current_clients);
 
@@ -527,7 +529,7 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
 * Description - Outputs latest snapshot interval statistics. 
 *
 * Input -       period - latest time period in milliseconds
-*               *http - pointer to the HTTP collected statistics to output
+*               *http  - pointer to the HTTP collected statistics to output
 *               *https - pointer to the HTTPS collected statistics to output
 * Return Code/Output - None
 ****************************************************************************************/
@@ -549,10 +551,10 @@ void print_snapshot_interval_statistics (unsigned long period,
 /****************************************************************************************
 * Function name - dump_snapshot_interval_and_advance_total_statistics
 *
-* Description - Dumps snapshot_interval statistics for the latest loading time period and adds
-*               this statistics to the total loading counters 
+* Description - Dumps snapshot_interval statistics for the latest loading time 
+*               period and adds this statistics to the total loading counters. 
 *
-* Input -       *bctx - pointer to batch context
+* Input -       *bctx    - pointer to batch context
 *               now_time - current time in msec since the epoch
 *
 * Return Code/Output - None
