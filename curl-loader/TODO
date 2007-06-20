@@ -1,11 +1,26 @@
 Last updated: 20/06/2007
 
-Nearest release 0.32 may hopefully include: 
+Nearest release 0.33 may hopefully include: 
 
 1. Multi-post forms, suggested by Jeremy Hicks jehicks@novell.com
     http://curl.haxx.se/libcurl/c/curl_formadd.html
 
-2. Add an option to limit throughput per client. Libcurl is already supporting it.
+2. Performance improvements:
+   cached memory allocators, using libcurl API 
+   (Aleksandar Lazic <al-curlloader@none.at>):
+   http://curl.haxx.se/libcurl/c/curl_global_init_mem.html
+   Michael Moser has proposed to use the memory allocator like here:
+   http://www.hoard.org/
+   http://www.cs.umass.edu/%7Eemery/hoard/asplos2000.pdf
+
+3. HTML analyses. libcurl example is using libtidy in:
+   http://www.koders.com/c/fid7923BF828D0534D6B747ED138FCDD50DCFD13B3F.aspx
+
+4. A regular expression pattern for a search in a response body
+   Look in Apache JMeter.
+
+5. Regular expression operations for the header/s certain header and whether 
+   value matches a regular expression pattern
 
 
 ---------------------------------------------------------------------------------------------------- 
@@ -13,113 +28,94 @@ Nearest release 0.32 may hopefully include:
 Next releases:
 
 0. Performance improvements:
-
-- cached memory allocators, using libcurl API 
-   (Aleksandar Lazic <al-curlloader@none.at>):
-   http://curl.haxx.se/libcurl/c/curl_global_init_mem.html
-
-   Michael Moser has proposed to use the memory allocator like here:
-   http://www.hoard.org/
-   http://www.cs.umass.edu/%7Eemery/hoard/asplos2000.pdf
-
 - Testbed for 50K and 100K clients. We need a more powerful HW:
     2-4 CPUs/cores and 4-8 GB of memory
-
 - Thread affinity for curl-loader SMP/multi- core HW adaptation feature.
 
 
 1. Support more than current 2 tokens (up to 8) in 
-    FORM_RECORDS_FILE. Tokenize the input in cycle. 
+   FORM_RECORDS_FILE. Tokenize the input in cycle. 
 
 2. An option to download a url not only once a cycle, but according to its
    "Weight", e.g. several times prior to going to the next url.
 
-3. ERROR_RESPONSE_BODY - a regular expression pattern for a
-    search in a response body. If not found - error. Look in Apache
-   JMeter.
+3. Add an option to limit throughput per client. Libcurl is already supporting it.
 
-4. ERROR_HEADER and ERROR_HEADER_VALUE -  whether we get a 
-    certain header and whether value matches a regular expression pattern
+4. Logging to files headers and bodies of responses exists. We may wish to improve
+   it on a certain stage by using memory-mapped files from our custom write
+   finctions. 
+   Memory-mapped files are effective for logging, but always we know the size in
+   advance. Mapping -re-mapping and truncation, if taken too much, may be 
+   required.
 
-5. Logging to files headers and bodies of responses exists. We may wish to improve
-    it on a certain stage by using memory-mapped files from our custom write
-    finctions. 
-    Memory-mapped files are effective for logging, but always we know the size in
-    advance. Mapping -re-mapping and truncation, if taken too much, may be 
-    required.
+5. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
+   a number of TCP connections, that our virtual client can use (the default 
+   is up to 5), and, if persistant, what is the number of request-responses 
+   till the connection to be closed and re-established. 
+   Another proposal of Aleks is to make configurable HTTP 1.1 or 1.0, that
+   we will not implement unless it becomes a feature required by many users.
+   We can add to libcurl a new option - something like 
+   CURLOPT_CONNECTION_REUSENUM to pass a <max_number> of requests till 
+   connection refresh.
+   Note, that httperf (sessions) is a reference application.
 
-6. HTML analyses. libcurl example is using libtidy in:
-   http://www.koders.com/c/fid7923BF828D0534D6B747ED138FCDD50DCFD13B3F.aspx
+6. Configuration/making improvements: moving all source-files
+   to src directory etc.
 
-7. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
-   a number of TCP connections, that our virtual client can use (the default is up to 5), 
-   and, if persistant, what is the number of request-responses till the connection to be 
-   closed and re-established. 
-  Another proposal of Aleks is to make configurable HTTP 1.1 or 1.0, that
-  we will not implement unless it becomes a feature required by many users.
-  We can add to libcurl a new option - something like 
-  CURLOPT_CONNECTION_REUSENUM to pass a <max_number> of requests till 
-  connection refresh.
-  Note, that httperf (sessions) is a reference application.
+7. X.509 client certificates per each https, ftps url. Client certificate
+   for each client?
 
-8. Configuration/making improvements: moving all source-files
-    to src directory etc.
-
-9. X.509 client certificates per each https, ftps url. Client certificate
-    for each client?
-
-10. Support for CAPS (calls per second) defined mode. Currently, we are 
+8. Support for CAPS (calls per second) defined mode. Currently, we are 
    supporting only a certain number of virtual clients and CAPS is the derived
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter;
 
-11. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like;
+9. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like;
 
-12. Template-guided output of configurable statistics 
-   (what user wishes with desired string, names) to statistics file;
+10. Template-guided output of configurable statistics 
+    (what user wishes with desired string, names) to statistics file;
 
-13. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec);
+11. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec);
 
-14. Support for more protocols: telnet, SFTP, SCP, SSH, etc;
+12. Support for more protocols: telnet, SFTP, SCP, SSH, etc;
 
-15. Support for more HTTP and FTP features.
+13. Support for more HTTP and FTP features.
 
-16. Support for browsers bevavior simulation.
+14. Support for browsers bevavior simulation.
 
-Aleksandar Lazic <al-curlloader@none.at> has suggested to mimic
-the behavior of browsers/wget, etc by:
+   Aleksandar Lazic <al-curlloader@none.at> has suggested to mimic
+   the behavior of browsers/wget, etc by:
 
-"set max_connections_per_site <NUM>
-set deep_or_breadth          (DEEP|BREADTH)
-set deep_or_breadth_count    <NUM>
-set wait_human_read_time     <NUM>
+   "set max_connections_per_site <NUM>
+   set deep_or_breadth          (DEEP|BREADTH)
+   set deep_or_breadth_count    <NUM>
+   set wait_human_read_time     <NUM>
 
-repeat as long as deep_or_breadth_count is not reached {
+   repeat as long as deep_or_breadth_count is not reached {
 
-get site (e.g.: index.html)
-parse site and ( count links and get the needed elements from remote
+   get site (e.g.: index.html)
+   parse site and ( count links and get the needed elements from remote
                 server
              || if element is to get make new connection but not more
                 the max_connections_per_site
               )
 
-wait_human_read_time()
+   wait_human_read_time()
 
-if breadth && deep_or_breadth_count not reached {
-   get the next link from same directory-level (e.g.: /, /news/, ...)
- }elsif deep && deep_or_breadth_count not reached {
-   get the next link from the next directory-level
- }
-}"
+   if breadth && deep_or_breadth_count not reached {
+      get the next link from same directory-level (e.g.: /, /news/, ...)
+    }elsif deep && deep_or_breadth_count not reached {
+       get the next link from the next directory-level
+    }
+   }"
 
-Daniel Stenberg <daniel@haxx.se> has mentioned:
+   Daniel Stenberg <daniel@haxx.se> has mentioned:
+   "The http spec recommends using no more than two connections to a single
+   server, and I believe they intened the primary connection to be used to get
+   the main html, and then you do a second connection (with pipelining) to get
+   all the images etc that the main HTML refers to.
 
-"The http spec recommends using no more than two connections to a single
-server, and I believe they intened the primary connection to be used to get
-the main html, and then you do a second connection (with pipelining) to get
-all the images etc that the main HTML refers to.
-
-For libcurl, you would add an easy handle for each connection you want to
-make. libcurl's pipelining support doesn't currently allow you to do any fine-
-grained control on what gets pipelined or not, so if you enable it you'll get
-pipelining for every subsequent request sent to the same server."
+   For libcurl, you would add an easy handle for each connection you want to
+   make. libcurl's pipelining support doesn't currently allow you to do any fine-
+   grained control on what gets pipelined or not, so if you enable it you'll get
+   pipelining for every subsequent request sent to the same server."
