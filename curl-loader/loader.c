@@ -999,6 +999,7 @@ int client_tracing_function (CURL *handle,
 {
   client_context* cctx = (client_context*) userp;
   char*url_target = NULL, *url_effective = NULL;
+  url_context* url_ctx = &cctx->bctx->url_ctx_array[cctx->url_curr_index];
 
 #if 0
   char buf[300];
@@ -1011,7 +1012,7 @@ int client_tracing_function (CURL *handle,
 
   if (url_logging)
     {
-      url_target = cctx->bctx->url_ctx_array[cctx->url_curr_index].url_str;
+      url_target = url_ctx->url_str;
       
       /* Clients are being redirected back and forth by 3xx redirects. */
       curl_easy_getinfo (handle, CURLINFO_EFFECTIVE_URL, &url_effective);
@@ -1021,6 +1022,7 @@ int client_tracing_function (CURL *handle,
   const int url_print = (url_logging && url) ? 1 : 0;
   const int url_diff = (url_print && url_effective && url_target) ? 
     strcmp(url_effective, url_target) : 0;
+  long response_status = 0;
 
   switch (type)
     {
@@ -1087,7 +1089,7 @@ int client_tracing_function (CURL *handle,
       stat_data_in_add (cctx, (unsigned long) size);
 
       {
-        long response_status = 0, response_module = 0;
+        long response_module = 0;
         
         if (verbose_logging)
           fprintf(cctx->file_output, "%ld %s <= Recv header: eff-url: %s, url: %s\n", 
@@ -1163,16 +1165,6 @@ int client_tracing_function (CURL *handle,
                       cctx->cycle_num, cctx->client_name, response_status, data,
                       url_print ? url : "", url_diff ? url_target : "");
 
-                /*
-                  We are not marking client on 401 and 407 as coming to the
-                  error state, because the responses are just authentication 
-                  challenges, that virtual client may overcome.
-                */
-                if (response_status != 401 || response_status != 407)
-                  {
-                    cctx->client_state = CSTATE_ERROR;
-                  }
-
                 /* First header of 4xx response */
                 first_hdr_4xx_inc (cctx);
                 stat_4xx_inc (cctx);  /* Increment number of 4xx responses */
@@ -1191,8 +1183,6 @@ int client_tracing_function (CURL *handle,
                     cctx->cycle_num, cctx->client_name, response_status, data,
                     url_print ? url : "", url_diff ? url_target : "");
 
-                cctx->client_state = CSTATE_ERROR;
-
                 /* First header of 5xx response */
                 first_hdr_5xx_inc (cctx);
                 stat_5xx_inc (cctx);  /* Increment number of 5xx responses */
@@ -1210,7 +1200,30 @@ int client_tracing_function (CURL *handle,
             /* FTP breaks it: - cctx->client_state = CSTATE_ERROR; */
             break;
           }
+      } /* switch of response status */
+
+      if (url_ctx->resp_status_errors_tbl)
+        {
+          if (response_status < 0 ||
+              response_status > URL_RESPONSE_STATUS_ERRORS_TABLE_SIZE ||
+              url_ctx->resp_status_errors_tbl[response_status])
+            {
+              cctx->client_state = CSTATE_ERROR;
+            }
+        }
+      else
+      {
+        if (response_status < 0 || response_status >= 400)
+          {
+            /* 401 and 407 responses are just authentication challenges, that 
+              virtual client may overcome. */
+            if (response_status != 401 || response_status != 407)
+              {
+                cctx->client_state = CSTATE_ERROR;
+              }
+          }
       }
+
       break;
 
     case CURLINFO_DATA_IN:

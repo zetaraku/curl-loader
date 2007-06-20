@@ -30,6 +30,8 @@
 #define URL_SHORT_NAME_LEN 12
 #define URL_AUTH_STR_LEN 64
 
+#define URL_RESPONSE_STATUS_ERRORS_TABLE_SIZE 600
+
 
 /*
   Application types of URLs.
@@ -78,23 +80,23 @@ typedef struct url_context
    /* URL buffer */
   char* url_str;
 
+  /* URL buffer length*/
   size_t url_str_len;
 
-    
+  /* The short-cut URL name to be used in Load Status GUI.  */
   char url_short_name [URL_SHORT_NAME_LEN + 1];
 
   /*
-    Used instead of URL string. If true, current url will be used and not some
-    new URL string. Useful e.g. when POST-ing to the form, obtained by the
-    previous GET fetching. 
+    Used instead of URL string. If true, the current url will be used. 
+    Useful e.g. when POST-ing to the form, obtained by the previous GET fetching. 
     Cannot be used for the first URL.
   */
   int url_use_current;
 
   /*
-    If true, the url is done only once and when previous urls have
-    been accomplished. Useful for a single logoff operation. It is done,
-    when previous URLs have been fetched.
+    If true, such url is done only once and not cycled. 
+    Useful for a single login/logoff operation. A url with such flag to be
+    fetched only, when previous cycling URLs have been accomplished.
   */
   int url_dont_cycle;
 
@@ -114,13 +116,13 @@ typedef struct url_context
   size_t req_type;
 
      /* 
-      The username to be used to access the URL by filling the POST 
-      form or in GET url
+      The username to be used to access a URL by filling the POST 
+      form or in GET url.
    */
   char username[URL_AUTH_STR_LEN];
 
   /* 
-     The password to be used to access the URL by filling the POST form or 
+     The password to be used to access a URL by filling the POST form or 
      in GET url.
   */
   char password[URL_AUTH_STR_LEN];
@@ -137,7 +139,11 @@ typedef struct url_context
      FORM_USAGETYPE_SINGLE_USER  - like "user=%s&password=%s";
 
      FORM_USAGETYPE_RECORDS_FROM_FILE
-     - like "user=%s&password=%s" and form_records_file defined;
+     Record file enables up to 16 record tokens to be used. Thus, an appropriate
+     form to include up to 16 form names with "=%s" to be filled by the record tokens
+     from a file:
+     "form1=%s&form2=%s&form3=%s.... &form16=%s", which for user and password form could look like:
+     "user=%s&password=%s
 
      FORM_USAGETYPE_AS_IS - use the string provided AS IS;
    */
@@ -150,8 +156,8 @@ typedef struct url_context
 
   /*
     The file with strings like "user:password", where separator may be 
-    ':', '@', '/' and ' ' (space) in line with RFC1738. The file may be created
-    as a dump of DB tables of users and passwords.
+    ',', ';', ':', '@', '/' and ' ' (space). The file may be created as a dump of DB tables 
+    of users and passwords.
   */
   char* form_records_file;
 
@@ -173,10 +179,10 @@ typedef struct url_context
   */
   char* upload_file;
 
-  /* Size of the file to upload */
+  /* Size of the file to upload in bytes. */
   off_t upload_file_size;
 
-  /* File pointer to the open file */
+  /* File pointer to the open upload file */
   FILE* upload_file_ptr;
 
   /* Web authentication method. If 0 - no Web authentication */
@@ -184,7 +190,7 @@ typedef struct url_context
   
   /* 
      Username:password. If NULL, username and password are
-     combined to make it
+     combined to make it.
   */
   char* web_auth_credentials;
 
@@ -193,36 +199,42 @@ typedef struct url_context
   
   /* 
      Username:password. If NULL, username and password are
-     combined to make it
+     combined to make it.
   */
   char* proxy_auth_credentials;
 
 
     /*
-
+      When true, an existing connection will be closed and connection
+      will be re-established (attempted).
     */
   long fresh_connect; 
 
     /*
-     Maximum time to estblish TCP connection with server (including resolving).
+     Maximum time to establish TCP connection with a server (including resolving).
      If zero, the global connect_timeout default is taken.
    */
   long connect_timeout;
 
-  
    /*
-     Maximum time to accomplish fetching  of the url
+     Maximum time to accomplish fetching  of a url.
    */
   unsigned long timer_url_completion;
 
-  /* Time to relax/sleep after fetching this url (msec).*/
+  /* 
+     Time to relax/sleep after fetching this url (msec). The timeout
+     actually emulates user behavior. A user normally needs time to 
+     read the page retrived prior to making another click.
+   */
   unsigned long timer_after_url_sleep;
 
   /* When positive, means ftp active. The default is passive. */
   int ftp_active;
 
+  /* Logs headers of HTTP responses to files, when true. */
   int log_resp_headers;
 
+  /* Logs bodies of HTTP responses to files, when true. */
   int log_resp_bodies;
 
 
@@ -236,7 +248,13 @@ typedef struct url_context
   */
   long url_ind;
 
+  /* 
+     Directory name to be used for the files with logging if headers and 
+     bodies of HTTP responses. 
+  */
   char* dir_log;
+
+  unsigned char *resp_status_errors_tbl;
 
 } url_context;
 

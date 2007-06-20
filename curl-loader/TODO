@@ -1,21 +1,11 @@
-Last updated: 12/06/2007
-
+Last updated: 20/06/2007
 
 Nearest release 0.32 may hopefully include: 
 
 1. Multi-post forms, suggested by Jeremy Hicks jehicks@novell.com
     http://curl.haxx.se/libcurl/c/curl_formadd.html
 
-2. ERROR_RESPONSE_CODES - add a list or codes considered
-   as errors, or not considered as error conditions on a per-url bases. 
-   By default all HTTP 5xx codes and 4xx -401-407 are considered as errors.
-   Plus means add to a url errors list, where minus means remove from a
-   url error list.
-   Something like ERROR_RESPONSE_CODES="+100+101-500-503"
-
-3. Add an option to limit throughput per client. Libcurl is already supporting it.
-
-
+2. Add an option to limit throughput per client. Libcurl is already supporting it.
 
 
 ---------------------------------------------------------------------------------------------------- 

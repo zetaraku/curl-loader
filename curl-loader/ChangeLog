@@ -1,5 +1,20 @@
 version 0.31 ?
 
+* Newly added tag per url RESPONSE_STATUS_ERRORS supports changes to the
+   default set of response statuses considered by errors. By default 4xx without
+   401 and 407 and all 5xx response codes are treated as errors.
+   Now you can either add a status to the errors or remove it. Sign + adds, - removes.
+   The syntaxes is a line of tokens separated by ',', where each tokens begins with either
+   + or - and is followed by the response status number from 0 up to 600.
+	
+   For example,  the effect of RESPONSE_STATUS_ERRORS="+200,-404"
+   is that 200 responses will be considered for that url as errors, whereas 404 
+   will be considered as success. File ./conf-examples/resp_errors.conf added.
+
+* Support of form-post tokens file (former credentials file) has been enhanced
+   to use up to 16 tokens, which means up to 16 forms to fill.
+   New separators added with the following supported: , : ; @ / and space.
+
 * Fixed a bug with ramp-up being stopped occasionally a long prior
    to the clients number reached the desired CLIENTS_MAX_NUM.
 

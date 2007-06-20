@@ -61,6 +61,9 @@
 #define AUTH_NTLM "NTLM"
 #define AUTH_ANY "ANY"
 
+static unsigned char 
+resp_status_errors_tbl_default[URL_RESPONSE_STATUS_ERRORS_TABLE_SIZE];
+
 
 /*
   value - supposed to be a null-terminated string.
@@ -127,7 +130,7 @@ static int timer_after_url_sleep_parser (batch_context*const bctx, char*const va
 static int ftp_active_parser (batch_context*const bctx, char*const value);
 static int log_resp_headers_parser (batch_context*const bctx, char*const value);
 static int log_resp_bodies_parser (batch_context*const bctx, char*const value);
-
+static int response_status_errors_parser (batch_context*const bctx, char*const value);
 
 static fparser find_tag_parser (const char* tag);
 
@@ -181,6 +184,7 @@ static const tag_parser_pair tp_map [] =
     {"FTP_ACTIVE", ftp_active_parser},
     {"LOG_RESP_HEADERS", log_resp_headers_parser},
     {"LOG_RESP_BODIES", log_resp_bodies_parser},
+    {"RESPONSE_STATUS_ERRORS", response_status_errors_parser},
 
     {NULL, 0}
 };
@@ -417,9 +421,7 @@ static int load_form_record_string (char*const input,
         }
     }
 
-
-  char *strtokp = 0;
-  char * token;
+  char * token = 0, *strtokp = 0;
   size_t token_count  = 0;
 
   for (token = strtok_r (input, separator, &strtokp); 
@@ -1380,6 +1382,75 @@ static int log_resp_bodies_parser (batch_context*const bctx, char*const value)
   return 0;
 }
 
+static int response_status_errors_parser (batch_context*const bctx, 
+                                          char*const value)
+{
+  url_context* url = &bctx->url_ctx_array[bctx->url_index];
+ 
+  /* Allocate the table */
+  if (! (url->resp_status_errors_tbl = 
+         calloc (URL_RESPONSE_STATUS_ERRORS_TABLE_SIZE, 
+                 sizeof (unsigned char))))
+    {
+      fprintf (stderr, "%s - error: calloc () failed with errno %d.\n", 
+              __func__, errno);
+      return -1;
+    }
+
+  /* Copy the default table */
+  memcpy (url->resp_status_errors_tbl, 
+          resp_status_errors_tbl_default,
+          URL_RESPONSE_STATUS_ERRORS_TABLE_SIZE);
+
+  long status = 0;
+  const char separator =  ',';
+  char * token = 0, *strtokp = 0;
+  size_t token_len = 0;
+
+  for (token = strtok_r (value, &separator, &strtokp); 
+       token != 0;
+       token = strtok_r (0, &separator, &strtokp))
+    {
+      if ((token_len = strlen (token)) < 2)
+        {
+          fprintf (stderr, "%s - error: token %s is too short.\n"
+                   "Each valid token should start from + or - with a following "
+                   "response status number.\n", __func__, token);
+          return -1;
+        }
+
+      if (*token != '+' && *token != '-')
+        {
+          fprintf (stderr, "%s - error: token %s does not have leading + or - symbol.\n"
+                   "Each valid token should start from + or - with a following "
+                   "response status number.\n", __func__, token);
+          return -1;
+        }
+
+      status = atol (token + 1);
+
+      if (status < 0 || status > URL_RESPONSE_STATUS_ERRORS_TABLE_SIZE)
+        {
+          fprintf (stderr, "%s - error: token %s non valid.\n"
+                   "Each valid token should start from + or - with a following "
+                   "response status number in the range from 0 up to %d.\n", 
+                   __func__, token, URL_RESPONSE_STATUS_ERRORS_TABLE_SIZE);
+          return -1;
+        }
+
+      if (*token == '+')
+        {
+          url->resp_status_errors_tbl[status] = 1;
+        }
+      else if (*token == '-')
+        {
+          url->resp_status_errors_tbl[status] = 0;
+        }
+    }
+
+  return 0;
+}
+
 static url_appl_type 
 url_schema_classification (const char* const url)
 {
@@ -1976,6 +2047,20 @@ static int post_validate_init (batch_context*const bctx)
   return 0;
 }
 
+static  void set_default_response_errors_table ()
+{
+  memset (&resp_status_errors_tbl_default, 
+          0, 
+          sizeof (resp_status_errors_tbl_default));
+
+  memset (resp_status_errors_tbl_default + 400, 
+          1,
+          sizeof (resp_status_errors_tbl_default) - 400);
+
+  resp_status_errors_tbl_default[401] = 0;
+  resp_status_errors_tbl_default[407] = 0;
+}
+
 /*******************************************************************************
 * Function name - parse_config_file
 *
@@ -2014,6 +2099,8 @@ int parse_config_file (char* const filename,
                __func__, filename, errno);
       return -1;
     }
+
+  set_default_response_errors_table ();
 
   while (fgets (fgets_buff, sizeof (fgets_buff) - 1, fp))
     {

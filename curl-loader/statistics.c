@@ -288,24 +288,8 @@ void op_stat_update (op_stat_point* op_stat,
 
   if (prev_state == CSTATE_URLS)
     {
-      /*
-      if (current_state != CSTATE_URLS)
-        {
-          
-          // If loading has advanced to the next state, update operational 
-          // statistics counters of the last URL (sometimes, the last is also
-          // the first and the only)
-          (current_state == CSTATE_ERROR) ? 
-            op_stat->url_failed[op_stat->url_num-1]++ : 
-            op_stat->url_ok[op_stat->url_num-1]++;
-        }
-      else
-      */
-        {
-           (current_state == CSTATE_ERROR) ? 
-             op_stat-> url_failed[prev_url_index]++ : 
-             op_stat->url_ok[prev_url_index]++;
-        }
+      (current_state == CSTATE_ERROR) ? op_stat-> url_failed[prev_url_index]++ :
+        op_stat->url_ok[prev_url_index]++;
     }
   
   return;
