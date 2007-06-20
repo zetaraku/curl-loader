@@ -1474,6 +1474,12 @@ static void free_url (url_context* url, int clients_max)
       free (url->dir_log);
       url->dir_log = 0;
     }
+
+  if (url->resp_status_errors_tbl)
+    {
+      free (url->resp_status_errors_tbl);
+      url->resp_status_errors_tbl = 0;
+    }
 }
   
 /****************************************************************************************

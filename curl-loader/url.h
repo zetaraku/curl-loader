@@ -254,6 +254,13 @@ typedef struct url_context
   */
   char* dir_log;
 
+  /*
+    An optional table of response status erros. If a response status is 404,
+    when resp_status_errors_tbl[404] is true, it is considered as an error
+    response. 
+    By default 4xx responses without 401 and 407 and all 5xx responses
+    are considered as errors.
+  */
   unsigned char *resp_status_errors_tbl;
 
 } url_context;
