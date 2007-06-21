@@ -30,7 +30,7 @@
              client protocol stacks, namely, HTTP and FTP stacks of 
              <a href="http://curl.haxx.se/libcurl/features.html">libcurl</a>,
              TLS/SSL of <a href="http://www.openssl.org/support/faq.html">openssl</a>, 
-             and supports login and authentication flavors.
+             simulates user behavior and supports login and authentication flavors.
   </p>
       <p>The tool is useful for performance loading of various application services,
               using HTTP, HTTPS, FTP and FTPS, for web-sites testing and traffic generation.
@@ -38,11 +38,11 @@
              establishment, sending of requests, receiving responses, headers and data 
              received/sent, errors from network, TLS/SSL and application (HTTP, FTP) levels.
   </p>
-      <p> Virtual clients are groupped to so-called batches of clients, performing
+      <p> Virtual clients are grouped to so-called batches of clients, performing
               the same sort of activities, like:
   </p>
        <p>     - authentication login;  </p>
-       <p>     - user activity simulation (UAS) by fetching several urls and timeouts in between; </p>
+       <p>     - user activity simulation by fetching several urls and timeouts in between; </p>
        <p>     - logoff. </p>
       <p> The tool can be easily extended to generate sftp, telnet, tftp, ldap, ssh, scp etc other 
               application protocols, supported by the great libcurl library.
@@ -52,8 +52,8 @@
     <section id="features">
       <title>Features List</title>
       <p>
-- Virtual clients number. The tools runs depending on your HW and scenario up to 
-5000-15000 simultaneously loading clients, all from a single curl-loader process.
+- Virtual clients number. The tools runs depending on your HW and scenario
+5000-15000 and more simultaneously loading clients, all from a single curl-loader process.
 Actual number of clients may be several times (if not tens) higher than the number of 
 simultaneously loading clients and is limited only by memory. Each client performs 
 loading from its own source IP-address or, as an option, all clients share the same 
@@ -76,7 +76,10 @@ configurable posted string (post-forms) are the options. Another option is
 loading of users with credentials from a text file;
       </p>
       <p>
-- HTTP user logooff with POST, POST after GET, or GET (cookies); POST logoff with
+- HTTP POST/GET forms with up to 16 tokens loaded from file;
+      </p>
+      <p>
+- HTTP user logoff with POST, GET+POST, or GET (cookies); POST logoff with
 configurable posted string (post-forms);
       </p>
       <p>
@@ -112,7 +115,7 @@ and FTPS urls in a single batch (test plan) configuration;
 - Inter/after URL "sleeping" timers;
       </p>
       <p>
-- Logfile with tracing activities for each virtual client. The logfile is atomatically 
+- Logfile with tracing activities for each virtual client. The logfile is automatically 
 rewinded, when reaching configurable size preventing disk crashes;
       </p>
       <p>

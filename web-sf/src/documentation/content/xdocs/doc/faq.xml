@@ -49,9 +49,11 @@ loading clients. To reach 10K simultaneously loading clients we would recommend 
 single 3.2 GHz Intel or 2.2 GHz AMD and 1.5-2 GB of memory.<br/>
 <br/>
 When loading from a multi-CPU (or multi-core) systems, a loading model with the number of
-curl-loader processes equal to the number of CPUs may be most effective and deliver even higher
-numbers (than 10K) of simultaneously loading clients from a single PC. If you are thinking, 
-tuning, optimizing and getting our advise - the sky is the limit.
+curl-loader threads equal to the number of logical CPUs seen in /proc/cpuinfo may be the most effective 
+and deliver even higher numbers (than 10K) of simultaneously loading clients from a single PC. 
+To run a batch in several threads use the command line option -t &lt;number-of-threads&gt;.<br/>
+<br/>
+If you are thinking, tuning, optimizing and getting our advise - the sky is the limit.
        </answer>
     </faq>
   </faqsection>
@@ -88,7 +90,7 @@ What are the building pre-requirements?
          do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink. <br/>
          <br/>
          Tarball of curl is included to the current release. When libcurl or curl-loader 
-         have building issues, correct them in the Makefile. 
+         has building issues, correct them in the Makefile. 
        </answer>
     </faq>
     <faq id="making">
@@ -120,7 +122,7 @@ How can I create loading configuration file?
       <answer>
         <p>
 To run a load create your configuration file to be passed to
-curl-loader using -f commmand line option, e.g.<br/>
+curl-loader using -f command line option, e.g.<br/>
          <br/>
          #curl-loader -f ./conf-user/user_batch.conf<br/>
         <br/>
@@ -137,7 +139,7 @@ curl-loader using -f commmand line option, e.g.<br/>
       <answer>
        <p>
 Configuration file or "batch configuration file" consists from tag=value
-strings, groupped into 2 sections:<br/>
+strings, grouped into 2 sections:<br/>
 - General;<br/>
 - URLs;<br/>
 <br/>
@@ -263,28 +265,29 @@ The first URL operation, which is doing each simulated user/client is login. Log
 performed by GET-ing the page (with 3xx HTTP redirections handled inside)
 with the first url http://192.168.0.1:8888/vax/root/Admin, called shortly "Login-GET". 
 Maximum time, that we consider appropriate for this operation is 10000 msecs. 
-The 2000 msec "sleep" timer simulates here the time spended by user to fill the 
-username and password to the POST-form received by the GET.<br/>
+The 2000 msec "sleep" timer simulates here the time by user to fill the username 
+and password to the POST-form received by the GET.<br/>
 <br/>
 The second url is empty and is used for POST-ing to the "current" url, using the form.
 Such empty string urls are allowed only, when URL_USE_CURRENT=1 is specified.
 The url is named as "Login-POST". Username "admin" and password "admin-passphrase"
 are used as the single user type and "filled" to the FORM_STRING= username=%s&amp;password=%s. 
 After "filling", the resulting form, which is sent to the web-service is 
-"username=admin&amp;password=admin-passphrase". There are other options available for FORM_STRING, 
-such as unique generated users, unique generated passwords or credentials loaded from a file; 
-these options will be described later. The maximum time allowed for the POST is 4000 msecs, 
-and the time of waiting/sleeping till the next url is 1000 msecs. 
-Worth to mention, that when the authentication is accomplished successfully,
-server sets to client cookies and redirects the client to the service page, which is the next url
+"username=admin&amp;password=admin-passphrase". There are other options 
+available for FORM_STRING, such as unique generated users, unique generated 
+passwords or credentials loaded from a file; these options will be described later. 
+The maximum time allowed for the POST is 4000 msecs, and the time of 
+waiting/sleeping till the next url is 1000 msecs. Worth to mention, that when 
+the authentication is accomplished successfully, server sets to client cookies 
+and redirects the client to the service page, which is the next url
 (note, that all redirections are handled internally).
  <br/>
  <br/>
 The third url is http://192.168.0.1:8888/vax/Admin/ServiceList.do with a short name
 "Service List". After the url is done a client comes to the forth url 
 http://192.168.0.1:8888/vax/Admin/Logout.do to for a logoff. This batch (testing plan)
-does not control and limit the time spended for logoff, which is indicated by
-TIMER_URL_COMPLETION = 0. After doing a 1000 msecs sleeping, a client comes
+does not control and limit the time for logoff, which is indicated by 
+TIMER_URL_COMPLETION = 0. After doing a 1000 msecs sleeping, a client comes 
 back to the first url to repeat the sequence till the number of cycles is expired. <br/>
  <br/>
 If we would like, that login and logoff to be done for each client only one, we would
@@ -292,7 +295,7 @@ add to the first, second and forth url the tag URL_DONT_CYCLE=1 to mark the urls
  as not-cycled to be fetched only once. <br/>
  <br/>
 
-Note, that both quotted and non-quotted string are supported as the tags values.<br/>
+Note, that both quoted and non-quoted strings are supported as the tags values.<br/>
 <br/>
 For more examples, please, look at the files in "conf-examples" directory.<br/>
         </p>
@@ -319,12 +322,12 @@ lower starting number, managed by the next tag CLIENTS_NUM_START and
 ramped-up each second by adding CLIENTS_RAMPUP_INC clients to the load.<br/>
 <br/>
 CLIENTS_NUM_START - number of clients to start the load with. If the tag is 
-not present or zero, CLIENTS_RAMPUP_INC value will be taken instead. 
+not present or zero CLIENTS_RAMPUP_INC value will be taken instead. 
 If neither CLIENTS_NUM_START nor CLIENTS_RAMPUP_INC are present
 or have positive value, the loader will take CLIENTS_NUM_MAX as the number
 of clients to start the load.<br/>
 <br/>
-CLIENTS_RAMPUP_INC - number of clients to be added to the load in the automatical
+CLIENTS_RAMPUP_INC - number of clients to be added to the load in the auto
 mode every second till CLIENTS_NUM_MAX number will be reached. For machines
 with a single CPU we would recommend not to keep the number above 50-100, whereas
 for dual-CPU machines you can keep it as large as 200-300.<br/>
@@ -338,7 +341,7 @@ number from 0-32. For IPv6 only CIDR values from 0 to 128 are supported.<br/>
 <br/>
 IP_ADDR_MIN and IP_ADDR_MAX are the interval of IP-addresses to be used
 for the clients. The interval of the addresses should be large enough to supply
-a dedicated IP for each client. Another mode, that can be used is the same IP
+a dedicated IP for each client. Another mode that can be used is "single IP address"
 for all clients; when IP_ADDR_MIN and IP_ADDR_MAX contain the same valid
 address, it will be used for all clients. If the IP-addresses specified by the tags do not exist,
 curl-loader adds them as the secondary IP-addresses to the loading network interface.<br/>
@@ -347,14 +350,14 @@ and from server back to the client addresses. Another route to ensure, when is a
 is to/from DNS server for resolving.<br/>
 <br/>
 CYCLES_NUM is the number of cycles to be performed. Any positive value is
-valid here as well as (-1), which means cycle indefinetely. Loading can be normally
+valid here as well as (-1), which means cycle indefinitely. Loading can be normally
 stopped at any moment by pressing Cntl-C; all statistics will be collected properly and files
 closed to contain necessary information. Note, that cycling relates only to the URLs not
 containing tag URL_DONT_CYCLE = 1. Curl-loader enables two optional non-cycling
 areas: the first before the cycling url/s area and the second after it.<br/>
 <br/>
 USER_AGENT provides an option to over-write the default MSIE-6-like HTTP header
-User-Agent. Place here a quotted string to emulate the browser, that you need.
+User-Agent. Place here a quoted string to emulate the browser that you need.
 The header is entered globally. If you need an option to customize it on a per-URL bases,
 please, use tag HEADER="User-Agent: the string of my favorite browser".<br/>
 <br/>
@@ -376,7 +379,7 @@ Status GUI. It improves appearance of the current status at the console. Recomme
 to configure it.<br/>
 <br/>
 URL_USE_CURRENT - used in combination with an empty string URL="" to indicate,
-that the current url, fetched by the previous operation, should be used."Current url" is 
+that the current url, fetched by the previous operation, should be used. "Current url" is 
 useful e.g., when POST-ing at the url, resulting from the previous GET. Note, that 
 HTTP redirections are handled internally and there is no need to use "current url" 
 approach for that purpose. <br/>
@@ -386,7 +389,7 @@ non-cycling areas: the first before the cycling url/s area and the second after 
 The first non-cycling area may be used for login, authentication, etc. single time
 operations, whereas the second non-cycling area is due to a single time logoff, for example.<br/>
 <br/>
-REQUEST_TYPE - HTTP request method to be choosen from GET, POST or PUT.<br/>
+REQUEST_TYPE - HTTP request method to be chosen from GET, POST or PUT.<br/>
 <br/>
 UPLOAD_FILE - filename, including path, to the file to be used for uploading.
 The path should be taken from the curl-loader place, e.g. ./conf-examples/bax.conf <br/>
@@ -414,7 +417,7 @@ either from the relevant tags or from file.<br/>
 <br/>
 <br/>
 FORM_STRING is the configurable template form to be used for POST-ing credentials
-ot any other records.<br/>
+or any other records.<br/>
 To generate multiple unique users with unique passwords FORM_USAGE_TYPE=
 "UNIQUE_USERS_AND_PASSWORDS", and the FORM_STRING to be a template like
 "username=%s%d&amp;password=%s%d". First '%s' will be substituted by the 
@@ -424,7 +427,7 @@ number. For example, if USERNAME=robert, PASSWORD=stam
 and FORM_STRING "username=%s%d&amp;password=%s%d", the final POST string, 
 used for the client number 1, will be  "username=robert1&amp;password=stam1".<br/>
 In this case USERNAME and PASSWORD strings are used just 
-as base-words for generating unique user credentials by appending an number.          
+as base-words for generating unique user credentials by appending a client sequence number.          
 <br/>
 When FORM_USAGE_TYPE="UNIQUE_USERS_SAME_PASSWORD" template
 of FORM string to be something like "username=%s%d&amp;password=%s", where
@@ -442,7 +445,7 @@ POST-ed indeed AS IS.<br/>
 <br/>
 <br/>
 FORM_RECORDS_FILE specifies the path to the file with credentials or any other tokens.
-(full-path or relative to curl-loader). A text file with usernames and passwords 
+(full-path or relative to curl-loader location). A text file with usernames and passwords 
 with the structure of each string like: &lt;teken1&gt;&lt;separator&gt;&lt;token2&gt;
 can be used as an input. According to RFC1738, only reserved ':', '@', '/' and probably 
 ' ' (space) are safe to use as separators between username and password. An example of 
@@ -470,7 +473,7 @@ to synthesize the credentials.<br/>
 <br/>
 FRESH_CONNECT is used to define on a per url bases, whether the connection 
 should be re-used or closed and re-connected after request-response cycle. 
-When 1, the TCP connection to be re-established. The system default is to keep 
+When 1, the TCP connection will be re-established. The system default is to keep 
 the connection and re-use it as much as server and protocol allow it. Still the system
 default could be changed by the command-line option -r.<br/>
 <br/>
@@ -481,13 +484,13 @@ be changed using -c command-line option.<br/>
 TIMER_URL_COMPLETION is the time in milli-seconds to allow a 
 url fetching operation, including all internal re-directions. The legal values are 0, 
 which means no limit on url-completion time, or above 20 msecs. When a value of 
-the tag is above 0, we are monitoring the url-fetching and cancelling it, 
+the tag is above 0, we are monitoring the url-fetching and canceling it, 
 if above the specified milliseconds. The results are presented on the Load Status 
 GUI as the operation "Timeouted" statistics and logged to all statistics files as 
 T-Err number.<br/>
 <br/>
-TIMER_AFTER_URL_SLEEP is the time in milli-secondsfor client to sleep 
-after fetching a URL prior to the next URL to do. Zero (0) means don't wait 
+TIMER_AFTER_URL_SLEEP is the time in milli-seconds for client to sleep 
+after fetching a URL prior to dealing with the next URL. Zero (0) means don't wait 
 and schedule client after the URL immediately.<br/>
 <br/>
 FTP_ACTIVE when defined as 1 forced FTP from the default passive to
@@ -502,6 +505,16 @@ LOG_RESP_BODIES when defined as 1 logs response headers to a file.
 Directory &lt;batch-name&gt; is created with subdirs url0, url1... url&lt;n&gt;
 Headers of responses are logged to the files named:
 cl-&lt;client-num&gt;-cycle-&lt;cycle-num&gt;.body<br/>
+<br/>
+RESPONSE_STATUS_ERRORS supports changes to the default set of per-url responses 
+considered as errors. By default 4xx without 401 and 407 and all 5xx response codes 
+are treated as errors. Now you can either add a status to the errors set or remove it. 
+Sign + (plus) adds, - (minus) removes. The syntax is a line of tokens separated by ',', 
+where each tokens begins with either + or - and is followed by the response status 
+number from 0 up to 600.<br/>
+For example,  the effect of RESPONSE_STATUS_ERRORS="+200,-404"
+is that 200 responses will be considered for that url as errors, whereas 404 
+will be considered as success.<br/>
 <br/>
       </answer>
     </faq>
@@ -619,7 +632,7 @@ as hyper, but uses poll() system call for demultiplexing.
       </question>
       <answer>
 curl-loader outputs to the console loading status and statistics as the 
-Load Status GUI ouput, where the left colomn is for the latest interval 
+Load Status GUI output, where the left column is for the latest interval 
 and the right is for the summary numbers since load start. 
 A copy of the output is also saved in the file &lt;batch-name&gt;.txt<br/>
        </answer>
@@ -649,7 +662,7 @@ initialization to the network interface of your choice and may be seen by the co
 <br/>
 Command ping (man ping) has an option -I to force the ping to be issued from
 a certain ip-address. To test, that your routing is OK, you may use, e.g.:<br/>
-#ping -I &lt;the client address you wish to use&gt; url-taget<br/>
+#ping -I &lt;the client address you wish to use&gt; url-target<br/>
 <br/>
 When it works - it will be OK.
 Y may also wish to read a bit into the linux routing/networking and DNS resolving
@@ -660,19 +673,19 @@ HOWTOS.<br/>
 
   <faq id="logfile">
       <question>
-     Where is the detaled log of all virtual clients activities and how to read it?
+     Where is the detailed log of all virtual clients activities and how to read it?
       </question>
       <answer>
 Detailed log is written to the file named:<br/>
 &lt;batch-name&gt;.log:<br/>
 <br/>
-The semantics of logfile output, using command line options -v (verbous) and -u 
+The semantics of logfile output, using command line options -v (verbose) and -u 
 (url print):<br/>
 "Cycle number", "Client number (ip-address)" - some information string, e.g.:<br/>
 <br/>
 4 39 (192.168.0.39)  :== Info:   Trying 10.30.6.42... : eff-url: http://10.30.6.42:8888/server/Admin/ServiceList.do, url:<br/>
 <br/>
-Which meas: cycle: 4, client number 39 with ipv4 address (192.168.0.39), 
+Which means: cycle: 4, client number 39 with ipv4 address (192.168.0.39), 
 status of the message is Info, eff-url - is the url, used right now, "url:" is 
 empty, which means, that it is the same as effective.<br/>
 <br/>
@@ -746,7 +759,7 @@ One string from the file:<br/>
 where<br/>
 1 (192.168.0.1)- is the index of the client and its ip-address;<br/>
 cycles- number of loading cycles done;<br/>
-cstate - is the number of the client state (-1 - error, 0 - init, 1- login, 2- uas, 3-logoff, 4-final-ok);<br/>
+cstate - is the number of the client state (-1 - error, 0 - init, 1- urls, 2-final-ok);<br/>
 b-in - bytes passed in;<br/>
 b-out - bytes passed out;<br/>
 req- number of requests done;<br/>
@@ -795,7 +808,7 @@ The mode uses epoll() syscall (via libevent library) for demultiplexing. <br/>
 0. Every big load starts with a small load. First, see, that you have a working 
 configuration file. Run it with a 1-2-3 clients and commandline option -v, and
 look into the l&lt;batch-name&gt;.log logfile.<br/>
-Look into the HW issues, duscussed in the FAQs and mind, that
+Look into the HW issues, discussed in the FAQs and mind, that
 each client requires 30-35 K of memory.<br/>
 <br/>
 1. Compile with optimization;<br/>
@@ -863,7 +876,16 @@ request. This default decreases consumption of CPU and open sockets.
 If you are specifying -r command-line option, the connection will be closed and 
 re-opened for the next request. <br/>
 <br/>
-8. Troubleshooting.<br/>
+8. Running curl-loader in multiple threads on several CPUs/cores.<br/>
+<br/>
+SMP-support can be gained by using option -t &lt;threads-num&gt;. 
+We can recommend to use number of threads as number of CPUs from /proc/cpuinfo. 
+Sometimes curl-loader crashes on start with the option used due to suspected bugs in libevent. 
+Re-run it optionally chnaging/decreasing number of threads used.  Note, that total statistics 
+is written to the file $batch-name_0.txt, whereas logs are per-thread and written to the files 
+$batch-name_&lt;thread-num&gt;.log.<br/>
+<br/>
+9. Troubleshooting.<br/>
 <br/>
 Run the first loading attempt with a small number of clients using command-line 
 options -v (verbose) and -u (url in logs). Grep to look for the errors and their reasons. 
@@ -874,7 +896,7 @@ problems.<br/>
 If any assistance required, please, don't hesitate to contact us using 
 PROBLEM-REPORTING form in the download tarball.<br/>
 <br/>
-9. Logs and statistics.<br/>
+10. Logs and statistics.<br/>
 <br/>
 After end of a run, or after SIGINT (Cntl-C), the final results are calculated
 and printed to the console as well as to the file &lt;batch-name&gt;.txt.
@@ -887,7 +909,7 @@ be useful, whereas the default policy is to rewind the logfile (writing from the
 file start), when it reaches 1 GB. Do not use -v and -u options, when you have 
 performance issues.<br/>
 <br/>
-10. Monitoring of the loading PC.<br/>
+11. Monitoring of the loading PC.<br/>
 <br/>
 Please, use top or vmstat commands to monitor the memory usage, swapping and CPU.
 Intensive swapping is a good indication, that your PC is short in user-space memory.
@@ -897,7 +919,7 @@ Zero idle CPU is not the show stopper, but when you see, that Load Status GUI on
 your console prints its output with delays higher than it should be 
 (the default is 3 seconds and may be adjusted by -i command-line option), you need
 stronger CPU or run several curl-loader processes on a multi-CPU machine. Note, that 
-for a load with several curl-loader precesses you need to arrange different
+for a load with several curl-loader processes you need to arrange different
 configuration files with different batch-names and not overlapping ranges of IP-addresses 
 for each curl-loader process.<br/>
        </answer>
@@ -910,11 +932,8 @@ How to calculate CAPS numbers for a load?
       <answer>
 When number of clients is defined by CLIENTS_NUM_MAX tag, number of
 CAPS (call attempts per seconds) is resulting from the clients number and 
-load duration for each cycle, comprising from:<br/>
-- login time with possible redirections and sleeping after login interval;<br/>
-- uas time for each url with possible redirections, intervals betwee urls and 
-  after uas interval;<br/>
-- logoff time with possible redirections and sleeping after logoff interval;<br/>
+load duration for each cycle, comprising from url time for each url with possible 
+redirections, intervals betwee urls and after url interval.<br/>
 <br/>
 The actions and time intervals are configurable in batch file, whereas
 url retrival time is server and network dependent and not always easy 
