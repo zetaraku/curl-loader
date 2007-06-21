@@ -116,6 +116,8 @@ static int form_records_file_parser (batch_context*const bctx, char*const value)
 
 static int upload_file_parser (batch_context*const bctx, char*const value);
 
+static int multipart_form_data_parser (batch_context*const bctx, char*const value);
+
 static int web_auth_method_parser (batch_context*const bctx, char*const value);
 static int web_auth_credentials_parser (batch_context*const bctx, char*const value);
 static int proxy_auth_method_parser (batch_context*const bctx, char*const value);
@@ -169,6 +171,8 @@ static const tag_parser_pair tp_map [] =
     {"FORM_RECORDS_FILE", form_records_file_parser},
 
     {"UPLOAD_FILE", upload_file_parser},
+
+    {"MULTIPART_FORM_DATA", multipart_form_data_parser},
 
     {"WEB_AUTH_METHOD", web_auth_method_parser},
     {"WEB_AUTH_CREDENTIALS", web_auth_credentials_parser},
@@ -1119,6 +1123,188 @@ static int upload_file_parser  (batch_context*const bctx, char*const value)
       bctx->url_ctx_array[bctx->url_index].upload_file_size = statbuf.st_size;
     }
     return 0;
+}
+
+static int multipart_form_data_parser (batch_context*const bctx, char*const value)
+{
+  char* fieldname = 0, *eq = 0, *content;
+  size_t value_len = strlen (value);
+  url_context* url = &bctx->url_ctx_array[bctx->url_index];
+  
+  if (!value_len)
+    {
+      fprintf(stderr, "%s - error: zero length value passed.\n", __func__);
+      return -1;
+    }
+  
+  /* 
+     Examples:
+         
+     "yourname=Michael" 
+     "filedescription=Cool text file with cool text inside"
+     "htmlcode=<HTML></HTML>;type=text/html"
+
+     "file=@cooltext.txt"
+     "coolfiles=@fil1.gif;type=image/gif,fil2.txt,fil3.html" 
+  */
+  
+  if (! (eq = strchr (value, '=')))
+    {
+      fprintf(stderr, "%s - error: no '=' sign in multipart_form_data.\n", __func__);
+      return -1;
+    }
+  
+  *eq = '\0';
+  fieldname = value;
+  
+  /* TODO: Test also fieldname not to be empty space */
+  if (!strlen (fieldname))
+    {
+      fprintf(stderr, "%s - error: name prior to = is empty.\n", __func__);
+      return -1;
+    }
+      
+  if (eq - value <= (int) value_len)
+    {
+      fprintf(stderr, "%s - error: no data after = sign.\n", __func__);
+      return -1;
+    }
+  
+  content = eq + 1;
+  
+
+#define FORM_CONTENT_TYPE_STR ";type=" 
+  
+  char* content_type = 0;
+  size_t content_type_len = 0;
+  int files = 0;
+  char* pos_current = content;
+  size_t files_number = 1;
+  const char comma = ',';
+
+  if (*content == '@')
+    {
+      files = 1;
+      if (content - value <= (int) value_len)
+        {
+          fprintf(stderr, "%s - error: no filename after  sign '@'.\n", __func__);
+          return -1;
+        }
+      content += 1;
+    }
+  
+
+  content_type = strstr (content, FORM_CONTENT_TYPE_STR);
+  
+  if (content_type)
+    content_type_len = strlen (content_type);
+  
+  if (content_type && content_type_len)
+    {
+      if (content_type_len <= strlen (FORM_CONTENT_TYPE_STR))
+        {
+          fprintf(stderr, "%s - error: content type, if appears should not be empty.\n", 
+                  __func__);
+          return -1;
+        }
+
+      /* Count the number of commas */
+      while (*pos_current && (pos_current = strchr (pos_current, comma)))
+        {
+          ++files_number;
+          ++pos_current;
+        }
+      
+      *content_type = '\0'; /* place instead of ';' of ';type=' zero - '\0' */
+      content_type = content_type + strlen (FORM_CONTENT_TYPE_STR);
+      
+    }
+
+  if (! files)
+    {
+  
+      if (content_type)
+        {
+          curl_formadd (&url->post, &url->last, 
+                        CURLFORM_COPYNAME, fieldname,
+                        CURLFORM_COPYCONTENTS, content,
+                        CURLFORM_CONTENTTYPE, content_type, 
+                        CURLFORM_END);
+        }
+      else
+        {
+          /* Default content-type */
+          curl_formadd (&url->post, &url->last, 
+                        CURLFORM_COPYNAME, fieldname,
+                        CURLFORM_COPYCONTENTS, content,
+                        CURLFORM_END);
+        }
+
+      return 0;
+    }
+
+  /* Coming here, if content is a file or files 'if (*content == '@')' is TRUE */
+  
+  // We allow content-type only for a single file. 
+  if (content_type)
+    {
+      if (files_number != 1)
+        {
+          fprintf(stderr, "%s - error: content type is allowed only " 
+                  "when a single file passed.\n", __func__);
+          return -1;
+        }
+      else
+        {
+          curl_formadd (&url->post, &url->last, 
+                        CURLFORM_COPYNAME, fieldname,
+                        CURLFORM_FILE, content,
+                        CURLFORM_CONTENTTYPE, content_type, 
+                        CURLFORM_END);
+        }
+    }
+
+  if (!content_type)
+    {
+      // Multiple files, or a single file without content type
+      struct curl_forms* forms =  NULL;
+
+      if (! (forms = calloc (files_number + 1, sizeof (struct curl_forms))))
+        {
+          fprintf(stderr, "%s - error: calloc of curl_forms failed with errno %d\n",
+                  __func__, errno);
+          return -1;
+        }
+
+      char * token = 0, *strtokp = 0;
+      size_t token_index = 0;
+      
+      for (token = strtok_r (content, &comma, &strtokp); 
+           token != 0;
+           token = strtok_r (0, &comma, &strtokp))
+        {
+          size_t token_len = strlen (token);
+          
+          if (! token_len)
+            {
+              fprintf (stderr, "%s - warning: token is empty. \n", __func__);
+            }
+          else
+            {
+              forms [token_index].option = CURLFORM_FILE;
+              forms [token_index].value  = token;
+            }
+          
+          token_index++;
+        }
+
+      curl_formadd (&url->post, &url->last, 
+                   CURLFORM_COPYNAME, fieldname,
+                   CURLFORM_ARRAY, forms, 
+                   CURLFORM_END);
+    }
+
+  return 0;
 }
 
 static int web_auth_method_parser (batch_context*const bctx, char*const value)

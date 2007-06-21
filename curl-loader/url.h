@@ -185,6 +185,11 @@ typedef struct url_context
   /* File pointer to the open upload file */
   FILE* upload_file_ptr;
 
+
+  /* Structures for multipart/formdata HTTP POST (rfc1867-style posts) */
+  struct curl_httppost* post;
+  struct curl_httppost* last;
+
   /* Web authentication method. If 0 - no Web authentication */
   authentication_method  web_auth_method;
   
