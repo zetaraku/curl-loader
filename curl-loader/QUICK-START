@@ -1,4 +1,4 @@
-FAST START INSTRUCTIONS
+FAST START INSTRUCTIONS, version 0.32
 
 
 
@@ -21,8 +21,8 @@ Another known issue is libidn.so, which means, that some linux distributions
 do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink. 
         
 Run the following commands from your (hopefully) bash linux shell:
-$tar zxfv curl-loader-&lt;version&gt;.tar.gz
-$cd curl-loader-&lt;version&gt;
+$tar zxfv curl-loader-<version>.tar.gz
+$cd curl-loader-<version>
 $make
          
 By default, we are building both libcurl and curl-loader without optimization and with
@@ -63,7 +63,7 @@ descriptors (sockets).
 Usage: 
 
 run as a root user:
-#./curl-loader -f &lt;configuration filename&gt; [other options]
+#./curl-loader -f <configuration filename> [other options]
 For the details about [other options] - see FAQs in README.
         
 If curl-loader reports any problems with validation of your configuration,

@@ -1,4 +1,4 @@
-curl-loader
+curl-loader, version 0.32
     
 Robert Iakobashvili, Ashdod, Israel
 Michael Moser, Modiin, Israel
@@ -25,7 +25,7 @@ levels.
 Virtual clients are groupped to so-called batches of clients, performing the 
 same sort of activities, like: 
 - authentication login; 
-- user activity simulation (UAS) by fetching several urls and timeouts in 
+- user activity simulation by fetching several urls and timeouts in 
 between; 
 - logoff. 
 The tool can be easily extended to generate sftp, telnet, tftp, ldap, ssh, scp 
@@ -35,12 +35,12 @@ etc other application protocols, supported by the great libcurl library.
 
 FEATURES
 
-- Virtual clients number. The tools runs depending on your HW and scenario up to 
-5000-15000 simultaneously loading clients, all from a single curl-loader 
-process. Actual number of clients may be several times (if not tens) higher than 
-the number of simultaneously loading clients and is limited only by memory. Each 
-client performs loading from its own source IP-address or, as an option, all 
-clients share the same IP-address; 
+- Virtual clients number. The tools runs depending on your HW and scenario
+5000-15000 and more simultaneously loading clients, all from a single curl-loader process.
+Actual number of clients may be several times (if not tens) higher than the number of 
+simultaneously loading clients and is limited only by memory. Each client performs 
+loading from its own source IP-address or, as an option, all clients share the same 
+IP-address;
 - Rampup of the virtual clients number at loading start in either automatic or 
 manual mode; 
 - IPv4 and IPv6 addresses and URIs; 
@@ -49,6 +49,7 @@ manual mode;
 configurable username and password for each virtual client as well as 
 configurable posted string (post-forms) are the options. Another option is 
 loading of users with credentials from a text file; 
+- HTTP POST/GET forms with up to 16 tokens loaded from file;
 - HTTP user logooff with POST, POST after GET, or GET (cookies); POST logoff 
 with configurable posted string (post-forms); 
 - HTTP Web and Proxy Authentication (HTTP 401 and 407 responses) with Basic, 
@@ -154,12 +155,10 @@ simultaneously loading clients. To reach 10K simultaneously loading clients we
 would recommend a PC with a single 3.2 GHz Intel or 2.2 GHz AMD and 1.5-2 GB of 
 memory.
 
-When loading from a multi-CPU (or multi-core) systems, a loading model with the 
-number of curl-loader processes equal to the number of CPUs may be most 
-effective and deliver even higher numbers (than 10K) of simultaneously loading 
-clients from a single PC. If you are thinking, tuning, optimizing and getting 
-our advise - the sky is the limit. 
-
+When loading from a multi-CPU (or multi-core) systems, a loading model with the number of
+curl-loader threads equal to the number of logical CPUs seen in /proc/cpuinfo may be the most effective 
+and deliver even higher numbers (than 10K) of simultaneously loading clients from a single PC. 
+To run a batch in several threads use the command line option -t <number-of-threads>.
 
 
 3. Building curl-loader
@@ -592,7 +591,15 @@ LOG_RESP_BODIES when defined as 1 logs response headers to a file. Directory
 <batch-name> is created with subdirs url0, url1... url<n> Headers of responses 
 are logged to the files named: cl-<client-num>-cycle-<cycle-num>.body
 
-
+RESPONSE_STATUS_ERRORS supports changes to the default set of per-url responses 
+considered as errors. By default 4xx without 401 and 407 and all 5xx response codes 
+are treated as errors. Now you can either add a status to the errors set or remove it. 
+Sign + (plus) adds, - (minus) removes. The syntax is a line of tokens separated by ',', 
+where each tokens begins with either + or - and is followed by the response status 
+number from 0 up to 600.
+For example,  the effect of RESPONSE_STATUS_ERRORS="+200,-404"
+is that 200 responses will be considered for that url as errors, whereas 404 
+will be considered as success.
 
 4.4. How does the loader support login, logoff and authentication flavors? 
 ^ 
@@ -913,9 +920,19 @@ operation, therefore keep CLIENTS_RAMPUP_INC below 100 clients per second.
 The default behavior of curl-loader now is to re-use the tcp-connection for the 
 next request. This default decreases consumption of CPU and open sockets. If you 
 are specifying -r command-line option, the connection will be closed and 
-re-opened for the next request. 
+re-opened for the next request.
 
-8. Troubleshooting.
+8. Running curl-loader in multiple threads on several CPUs/cores.
+
+SMP-support can be gained by using option -t <threads-num>. 
+We can recommend to use number of threads as number of CPUs from /proc/cpuinfo. 
+Sometimes curl-loader crashes on start with the option used due to suspected bugs in libevent. 
+Re-run it optionally chnaging/decreasing number of threads used.  Note, that total statistics 
+is written to the file $batch-name_0.txt, whereas logs are per-thread and written to the files 
+$batch-name_<thread-num>.log.
+
+
+9. Troubleshooting.
 
 Run the first loading attempt with a small number of clients using command-line 
 options -v (verbose) and -u (url in logs). Grep to look for the errors and their 
@@ -926,7 +943,8 @@ timeout" error, this may be due to routing or resolving problems.
 If any assistance required, please, don't hesitate to contact us using 
 PROBLEM-REPORTING form in the download tarball.
 
-9. Logs and statistics.
+
+10. Logs and statistics.
 
 After end of a run, or after SIGINT (Cntl-C), the final results are calculated 
 and printed to the console as well as to the file <batch-name>.txt. Current 
@@ -939,7 +957,8 @@ useful, whereas the default policy is to rewind the logfile (writing from the
 file start), when it reaches 1 GB. Do not use -v and -u options, when you have 
 performance issues.
 
-10. Monitoring of the loading PC.
+
+11. Monitoring of the loading PC.
 
 Please, use top or vmstat commands to monitor the memory usage, swapping and 
 CPU. Intensive swapping is a good indication, that your PC is short in 

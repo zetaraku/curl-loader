@@ -1,4 +1,4 @@
-Last updated: 20/06/2007
+Last updated: 21/06/2007
 
 Nearest release 0.33 may hopefully include: 
 
@@ -6,12 +6,15 @@ Nearest release 0.33 may hopefully include:
     http://curl.haxx.se/libcurl/c/curl_formadd.html
 
 2. Performance improvements:
-   cached memory allocators, using libcurl API 
+
+   -cached memory allocators, using libcurl API 
    (Aleksandar Lazic <al-curlloader@none.at>):
    http://curl.haxx.se/libcurl/c/curl_global_init_mem.html
    Michael Moser has proposed to use the memory allocator like here:
    http://www.hoard.org/
    http://www.cs.umass.edu/%7Eemery/hoard/asplos2000.pdf
+
+- thread affinity for curl-loader SMP/multi- core HW adaptation feature.
 
 3. HTML analyses. libcurl example is using libtidy in:
    http://www.koders.com/c/fid7923BF828D0534D6B747ED138FCDD50DCFD13B3F.aspx
@@ -30,8 +33,6 @@ Next releases:
 0. Performance improvements:
 - Testbed for 50K and 100K clients. We need a more powerful HW:
     2-4 CPUs/cores and 4-8 GB of memory
-- Thread affinity for curl-loader SMP/multi- core HW adaptation feature.
-
 
 1. Support more than current 2 tokens (up to 8) in 
    FORM_RECORDS_FILE. Tokenize the input in cycle. 
