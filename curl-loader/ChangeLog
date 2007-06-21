@@ -1,4 +1,4 @@
-version 0.32, 21/06/2007
+version 0.32, 21/06/2007, svn 431
 
 * Newly added tag per url RESPONSE_STATUS_ERRORS supports changes to the
    default set of response statuses considered by errors. By default 4xx without
