@@ -34,22 +34,19 @@ Next releases:
 - Testbed for 50K and 100K clients. We need a more powerful HW:
     2-4 CPUs/cores and 4-8 GB of memory
 
-1. Support more than current 2 tokens (up to 8) in 
-   FORM_RECORDS_FILE. Tokenize the input in cycle. 
-
-2. An option to download a url not only once a cycle, but according to its
+1. An option to download a url not only once a cycle, but according to its
    "Weight", e.g. several times prior to going to the next url.
 
-3. Add an option to limit throughput per client. Libcurl is already supporting it.
+2. Add an option to limit throughput per client. Libcurl is already supporting it.
 
-4. Logging to files headers and bodies of responses exists. We may wish to improve
+3. Logging to files headers and bodies of responses exists. We may wish to improve
    it on a certain stage by using memory-mapped files from our custom write
    finctions. 
    Memory-mapped files are effective for logging, but always we know the size in
    advance. Mapping -re-mapping and truncation, if taken too much, may be 
    required.
 
-5. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
+4. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
    a number of TCP connections, that our virtual client can use (the default 
    is up to 5), and, if persistant, what is the number of request-responses 
    till the connection to be closed and re-established. 
@@ -60,29 +57,29 @@ Next releases:
    connection refresh.
    Note, that httperf (sessions) is a reference application.
 
-6. Configuration/making improvements: moving all source-files
+5. Configuration/making improvements: moving all source-files
    to src directory etc.
 
-7. X.509 client certificates per each https, ftps url. Client certificate
+6. X.509 client certificates per each https, ftps url. Client certificate
    for each client?
 
-8. Support for CAPS (calls per second) defined mode. Currently, we are 
+7. Support for CAPS (calls per second) defined mode. Currently, we are 
    supporting only a certain number of virtual clients and CAPS is the derived
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter;
 
-9. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like;
+8. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like;
 
-10. Template-guided output of configurable statistics 
-    (what user wishes with desired string, names) to statistics file;
+9. Template-guided output of configurable statistics 
+   (what user wishes with desired string, names) to statistics file;
 
-11. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec);
+10. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec);
 
-12. Support for more protocols: telnet, SFTP, SCP, SSH, etc;
+11. Support for more protocols: telnet, SFTP, SCP, SSH, etc;
 
-13. Support for more HTTP and FTP features.
+12. Support for more HTTP and FTP features.
 
-14. Support for browsers bevavior simulation.
+13. Support for browsers bevavior simulation.
 
    Aleksandar Lazic <al-curlloader@none.at> has suggested to mimic
    the behavior of browsers/wget, etc by:
@@ -105,7 +102,7 @@ Next releases:
 
    if breadth && deep_or_breadth_count not reached {
       get the next link from same directory-level (e.g.: /, /news/, ...)
-    }elsif deep && deep_or_breadth_count not reached {
+    } elsif deep && deep_or_breadth_count not reached {
        get the next link from the next directory-level
     }
    }"
