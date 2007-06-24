@@ -1145,7 +1145,7 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
      "htmlcode=<HTML></HTML>;type=text/html"
 
      "file=@cooltext.txt"
-     "coolfiles=@fil1.gif;type=image/gif,fil2.txt,fil3.html" 
+     "coolfiles=@fil1.gif,fil2.txt,fil3.html" 
   */
   
   if (! (eq = strchr (value, '=')))
@@ -1164,7 +1164,7 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
       return -1;
     }
       
-  if (eq - value <= (int) value_len)
+  if (eq - value >= (int) value_len)
     {
       fprintf(stderr, "%s - error: no data after = sign.\n", __func__);
       return -1;
@@ -1185,14 +1185,20 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
   if (*content == '@')
     {
       files = 1;
-      if (content - value <= (int) value_len)
+      if (content - value >= (int) value_len)
         {
           fprintf(stderr, "%s - error: no filename after  sign '@'.\n", __func__);
           return -1;
         }
       content += 1;
+
+        /* Count the number of files/commas */
+      while (*pos_current && (pos_current = strchr (pos_current, comma)))
+        {
+          ++files_number;
+          ++pos_current;
+        }
     }
-  
 
   content_type = strstr (content, FORM_CONTENT_TYPE_STR);
   
@@ -1207,13 +1213,6 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
                   __func__);
           return -1;
         }
-
-      /* Count the number of commas */
-      while (*pos_current && (pos_current = strchr (pos_current, comma)))
-        {
-          ++files_number;
-          ++pos_current;
-        }
       
       *content_type = '\0'; /* place instead of ';' of ';type=' zero - '\0' */
       content_type = content_type + strlen (FORM_CONTENT_TYPE_STR);
@@ -1225,7 +1224,7 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
   
       if (content_type)
         {
-          curl_formadd (&url->post, &url->last, 
+          curl_formadd (&url->mpart_form_post, &url->mpart_form_last, 
                         CURLFORM_COPYNAME, fieldname,
                         CURLFORM_COPYCONTENTS, content,
                         CURLFORM_CONTENTTYPE, content_type, 
@@ -1234,7 +1233,7 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
       else
         {
           /* Default content-type */
-          curl_formadd (&url->post, &url->last, 
+          curl_formadd (&url->mpart_form_post, &url->mpart_form_last, 
                         CURLFORM_COPYNAME, fieldname,
                         CURLFORM_COPYCONTENTS, content,
                         CURLFORM_END);
@@ -1256,7 +1255,7 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
         }
       else
         {
-          curl_formadd (&url->post, &url->last, 
+          curl_formadd (&url->mpart_form_post, &url->mpart_form_last, 
                         CURLFORM_COPYNAME, fieldname,
                         CURLFORM_FILE, content,
                         CURLFORM_CONTENTTYPE, content_type, 
@@ -1298,7 +1297,7 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
           token_index++;
         }
 
-      curl_formadd (&url->post, &url->last, 
+      curl_formadd (&url->mpart_form_post, &url->mpart_form_last, 
                    CURLFORM_COPYNAME, fieldname,
                    CURLFORM_ARRAY, forms, 
                    CURLFORM_END);
@@ -1887,15 +1886,40 @@ static int validate_batch_url (batch_context*const bctx)
                        __func__);
               return -1;
             }
+
+          /* 
+             HTTP POST-ing requires either FORM_STRING or 
+             MULTIPART_FORM_DATA tags.
+          */ 
+          if (req_type == HTTP_REQ_TYPE_POST)
+            {
+              if (!url->form_str && !url->mpart_form_post)
+                {
+                  fprintf (stderr, "%s - error: either FORM_STRING or "
+                           "MULTIPART_FORM_DATA tags should be defined to "
+                           "make HTTP POST\n", __func__);
+                  return -1;   
+                }
+
+              if (url->form_str && url->mpart_form_post)
+                {
+                  fprintf (stderr, "%s - error: either FORM_STRING or "
+                           "MULTIPART_FORM_DATA tags, but not the both, should be "
+                           "defined to make HTTP POST\n", __func__);
+                  return -1;   
+                }
+             }
         }
       
-      if (url->form_records_file && ! url->form_str[0])
+      if (url->form_records_file && !url->form_str)
         {
           fprintf (stderr, "%s - error: empty FORM_STRING, "
                    "when FORM_RECORDS_FILE defined.\n Either disable" 
                    "FORM_RECORDS_FILE or define FORM_STRING\n", __func__);
           return -1;
         }
+
+      
       
       /*
         Test, that there is only a single continues area of cycling URLs 

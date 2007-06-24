@@ -673,7 +673,11 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
             }
           else
             {
-              /* Sets POST as the HTTP request method */
+              /* 
+                 Sets POST as the HTTP request method using either:
+                 - POST-fields;
+                 - multipart form-data as in RFC 1867;
+              */
               if (set_client_url_post_data (cctx, url) == -1)
                 {
                   fprintf (stderr,
@@ -849,18 +853,32 @@ int set_response_logfile (client_context* cctx, url_context* url)
 ***********************************************************************/
 int set_client_url_post_data (client_context* cctx, url_context* url)
 {
-  if (init_client_formed_buffer (cctx, 
-                                 url,
-                                 cctx->post_data, 
-                                 cctx->post_data_len) == -1)
+  if (url->form_str)
     {
-      fprintf (stderr,
-               "%s - error: init_client_formed_buffers() failed.\n",
+      if (init_client_formed_buffer (cctx, 
+                                     url,
+                                     cctx->post_data, 
+                                     cctx->post_data_len) == -1)
+        {
+          fprintf (stderr, "%s - error: init_client_formed_buffers() failed.\n",
+                   __func__);
+          return -1;
+        }
+      
+      curl_easy_setopt (cctx->handle, CURLOPT_POSTFIELDS, cctx->post_data);
+    }
+  else if (url->mpart_form_post)
+    {
+      curl_easy_setopt (cctx->handle, CURLOPT_HTTPPOST, url->mpart_form_post);
+    }
+  else
+    {
+      fprintf (stderr, 
+               "%s - error: neither url->form_str (POSTFIELDS) nor "
+               "url->mpart_form_post (multipart form data, RFC1867) are initialized.\n",
                __func__);
       return -1;
     }
-
-  curl_easy_setopt (cctx->handle, CURLOPT_POSTFIELDS, cctx->post_data);
 
   return 0;
 }

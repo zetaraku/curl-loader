@@ -1,3 +1,23 @@
+version 0.33, ?
+
+* Initial support for multipart form data POST-ing as in RFC1867 has been added. 
+   Several tags MULTIPART_FORM_DATA can be used for a url to post in a 
+   configuration file, e.g. as in ./conf-examples/multipart-formdata-post.conf:
+	
+   MULTIPART_FORM_DATA="yourname=Michael"
+   MULTIPART_FORM_DATA="filedescription=Cool text file with cool text inside"
+   MULTIPART_FORM_DATA="htmlcode=<HTML></HTML>;type=text/html"
+   MULTIPART_FORM_DATA="file=@cooltext.txt"
+   MULTIPART_FORM_DATA="coolfiles=@fil1.gif,fil2.txt,fil3.html"
+
+   Currently, the feature uses the string provided AS_IS and does not generate
+   any unique users, unique passwords or loads tokens from file.
+
+   To prevent from sending "Expect: 100-continue", pass as a custom HTTP header
+   CUSTOM_HEADER="Expect: "
+
+
+
 version 0.32, 21/06/2007, svn 431
 
 * Newly added tag per url RESPONSE_STATUS_ERRORS supports changes to the

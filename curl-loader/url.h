@@ -187,8 +187,8 @@ typedef struct url_context
 
 
   /* Structures for multipart/formdata HTTP POST (rfc1867-style posts) */
-  struct curl_httppost* post;
-  struct curl_httppost* last;
+  struct curl_httppost* mpart_form_post;
+  struct curl_httppost* mpart_form_last;
 
   /* Web authentication method. If 0 - no Web authentication */
   authentication_method  web_auth_method;

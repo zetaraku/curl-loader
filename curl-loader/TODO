@@ -2,10 +2,8 @@ Last updated: 21/06/2007
 
 Nearest release 0.33 may hopefully include: 
 
-1. Multi-post forms, suggested by Jeremy Hicks jehicks@novell.com
-    http://curl.haxx.se/libcurl/c/curl_formadd.html
 
-2. Performance improvements:
+1. Performance improvements:
 
    -cached memory allocators, using libcurl API 
    (Aleksandar Lazic <al-curlloader@none.at>):
@@ -16,13 +14,13 @@ Nearest release 0.33 may hopefully include:
 
 - thread affinity for curl-loader SMP/multi- core HW adaptation feature.
 
-3. HTML analyses. libcurl example is using libtidy in:
+2. HTML analyses. libcurl example is using libtidy in:
    http://www.koders.com/c/fid7923BF828D0534D6B747ED138FCDD50DCFD13B3F.aspx
 
-4. A regular expression pattern for a search in a response body
+3. A regular expression pattern for a search in a response body
    Look in Apache JMeter.
 
-5. Regular expression operations for the header/s certain header and whether 
+4. Regular expression operations for the header/s certain header and whether 
    value matches a regular expression pattern
 
 
@@ -32,21 +30,28 @@ Next releases:
 
 0. Performance improvements:
 - Testbed for 50K and 100K clients. We need a more powerful HW:
-    2-4 CPUs/cores and 4-8 GB of memory
+    2-4 CPUs/cores and 4-8 GB of memory.
 
-1. An option to download a url not only once a cycle, but according to its
-   "Weight", e.g. several times prior to going to the next url.
+1. Multipart post forms (RFC1867) can be enhanced by adding loading tokens
+    from file, generation of unique words, etc 
 
-2. Add an option to limit throughput per client. Libcurl is already supporting it.
+2. An option to download a url not only once a cycle, but according to its
+   "Weight", probability. Weight can be less than 1, e.g. 0.3, which means, that 
+    there is a 30 % probability, that a client will load this url. Weight 3 means,
+    that there is 300 % probability, that a url will be fetched, which practically
+    means, that a url will be fetched several times by clients prior to going to next
+    and with an average of fetching it 3-times. 
 
-3. Logging to files headers and bodies of responses exists. We may wish to improve
+3. Add an option to limit throughput per client. Libcurl is already supporting it.
+
+4. Logging to files headers and bodies of responses exists. We may wish to improve
    it on a certain stage by using memory-mapped files from our custom write
    finctions. 
    Memory-mapped files are effective for logging, but always we know the size in
    advance. Mapping -re-mapping and truncation, if taken too much, may be 
    required.
 
-4. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
+5. Aleksandar Lazic <al-curlloader@none.at> has suggested to make configurable 
    a number of TCP connections, that our virtual client can use (the default 
    is up to 5), and, if persistant, what is the number of request-responses 
    till the connection to be closed and re-established. 
@@ -57,29 +62,29 @@ Next releases:
    connection refresh.
    Note, that httperf (sessions) is a reference application.
 
-5. Configuration/making improvements: moving all source-files
+6. Configuration/making improvements: moving all source-files
    to src directory etc.
 
-6. X.509 client certificates per each https, ftps url. Client certificate
+7. X.509 client certificates per each https, ftps url. Client certificate
    for each client?
 
-7. Support for CAPS (calls per second) defined mode. Currently, we are 
+8. Support for CAPS (calls per second) defined mode. Currently, we are 
    supporting only a certain number of virtual clients and CAPS is the derived
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter;
 
-8. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like;
+9. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like;
 
-9. Template-guided output of configurable statistics 
+10. Template-guided output of configurable statistics 
    (what user wishes with desired string, names) to statistics file;
 
-10. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec);
+11. Usage of random time intervals, e.g 100-200 (from 100 to 200 msec);
 
-11. Support for more protocols: telnet, SFTP, SCP, SSH, etc;
+12. Support for more protocols: telnet, SFTP, SCP, SSH, etc;
 
-12. Support for more HTTP and FTP features.
+13. Support for more HTTP and FTP features.
 
-13. Support for browsers bevavior simulation.
+14. Support for browsers bevavior simulation.
 
    Aleksandar Lazic <al-curlloader@none.at> has suggested to mimic
    the behavior of browsers/wget, etc by:
