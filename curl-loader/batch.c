@@ -19,6 +19,9 @@
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+// must be the first include
+#include "fdsetsize.h"
+
 #include "batch.h"
 
 int is_batch_group_leader (batch_context* bctx)

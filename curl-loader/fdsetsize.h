@@ -34,4 +34,8 @@
 
 #define __FD_SETSIZE  CURL_LOADER_FD_SETSIZE 
 
+#ifndef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 64
+#endif
+
 
