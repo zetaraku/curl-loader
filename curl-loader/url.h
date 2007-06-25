@@ -242,6 +242,12 @@ typedef struct url_context
   /* Logs bodies of HTTP responses to files, when true. */
   int log_resp_bodies;
 
+  /* 
+     Upper limit for the transfer download/upload rate in
+     bytes/sec. 
+  */
+  curl_off_t transfer_limit_rate;
+
 
   /************* Assisting Elements    *************/
 

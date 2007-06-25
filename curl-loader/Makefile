@@ -25,7 +25,8 @@ OPENSSLDIR=$(shell $(CURDIR)/openssldir.sh)
 CC=gcc
 
 #C Compiler Flags
-CFLAGS= -W -Wall -Wpointer-arith -pipe -DCURL_LOADER_FD_SETSIZE=20000
+CFLAGS= -W -Wall -Wpointer-arith -pipe -DCURL_LOADER_FD_SETSIZE=20000 \
+	-D_FILE_OFFSET_BITS=64 #-D_LARGE_FILES -D_LARGEFILE_SOURCE
 
 
 

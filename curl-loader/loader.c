@@ -594,6 +594,20 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
       /* Provide the size of the upload */
       curl_easy_setopt(handle, CURLOPT_INFILESIZE, 
                        (long) url->upload_file_size);
+
+      if (url->transfer_limit_rate)
+        {
+          curl_easy_setopt(handle, CURLOPT_MAX_SEND_SPEED_LARGE,
+                           (curl_off_t) url->transfer_limit_rate);
+        }
+    }
+  else
+    {
+      if (url->transfer_limit_rate)
+        {
+          curl_easy_setopt(handle, CURLOPT_MAX_RECV_SPEED_LARGE,
+                           (curl_off_t) url->transfer_limit_rate);
+        }
     }
 
   /* 

@@ -133,6 +133,7 @@ static int ftp_active_parser (batch_context*const bctx, char*const value);
 static int log_resp_headers_parser (batch_context*const bctx, char*const value);
 static int log_resp_bodies_parser (batch_context*const bctx, char*const value);
 static int response_status_errors_parser (batch_context*const bctx, char*const value);
+static int transfer_limit_rate_parser (batch_context*const bctx, char*const value);
 
 static fparser find_tag_parser (const char* tag);
 
@@ -189,6 +190,8 @@ static const tag_parser_pair tp_map [] =
     {"LOG_RESP_HEADERS", log_resp_headers_parser},
     {"LOG_RESP_BODIES", log_resp_bodies_parser},
     {"RESPONSE_STATUS_ERRORS", response_status_errors_parser},
+
+    {"TRANSFER_LIMIT_RATE", transfer_limit_rate_parser},
 
     {NULL, 0}
 };
@@ -1637,6 +1640,21 @@ static int response_status_errors_parser (batch_context*const bctx,
 
   return 0;
 }
+
+static int transfer_limit_rate_parser (batch_context*const bctx, char*const value)
+{
+  long rate = atol (value);
+
+  if (rate < 0)
+    {
+      fprintf(stderr, "%s error: negative rate is not allowed.\n", __func__);
+      return -1;
+    }
+
+  bctx->url_ctx_array[bctx->url_index].transfer_limit_rate = (curl_off_t) rate;
+  return 0;
+}
+
 
 static url_appl_type 
 url_schema_classification (const char* const url)

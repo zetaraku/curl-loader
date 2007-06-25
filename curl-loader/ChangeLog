@@ -1,5 +1,11 @@
 version 0.33, ?
 
+* Throughput limit for download/upload operations can be configured for each client 
+   now on a per-url bases using a new tag TRANSFER_LIMIT_RATE. The value of
+   the tag to be provided as bytes (not bits) per second.
+   Makefile: -D_FILE_OFFSET_BITS=64 - added to compiling to ensure support for
+   large files (>4GB).
+
 * Initial support for multipart form data POST-ing as in RFC1867 has been added. 
    Several tags MULTIPART_FORM_DATA can be used for a url to post in a 
    configuration file, e.g. as in ./conf-examples/multipart-formdata-post.conf:

@@ -42,8 +42,6 @@ Next releases:
     means, that a url will be fetched several times by clients prior to going to next
     and with an average of fetching it 3-times. 
 
-3. Add an option to limit throughput per client. Libcurl is already supporting it.
-
 4. Logging to files headers and bodies of responses exists. We may wish to improve
    it on a certain stage by using memory-mapped files from our custom write
    finctions. 
