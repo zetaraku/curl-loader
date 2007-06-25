@@ -9,7 +9,7 @@ BUILD=$(shell pwd)/build
 #CARES_MAKE_DIR=$(CARES_BUILD)/c-ares-$(CARES_VER)
 
 CURL_BUILD=$(BUILD)/curl
-CURL_VER:=7.16.2
+CURL_VER:=7.16.3
 
 LIBEVENT_BUILD=$(BUILD)/libevent
 LIBEVENT_VER:=1.3
@@ -56,7 +56,7 @@ OPT_FLAGS=
 endif
 
 # CPU-tuning flags
-#OPT_FLAGS+= -mtune=pentiupam4 -mcpu=pentium4
+#OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
 
 #Profiling flags
 ifeq ($(profile),1)
@@ -131,12 +131,12 @@ $(LIBEVENT):
 #	cp -pf $(CARES_MAKE_DIR)/include/*.h ./inc
 #	cp -pf $(CARES_MAKE_DIR)/lib/libcares* ./lib
 
+# patch -d curl -p1 < ../patches/multi-socket-action.patch; \
+# patch -d curl -p1 < ../patches/curl-max-write-size.patch; \
+# patch -d curl -p1 < ../patches/curl-alloc-master-buffer.patch; \
 
 $(LIBCURL):
 	cd ./packages; tar zxf curl-$(CURL_VER).tar.gz; ln -sf curl-$(CURL_VER) curl; \
-	patch -d curl -p1 < ../patches/multi-socket-action.patch; \
-	patch -d curl -p1 < ../patches/curl-max-write-size.patch; \
-	patch -d curl -p1 < ../patches/curl-alloc-master-buffer.patch; \
 	patch -d curl -p1 < ../patches/curl-trace-info-error.patch; \
 	patch -d curl -p1 < ../patches/curl-hash.patch; \
 	patch -d curl -p0 < ../patches/curl-socket-hash-table-size.patch
