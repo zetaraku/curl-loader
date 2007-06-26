@@ -149,7 +149,8 @@ rewinded, when reaching configurable size preventing disk crashes;
       <p>
          The tool is written and supported by Robert Iakobashvili and Michael Moser both 
          from Israel. Please, use the link to the mailing list provided in Support 
-         section to contact us and to get support for the tool.
+         section to contact us and to get support for the tool. Subscribe to the curl-loader-devel
+         list and mail filled PROBLEM-REPORTING form.
       </p>
      </section>
      <section id="success-usage">
