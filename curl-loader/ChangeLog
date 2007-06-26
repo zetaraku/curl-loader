@@ -1,5 +1,8 @@
 version 0.33, ?
 
+* Advanced to curl-7.16.3. Several patches removed as they are now in 
+   mainline curl. Re-based and corrected patch curl-hash.patch, submitted it to curl.
+
 * Throughput limit for download/upload operations can be configured for each client 
    now on a per-url bases using a new tag TRANSFER_LIMIT_RATE. The value of
    the tag to be provided as bytes (not bits) per second.
