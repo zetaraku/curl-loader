@@ -124,7 +124,7 @@ How can I create loading configuration file?
 To run a load create your configuration file to be passed to
 curl-loader using -f command line option, e.g.<br/>
          <br/>
-         #curl-loader -f ./conf-user/user_batch.conf<br/>
+         #curl-loader -f ./conf-examples/bulk.conf<br/>
         <br/>
         For more examples, please, look at the files in "conf-examples" directory. You may 
         copy an example file and edit it by using the next FAQ guidelines.
@@ -666,13 +666,12 @@ initialization to the network interface of your choice and may be seen by the co
 Command ping (man ping) has an option -I to force the ping to be issued from
 a certain ip-address. To test, that your routing is OK, you may use, e.g.:<br/>
 #ping -I &lt;the client address you wish to use&gt; url-target<br/>
+When it works - it will be OK.
 <br/>
-When it works - it will be OK.<br/>
+Please, also pay attention to the firewalling/NAT settings at your linux loading machine
+(netfilter/iptables), at the tested servers and through the whole packets route.<br/>
 <br/>
-Please, pay attention to the firewalling/NAT settings on your linux loading machine
-(netfilter/iptables) as well as on the servers.<br/>
-<br/>
-Y may also wish to read a bit into the linux routing/networking and DNS resolving
+Y may also wish to read a bit about linux routing/networking/iptables and DNS resolving
 HOWTOS.<br/>
 <br/>
        </answer>
@@ -720,7 +719,7 @@ Currently HTTP/HTTPS statistics includes the following counters:<br/>
    - server 5xx errors num;<br/>
    - other errors num, like resolving, tcp-connect, server closing or 
      empty responses number (Err);<br/>
-   - url completion time expiration errors (T-Err);
+   - url completion time expiration errors (T-Err);<br/>
    - average application server Delay (msec), estimated as the time between 
      HTTP request and HTTP response without taking into the account network
      latency (RTT) (D);<br/>

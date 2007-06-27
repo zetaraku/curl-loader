@@ -9,7 +9,7 @@
     BUILDING CURL-LOADER.
   </p>
         Build it using general C development environment with bash, 
-        gcc (3 or 4 series), make, etc on a linux machine.<br/>
+        gcc compiler (3 or 4 series), make, etc on a linux machine.<br/>
         <br/>
         Building pre-requirements are:<br/>
           1. openssl binaries;<br/>
@@ -22,9 +22,10 @@
          For example: $export OPENSSLDIR=the-full-path-to-the-directory<br/>
          <br/>
          Another known issue is libidn.so, which means, that some linux distributions 
-         do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink. <br/>
+         do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink.
+         Sometimes you may need to edit the Makefile and to remove -lidn from the linking string.
         <br/>
-          Run the following commands from your (hopefully) bash linux shell:<br/>
+          Run the following commands from your bash linux shell:<br/>
          $tar zxfv curl-loader-&lt;version&gt;.tar.gz<br/>
          $cd curl-loader-&lt;version&gt;<br/>
          $make<br/>
@@ -40,7 +41,7 @@
       </p>
         To run the load create a configuration file to be passed to
          curl-loader by the -f commmand line option, e.g.<br/>
-         #curl-loader -f ./conf-user/user_batch.conf<br/>
+         #curl-loader -f ./conf-examples/bulk.conf<br/>
         <br/>
         For more examples, please, look at the files in "conf-examples" directory. You may 
         copy an example file and edit it.<br/>
@@ -62,10 +63,9 @@
       </p>
         run as a root user:<br/>
         #./curl-loader -f &lt;configuration filename&gt; [other options]<br/>
-         For the details about [other options], please see FAQs.<br/>
         <br/>
-        If curl-loader on start reports any problems your configuration file,
-        please, "don't panic" - just fix it.<br/>
+        If curl-loader on start reports any problems with your configuration file,
+        please, "don't panic" - fix the problems.<br/>
         For more details, please, look into the FAQs page.<br/>
        <br/>
   </body>
