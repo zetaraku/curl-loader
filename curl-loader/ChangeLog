@@ -1,4 +1,8 @@
 version 0.33, ?
+
+* Bugfix Common-IP (same minimal and max ip addresses) was buggy for
+  SMP configurations.
+
 * Corrected Timeouted to "Timed Out". Thanks to BuraphaLinux Server
   <buraphalinuxserver@gmail.com> for the patch.
 
