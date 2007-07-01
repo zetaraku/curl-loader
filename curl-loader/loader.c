@@ -1824,42 +1824,58 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
 
       bc_arr[i].ipv6 = master.ipv6;
 
-      if (! bc_arr[i].ipv6)
+      if (! master.ip_common)
         {
-          bc_arr[i].ip_addr_min = i ? bc_arr[i - 1].ip_addr_max : master.ip_addr_min;
-          bc_arr[i].ip_addr_max = bc_arr[i].ip_addr_min + bc_arr[i].client_num_max;
-        }
-      else
-        {
-          // IPv6 range
-
-          if (! i)
+          if (! bc_arr[i].ipv6)
             {
-              bc_arr[i].ipv6_addr_min = master.ipv6_addr_min; 
+              bc_arr[i].ip_addr_min = i ? bc_arr[i - 1].ip_addr_max : master.ip_addr_min;
+              bc_arr[i].ip_addr_max = bc_arr[i].ip_addr_min + bc_arr[i].client_num_max;
             }
           else
             {
-              if (ipv6_increment (&bc_arr[i - 1].ipv6_addr_max, 
-                                  &bc_arr[i].ipv6_addr_min) == -1)
+              // IPv6 range
+              
+              if (! i)
                 {
-                  fprintf (stderr, "%s - error: ipv6_increment()failed\n ", __func__);
-                  return -1;
+                  bc_arr[i].ipv6_addr_min = master.ipv6_addr_min; 
+                }
+              else
+                {
+                  if (ipv6_increment (&bc_arr[i - 1].ipv6_addr_max, 
+                                      &bc_arr[i].ipv6_addr_min) == -1)
+                    {
+                      fprintf (stderr, "%s - error: ipv6_increment()failed\n ", __func__);
+                      return -1;
+                    }
+                }
+            
+              struct in6_addr in6_temp = bc_arr[i].ipv6_addr_min;
+              
+              int k;
+              for (k = 0; k < bc_arr[i].client_num_max; k++)
+                {
+                  if (ipv6_increment (&in6_temp, 
+                                      &bc_arr[i].ipv6_addr_max) == -1)
+                    {
+                      fprintf (stderr, "%s - error: ipv6_increment()failed\n ", __func__);
+                      return -1;
+                    }
+                  
+                  in6_temp = bc_arr[i].ipv6_addr_max;
                 }
             }
+        }
+      else
+        {
+          // Common IP-address.
 
-          struct in6_addr in6_temp = bc_arr[i].ipv6_addr_min;
-
-          int k;
-          for (k = 0; k < bc_arr[i].client_num_max; k++)
+          if (! bc_arr[i].ipv6)
             {
-              if (ipv6_increment (&in6_temp, 
-                                  &bc_arr[i].ipv6_addr_max) == -1)
-                {
-                  fprintf (stderr, "%s - error: ipv6_increment()failed\n ", __func__);
-                  return -1;
-                }
-
-              in6_temp = bc_arr[i].ipv6_addr_max;
+              bc_arr[i].ip_addr_min = bc_arr[i].ip_addr_max  = master.ip_addr_min;
+            }
+          else
+            {
+              bc_arr[i].ipv6_addr_min = bc_arr[i].ipv6_addr_max = master.ipv6_addr_min; 
             }
         }
 
