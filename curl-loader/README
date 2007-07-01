@@ -573,7 +573,7 @@ operation, including all internal re-directions. The legal values are 0, which
 means no limit on url-completion time, or above 20 msecs. When a value of the 
 tag is above 0, we are monitoring the url-fetching and cancelling it, if above 
 the specified milliseconds. The results are presented on the Load Status GUI as 
-the operation "Timeouted" statistics and logged to all statistics files as T-Err 
+the operation "Timed out" statistics and logged to all statistics files as T-Err 
 number.
 
 TIMER_AFTER_URL_SLEEP is the time in milli-secondsfor client to sleep after 

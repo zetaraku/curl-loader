@@ -6,7 +6,7 @@ Version 0.31 is supposed to bring a new type of configuration.
     now comes in milliseconds and enforced. When a value of the tag is
    above 0, we are monitoring the url-fetching and cancelling it, if above
    the specified milliseconds.
-   The results are presented on the Load Status GUI as the operation Timeouted
+   The results are presented on the Load Status GUI as the operation Timed out
    statistics and is reflected in files as T-Err number.
    When a url fetch is cancelled on the url-completion timeout, the number of Failed
    operations also increases.

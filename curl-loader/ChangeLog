@@ -1,4 +1,6 @@
 version 0.33, ?
+* Corrected Timeouted to "Timed Out". Thanks to BuraphaLinux Server
+  <buraphalinuxserver@gmail.com> for the patch.
 
 * Advanced to curl-7.16.3. Several patches removed as they are now in 
    mainline curl. Re-based and corrected patch curl-hash.patch, submitted it to curl.
@@ -91,7 +93,7 @@ version 0.31 - released 31/05/2007, svn 399
     now comes in milliseconds and enforced. When a value of the tag is
    above 0, we are monitoring the url-fetching and cancelling it, if above
    the specified milliseconds.
-   The results are presented on the Load Status GUI as the operation Timeouted
+   The results are presented on the Load Status GUI as the operation Timed out
    statistics and is reflected in files as T-Err number.
    When a url fetch is cancelled on the url-completion timeout, the number of Failed
    operations also increases.

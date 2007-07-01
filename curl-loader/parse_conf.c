@@ -1499,7 +1499,7 @@ static int timer_url_completion_parser (batch_context*const bctx,
                  "Note, that since version 0.31 the timer is in msec and enforced by\n"
                  "monitoring time of each url fetching and cancelling, when it \n"
                  "takes msec above the timer. Operation statistics provides a view\n"
-                 "on what happens as URL-Timeouted and statistics T-Err counter.\n"
+                 "on what happens as URL-Timed out and statistics T-Err counter.\n"
                  "To preserve the previous behavior without the timer enforcement,\n"
                  "please, place 0 value here.\n",
                 __func__);

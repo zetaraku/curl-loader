@@ -826,7 +826,7 @@ static void print_operational_statistics (op_stat_point*const osp_curr,
   if (!osp_curr || !osp_total)
     return;
 
-  fprintf (stdout, " Operations:\t\t Success\t\t Failed\t\t\tTimeouted\n");
+  fprintf (stdout, " Operations:\t\t Success\t\t Failed\t\t\tTimed out\n");
 
   if (osp_curr->url_num && (osp_curr->url_num == osp_total->url_num))
     {
