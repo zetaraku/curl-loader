@@ -105,6 +105,12 @@ cleanall: clean
 tags:
 	etags --members -o $(TAGFILE) *.h *.c
 
+install:
+	cp -f ./curl-loader /usr/bin
+	cp -f curl-loader.1 /usr/share/man/man1/curl-loader.1  
+
+	
+
 menuconfig:
 	mkdir -p build; cd ./build; tar zxfv ../packages/dialog.tar.gz
 	cd ./build/dialog; patch -p1 < ../../patches/dialog-curl-loader.patch
