@@ -5,7 +5,7 @@ TAGFILE=.tagfile
 BUILD=$(shell pwd)/build
 
 #CARES_BUILD=$(BUILD)/c-ares
-#CARES_VER:=1.3.3-20070430
+#CARES_VER:=1.4
 #CARES_MAKE_DIR=$(CARES_BUILD)/c-ares-$(CARES_VER)
 
 CURL_BUILD=$(BUILD)/curl
@@ -25,10 +25,9 @@ OPENSSLDIR=$(shell $(CURDIR)/openssldir.sh)
 CC=gcc
 
 #C Compiler Flags
-CFLAGS= -W -Wall -Wpointer-arith -pipe -DCURL_LOADER_FD_SETSIZE=20000 \
-	-D_FILE_OFFSET_BITS=64 #-D_LARGE_FILES -D_LARGEFILE_SOURCE
-
-
+CFLAGS= -W -Wall -Wpointer-arith -pipe \
+	-DCURL_LOADER_FD_SETSIZE=20000 \
+	-D_FILE_OFFSET_BITS=64
 
 #
 # Making options: e.g. $make optimize=1 debug=0 profile=1 
@@ -55,8 +54,8 @@ else
 OPT_FLAGS=
 endif
 
-# CPU-tuning flags
-OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
+# CPU-tuning flags for Pentium-4 arch.
+#OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
 
 #Profiling flags
 ifeq ($(profile),1)
@@ -64,8 +63,6 @@ PROF_FLAG=-pg
 else
 PROF_FLAG=
 endif
-
-
 
 
 #Linker mapping
@@ -119,13 +116,11 @@ install:
 	cp -rf conf-examples $(DOCDIR)
 
 
-	
-
-menuconfig:
-	mkdir -p build; cd ./build; tar zxfv ../packages/dialog.tar.gz
-	cd ./build/dialog; patch -p1 < ../../patches/dialog-curl-loader.patch
-	make -C ./build/dialog/scripts/config
-	cd ./conf-user; ../build/dialog/scripts/config/mconf ../mconfig/Config.in
+#menuconfig:
+#	mkdir -p build; cd ./build; tar zxfv ../packages/dialog.tar.gz
+#	cd ./build/dialog; patch -p1 < ../../patches/dialog-curl-loader.patch
+#	make -C ./build/dialog/scripts/config
+#	cd ./conf-user; ../build/dialog/scripts/config/mconf ../mconfig/Config.in
 
 $(LIBEVENT):
 	mkdir -p $(LIBEVENT_BUILD)
