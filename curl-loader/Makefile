@@ -85,6 +85,11 @@ INCDIR=-I. -I./inc -I$(OPENSSLDIR)/include
 LIBCURL:=./lib/libcurl.a
 LIBEVENT:=./lib/libevent.a
 
+# documentation directory
+DOCDIR=/usr/share/curl-loader/
+
+# manual page directory
+MANDIR=/usr/share/man
 
 all: $(TARGET)
 
@@ -107,7 +112,12 @@ tags:
 
 install:
 	cp -f ./curl-loader /usr/bin
-	cp -f curl-loader.1 /usr/share/man/man1/curl-loader.1  
+	cp -f doc/curl-loader.1 $(MANDIR)/man1/  
+	cp -f doc/curl-loader-config.5 $(MANDIR)/man5/
+	@if [ ! -d $(DOCDIR) ]; then mkdir -p $(DOCDIR) ; fi
+	cp -f doc/* $(DOCDIR) 
+	cp -rf conf-examples $(DOCDIR)
+
 
 	
 
