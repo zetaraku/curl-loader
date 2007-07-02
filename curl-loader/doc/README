@@ -1,7 +1,9 @@
 curl-loader, version 0.32
-    
-Robert Iakobashvili, Ashdod, Israel
-Michael Moser, Modiin, Israel
+ 
+2006 - 2007 Copyright (C)  
+Robert Iakobashvili,  <coroberti@gmail.com>, Ashdod, Israel
+Michael Moser, <moser.michael@gmail.com>, Modiin, Israel
+All rights reserved.
 
 To skip bla-bla, please, refer to the QUICK-START file,
 but mind, that tuning for a high load still is in the FAQs.
