@@ -6,9 +6,9 @@
   </header>
   <body> 
       <p>The link serves as our Road Map file:</p>
-<link href="http://curl-loader.svn.sourceforge.net/viewvc/curl-loader/trunk/curl-loader/TODO?view=markup">TODO</link><br/>
+<link href="http://curl-loader.svn.sourceforge.net/viewvc/curl-loader/trunk/curl-loader/doc/TODO?view=markup">TODO</link><br/>
 <br/>
-We are looking for developers for the project. If you can help us to improve documentation or
-propose features or behavior, it would be very much appreciated.  <br/>
+The project is looking for developers. If you can help us to improve documentation,
+propose features or behavior, it would be also very much appreciated.  <br/>
   </body>
 </document>

@@ -148,12 +148,20 @@ rewinded, when reaching configurable size preventing disk crashes;
       <title>Authors</title>
       <p>
          The tool is written and supported by Robert Iakobashvili and Michael Moser both 
-         from Israel. 
+         from Israel.
       </p>
+     <p>
+          <img src="images/israel.jpg" alt="Israel flag" />
+      </p>
+      <p>
         Please, use the link to the mailing list provided in Support 
          section to contact us and to get support for the tool. Subscribe to the curl-loader-devel
          list and mail your filled PROBLEM-REPORTING form located in the curl-loader tarball
          to the list. Your suggestion, ideas and patches would be very much appreciated.
+      </p>
+      <p>
+         The official language of the curl-loader-devel mailing list is English, whereas 
+         Russian and German written mails will be also responded.
       </p>
 
      </section>
