@@ -86,7 +86,7 @@ LIBCURL:=./lib/libcurl.a
 LIBEVENT:=./lib/libevent.a
 
 # documentation directory
-DOCDIR=/usr/share/curl-loader/
+DOCDIR=/usr/share/doc/curl-loader/
 
 # manual page directory
 MANDIR=/usr/share/man
