@@ -85,7 +85,7 @@ typedef struct client_context
     We can use it as a timer_node without disclosing all other
     structure of client_context.
 
-    Used for the client two timers:
+    Used for the client two not overlapping timers:
     - sleeping after url timer;
     - limiting maximum url fetching time (inc resolving and connecting);
   */
@@ -160,6 +160,9 @@ typedef struct client_context
   FILE* logfile_headers;
 
   FILE* logfile_bodies;
+
+  
+  char* url_fetch_decision;
 
 
   /* 

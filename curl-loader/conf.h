@@ -141,6 +141,7 @@ int parse_config_file (char* const filename,
 
 int create_response_logfiles_dirs (struct batch_context* bctx);
 int alloc_client_formed_buffers (struct batch_context* bctx);
+int alloc_client_fetch_decision_array (struct batch_context* bctx);
 int init_operational_statistics(struct batch_context* bctx);
 
 /*

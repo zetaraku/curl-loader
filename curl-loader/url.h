@@ -253,6 +253,18 @@ typedef struct url_context
   */
   curl_off_t transfer_limit_rate;
 
+  /*
+    Percent probability, that a client will fetch the url.
+    Zero means 100 % probability.
+  */
+  int fetch_probability;
+
+  /*
+    Client should remember, whetter once decided using rand()
+    "to fetch a url or not to fetch".
+  */
+  int fetch_probability_once;
+
 
   /************* Assisting Elements    *************/
 

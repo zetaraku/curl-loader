@@ -1990,6 +1990,14 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
                    __func__);
           return -1;
         }
+
+      if (alloc_client_fetch_decision_array (&bc_arr[i]) == -1)
+        {
+          fprintf (stderr, 
+                   "\"%s\" - alloc_client_fetch_decision_array () failed .\n", 
+                   __func__);
+          return -1;
+        }
       
       if (init_operational_statistics (&bc_arr[i]) == -1)
         {

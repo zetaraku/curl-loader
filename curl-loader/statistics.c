@@ -321,7 +321,7 @@ unsigned long get_tick_count ()
 {
   struct timeval  tval;
 
-  if (!gettimeofday (&tval, NULL) == -1)
+  if (gettimeofday (&tval, NULL) == -1)
     {
       fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", 
               __func__, errno);

@@ -52,7 +52,7 @@ current_url_completion_timeout (unsigned long *timeout,
     {
       fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", 
               __func__, errno);
-      exit (1);
+      return -1;
     }
   srand (tval.tv_sec * tval.tv_usec);
 
@@ -86,11 +86,11 @@ current_url_sleeping_timeout (unsigned long *timeout,
 
   struct timeval  tval;
 
-  if (!gettimeofday (&tval, NULL) == -1)
+  if (gettimeofday (&tval, NULL) == -1)
     {
       fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", 
               __func__, errno);
-      exit (1);
+      return -1;
     }
   srand (tval.tv_sec * tval.tv_usec);
 

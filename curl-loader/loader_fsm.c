@@ -24,6 +24,7 @@
 #include "fdsetsize.h"
 
 #include <stdlib.h>
+#include <errno.h>
 
 #include "loader.h"
 #include "client.h"
@@ -83,6 +84,8 @@ static int client_remove_from_load (batch_context* bctx, client_context* cctx);
 static int client_add_to_load (batch_context* bctx, 
                                client_context* cctx,
                                unsigned long now_time);
+
+static int fetching_decision (client_context* cctx, url_context* url);
 
 
 /*****************************************************************************
@@ -1069,11 +1072,14 @@ static int pick_up_next_url (client_context* cctx)
   if (! bctx->cycling_completed && cctx->url_curr_index == (size_t)lc_url)
     {
       // Finished with all the urls for a single cycle
+      //
       advance_cycle_num (cctx);
           
       if (cctx->cycle_num == bctx->cycles_num)
         {
-          bctx->cycling_completed = 1; // Cycling completed
+
+          // Cycling completed
+          bctx->cycling_completed = 1;
 
           // If there are non-cycling urls to fetch - continue
           if (cctx->url_curr_index == (size_t)(bctx->urls_num - 1))
@@ -1090,6 +1096,44 @@ static int pick_up_next_url (client_context* cctx)
         }
     }
   return -1;
+}
+
+static int fetching_decision (client_context* cctx, url_context* url)
+{
+  if (! url->fetch_probability)
+    {
+      // Not using fetch probability
+      return 1;
+    }
+
+  if (cctx->url_fetch_decision[cctx->url_curr_index] != -1)
+    {
+      return cctx->url_fetch_decision[cctx->url_curr_index];
+    }
+
+  struct timeval  tval;
+  if (gettimeofday (&tval, NULL) == -1)
+    {
+      fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", 
+              __func__, errno);
+      return -1;
+    }
+  srand (tval.tv_sec * tval.tv_usec);
+  
+  int number = 1+ (int) (((double)100) *(rand () / (RAND_MAX + 1.0)));
+
+  if (number <= url->fetch_probability)
+    {
+      cctx->url_fetch_decision[cctx->url_curr_index] = 1;
+      return 1;
+    }
+  else
+    {
+      cctx->url_fetch_decision[cctx->url_curr_index] = 0;
+      return 0;
+    }
+
+  return 0;
 }
 
 static int load_urls_state (client_context* cctx, unsigned long now_time, unsigned long *wait_msec)
@@ -1110,21 +1154,19 @@ static int load_urls_state (client_context* cctx, unsigned long now_time, unsign
                    __func__);
           return -1;
         }
-      else
-        {
-          fprintf (stderr, 
-                   "%s - sleeping %ld.\n",
-                   __func__, *wait_msec);
-        }
-      
+
       // Now, pick-up the next url index
-      if ((url_next = pick_up_next_url (cctx)) < 0)
+      do
         {
-          return (cctx->client_state = CSTATE_FINISHED_OK);
+          if ((url_next = pick_up_next_url (cctx)) < 0)
+            {
+              return (cctx->client_state = CSTATE_FINISHED_OK);
+            }
+          
+          // Set the new url index
+          cctx->url_curr_index =  (size_t) url_next;
         }
-      
-      // Set the new url index
-      cctx->url_curr_index =  (size_t) url_next;
+      while (fetching_decision (cctx, &bctx->url_ctx_array[cctx->url_curr_index]) != 1);
       
       // Setup the new url.
       setup_url (cctx);

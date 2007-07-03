@@ -135,6 +135,9 @@ static int log_resp_bodies_parser (batch_context*const bctx, char*const value);
 static int response_status_errors_parser (batch_context*const bctx, char*const value);
 static int transfer_limit_rate_parser (batch_context*const bctx, char*const value);
 
+static int fetch_probability_parser (batch_context*const bctx, char*const value);
+static int fetch_probability_once_parser (batch_context*const bctx, char*const value);
+
 static fparser find_tag_parser (const char* tag);
 
 /*
@@ -192,6 +195,9 @@ static const tag_parser_pair tp_map [] =
     {"RESPONSE_STATUS_ERRORS", response_status_errors_parser},
 
     {"TRANSFER_LIMIT_RATE", transfer_limit_rate_parser},
+
+    {"FETCH_PROBABILITY", fetch_probability_parser},
+    {"FETCH_PROBABILITY_ONCE", fetch_probability_once_parser},
 
     {NULL, 0}
 };
@@ -1670,6 +1676,40 @@ static int transfer_limit_rate_parser (batch_context*const bctx, char*const valu
   return 0;
 }
 
+static int fetch_probability_parser (batch_context*const bctx, char*const value)
+{
+  long probability = atol (value);
+
+  if (probability < 1 || probability > 100)
+    {
+      fprintf(stderr, "%s error: tag FETCH_PROBABILITY should be with "
+              "from 1 up to 100.\n", __func__);
+      return -1;
+    }
+
+  bctx->url_ctx_array[bctx->url_index].fetch_probability = (int) probability;
+  return 0;
+
+}
+
+static int fetch_probability_once_parser (batch_context*const bctx, 
+                                          char*const value)
+{
+  long probability_once = atol (value);
+
+  if (probability_once != 0 && probability_once != 1)
+    {
+      fprintf (stderr, 
+              "%s error: tag FETCH_PROBABILITY_ONCE can be either 0 or 1.\n", 
+              __func__);
+      return -1;
+    }
+
+  bctx->url_ctx_array[bctx->url_index].fetch_probability_once = 
+    (int) probability_once;
+  return 0;
+}
+
 
 static url_appl_type 
 url_schema_classification (const char* const url)
@@ -2200,6 +2240,37 @@ int alloc_client_formed_buffers (batch_context* bctx)
   return 0;
 }
 
+int alloc_client_fetch_decision_array (batch_context* bctx)
+{
+  int k = 0;
+  
+  for (k = 0; k < bctx->urls_num; k++)
+    {
+      url_context* url = &bctx->url_ctx_array[k];
+
+      if (url->fetch_probability && url->fetch_probability_once)
+        {
+          int i;
+          for (i = 0;  i < bctx->client_num_max; i++)
+            {
+              client_context* cctx = &bctx->cctx_array[i];
+
+              if (!cctx->url_fetch_decision)
+                {
+                  if (!(cctx->url_fetch_decision = calloc (bctx->urls_num, sizeof (char))))
+                    {
+                      fprintf (stderr, "\"%s\" error: failed to allocate client "
+                               "url_fetch_decision buffer.\n", __func__) ;
+                      return -1;
+                    }
+                  memset (cctx->url_fetch_decision, -1, bctx->urls_num);
+                }
+            }
+        }
+    }
+  return 0;
+}
+
 int init_operational_statistics(batch_context* bctx)
 {
   if (op_stat_point_init(&bctx->op_delta,
@@ -2257,6 +2328,14 @@ static int post_validate_init (batch_context*const bctx)
     {
       fprintf (stderr, 
                "\"%s\" - alloc_client_formed_buffers () failed .\n", 
+               __func__);
+      return -1;
+    }
+
+  if (alloc_client_fetch_decision_array (bctx) == -1)
+    {
+      fprintf (stderr, 
+               "\"%s\" - alloc_client_fetch_decision_array () failed .\n", 
                __func__);
       return -1;
     }
