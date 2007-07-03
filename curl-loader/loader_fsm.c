@@ -33,10 +33,14 @@
 #include "screen.h"
 #include "cl_alloc.h"
 
-static int load_error_state (client_context* cctx, unsigned long *wait_msec);
-static int load_init_state (client_context* cctx, unsigned long *wait_msec);
-static int load_urls_state (client_context* cctx, unsigned long *wait_msec);
-static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec);
+static int load_error_state (client_context* cctx, unsigned long now_time,
+                             unsigned long *wait_msec);
+static int load_init_state (client_context* cctx, unsigned long now_time,
+                            unsigned long *wait_msec);
+static int load_urls_state (client_context* cctx, unsigned long now_time,
+                            unsigned long *wait_msec);
+static int load_final_ok_state (client_context* cctx, unsigned long now_time,
+                                unsigned long *wait_msec);
 
 /* 
    Table of loading functions in order to call an appropiate for 
@@ -315,8 +319,9 @@ int load_next_step (client_context* cctx,
      Initialize virtual client's CURL handle for the next step of loading by calling
      load_<state-name>_state() function relevant for a particular client state.
   */
-  rval_load = load_state_func_table[cctx->client_state+1](cctx, 
-  							  &interleave_waiting_time);
+  rval_load = load_state_func_table[cctx->client_state+1] (cctx,
+                                                           now_time,
+                                                           &interleave_waiting_time);
 
 
   /* Update operational statistics */
@@ -634,8 +639,18 @@ static int client_add_to_load (batch_context* bctx,
   /* Schedule the client immediately */
   if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
     {
-      const unsigned long timer_url_completion =  
-        bctx->url_ctx_array[cctx->url_curr_index].timer_url_completion;
+      unsigned long timer_url_completion = 0;
+
+      if (current_url_completion_timeout (&timer_url_completion,
+                                          &bctx->url_ctx_array[cctx->url_curr_index],
+                                          now_time) == -1)
+        {
+          fprintf (stderr, 
+                       "%s - error: current_url_completion_timeout () failed.\n",
+                       __func__);
+          return -1;
+        }
+
 
       if (timer_url_completion)
         {
@@ -974,15 +989,18 @@ static int setup_url (client_context* cctx)
  *               first url to fetch
  *
  * Input -       *cctx      - pointer to the client context
+ *               now_time - current timestamp
  *               *wait_msec - pointer to time to wait till next scheduling (
  *                            interleave time).
  * Return Code/Output - CSTATE enumeration with the state of loading
  *******************************************************************************/
-static int load_init_state (client_context* cctx, unsigned long *wait_msec)
+static int load_init_state (client_context* cctx, 
+                            unsigned long now_time,
+                            unsigned long *wait_msec)
 {
   *wait_msec = 0;
 
-  return load_urls_state (cctx, wait_msec);
+  return load_urls_state (cctx, now_time, wait_msec);
 }
 
 /*******************************************************************************
@@ -993,11 +1011,14 @@ static int load_init_state (client_context* cctx, unsigned long *wait_msec)
  *               re-schedules the client for next cycle of loading.
  *
  * Input -       *cctx      - pointer to the client context
+*               now_time - current timestamp
  *               *wait_msec - pointer to time to wait till next scheduling 
  *                            (interleave time).
  * Return Code/Output - CSTATE enumeration with the state of loading
  ********************************************************************************/
-static int load_error_state (client_context* cctx, unsigned long *wait_msec)
+static int load_error_state (client_context* cctx,
+                             unsigned long now_time,
+                             unsigned long *wait_msec)
 {
   batch_context* bctx = cctx->bctx;
 
@@ -1012,7 +1033,7 @@ static int load_error_state (client_context* cctx, unsigned long *wait_msec)
       else
         {
             /* Load the first active url - start from the very beginning. */
-          return load_state_func_table[CSTATE_URLS](cctx, wait_msec);
+          return load_state_func_table[CSTATE_URLS](cctx, now_time, wait_msec);
         }
     }
  
@@ -1071,7 +1092,7 @@ static int pick_up_next_url (client_context* cctx)
   return -1;
 }
 
-static int load_urls_state (client_context* cctx, unsigned long *wait_msec)
+static int load_urls_state (client_context* cctx, unsigned long now_time, unsigned long *wait_msec)
 { 
   batch_context* bctx = cctx->bctx;
   int url_next = -1;
@@ -1079,7 +1100,22 @@ static int load_urls_state (client_context* cctx, unsigned long *wait_msec)
   if (cctx->client_state == CSTATE_URLS)
     {
       // Mind the after url sleeping timeout, if any.
-      *wait_msec = bctx->url_ctx_array[cctx->url_curr_index].timer_after_url_sleep;
+      //
+      if (current_url_sleeping_timeout (wait_msec,
+                                          &bctx->url_ctx_array[cctx->url_curr_index],
+                                          now_time) == -1)
+        {
+          fprintf (stderr, 
+                   "%s - error: current_url_completion_timeout () failed.\n",
+                   __func__);
+          return -1;
+        }
+      else
+        {
+          fprintf (stderr, 
+                   "%s - sleeping %ld.\n",
+                   __func__, *wait_msec);
+        }
       
       // Now, pick-up the next url index
       if ((url_next = pick_up_next_url (cctx)) < 0)
@@ -1106,9 +1142,11 @@ static int load_urls_state (client_context* cctx, unsigned long *wait_msec)
   return setup_url (cctx);
 }
 
-static int load_final_ok_state (client_context* cctx, unsigned long *wait_msec)
+static int load_final_ok_state (client_context* cctx, 
+                                unsigned long now_time, 
+                                unsigned long *wait_msec)
 {
-  (void) cctx; (void) wait_msec;
+  (void) cctx; (void) wait_msec; (void) now_time; 
 
   return CSTATE_FINISHED_OK;
 }

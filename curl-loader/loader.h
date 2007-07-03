@@ -217,7 +217,9 @@ int add_loading_clients (struct batch_context* bctx);
  ****************************************************************************************/
 int add_loading_clients_num (struct batch_context* bctx, int add_number);
 
-typedef int (*load_state_func)  (struct client_context* cctx, unsigned long *wait_msec);
+typedef int (*load_state_func)  (struct client_context* cctx, 
+                                 unsigned long now_time, 
+                                 unsigned long *wait_msec);
 
 /* 
    Table of loading functions in order to call an appropiate for 

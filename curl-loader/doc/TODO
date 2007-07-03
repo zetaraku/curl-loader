@@ -12,16 +12,13 @@ Nearest release 0.33 may hopefully include:
     the decision whether to fetch a url or not, and will use the result of the
     once made decision for all cycles.
 
-2. Usage of random time intervals, e.g 100-1000 means a random time from 
-    100 to 1000 msec.
-
-3. HTML analyses. libcurl example is using libtidy in:
+2. HTML analyses. libcurl example is using libtidy in:
    http://www.koders.com/c/fid7923BF828D0534D6B747ED138FCDD50DCFD13B3F.aspx
 
-4. A regular expression pattern for a search in a response body
+3. A regular expression pattern for a search in a response body
    Look in Apache JMeter.
 
-5. Regular expression operations for the header/s certain header and whether 
+4. Regular expression operations for the header/s certain header and whether 
    value matches a regular expression pattern.
 
 

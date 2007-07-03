@@ -224,7 +224,10 @@ static int find_first_cycling_url (batch_context* bctx);
 static int find_last_cycling_url (batch_context* bctx);
 static int netmask_to_cidr (char *dotted_ipv4);
 static int print_correct_form_usagetype (form_usagetype ftype, char* value);
-
+static int parse_timer_range (char* input, 
+                              size_t input_len, 
+                              long* first_val, 
+                              long* second_val);
 
 /****************************************************************************************
 * Function name - find_tag_parser
@@ -1481,58 +1484,70 @@ static int timer_tcp_conn_setup_parser (batch_context*const bctx, char*const val
 static int timer_url_completion_parser (batch_context*const bctx, 
 					char*const value)
 {
-  const long timer = atol (value);
+  long timer_lrange = 0;
+  long timer_hrange = 0;
+  size_t value_len = strlen (value) + 1;
 
-    if (timer < 0)
+  if (parse_timer_range (value,
+                         value_len,
+                         &timer_lrange,
+                         &timer_hrange) == -1)
     {
-        fprintf(stderr, 
-                "%s error: negative value provided %ld.\n" 
-                "The timer is expected  to be 20 msec and more.\n", 
-                __func__, timer);
-        return -1;
+      fprintf(stderr, "%s error: parse_timer_range () failed.\n", __func__);
+      return -1;
+    }
+  
+  if (!timer_hrange && timer_lrange > 0 && timer_lrange < 20)
+    {
+      fprintf(stderr, 
+              "%s error: the timer should be either 0 or 20 msec and more, not %ld.\n"
+              "Note, that since version 0.31 the timer is in msec and enforced by\n"
+              "monitoring time of each url fetching and cancelling, when it \n"
+              "takes msec above the timer. Operation statistics provides a view\n"
+              "on what happens as URL-Timed out and statistics T-Err counter.\n"
+              "To preserve the previous behavior without the timer enforcement,\n"
+              "please, place 0 value here.\n",
+              __func__, timer_lrange);
+      return -1;
     }
 
-    if (timer > 0 && timer < 20)
-      {
-         fprintf(stderr, 
-                "%s error: the timer should be either 0 or 20 msec and more.\n"
-                 "Note, that since version 0.31 the timer is in msec and enforced by\n"
-                 "monitoring time of each url fetching and cancelling, when it \n"
-                 "takes msec above the timer. Operation statistics provides a view\n"
-                 "on what happens as URL-Timed out and statistics T-Err counter.\n"
-                 "To preserve the previous behavior without the timer enforcement,\n"
-                 "please, place 0 value here.\n",
-                __func__);
-        return -1;
-      }
+    bctx->url_ctx_array[bctx->url_index].timer_url_completion_lrange = 
+      timer_lrange;
 
-    bctx->url_ctx_array[bctx->url_index].timer_url_completion = timer;
+    bctx->url_ctx_array[bctx->url_index].timer_url_completion_hrange = 
+      timer_hrange;
 
     return 0;
 }
 static int timer_after_url_sleep_parser (batch_context*const bctx, 
 					 char*const value)
 {
-    const long timer = atol (value);
-
-    if (timer < 0)
+  long timer_lrange = 0;
+  long timer_hrange = 0;
+  size_t value_len = strlen (value) + 1;
+  
+  if (parse_timer_range (value,
+                         value_len,
+                         &timer_lrange,
+                         &timer_hrange) == -1)
     {
-        fprintf(stderr, 
-                "%s error: negative value provided %ld.\n" 
-                "The timer is expected  to be either 0 or 20 msec and more.\n", 
-                __func__, timer);
-        return -1;
+      fprintf(stderr, "%s error: parse_timer_range () failed.\n", __func__);
+      return -1;
     }
-
-    if (timer > 0 && timer < 20)
+  
+    if (!timer_hrange && timer_lrange > 0 && timer_lrange < 20)
       {
-         fprintf(stderr, 
-                 "%s error: the timer should be either 0 or 20 msec and more.\n",
+        fprintf(stderr, 
+                "%s error: the timer should be either 0 or 20 msec and more.\n",
                 __func__);
         return -1;
       }
 
-    bctx->url_ctx_array[bctx->url_index].timer_after_url_sleep = timer;
+    bctx->url_ctx_array[bctx->url_index].timer_after_url_sleep_lrange = 
+      timer_lrange;
+
+    bctx->url_ctx_array[bctx->url_index].timer_after_url_sleep_hrange = 
+      timer_hrange;
 
     return 0;
 }
@@ -2638,4 +2653,72 @@ static int print_correct_form_usagetype (form_usagetype ftype, char* value)
     }
 
   return -1;
+}
+
+static int parse_timer_range (char* input,
+                              size_t input_len,
+                              long* first_val,
+                              long* second_val)
+{
+  if (!input || !input_len || !first_val || !second_val)
+    {
+      fprintf (stderr, "%s - error: wrong input\n", __func__);
+      return -1;
+    }
+
+  const char separator = '-';
+  char* second = 0;
+  char* sep = 0;
+  sep = strchr (input, separator);
+
+  if (sep)
+    {
+      *sep = '\0';
+
+      if ((sep - input < (int)input_len) && (*(sep + 1)))
+        {
+          second = sep + 1;
+        }
+      else
+        {
+          *sep = separator;
+          fprintf (stderr, "%s - error: wrong input %s. "
+                   "Separator %c exists, but no value after the separator.\n", 
+                   __func__, input, separator);
+          return -1 ;
+        }
+    }
+
+  *first_val = atol (input);
+
+  if (*first_val < 0)
+    {
+      fprintf (stderr, "%s - error: wrong input %s. "
+               "Only non-negative values are allowed.\n", 
+               __func__, input);
+      return -1;
+    }
+
+  if (sep)
+    {
+      *second_val = atol (second);
+
+      if (sep && *second_val < 0)
+        {
+          fprintf (stderr, "%s - error: wrong input %s. "
+                   "Only non-negative values are allowed.\n", 
+                   __func__, second);
+          return -1;
+        }
+      
+      if (sep && *first_val >= *second_val)
+        {
+          fprintf (stderr, "%s - error: wrong input. "
+                   "First value (%ld) should be less then the second (%ld).\n"
+                   "Switch the order.\n", __func__, *first_val, *second_val);
+          return -1 ;
+        }
+    }
+
+  return 0;
 }

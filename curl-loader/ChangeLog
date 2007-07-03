@@ -1,5 +1,11 @@
 version 0.33, ?
 
+* Random timers added as an option to TIMER_AFTER_URL_SLEEP = 0-2000,
+   which means, that a client will sleep for some random time from 0 to 2000 
+   millisec. It can be an option also to TIMER_URL_COMPLETION, whereas
+   less useful. 
+   Files url.c and ./conf-examples/timers-random-range.conf added to svn.
+
 * Bugfix Common-IP (same minimal and max ip addresses) was buggy for
   SMP configurations.
 

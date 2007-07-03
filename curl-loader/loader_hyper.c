@@ -553,12 +553,11 @@ static int on_exit_hyper (batch_context* bctx)
  ****************************************************************************************/
 static int mget_url_hyper (batch_context* bctx)		       
 {
-  float max_timeout = DEFAULT_SMOOTH_URL_COMPLETION_TIME;
-
-  if (bctx->url_ctx_array)
-    {
-      max_timeout = bctx->url_ctx_array[0].timer_url_completion;
-    }
+  // float max_timeout = DEFAULT_SMOOTH_URL_COMPLETION_TIME;
+  // if (bctx->url_ctx_array)
+  //  {
+  //    max_timeout = bctx->url_ctx_array[0].timer_url_completion;
+  //  }
  
   /* update timeout */
   update_timeout_hyper (bctx);

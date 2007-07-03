@@ -26,6 +26,8 @@
 
 #include <stddef.h>
 
+#include <curl/curl.h>
+
 
 #define URL_SHORT_NAME_LEN 12
 #define URL_AUTH_STR_LEN 64
@@ -222,16 +224,19 @@ typedef struct url_context
   long connect_timeout;
 
    /*
-     Maximum time to accomplish fetching  of a url.
+     Time to accomplish fetching  of a url.
    */
-  unsigned long timer_url_completion;
+  unsigned long timer_url_completion_lrange;
+  unsigned long timer_url_completion_hrange;
+  
 
   /* 
      Time to relax/sleep after fetching this url (msec). The timeout
      actually emulates user behavior. A user normally needs time to 
      read the page retrived prior to making another click.
    */
-  unsigned long timer_after_url_sleep;
+  unsigned long timer_after_url_sleep_lrange;
+  unsigned long timer_after_url_sleep_hrange;
 
   /* When positive, means ftp active. The default is passive. */
   int ftp_active;
@@ -276,5 +281,15 @@ typedef struct url_context
 
 } url_context;
 
+
+int
+current_url_completion_timeout (unsigned long *timeout,
+                                url_context* url, 
+                                unsigned long now);
+
+int
+current_url_sleeping_timeout (unsigned long *timeout, 
+                              url_context* url, 
+                              unsigned long now);
 
 #endif /* URL_H */
