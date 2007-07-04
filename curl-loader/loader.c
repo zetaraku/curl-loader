@@ -1362,7 +1362,7 @@ static void free_batch_data_allocations (batch_context* bctx)
   op_stat_point_release (&bctx->op_delta);
   op_stat_point_release (&bctx->op_total);
   
-  /* 
+  /*
      Free client contexts 
   */
   if (bctx->cctx_array)
@@ -1387,13 +1387,19 @@ static void free_batch_data_allocations (batch_context* bctx)
            if (cctx->logfile_headers)
              {
                fclose (cctx->logfile_headers);
-                cctx->logfile_headers= NULL;
+               cctx->logfile_headers= NULL;
              }
 
            if (cctx->logfile_bodies)
              {
                fclose (cctx->logfile_bodies);
                cctx->logfile_bodies = NULL;
+             }
+
+           if (cctx->url_fetch_decision)
+             {
+               free (cctx->url_fetch_decision);
+               cctx->url_fetch_decision = NULL;
              }
          }/* from for */
 

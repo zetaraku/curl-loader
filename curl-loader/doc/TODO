@@ -1,25 +1,26 @@
 Last updated: July 2 2007
 
-Nearest release 0.33 may hopefully include: 
+The next stable release 0.40 requires:
 
-1. FETCH_PROBABILITY tag with a value from 0 to 100
-     percents will provide an option to fetch a url not by all
-    but rather by a fraction of clients. When the tag is 30 (%),
-    it means, that only 30% of clients will fetch the url, whereas
-    70% of clients will go forward.
-    FETCH_PROBABILITY_ONCE=1 will enable to use random
-    calculation only once (at the first cycle), where a client will remember
-    the decision whether to fetch a url or not, and will use the result of the
-    once made decision for all cycles.
+1. Some more testings with -t option - bug in statistics;
+2. Documentation updating, including the man pages
+     and the web-site;
 
-2. HTML analyses. libcurl example is using libtidy in:
+
+The next beta release 0.41 may hopefully be devoted to processing
+of HTTP response bodies: 
+
+1. HTML analyses. libcurl example is using libtidy in:
    http://www.koders.com/c/fid7923BF828D0534D6B747ED138FCDD50DCFD13B3F.aspx
 
-3. A regular expression pattern for a search in a response body
+2. A regular expression pattern for a search in a response body
    Look in Apache JMeter.
 
-4. Regular expression operations for the header/s certain header and whether 
+3. Regular expression operations for the header/s certain header and whether 
    value matches a regular expression pattern.
+
+4. Vladislav Wainbaum proposed to add extraction of a field from response
+      to be used in the next requests.
 
 
 ---------------------------------------------------------------------------------------------------- 
@@ -110,7 +111,3 @@ Next releases:
    make. libcurl's pipelining support doesn't currently allow you to do any fine-
    grained control on what gets pipelined or not, so if you enable it you'll get
    pipelining for every subsequent request sent to the same server."
-
-
-12. Vladislav Wainbaum proposed to add extraction of a field from response
-      to be used in the next requests.

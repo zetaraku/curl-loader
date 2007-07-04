@@ -1,5 +1,22 @@
 version 0.33, ?
 
+* Tag FETCH_PROBABILITY adds support in order a client (virtual)
+   to deal with a URL not as a must, but with a certain probability.
+   The allowed values are in the range from 1 to 100 percents. If one needs
+   a zero percent probability, he can just remove/comment-out the url from
+   the batch-file. When somebody places 100, it means, that the tag can be 
+   actually commented out, because the url is a must.
+   How it works? When a client comes to a url, it examines, whether the url
+   should be fetched with a certain probability and not for certain. If the url
+   is a MUST (no tag FETCH_PROBABILITY), the client fetches the url.
+   If the tag is configured, the client makes a random decision and with
+   a probability of the tag value fetches the url. If the url is not to be fetched,
+   the client goes to the next url or, when there are no other urls,
+   increases the cycles count.
+   Tag FETCH_PROBABILITY_ONCE forces the decision of a client regarding
+   each url to be done only once upon the first cycle and to be remembered for 
+   other cycles.
+
 * Random timers added as an option to TIMER_AFTER_URL_SLEEP = 0-2000,
    which means, that a client will sleep for some random time from 0 to 2000 
    millisec. It can be an option also to TIMER_URL_COMPLETION, whereas

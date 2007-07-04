@@ -1106,30 +1106,39 @@ static int fetching_decision (client_context* cctx, url_context* url)
       return 1;
     }
 
-  if (cctx->url_fetch_decision[cctx->url_curr_index] != -1)
+  if (cctx->url_fetch_decision && 
+      cctx->url_fetch_decision[cctx->url_curr_index] != -1)
     {
       return cctx->url_fetch_decision[cctx->url_curr_index];
     }
 
   struct timeval  tval;
+
   if (gettimeofday (&tval, NULL) == -1)
     {
       fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", 
               __func__, errno);
       return -1;
     }
+
   srand (tval.tv_sec * tval.tv_usec);
   
   int number = 1+ (int) (((double)100) *(rand () / (RAND_MAX + 1.0)));
 
   if (number <= url->fetch_probability)
     {
-      cctx->url_fetch_decision[cctx->url_curr_index] = 1;
+      if (cctx->url_fetch_decision)
+        {
+          cctx->url_fetch_decision[cctx->url_curr_index] = 1;
+        }
       return 1;
     }
   else
     {
-      cctx->url_fetch_decision[cctx->url_curr_index] = 0;
+      if (cctx->url_fetch_decision)
+        {
+          cctx->url_fetch_decision[cctx->url_curr_index] = 0;
+        }
       return 0;
     }
 
