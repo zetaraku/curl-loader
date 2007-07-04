@@ -4,6 +4,9 @@ TAGFILE=.tagfile
 
 BUILD=$(shell pwd)/build
 
+#
+# Building of DNS asynch resolving c-ares library.
+#
 #CARES_BUILD=$(BUILD)/c-ares
 #CARES_VER:=1.4
 #CARES_MAKE_DIR=$(CARES_BUILD)/c-ares-$(CARES_VER)
@@ -74,6 +77,9 @@ LDFLAGS=-L./lib -L$(OPENSSLDIR)/lib
 # Link Libraries. RedHat/FC require sometimes lidn
 LIBS= -ldl -lpthread -lrt -lidn -lcurl -levent -lz -lssl -lcrypto #-lcares 
 
+# Link Libraries. Some other distributions do not need -lidn
+LIBS= -ldl -lpthread -lrt -lcurl -levent -lz -lssl -lcrypto #-lcares 
+
 # Include directories
 INCDIR=-I. -I./inc -I$(OPENSSLDIR)/include
 
@@ -114,13 +120,6 @@ install:
 	@if [ ! -d $(DOCDIR) ]; then mkdir -p $(DOCDIR) ; fi
 	cp -f doc/* $(DOCDIR) 
 	cp -rf conf-examples $(DOCDIR)
-
-
-#menuconfig:
-#	mkdir -p build; cd ./build; tar zxfv ../packages/dialog.tar.gz
-#	cd ./build/dialog; patch -p1 < ../../patches/dialog-curl-loader.patch
-#	make -C ./build/dialog/scripts/config
-#	cd ./conf-user; ../build/dialog/scripts/config/mconf ../mconfig/Config.in
 
 $(LIBEVENT):
 	mkdir -p $(LIBEVENT_BUILD)
