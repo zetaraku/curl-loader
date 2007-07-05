@@ -1,4 +1,9 @@
-.TH curl\-loader\-config 5 "July 1, 2007" "Version 0.32"
+.\" Copyright (C) 2007 by John Gatewood Ham
+.\"
+.\" The man pages is licensed under the terms of the GNU 
+.\" General Public License version 2 as
+.\" published by the Free Software Foundation.
+.TH curl\-loader\-config 5 "July 8, 2007" "Version 0.40"
 .SH NAME
 .nh
 .B curl\-loader\-config
@@ -92,11 +97,13 @@ name is used for the display while the
 .B curl\-loader
 is running, and also for the three generated files.  
 This is a tag for the general section.
+.TP
 .B CLIENTS_NUM_MAX
 .nh
 This requires an unsigned integer value and is used to specify the
 maximum number of clients to be used for this batch.
 This is a tag for the general section.
+.TP
 .B CLIENTS_NUM_START
 .nh
 This requires an unsigned integer value and is used to specify the
@@ -127,7 +134,7 @@ This requires a valid interface name and specifies the interface
 that will be used for connecting to the server(s) specified in the
 URLs of the URL section.  You can do:
 .nf
-ls /sys/class/net
+ls /sys/class/net or run /sbin/ifconfig or /sbin/ip addr
 .fi
 to get the names of your network interfaces.  Normally you would
 use something like eth0.  This is a tag for the general section.
@@ -144,17 +151,17 @@ This requires a valid IP address as the value.  This is the first
 address to use and the first client you create will use this as its
 source address.  The 
 .B curl\-loader
-tool supports two operating modes.  In the first mode, a fake IP
-is used for each client.  The first client gets IP_ADDR_MIN, then
-each new client will increment this by one and
+tool supports two operating modes.  In the first mode, a secondary IP
+is used for each client and added to the network interface.  The first client 
+gets IP_ADDR_MIN, then each new client will increment this by one and
 use that address, until the 
 .B IP_ADDR_MAX 
 is reached and the address will wrap back to IP_ADDR_MIN.  In the
-second mode, you specify the real IP for the interface specified in
-the 
+second mode, you specify the only IP, optionally to be the real address for the 
+interface specified in the 
 .B INTERFACE
-tag and you use it for IP_ADDR_MIN and IP_ADDR_MAX and all clients
-use the real IP for that interface.  This is a tag for the general 
+tag, and you use it for IP_ADDR_MIN and IP_ADDR_MAX and all clients
+use the only IP-address.  This is a tag for the general 
 section.
 .TP
 .B IP_ADDR_MAX
@@ -173,7 +180,7 @@ general section.
 .TP
 .B USER_AGENT
 This requires a valid quoted string value.  This is a way to override the
-default MISIE-6-like HTTP header User-Agent.  This will be used for
+default MS IE-6-like HTTP header User-Agent.  This will be used for
 all URLs.  If you want to set it only for a particular URL, see the
 .B HEADER
 tag.  This is a tag for the general section.
@@ -198,7 +205,7 @@ This is a tag for the URL section.
 .B URL_SHORT_NAME
 .nh
 This optional tag requires an ASCII string with at most 12 characters.
-It is used for the statistics display while the
+It is used for the operational statistics display while the
 .B cur\-loader
 tool is running.
 This is a tag for the URL section.
@@ -207,7 +214,7 @@ This is a tag for the URL section.
 .nh
 This optional tag is used when the URL is empty and is set to the integer 1.
 It is used to indicate that the current URL from the last operation should
-be used.  This is used when doing an http POST.
+be used.  This is used for example when doing an http POST.
 This is a tag for the URL section.
 .TP
 .B URL_DONT_CYCLE
@@ -234,7 +241,8 @@ This is a tag for the URL section.
 .B HEADER
 .nh
 This optional tag requires a string value.  This is used to send a 
-custom header sequence.
+custom request header. The tag can be used either to add a new header
+to the loader defaults or to overwrite the header value, used by the defaults.
 This is a tag for the URL section.
 .TP
 .B USERNAME
@@ -405,14 +413,15 @@ tool changes the default value.  This tag allows you to set this for
 a particular URL.
 This is a tag for the URL section.
 .TP
-.B TIMER_USR_COMPLETION
+.B TIMER_URL_COMPLETION
 .nh
 This optional tag requires an unsigned integer value.  This specifies the
 time in milliseconds to wait for a url fetching operation to complete.
 If the value is 0, this means there is no time limit enforced.
 If the value is greater than 0, then if the fetch is not completed in
 that amount of time, the fetch is cancelled and is considered a time out.
-Strangely, no value between 1 and 19 may be used.
+Values between 1 and 19 should not be used because the operating system and
+curl-loader cannot enforce such short timers.
 This is a tag for the URL section.
 .TP
 .B TIMER_AFTER_URL_SLEEP
@@ -420,6 +429,9 @@ This is a tag for the URL section.
 This optional tag requires an unsigned integer value.  This specifies the
 time in milliseconds for a client to sleep after finishing a fetch.  The
 value 0 means do not sleep at all, but instead immediately continue.
+Random timer values could be an option specified as e.g. 0-2000,
+which means, that a client will sleep for some random time from 0 to 2000 
+milliseconds.
 This is a tag for the URL section.
 .TP
 .B FTP_ACTIVE
@@ -452,19 +464,77 @@ This is a tag for the URL section.
 .TP
 .B RESPONSE_STATUS_ERRORS
 .nh
-.B "****> FIXME! FIXME! FIXME! FIXME! <****"
 .br
-I could not really understand the README file about this option.  I
-tried to use it with ftp to make a response of 0 work and otherwise
-have things work normally but was unsuccessful.
+Response codes of 4xx (without 401 and 407) and all 5xx are considered as 
+operational errors. On error client does not continue along with batch test
+plan, and instead tries another cycle. By using the tag one can either add a status to 
+the errors set or remove it. Sign + (plus) adds, - (minus) removes.
+For example,  the effect of RESPONSE_STATUS_ERRORS="+200,-404"
+is that 200 responses will be considered for that url as errors, whereas 404 
+will be considered as success.
+This is a tag for the URL section.
+.TP
+.B MULTIPART_FORM_DATA
+.nh
+This tag adds initial support for multipart form data POST-ing as in RFC1867.
+Several tags MULTIPART_FORM_DATA can be used for a url to post in a 
+configuration file, e.g. as in ./conf-examples/multipart-formdata-post.conf:
+.nf
+	
+   MULTIPART_FORM_DATA="yourname=Michael"
+   MULTIPART_FORM_DATA="filedescription=Cool text file with cool text inside"
+   MULTIPART_FORM_DATA="htmlcode=<HTML></HTML>;type=text/html"
+   MULTIPART_FORM_DATA="file=@cooltext.txt"
+   MULTIPART_FORM_DATA="coolfiles=@fil1.gif,fil2.txt,fil3.html"
+.fi
+
+The files to be copied are indicated by @ and to be located in the same directory
+as curl-loader.
 .br
-.B "****> FIXME! FIXME! FIXME! FIXME! <****"
+.br
+Currently, the feature uses the strings provided AS_IS and does not generate
+any unique users, unique passwords or loads tokens from file.
+.br
+To prevent from sending "Expect: 100-continue", pass as a custom HTTP header
+HEADER="Expect: "
+.br
 .br
 This is a tag for the URL section.
+.TP
+.B TRANSFER_LIMIT_RATE
+This optional tag limits throughput for download or upload operations for 
+each client fetching the particular url, where it is used. The value of the tag 
+to be provided as bytes (not bits) per second.
+This is a tag for the URL section.
+.TP
+.B FETCH_PROBABILITY
+This optional tag allows to fetch a url with a certain run-time probability.
+The allowed values are in the range from 1 to 100 percents.
+This is a tag for the URL section.
+.TP
+.B FETCH_PROBABILITY_ONCE
+This optional tag allows for each client to make the decision regarding
+the
+.B FETCH_PROBABILITY
+to be done only once (at the first cycle).
+
+
+
 .SH AUTHORS
 The
 .B curl\-loader
 .nh
 program was written by Robert Iakobashvili and Michael Moser.
+.br
+
+This manual page was written by John Gatewood Ham
+.br
+.SH FILES
+/usr/bin/curl-loader
+.br
+/usr/share/doc/curl-loader/* for documentation
+.br
+/usr/share/doc/curl-loader/conf-examples/* for configuration examples
+.br
 .SH "SEE ALSO"
 .BR curl\-loader (8)

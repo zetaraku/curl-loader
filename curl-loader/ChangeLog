@@ -1,4 +1,4 @@
-version 0.33, ?
+version 0.40, ?
 
 * Tag FETCH_PROBABILITY adds support in order a client (virtual)
    to deal with a URL not as a must, but with a certain probability.
@@ -52,7 +52,7 @@ version 0.33, ?
    any unique users, unique passwords or loads tokens from file.
 
    To prevent from sending "Expect: 100-continue", pass as a custom HTTP header
-   CUSTOM_HEADER="Expect: "
+   HEADER="Expect: "
 
    Still, should be tested as we do not have and server side for that.
 

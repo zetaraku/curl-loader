@@ -1,8 +1,13 @@
-.TH curl\-loader 8 "June 25, 2007" "Version 0.32"
+.\" Copyright (C) 2007 by John Gatewood Ham
+.\"
+.\" The man pages is licensed under the terms of the GNU 
+.\" General Public License version 2 as
+.\" published by the Free Software Foundation.
+.TH curl\-loader 8 "July 8, 2007" "Version 0.40"
 .SH NAME
 .nh
 .B curl\-loader
-\- tool for load testing of web and ftp servers
+\- tool for testing of web applications, web and ftp servers
 .SH SYNOPSIS
 .nh
 .B curl\-loader
@@ -51,7 +56,7 @@ Specify connection establishment timeout in seconds.
 .TP
 .B "\-e"
 .nh
-Error drop client (smooth mode). When an error occurs, the client 
+Error drop client. When an error occurs, the client 
 does not attempt to process the next cycle.
 .TP
 .B "\-l #"
@@ -120,3 +125,16 @@ The
 .B curl\-loader
 .nh
 program was written by Robert Iakobashvili and Michael Moser.
+.br
+
+This manual page was written by John Gatewood Ham
+.br
+.SH FILES
+/usr/bin/curl-loader
+.br
+/usr/share/doc/curl-loader/* for documentation
+.br
+/usr/share/doc/curl-loader/conf-examples/* for configuration examples
+.br
+.SH SEE ALSO
+curl-loader-config(5)
