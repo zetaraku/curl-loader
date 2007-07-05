@@ -1,4 +1,4 @@
-FAST START INSTRUCTIONS, version 0.32
+FAST START INSTRUCTIONS, version 0.40
 
 
 
@@ -18,9 +18,11 @@ the value of that directory.
 For example: $export OPENSSLDIR=the-full-path-to-the-directory
          
 Another known issue is libidn.so, which means, that some linux distributions 
-do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink. 
+do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink.
+In some cases, you may be required to remove -lidn from the linking line,
+whereas you need to comment a line in Makefile and uncomment another.
         
-Run the following commands from your (hopefully) bash linux shell:
+Run the following commands from your bash linux shell:
 $tar zxfv curl-loader-<version>.tar.gz
 $cd curl-loader-<version>
 $make
@@ -29,6 +31,8 @@ By default, we are building both libcurl and curl-loader without optimization an
 debugging -g option. To build with optimization and without debugging, please, run:
 $make cleanall
 $make optimize=1 debug=0
+Optionally, run as a root:
+#make install
 If still any building issues, please, fill you free to contact us for assistance.
 
        
@@ -38,7 +42,7 @@ Loading Configuration.
 
 To run the load, you need to create your configuration file to be passed to
 curl-loader by the -f commmand line option, e.g.
-#curl-loader -f ./conf-user/user_batch.conf
+#curl-loader -f ./conf-user/bulk.conf
         
 For more examples, please, look at the files in "conf-examples" directory. You may 
 copy an example file and edit it.

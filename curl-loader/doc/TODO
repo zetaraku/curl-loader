@@ -1,11 +1,4 @@
-Last updated: July 2 2007
-
-The next stable release 0.40 requires:
-
-1. Some more testings with -t option - bug in statistics;
-2. Documentation updating, including the man pages
-     and the web-site;
-
+Last updated: July 5 2007
 
 The next beta release 0.41 may hopefully be devoted to processing
 of HTTP response bodies: 

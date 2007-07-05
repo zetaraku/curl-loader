@@ -3,7 +3,7 @@
 .\" The man pages is licensed under the terms of the GNU 
 .\" General Public License version 2 as
 .\" published by the Free Software Foundation.
-.TH curl\-loader 8 "July 8, 2007" "Version 0.40"
+.TH curl\-loader 8 "July 5, 2007" "Version 0.40"
 .SH NAME
 .nh
 .B curl\-loader
@@ -68,22 +68,12 @@ Once the size is reached, the file pointer is rewound.
 .nh
 Specify the mode of loading, with 0 for hyper (the default) or 1 for smooth.
 .TP
-.B "\-o"
-Output bodies of files downloaded to sdtout.  
-.B NOTE:
-This can generate an enormous amount of output.
-.TP
 .B "\-r"
 Connections are used only once.  The
 .B
 curl\-loader
 will close connections after each operation and then open a new
 connection for any subsequent operation.
-.TP
-.B "\-s"
-Output client messages to stderr instead of to the log file.
-.B NOTE:
-This can generate an enormous amount of output.
 .TP
 .B "\-t #"
 Specify the number of threads to use for loading sub\-batches of clients.  

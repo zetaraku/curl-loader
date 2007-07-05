@@ -3,7 +3,7 @@
 .\" The man pages is licensed under the terms of the GNU 
 .\" General Public License version 2 as
 .\" published by the Free Software Foundation.
-.TH curl\-loader\-config 5 "July 8, 2007" "Version 0.40"
+.TH curl\-loader\-config 5 "July 5, 2007" "Version 0.40"
 .SH NAME
 .nh
 .B curl\-loader\-config
@@ -477,8 +477,8 @@ This is a tag for the URL section.
 .B MULTIPART_FORM_DATA
 .nh
 This tag adds initial support for multipart form data POST-ing as in RFC1867.
-Several tags MULTIPART_FORM_DATA can be used for a url to post in a 
-configuration file, e.g. as in ./conf-examples/multipart-formdata-post.conf:
+Several tags MULTIPART_FORM_DATA can be used for a url to post, 
+e.g. as in ./conf-examples/multipart-formdata-post.conf:
 .nf
 	
    MULTIPART_FORM_DATA="yourname=Michael"
@@ -502,9 +502,8 @@ HEADER="Expect: "
 This is a tag for the URL section.
 .TP
 .B TRANSFER_LIMIT_RATE
-This optional tag limits throughput for download or upload operations for 
-each client fetching the particular url, where it is used. The value of the tag 
-to be provided as bytes (not bits) per second.
+This optional tag limits client maximum throughput for a url. 
+The value of the tag to be provided as bytes (not bits) per second.
 This is a tag for the URL section.
 .TP
 .B FETCH_PROBABILITY
@@ -513,8 +512,8 @@ The allowed values are in the range from 1 to 100 percents.
 This is a tag for the URL section.
 .TP
 .B FETCH_PROBABILITY_ONCE
-This optional tag allows for each client to make the decision regarding
-the
+This optional tag enables for a client to make the decision regarding
+wether to fetch a URL or not using
 .B FETCH_PROBABILITY
 to be done only once (at the first cycle).
 
