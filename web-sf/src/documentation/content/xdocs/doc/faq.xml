@@ -87,7 +87,9 @@ What are the building pre-requirements?
          $export OPENSSLDIR=the-full-path-to-the-directory<br/>
          <br/>
          Another known issue is libidn.so, which means, that some linux distributions 
-         do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink. <br/>
+         do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink or 
+         in some cases exclude -lidn from the linking string, which requires commenting
+         a string in Makefile and uncommenting another.<br/>
          <br/>
          Tarball of curl is included to the current release. When libcurl or curl-loader 
          has building issues, correct them in the Makefile. 
@@ -107,6 +109,10 @@ What are the building pre-requirements?
          debugging -g option. To build with optimization and without debugging, please, run:<br/>
          $make cleanall<br/>
          $make optimize=1 debug=0<br/>
+         <br/>
+         Y can make optional installing of the loader by running as a root:<br/>
+          #make install<br/>
+         <br/>
          If still any building issues, please, fill you free to contact us for assistance using placed in 
          download tarball PROBLEM-REPORTING form and its instructions.<br/>
        </answer>
@@ -310,14 +316,14 @@ For more examples, please, look at the files in "conf-examples" directory.<br/>
 <br/>
 Tags of the sections GENERAL:<br/>
 <br/>
-BATCH_NAME - a short string to be provided. The string will be
-used to create logfile, statistics file and client dump files with the
-same name as the batch-name and extensions .log, .txt and .ctx, respectively.<br/>
+BATCH_NAME requires a string value and is used to name the batch.  This
+name is used for the display while the program is running, and also for the three 
+generated log and statistics files.<br/>
 <br/>
-CLIENTS_NUM_MAX - a maximum number of clients to be used for load.
-Any positive number is valid here. Note, that each loading client requires 30-35 K
+CLIENTS_NUM_MAX - a maximum number of clients to be used for this load.
+Any positive number is valid here. Note, that each loading client requires about 30 K
 of RAM plus some non-pageable memory in kernel. We have already tried loads
-with up to 20000 clients. Loads above 1000 client is recommended to start with a some
+with up to 60000 clients. Loads above 1000 client is recommended to start with a some
 lower starting number, managed by the next tag CLIENTS_NUM_START and
 ramped-up each second by adding CLIENTS_RAMPUP_INC clients to the load.<br/>
 <br/>
@@ -493,7 +499,9 @@ T-Err number.<br/>
 <br/>
 TIMER_AFTER_URL_SLEEP is the time in milli-seconds for client to sleep 
 after fetching a URL prior to dealing with the next URL. Zero (0) means don't wait 
-and schedule client after the URL immediately.<br/>
+and schedule client after the URL immediately. Random timer values could be an 
+option specified as e.g. 0-2000, which means, that a client will sleep for some 
+random time from 0 to 2000 milliseconds.<br/>
 <br/>
 FTP_ACTIVE, when defined as 1, is forcing FTP protocol to use an active mode 
 (the default is passive).<br/>
@@ -518,6 +526,35 @@ For example,  the effect of RESPONSE_STATUS_ERRORS="+200,-404"
 is that 200 responses will be considered for that url as errors, whereas 404 
 will be considered as success.<br/>
 <br/>
+<br/>
+MULTIPART_FORM_DATA tag adds initial support for multipart form data 
+POST-ing as in RFC1867. <br/>
+Several tags MULTIPART_FORM_DATA can be used 
+for a url to post, e.g. as in ./conf-examples/multipart-formdata-post.conf:<br/>
+<br/>
+MULTIPART_FORM_DATA="yourname=Michael"<br/>
+MULTIPART_FORM_DATA="filedescription=Cool text file with cool text inside"<br/>
+MULTIPART_FORM_DATA="htmlcode=&lt;HTML&gt;&lt;/HTML&gt;;type=text/html"<br/>
+MULTIPART_FORM_DATA="file=@cooltext.txt"<br/>
+MULTIPART_FORM_DATA="coolfiles=@fil1.gif,fil2.txt,fil3.html"<br/>
+<br/>
+The files to be copied are indicated by @ and to be located in the same directory
+as curl-loader. Currently, the feature uses the strings provided AS_IS and does not generate
+any unique users, unique passwords or loads tokens from file.
+To prevent from sending "Expect: 100-continue", pass as a custom HTTP header
+HEADER="Expect: "<br/>
+<br/>
+<br/>
+TRANSFER_LIMIT_RATE limits client maximum throughput for 
+a url. The value of the tag to be provided as bytes (not bits) per second.<br/>
+<br/>
+FETCH_PROBABILITY allows to fetch a url not as a must, but 
+with a certain run-time probability. The allowed values are in the 
+range from 1 to 100 percents.<br/>
+<br/>
+FETCH_PROBABILITY_ONCE enables for a client to make the decision regarding
+wether to fetch a URL or not using FETCH_PROBABILITY
+to be done only once (at the first cycle).
       </answer>
     </faq>
 
@@ -531,7 +568,7 @@ will be considered as success.<br/>
             filled and posted by POST);<br/>
           - POST only;<br/>
            - GET only.<br/>
-        Next version will support multipart form data POST-ing as in RFC1867.<br/>
+        The loader also supports multipart form data POST-ing as in RFC1867.<br/>
           <br/>
          The loader supports HTTP Web Authentication and Proxy Authentication.
          The supported authentication methods are Basic, Digest (RFC2617) and NTLM.
@@ -567,14 +604,14 @@ ftp_upload.conf.<br/>
       <answer>
       Running hundred and thousand of clients, please, do not forget:<br/>
         - to increase limit of descriptors (sockets) by running e.g. <br/>
-           #ulimit -n 19999;<br/>
+           #ulimit -n 100 000;<br/>
         - optionally, to set reuse of sockets in time-wait state: by setting <br/>
             #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or<br/> 
            #echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse;<br/>
        <br/>
 In some cases you may need to increase the system limits for open
 descriptors (sockets):<br/>
-echo 65535 > /proc/sys/fs/file-max <br/>
+echo 150 000 > /proc/sys/fs/file-max <br/>
 Note, that your linux distribution may require editing of some other files
 like /etc/security/limits.conf, etc
        </answer>
@@ -590,14 +627,13 @@ like /etc/security/limits.conf, etc
          <br/>
          Other possible options are:<br/>
         -c[onnection establishment timeout, seconds]<br/>
-        -e[rror drop client. Client on error doesn't attempt loading any more]<br/>
+        -e[rror drop client. Client on error doesn't attempt to process the next cycle]<br/>
         -h[elp]<br/>
         -i[ntermediate (snapshot) statistics time interval (default 3 sec)]<br/>
         -f[ilename of configuration to run (batches of clients)]<br/>
         -l[ogfile max size in MB (default 1024). On the size reached, file pointer is rewinded]<br/>
         -m[ode of loading, 0 - hyper (the default, epoll () based ), 1 - smooth (select () based)]<br/>
         -r[euse connections disabled. Closes TCP-connections and re-open them. Try with and without]<br/>
-        -s[tderr printout of client messages instead of to logfile - attn!- bulky]<br/>
         -v[erbose output to the logfiles; includes info about headers sent/received]<br/>
         -u[rl logging - logs url names to logfile, when -v verbose option is used]<br/>
         -w[arnings skip]<br/>
@@ -828,7 +864,7 @@ Y may add to Makefile optimization for your particular processor by
 <br/>
 3. Increase the default number of allowed open descriptors (sockets);<br/>
 <br/>
-Run e.g. #ulimit -n 19900<br/>
+Run e.g. #ulimit -n 100 000<br/>
 <br/>
 When running several instances of curl-loader, consider increase of system
 limits for open descriptors, if necessary. Take your own account of the
