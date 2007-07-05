@@ -114,12 +114,15 @@ tags:
 	etags --members -o $(TAGFILE) *.h *.c
 
 install:
-	cp -f ./curl-loader /usr/bin
-	cp -f doc/curl-loader.1 $(MANDIR)/man1/  
-	cp -f doc/curl-loader-config.5 $(MANDIR)/man5/
-	@if [ ! -d $(DOCDIR) ]; then mkdir -p $(DOCDIR) ; fi
-	cp -f doc/* $(DOCDIR) 
-	cp -rf conf-examples $(DOCDIR)
+	mkdir -p $(DESTDIR)/usr/bin 
+	mkdir -p $(DESTDIR)$(MANDIR)/man1
+	mkdir -p $(DESTDIR)$(MANDIR)/man5
+	mkdir -p $(DESTDIR)$(DOCDIR)
+	cp -f curl-loader $(DESTDIR)/usr/bin
+	cp -f doc/curl-loader.1 $(DESTDIR)$(MANDIR)/man1/  
+	cp -f doc/curl-loader-config.5 $(DESTDIR)$(MANDIR)/man5/
+	cp -f doc/* $(DESTDIR)$(DOCDIR) 
+	cp -rf conf-examples $(DESTDIR)$(DOCDIR)
 
 $(LIBEVENT):
 	mkdir -p $(LIBEVENT_BUILD)
