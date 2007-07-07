@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V1.2//EN" "http://apache.org/forrest/dtd/document-v12.dtd">
+<document> 
+  <header> 
+    <title>curl-loader - High Load HW</title> 
+  </header>
+  <body> 
+      <p>We have used the following HW to run loads of 60K clients/users:</p>
+<br/>
+an old PC with dual Xeon and 2-4 GB of checked memory, where 4GB is recommended.
+We compiled curl-loader with optimization, tuned linux as described in our FAQs (see
+HOWTOS-FAQs and run the loader with threads using command line option -t 2 or -t 4.
+Please, note that due to still unresolved bugs most probably in libevent, the loader may crash
+on start. Workaround it by re-running and/or, optionally, changing the number of threads.
+We are recommending to run the number of threads close to the number of logical CPUs.<br/>
+<br/>
+<p>To run a load of 100-150 K clients/users we would suggest to use:</p>
+<br/>
+a PC-box equipped with two modern dual core Intel or AMD CPUs and 8GB of checked RAM.<br/>
+Please, make all optimizations as in HOWTOS-FAQs, mind the total bandwidth limitations of
+the box NICs and run it with -t 4 command-line option. Y may wish to limit maximum bandwidth
+used by client as specified in HOWTOS-FAQs, using a special URL-section tag.<br/>
+<br/>
+Many testing scenarious with 100K clients do not require strong processing power and
+PC with less CPU resources could be enough. Each client requires about 30-40K of memory +
+better to leave some more spare memory for the system, therefore compromises on memory
+are not recommended. 
+  </body>
+</document>

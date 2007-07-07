@@ -49,8 +49,9 @@ loading clients. To reach 10K simultaneously loading clients we would recommend 
 single 3.2 GHz Intel or 2.2 GHz AMD and 1.5-2 GB of memory.<br/>
 <br/>
 When loading from a multi-CPU (or multi-core) systems, a loading model with the number of
-curl-loader threads equal to the number of logical CPUs seen in /proc/cpuinfo may be the most effective 
-and deliver even higher numbers (than 10K) of simultaneously loading clients from a single PC. 
+curl-loader threads equal to the number of logical CPUs seen in /proc/cpuinfo (command-line option 
+-t &lt;thread-num&gt;) may be the most effective 
+and deliver very high numbers  (20K-50K-100K) of simultaneously loading clients from a single PC. 
 To run a batch in several threads use the command line option -t &lt;number-of-threads&gt;.<br/>
 <br/>
 If you are thinking, tuning, optimizing and getting our advise - the sky is the limit.
@@ -835,9 +836,8 @@ error state will not be scheduled for load any more. <br/>
      What about performance?
       </question>
       <answer>
-HYPER mode (-m 0 command line option) was already used for loads with up to 10000 clients,
-whereas HW issues, like CPU and memory resource, start to be counting.
-The mode uses epoll() syscall (via libevent library) for demultiplexing. <br/>
+The loader was already used for loads with up to 60000 clients,
+whereas HW issues, mainly memory resources, start to be counting.<br/>
 <br/>
        </answer>
     </faq>
@@ -879,7 +879,7 @@ to be cared about for the default hyper mode.<br/>
 <br/>
 Increase the maximum number of open descriptors in your linux system, if required,
 using linux HOWTOS.<br/>
-echo 65535 > /proc/sys/fs/file-max <br/>
+echo 100 000 > /proc/sys/fs/file-max <br/>
 Note, that your linux distribution may require editing of some other files
 like /etc/security/limits.conf, etc<br/>
 <br/>
@@ -909,7 +909,7 @@ will compete for the IP-addresses to bind to.<br/>
 Use CLIENTS_RAMPUP_INC tag in smooth or hyper mode to increase number of your 
 clients gradually at start-up in order not boom the server and not to burn out the CPU
 at your loading machine. Addition of new clients is a CPU-expensive operation, therefore
-keep CLIENTS_RAMPUP_INC below 100 clients per second.<br/>
+keep CLIENTS_RAMPUP_INC below 100 clients per second per each CPU/core.<br/>
 <br/>
 7. Connections re-use.<br/>
 <br/>
