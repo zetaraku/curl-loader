@@ -836,7 +836,7 @@ error state will not be scheduled for load any more. <br/>
      What about performance?
       </question>
       <answer>
-The loader was already used for loads with up to 60000 clients,
+The loader was already used for loads with up to 60000 HTTP 1.1 clients,
 whereas HW issues, mainly memory resources, start to be counting.<br/>
 <br/>
        </answer>

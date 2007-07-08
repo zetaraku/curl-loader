@@ -33,8 +33,8 @@
              simulates user behavior and supports login and authentication flavors.
       </p>
       <p>
-The goal of the project is to deliver a powerful and flexible open-source performance loading and testing tool
-as a reasonable substitute for Spirent Avalanche and IXIA IxLoad.
+The goal of the project is to deliver a powerful and flexible open-source testing solution
+as a real alternative to Spirent Avalanche and IXIA IxLoad.
   </p>
       <p>The tool is useful for performance loading of various application services,
               using HTTP, HTTPS, FTP and FTPS, for testing web and ftp servers and traffic generation.
@@ -57,8 +57,8 @@ as a reasonable substitute for Spirent Avalanche and IXIA IxLoad.
       <title>Features List</title>
       <p>
 - Virtual clients number. The tools runs depending on your HW and scenario
-5000-25000 and more simultaneously loading clients, all from a single curl-loader process.
-Actual number of clients may be several times higher (we tried 60 000) and is limited 
+2500-25000 and more simultaneously loading clients, all from a single curl-loader process.
+Actual number of clients may be several times higher (we tried 60 000 HTTP 1.1 clients) and is limited 
 mainly by memory. Each client performs loading from its own source IP-address or, 
 as an option, all clients share the same IP-address;
       </p>
