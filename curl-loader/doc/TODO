@@ -1,4 +1,18 @@
-Last updated: July 5 2007
+Last updated: July 8 2007
+
+The strategic directions of development are:
+
+- increasing of loading power like simulated HTTP/FTP users/clients
+  numbers and bringing it to hundred thousands (200 000 - 500 000);
+
+- adding support for HTTP/FTP responses body and headers analyses;
+
+- web-crawling and emulation of browser benaviour;
+
+- adding support for TLS/SSL HW acceleration (e.g. Cavium or Broadcom cards);
+
+
+
 
 The next beta release 0.41 may hopefully be devoted to processing
 of HTTP response bodies: 
