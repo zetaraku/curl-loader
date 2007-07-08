@@ -7,7 +7,7 @@ The strategic directions of development are:
 
 - adding support for HTTP/FTP responses body and headers analyses;
 
-- web-crawling and emulation of browser benaviour;
+- web-crawling and emulation of browser behaviour;
 
 - adding support for TLS/SSL HW acceleration (e.g. Cavium or Broadcom cards);
 
@@ -50,15 +50,10 @@ Next releases:
 1. Multipart post forms (RFC1867) can be enhanced by adding loading tokens
     from file, generation of unique words, etc 
 
-2. FETCH_REPETITION tag to define the number to repeat a url prior to going
-    to the next one.
+2. FETCH_REPETITION tag to define how much times to repeat a url fetching.
 
-3. Logging to files headers and bodies of responses exists. We may wish to improve
-   it on a certain stage by using memory-mapped files from our custom write
-   finctions. 
-   Memory-mapped files are effective for logging, but always we know the size in
-   advance. Mapping -re-mapping and truncation, if taken too much, may be 
-   required.
+3. Logging to files of responses headers and bodies can be improved. We may 
+    wish to use memory-mapped files.
 
 4. Configuration/making improvements: moving all source-files
    to src directory etc.
@@ -82,10 +77,10 @@ Next releases:
 
 11. Support for browsers bevavior simulation.
 
-   Aleksandar Lazic <al-curlloader@none.at> has suggested to mimic
+   Aleksandar Lazic <al-curlloader@none.at> has proposed to mimic
    the behavior of browsers/wget, etc by:
 
-   "set max_connections_per_site <NUM>
+  "set max_connections_per_site <NUM>
    set deep_or_breadth          (DEEP|BREADTH)
    set deep_or_breadth_count    <NUM>
    set wait_human_read_time     <NUM>
@@ -109,6 +104,7 @@ Next releases:
    }"
 
    Daniel Stenberg <daniel@haxx.se> has mentioned:
+
    "The http spec recommends using no more than two connections to a single
    server, and I believe they intened the primary connection to be used to get
    the main html, and then you do a second connection (with pipelining) to get
