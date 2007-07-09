@@ -23,14 +23,14 @@
   <body> 
     <section id="overview">
       <title>Introduction</title>
-      <p>The loader is an open-source tool written in C-language, simulating 
-             application load and application behavior of thousands and tens of 
-             thousand HTTP/HTTPS and FTP/FTPS clients, each with its own 
-             source IP-address. In contrast to other tools, curl-loader is using real 
-             client protocol stacks, namely, HTTP and FTP stacks of 
-             <a href="http://curl.haxx.se/libcurl/features.html">libcurl</a>,
-             TLS/SSL of <a href="http://www.openssl.org/support/faq.html">openssl</a>, 
-             simulates user behavior and supports login and authentication flavors.
+<p>curl-loader (also known as "homasnik" and "davilka") is an open-source 
+tool written in C-language, simulating application load and application 
+behavior of thousands and tens of thousand HTTP/HTTPS and FTP/FTPS 
+clients, each with its own source IP-address. In contrast to other tools 
+curl-loader is using real C-written client protocol stacks, namely, HTTP and FTP stacks of 
+<a href="http://curl.haxx.se/libcurl/features.html">libcurl</a> and
+TLS/SSL of <a href="http://www.openssl.org/support/faq.html">openssl</a>,
+and simulates user behavior with support for login and authentication flavors.
       </p>
       <p>
 The goal of the project is to deliver a powerful and flexible open-source testing solution
@@ -169,11 +169,11 @@ rewinded, when reaching configurable size preventing disk crashes;
         Please, use the link to the mailing list provided in Support 
          section to contact us and to get support for the tool. Subscribe to the curl-loader-devel
          list and mail your filled PROBLEM-REPORTING form located in the curl-loader tarball
-         to the list. Your suggestion, ideas and patches would be very much appreciated.
+         to the list. Your suggestions, ideas and patches would be very much appreciated.
       </p>
       <p>
          The official language of the curl-loader-devel mailing list is English, whereas 
-         Russian and German written mails will be also responded.
+         Russian and German written mails are also welcomed.
       </p>
 
      </section>

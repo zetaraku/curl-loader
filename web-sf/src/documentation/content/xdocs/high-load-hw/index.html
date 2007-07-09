@@ -21,15 +21,19 @@ We are recommending to run the number of threads close to the number of logical 
 </p>
 <p>
 a PC-box equipped with two modern dual core Intel or AMD CPUs and 8GB of checked RAM.
-Please, make all optimizations as in HOWTOS-FAQs, mind the total bandwidth limitations of
-the box NICs and run it with -t 4 command-line option. Y may wish to limit maximum bandwidth
+Please, proceed with all optimizations as in HOWTOS-FAQs, mind the total bandwidth limitations of
+the box NICs and run curl-loader with -t 4 command-line option. Y may wish to limit maximum bandwidth
 used by client as specified in HOWTOS-FAQs, using a special URL-section tag.
+Please, also edit the file in curl-loader distribution patches/libevent-nevent.patch
+and correct NEVENT number from the set 61000 to the maximum number of connections/clients 
+you wish to reach plus more 1000. Further run "make cleanall" and rebuild curl-loader 
+with optimization as described by the HOWTOS-FAQs.
 </p>
 <p>
 Many testing scenarious with 100K clients do not require strong processing power and a
-PC with less CPU resources could be enough. Each client requires about 30-40K of memory and
-better to leave some more spare memory for the system, therefore, compromises on memory
-are less recommended. 
+PC with less CPU resources could be enough. Each client requires about 30-40K of memory,
+whereas better to keep more spare memory for the system; therefore, compromises on memory
+are not really recommended.
 </p>
   </body>
 </document>
