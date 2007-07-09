@@ -1,9 +1,10 @@
 /* 
 *     parse_conf.c
 *
-* 2006 Copyright (c) 
+* 2006-2007 Copyright (c) 
 * Robert Iakobashvili, <coroberti@gmail.com>
 * All rights reserved.*
+*
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
 * the Free Software Foundation; either version 2 of the License, or
@@ -483,7 +484,6 @@ static int load_form_record_string (char*const input,
   return 0;
 }
 
-
 /****************************************************************************************
 * Function name - pre_parser
 *
@@ -551,6 +551,153 @@ static int pre_parser (char** ptr, size_t* len)
     *len = strlen (value_start) + 1;
   
     return 0;
+}
+
+/*******************************************************************************
+* Function name - parse_timer_range
+*
+* Description - Parses potential timer ranges with values looking either as 
+*                  "1000" or "1000-2000"
+* 
+* Input-    *input - pointer to value string
+*                  input_len - length of the value string, pointed by <input>
+* Input/Output - *first_val - used to return the first long value
+*                               *second_val - used to return the second long value, which is optional
+*
+* Return Code/Output - On success - 0, on failure - (-1)
+*********************************************************************************/
+static int parse_timer_range (char* input,
+                              size_t input_len,
+                              long* first_val,
+                              long* second_val)
+{
+  if (!input || !input_len || !first_val || !second_val)
+    {
+      fprintf (stderr, "%s - error: wrong input\n", __func__);
+      return -1;
+    }
+
+  const char separator = '-';
+  char* second = 0;
+  char* sep = 0;
+  sep = strchr (input, separator);
+
+  if (sep)
+    {
+      *sep = '\0';
+
+      if ((sep - input < (int)input_len) && (*(sep + 1)))
+        {
+          second = sep + 1;
+        }
+      else
+        {
+          *sep = separator;
+          fprintf (stderr, "%s - error: wrong input %s. "
+                   "Separator %c exists, but no value after the separator.\n", 
+                   __func__, input, separator);
+          return -1 ;
+        }
+    }
+
+  *first_val = atol (input);
+
+  if (*first_val < 0)
+    {
+      fprintf (stderr, "%s - error: wrong input %s. "
+               "Only non-negative values are allowed.\n", 
+               __func__, input);
+      return -1;
+    }
+
+  if (sep)
+    {
+      *second_val = atol (second);
+
+      if (sep && *second_val < 0)
+        {
+          fprintf (stderr, "%s - error: wrong input %s. "
+                   "Only non-negative values are allowed.\n", 
+                   __func__, second);
+          return -1;
+        }
+      
+      if (sep && *first_val >= *second_val)
+        {
+          fprintf (stderr, "%s - error: wrong input. "
+                   "First value (%ld) should be less then the second (%ld).\n"
+                   "Switch the order.\n", __func__, *first_val, *second_val);
+          return -1 ;
+        }
+    }
+
+  return 0;
+}
+
+/******************************************************************************
+* Function name - eat_ws
+*
+* Description - Eats leading white space. Returns pointer to the start of 
+*                    the non-white-space or NULL. Returns via len a new length.
+* 
+* Input -               *ptr - pointer to the url context
+* Input/Output- *len - pointer to a lenght 
+* Return Code/Output - Returns pointer to the start of the non-white-space or NULL
+*******************************************************************************/
+char* eat_ws (char* ptr, size_t*const len)
+{
+  if (!ptr || !*len)
+    return NULL;
+
+  while (*len && is_ws (ptr))
+    ++ptr, --(*len);
+
+  return *len ? ptr : NULL;
+}
+
+/******************************************************************************
+* Function name - skip_non_ws
+*
+* Description - Skips non-white space. Returns pointer to the start of 
+*                    the white-space or NULL. Returns via len a new length.
+* 
+* Input -               *ptr - pointer to the url context
+* Input/Output- *len - pointer to a lenght 
+* Return Code/Output - Returns pointer to the start of the white-space or NULL
+*******************************************************************************/
+static char* skip_non_ws (char*ptr, size_t*const len)
+{
+  if (!ptr || !*len)
+    return NULL;
+
+  while (*len && is_non_ws (ptr))
+    ++ptr, --(*len);
+
+  return *len ? ptr : NULL;
+}
+
+/******************************************************************************
+* Function name - is_ws
+*
+* Description - Determines, whether a char pointer points to a white space
+* Input -               *ptr - pointer to the url context
+* Return Code/Output - If white space - 1, else 0
+*******************************************************************************/
+static int is_ws (char*const ptr)
+{
+  return (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n') ? 1 : 0;
+}
+
+/******************************************************************************
+* Function name - is_non_ws
+*
+* Description - Determines, whether a char pointer points to a non-white space
+* Input -               *ptr - pointer to the url context
+* Return Code/Output - If non-white space - 1, else 0
+*******************************************************************************/
+static int is_non_ws (char*const ptr)
+{
+  return ! is_ws (ptr);
 }
 
 /*
@@ -1710,7 +1857,15 @@ static int fetch_probability_once_parser (batch_context*const bctx,
   return 0;
 }
 
-
+/******************************************************************************
+* Function name - url_schema_classification
+*
+* Description - Makes url analyses to return the type (e.g. http, ftps, telnet, etc)
+* 
+* Input -      *url - pointer to the url context
+* Return Code/Output - On success - a url schema type, on failure - 
+*                    (URL_APPL_UNDEF)
+*******************************************************************************/
 static url_appl_type 
 url_schema_classification (const char* const url)
 {
@@ -1742,41 +1897,6 @@ url_schema_classification (const char* const url)
   return  URL_APPL_UNDEF;
 }
 
-/*
-  Eats leading white space. Returns pointer to the start of 
-  the non-white-space or NULL. Returns via len a new length.
-*/
-char* eat_ws (char* ptr, size_t*const len)
-{
-  if (!ptr || !*len)
-    return NULL;
-
-  while (*len && is_ws (ptr))
-    ++ptr, --(*len);
-
-  return *len ? ptr : NULL;
-}
-
-static char* skip_non_ws (char*ptr, size_t*const len)
-{
-  if (!ptr || !*len)
-    return NULL;
-
-  while (*len && is_non_ws (ptr))
-    ++ptr, --(*len);
-
-  return *len ? ptr : NULL;
-}
-
-static int is_ws (char*const ptr)
-{
-  return (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n') ? 1 : 0;
-}
-
-static int is_non_ws (char*const ptr)
-{
-  return ! is_ws (ptr);
-}
 
 /******************************************************************************
 * Function name - validate_batch
@@ -1918,7 +2038,6 @@ static int validate_batch_general (batch_context*const bctx)
     return 0;
 }
 
-
 /******************************************************************************
 * Function name - validate_batch_url
 *
@@ -1991,8 +2110,6 @@ static int validate_batch_url (batch_context*const bctx)
                    "FORM_RECORDS_FILE or define FORM_STRING\n", __func__);
           return -1;
         }
-
-      
       
       /*
         Test, that there is only a single continues area of cycling URLs 
@@ -2093,6 +2210,15 @@ static int validate_batch_url (batch_context*const bctx)
   return 0;
 }
 
+/******************************************************************************
+* Function name - create_response_logfiles_dirs
+*
+* Description - When at least a single URL configuration requires logging of
+*                    responses, creates a directory with the same name as for the batch. 
+* 
+* Input -      *bctx - pointer to the initialized batch context to validate
+* Return Code/Output - On success - 0, on failure - (-1)
+*******************************************************************************/
 int create_response_logfiles_dirs (batch_context* bctx)
 {
   int dir_created_flag = 0;
@@ -2159,6 +2285,18 @@ int create_response_logfiles_dirs (batch_context* bctx)
   return 0;
 }
 
+/******************************************************************************
+* Function name - alloc_client_formed_buffers
+*
+* Description - Allocates client formed buffers to be used for POST-ing. Size of the
+*                    buffers is taken as a maximum possible lenght. The buffers will be
+*                    initialized for POST-ing for each URL, that is using POST, and 
+*                    according to the detailed URL-based configuration, tokens, 
+*                    form-type, etc.
+* 
+* Input -      *bctx - pointer to the initialized batch context to validate
+* Return Code/Output - On success - 0, on failure - (-1)
+*******************************************************************************/
 int alloc_client_formed_buffers (batch_context* bctx)
 {
   int k = 0;
@@ -2240,6 +2378,16 @@ int alloc_client_formed_buffers (batch_context* bctx)
   return 0;
 }
 
+/******************************************************************************
+* Function name - alloc_client_fetch_decision_array
+*
+* Description - Allocates client URL fetch decision arrays to be used, when 
+*                    fetching decision to be done only during the first cycle 
+*                    and remembered (in fetch_decision_array).
+* 
+* Input -      *bctx - pointer to the initialized batch context to validate
+* Return Code/Output - On success - 0, on failure - (-1)
+*******************************************************************************/
 int alloc_client_fetch_decision_array (batch_context* bctx)
 {
   int k = 0;
@@ -2271,6 +2419,14 @@ int alloc_client_fetch_decision_array (batch_context* bctx)
   return 0;
 }
 
+/******************************************************************************
+* Function name - init_operational_statistics
+*
+* Description - Allocates and inits operational statistics structures.
+* 
+* Input -      *bctx - pointer to the initialized batch context to validate
+* Return Code/Output - On success - 0, on failure - (-1)
+*******************************************************************************/
 int init_operational_statistics(batch_context* bctx)
 {
   if (op_stat_point_init(&bctx->op_delta,
@@ -2375,6 +2531,13 @@ static int post_validate_init (batch_context*const bctx)
   return 0;
 }
 
+/*******************************************************************************
+* Function name - set_default_response_errors_table
+*
+* Description - Inits by defaults the response codes, considered as errors.
+*                          
+* Return Code/Output - None
+********************************************************************************/
 static  void set_default_response_errors_table ()
 {
   memset (&resp_status_errors_tbl_default, 
@@ -2616,6 +2779,16 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
   return 0;
 }
 
+/*******************************************************************************
+* Function name -  find_first_cycling_url
+*
+* Description - Finds the first (by index) url, where cycling is required.
+*
+* Input -       *bctx - pointer to the batch context
+*                          
+* Return Code/Output - If found - the url non-negative index. Return ( -1),
+*                      when no cycling urls configured.
+********************************************************************************/
 static int find_first_cycling_url (batch_context* bctx)
 {
   size_t i;
@@ -2638,6 +2811,16 @@ static int find_first_cycling_url (batch_context* bctx)
   return bctx->first_cycling_url;
 }
 
+/*******************************************************************************
+* Function name -  find_last_cycling_url
+*
+* Description - Finds the last (by index) url, where cycling is required.
+*
+* Input -       *bctx - pointer to the batch context
+*                          
+* Return Code/Output - If found - the url non-negative index. Return ( -1),
+*                      when no cycling urls configured.
+********************************************************************************/
 static int find_last_cycling_url (batch_context* bctx)
 {
   size_t i = 0;
@@ -2690,6 +2873,17 @@ static int netmask_to_cidr (char *dotted_ipv4)
   return (32 - tmp); 
  }
 
+/*******************************************************************************
+* Function name -  print_correct_form_usagetype
+*
+* Description - Outputs explanation about mismatching of FORM_STRING and
+*                     FORM_USAGE_TYPE. 
+*
+* Input -       ftype - type of form usage
+*                     *value - the value of FORM_USAGE_TYPE tag
+*                          
+* Return Code/Output - Returns always -1 as being error output.
+********************************************************************************/
 static int print_correct_form_usagetype (form_usagetype ftype, char* value)
 {
   switch (ftype)
@@ -2734,70 +2928,3 @@ static int print_correct_form_usagetype (form_usagetype ftype, char* value)
   return -1;
 }
 
-static int parse_timer_range (char* input,
-                              size_t input_len,
-                              long* first_val,
-                              long* second_val)
-{
-  if (!input || !input_len || !first_val || !second_val)
-    {
-      fprintf (stderr, "%s - error: wrong input\n", __func__);
-      return -1;
-    }
-
-  const char separator = '-';
-  char* second = 0;
-  char* sep = 0;
-  sep = strchr (input, separator);
-
-  if (sep)
-    {
-      *sep = '\0';
-
-      if ((sep - input < (int)input_len) && (*(sep + 1)))
-        {
-          second = sep + 1;
-        }
-      else
-        {
-          *sep = separator;
-          fprintf (stderr, "%s - error: wrong input %s. "
-                   "Separator %c exists, but no value after the separator.\n", 
-                   __func__, input, separator);
-          return -1 ;
-        }
-    }
-
-  *first_val = atol (input);
-
-  if (*first_val < 0)
-    {
-      fprintf (stderr, "%s - error: wrong input %s. "
-               "Only non-negative values are allowed.\n", 
-               __func__, input);
-      return -1;
-    }
-
-  if (sep)
-    {
-      *second_val = atol (second);
-
-      if (sep && *second_val < 0)
-        {
-          fprintf (stderr, "%s - error: wrong input %s. "
-                   "Only non-negative values are allowed.\n", 
-                   __func__, second);
-          return -1;
-        }
-      
-      if (sep && *first_val >= *second_val)
-        {
-          fprintf (stderr, "%s - error: wrong input. "
-                   "First value (%ld) should be less then the second (%ld).\n"
-                   "Switch the order.\n", __func__, *first_val, *second_val);
-          return -1 ;
-        }
-    }
-
-  return 0;
-}

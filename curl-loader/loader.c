@@ -60,17 +60,17 @@
 #include "cl_alloc.h"
 
 
-static int create_ip_addrs (batch_context* bctx, int bctx_num);
-int client_tracing_function (CURL *handle, 
+static int client_tracing_function (CURL *handle, 
                              curl_infotype type, 
                              unsigned char *data, 
                              size_t size, 
                              void *userp);
-
-size_t do_nothing_write_func (void *ptr, 
+static size_t do_nothing_write_func (void *ptr, 
                               size_t size, 
                               size_t nmemb, 
                               void *stream);
+
+static int create_ip_addrs (batch_context* bctx, int bctx_num);
 
 static void* batch_function (void *batch_data);
 static int initial_handles_init (struct client_context*const cdata);
@@ -109,7 +109,8 @@ static void sigint_handler (int signum)
 typedef int (*pf_user_activity) (struct client_context*const);
 
 /*
- * Batch functions for the 3 modes.
+ * Batch functions for the 2 loading modes: 
+ * hyper (epoll-based) and smooth (poll-based).
 */
 static pf_user_activity ua_array[2] = 
 { 
@@ -156,7 +157,10 @@ main (int argc, char *argv [])
     }
 
    /*
-    * De-facto in full we are supporting only a single batch.
+    * De-facto the support is only for a single batch.
+    * However, we are using internal support for multiple batches
+    * for loading from several threads, using sub-batches 
+    * (a subset of virtual clients).
     * TODO: test env for all batches.
     */
    if (test_environment (&bc_arr[0]) == -1)
@@ -174,9 +178,12 @@ main (int argc, char *argv [])
       fprintf (stderr, "%s - error: create_ip_addrs () failed. \n", __func__);
       return -1;
     }
-
-  fprintf (stderr, "%s - accomplished setting IP-addresses to the loading interfaces.\n", 
-           __func__);
+  else
+    {
+      fprintf (stderr, 
+               "%s - added IP-addresses to the loading network interface.\n", 
+               __func__);
+    }
 
   signal (SIGINT, sigint_handler);
 
@@ -204,7 +211,9 @@ main (int argc, char *argv [])
 
       create_thr_subbatches (bc_arr, threads_subbatches_num); 
       
-      /* Opening threads for the batches of clients */
+      /* 
+         Opening threads for the batches of clients 
+      */
       for (i = 0 ; i < threads_subbatches_num ; i++) 
         {
           bc_arr[i].batch_id = i;
@@ -224,7 +233,7 @@ main (int argc, char *argv [])
             }
         }
 
-      /* Waiting for all the threads to terminate */
+      /* Waiting for all running threads to terminate */
       for (i = 0 ; i < threads_subbatches_num ; i++) 
         {
           error = pthread_join (tid[i], NULL) ;
@@ -259,7 +268,6 @@ static void* batch_function (void * batch_data)
                "%s - error: batch_data input is zero.\n", __func__);
       return NULL;
     }
- 
 
   if (! stderr_print_client_msg)
     {
@@ -307,7 +315,7 @@ static void* batch_function (void * batch_data)
  
   /* 
      Init libcurl MCURL and CURL handles. Setup of the handles is delayed to
-     the later step, depending on the flavors of url required.
+     the later step, depending on urls required.
   */
   if (initial_handles_init (bctx->cctx_array) == -1)
     {
@@ -318,9 +326,10 @@ static void* batch_function (void * batch_data)
 
   /* 
      Now run configuration-defined actions, like login, fetching various urls and and 
-     sleeping in between, loggoff
-     Calls user activity loading function corresponding to the loading mode
-     used (user_activity_smooth () or user_activity_hyper ()).
+     sleeping in between and loggoff.
+
+     It calls user activity loading function corresponding to the used loading mode
+     (user_activity_smooth () or user_activity_hyper ()).
   */ 
   rval = ua_array[loading_mode] (bctx->cctx_array);
 
@@ -337,6 +346,7 @@ static void* batch_function (void * batch_data)
 
   if (log_file)
       fclose (log_file);
+
   if (statistics_file)
       fclose (statistics_file);
 
@@ -351,7 +361,7 @@ static void* batch_function (void * batch_data)
 * Description - Libcurl initialization of curl multi-handle and the curl handles (clients), 
 *               used in the batch
 *
-* Input -       *ctx_array - array of clients for a particular batch of clients
+* Input -       *ctx_array - array of clients for a particular batch/sub-batch of clients
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 static int initial_handles_init (client_context*const ctx_array)
@@ -382,24 +392,42 @@ static int initial_handles_init (client_context*const ctx_array)
   return 0;
 }
 
+/*
+  The callback to libcurl to write all bytes to ptr.
+*/
+size_t writefunction( void *ptr, size_t size, size_t nmemb, void *stream)
+{
+  fwrite (ptr, size, nmemb, stream);
+  return(nmemb * size);
+}
+
+/*
+  The callback to libcurl to skip all body bytes of the fetched urls.
+*/
+size_t 
+do_nothing_write_func (void *ptr, size_t size, size_t nmemb, void *stream)
+{
+  (void)ptr;
+  (void)stream;
+
+  /* 
+     Overwriting the default behavior to write body bytes to stdout and 
+     just skipping the body bytes without any output. 
+  */
+  return (size*nmemb);
+}
+
 /****************************************************************************************
 * Function name - setup_curl_handle
 *
-* Description - Setup for a single curl handle (client): removes a handle from multi-handle, 
-*               inits it, using setup_curl_handle_init () function, and adds the
-*               handle back to the multi-handle.
+* Description - Inits a CURL handle, using setup_curl_handle_init () function.
 *
-* Input -       *cctx        - pointer to client context, containing CURL handle pointer;
-*               *url     - pointer to url-context, containing all url-related information;
+* Input -       *cctx - pointer to client context, containing CURL handle pointer;
+*               *url  - pointer to url-context, containing all url-related information;
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int setup_curl_handle (client_context*const cctx, url_context* url)
 {
-  if (!cctx || !url)
-    {
-      return -1;
-    }
-  
   if (setup_curl_handle_init (cctx, url) == -1)
   {
       fprintf (stderr,"%s - error: failed.\n",__func__);
@@ -409,12 +437,6 @@ int setup_curl_handle (client_context*const cctx, url_context* url)
   return 0;
 }
 
-size_t writefunction( void *ptr, size_t size, size_t nmemb, void *stream)
-{
-  fwrite(ptr,size,nmemb,stream);
-  return(nmemb*size);
-}
-
 /****************************************************************************
 * Function name - setup_curl_handle_init
 *
@@ -422,19 +444,19 @@ size_t writefunction( void *ptr, size_t size, size_t nmemb, void *stream)
 *               setup_curl_handle_appl () function for the application-specific 
 *               (HTTP/FTP) initialization.
 *
-* Input -       *cctx        - pointer to client context, containing CURL handle pointer;
-*               *url     - pointer to url-context, containing all url-related information;
+* Input -       *cctx- pointer to client context, containing CURL handle pointer;
+*               *url - pointer to url-context, containing all url-related information;
 * Return Code/Output - On Success - 0, on Error -1
 ******************************************************************************/
 int setup_curl_handle_init (client_context*const cctx, url_context* url)
 {
-  batch_context* bctx = cctx->bctx;
-  CURL* handle = cctx->handle;
-
   if (!cctx || !url)
     {
       return -1;
     }
+
+  batch_context* bctx = cctx->bctx;
+  CURL* handle = cctx->handle;
 
   curl_easy_reset (handle);
 
@@ -451,8 +473,8 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
   if (url->url_str && url->url_str_len)
     {
       /* 
-         Note, target URL for PUT should include a file
-         name, not only a directory 
+         Note, target URL for PUT should include directory with a file
+         name, not just a directory.
       */
 
       if (url->req_type == HTTP_REQ_TYPE_GET  && url->form_str)
@@ -471,7 +493,7 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
           strcpy (cctx->get_url_form_data, url->url_str);
           
           if (init_client_formed_buffer (cctx, 
-                                         url, 
+                                         url,
                                          cctx->get_url_form_data + url->url_str_len -1,
                                          cctx->get_url_form_data_len - url->url_str_len) == -1)
             {
@@ -490,8 +512,7 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
     }
   else
     {
-      fprintf (stderr,"%s - error: empty url provided.\n",
-                   __func__);
+      fprintf (stderr,"%s - error: empty url provided.\n", __func__);
       return -1;
     }
   
@@ -543,9 +564,9 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
   
   if (url->log_resp_bodies || url->log_resp_headers)
     {
-      if (set_response_logfile (cctx, url) == -1)
+      if (response_logfiles_set (cctx, url) == -1)
         {
-          fprintf (stderr,"%s - error: set_response_logfile () .\n",
+          fprintf (stderr,"%s - error: response_logfiles_set () .\n",
                    __func__);
           return -1;
         }
@@ -629,8 +650,8 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
 *
 * Description - Application/url-type specific setup for a single curl handle (client)
 *
-* Input -       *cctx       - pointer to client context, containing CURL handle pointer;
-*               *url    - pointer to url-context, containing all url-related information;
+* Input -       *cctx- pointer to client context, containing CURL handle pointer;
+*               *url - pointer to url-context, containing all url-related information;
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int setup_curl_handle_appl (client_context*const cctx, url_context* url)
@@ -644,7 +665,7 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
         url->url_appl_type == URL_APPL_HTTP)
     {
         
-        /* HTTP-specific initialization */
+        /* ******** HTTP-SPECIFIC INITIALIZATION ************** */
         
       /* 
          Follow possible HTTP-redirection from header Location of the 
@@ -692,10 +713,10 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
                  - POST-fields;
                  - multipart form-data as in RFC 1867;
               */
-              if (set_client_url_post_data (cctx, url) == -1)
+              if (init_client_url_post_data (cctx, url) == -1)
                 {
                   fprintf (stderr,
-                           "%s - error: set_client_url_post_data() failed.\n",
+                           "%s - error: init_client_url_post_data() failed.\n",
                            __func__);
                   return -1;
                 }
@@ -767,7 +788,8 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
     else if (url->url_appl_type == URL_APPL_FTP ||
              url->url_appl_type == URL_APPL_FTPS)
     {
-      /***********  FTP-specific setup. *****************/
+
+      /***********  FTP-SPECIFIC INITIALIZATION. *****************/
 
       if (url->ftp_active)
         {
@@ -784,14 +806,24 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
           curl_easy_setopt (handle, CURLOPT_POSTQUOTE, 
                             url->custom_http_hdrs);
         }
-
-      
     }
 
   return 0;
 }
 
-int set_response_logfile (client_context* cctx, url_context* url)
+/**********************************************************************
+* Function name - response_logfiles_set
+*
+* Description - Opens a logfile for responses to be used for a certain client
+*               and a certain url. A separate file to be opened for headers 
+*               and bodies. Sets the files to the logging mechanism of
+*               libcurl.
+* 
+* Input -       *cctx - pointer to client context
+*               *url  - pointer to url context
+* Return Code/Output - On Success - 0, on Error -1
+***********************************************************************/
+int response_logfiles_set (client_context* cctx, url_context* url)
 {
   CURL* handle = cctx->handle;
 
@@ -857,7 +889,7 @@ int set_response_logfile (client_context* cctx, url_context* url)
 }
 
 /**********************************************************************
-* Function name - set_client_url_post_data
+* Function name - init_client_url_post_data
 *
 * Description - Initialize client post form buffer to be used for a url POST-ing
 * 
@@ -865,7 +897,7 @@ int set_response_logfile (client_context* cctx, url_context* url)
 *               *url - pointer to url context
 * Return Code/Output - On Success - 0, on Error -1
 ***********************************************************************/
-int set_client_url_post_data (client_context* cctx, url_context* url)
+int init_client_url_post_data (client_context* cctx, url_context* url)
 {
   if (url->form_str)
     {
@@ -903,9 +935,9 @@ int set_client_url_post_data (client_context* cctx, url_context* url)
 * Description - Initialize client buffer controlled by FORM_STRING. The buffers
 *                to be used for POST-ing credentials/tokens or for GET passed tokens.
 * 
-* Input -       *cctx - pointer to client context
-*               *url - pointer to url context
-*               *buffer - the client buffer
+* Input -       *cctx       - pointer to client context
+*               *url        - pointer to url context
+*               *buffer     - the client buffer
 *               *buffer_len - size of the client buffer
 * Return Code/Output - On Success - 0, on Error -1
 *************************************************************************/
@@ -1023,7 +1055,7 @@ static int init_client_formed_buffer (client_context* cctx,
 *
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
-int client_tracing_function (CURL *handle, 
+static int client_tracing_function (CURL *handle, 
                              curl_infotype type, 
                              unsigned char *data, 
                              size_t size, 
@@ -1037,7 +1069,13 @@ int client_tracing_function (CURL *handle,
   char buf[300];
   int n;
 
-  n = snprintf(buf,sizeof(buf)-1,"->client_tracing_function cctx=%p size=%d | %s",cctx,size,data);
+  n = snprintf (buf, 
+                sizeof (buf)- 1, 
+                "->client_tracing_function cctx=%p size=%d | %s",
+                cctx,
+                size,
+                data);
+
   buf[n] = '\0';
   printf("%s\n",buf);
 #endif  
@@ -1519,14 +1557,14 @@ static void free_url (url_context* url, int clients_max)
     }
 }
   
-/****************************************************************************************
+/*****************************************************************************
 * Function name - create_ip_addrs
 *
 * Description - Adds ip-addresses of batches of loading clients to network adapter/s
 * Input -       *bctx_array - pointer to the array of batch contexts
-*               bctx_num - number of batch contexts in <bctx_array>
+*               bctx_num    - number of batch contexts in <bctx_array>
 * Return Code/Output - None
-****************************************************************************************/
+*******************************************************************************/
 static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
 {
   int batch_index, client_index; /* Batch and client indexes */
@@ -1599,6 +1637,19 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
   return 0;
 }
 
+/*****************************************************************************
+* Function name - ip_addr_str_allocate_init
+*
+* Description - Allocates a single string and inits it by printing a text presentation
+*               of an IP-address (either IPv4 or IPv6).
+*
+* Input -       *bctx        - pointer to a batch context
+*               client_index - number of client in the client-array
+*
+* Input/Output **addr_str - second pointer a string for IP-address, allocated by the
+*                           function.
+* Return Code/Output - None
+*******************************************************************************/
 static int ip_addr_str_allocate_init (batch_context* bctx, 
                                       int client_index, 
                                       char** addr_str)
@@ -1680,22 +1731,6 @@ static int ip_addr_str_allocate_init (batch_context* bctx,
   return 0;
 }
 
-/*
-  The callback to libcurl to skip all body bytes of the fetched urls.
-*/
-size_t 
-do_nothing_write_func (void *ptr, size_t size, size_t nmemb, void *stream)
-{
-  (void)ptr;
-  (void)stream;
-
-  /* 
-     Overwriting the default behavior to write body bytes to stdout and 
-     just skipping the body bytes without any output. 
-  */
-  return (size*nmemb);
-}
-
 /****************************************************************************************
 * Function name - rewind_logfile_above_maxsize
 *
@@ -1765,9 +1800,19 @@ static int ipv6_increment(const struct in6_addr *const src,
   return 0;
 }
 
+/*****************************************************************************
+* Function name - create_thr_subbatches 
+*
+* Description - Cuts a batch to several sub-batches, each to be used by a 
+*               separate thread.
+*
+* Input -       *bc_arr        - pointer to an array of batch contexts
+*               subbatches_num - number sub-batches to produce (threads)
+*
+* Return Code/Output - On Success - 0, on Error -1
+*******************************************************************************/
 static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
 {
-
   if (! bc_arr)
     {
       return -1;
@@ -1901,9 +1946,9 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
 
       if (i)
         {
-          if (! (bc_arr[i].url_ctx_array = 
-                 (url_context *) cl_calloc (bc_arr[i].urls_num, 
-		 			    sizeof (url_context))))
+          if (! (bc_arr[i].url_ctx_array = (url_context *) cl_calloc (
+                                                                      bc_arr[i].urls_num, 
+                                                                      sizeof (url_context))))
             {
               fprintf (stderr, 
                        "%s - error: failed to allocate URL-context array for %d urls\n", 
@@ -1926,11 +1971,10 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
       /* Zero the pointer to be initialized. */
       bc_arr[i].multiple_handle = 0;
 
-
       /* 
          Allocate the array of IP-addresses. 
+         TODO: memory leak of ip-addresses with the batch bc_arr[0] 
       */
-      /* TODO: memory leak of ip-addresses with the batch bc_arr[0] */
 
       bc_arr[i].ip_addr_array = 0;
 

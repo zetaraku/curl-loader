@@ -56,8 +56,8 @@ int test_environment (struct batch_context* bctx);
 *               and inits it, using setup_curl_handle_init () function, and, finally, 
 *               adds the handle back to the multi-handle.
 *
-* Input -       *cctx - pointer to client context, which contains CURL handle pointer;
-*               *url_ctx - pointer to url-context, containing all url-related information;
+* Input -       *cctx        - pointer to client context, which contains CURL handle pointer;
+*               *url_ctx     - pointer to url-context, containing all url-related information;
 *               cycle_number - current number of loading cycle
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
@@ -71,7 +71,7 @@ int setup_curl_handle (struct client_context*const cctx, struct url_context* url
 *               setup_curl_handle_appl () function for the application-specific 
 *               (HTTP/FTP) initialization.
 *
-* Input -       *cctx - pointer to client context, which contains CURL handle pointer;
+* Input -       *cctx    - pointer to client context, which contains CURL handle pointer;
 *               *url_ctx - pointer to url-context, containing all url-related information;
 * Return Code/Output - On Success - 0, on Error -1
 *****************************************************************************
@@ -80,7 +80,7 @@ int setup_curl_handle_init (struct client_context*const cctx, struct url_context
 
 
 /**********************************************************************
-* Function name - set_client_url_post_data
+* Function name - init_client_url_post_data
 *
 * Description - Initialize client post form buffer to be used for a url POST-ing
 * 
@@ -88,19 +88,33 @@ int setup_curl_handle_init (struct client_context*const cctx, struct url_context
 *                *url - pointer to url context
 * Return Code/Output - On Success - 0, on Error -1
 ***********************************************************************/
-int set_client_url_post_data (struct client_context* cctx, struct url_context* url);
+int init_client_url_post_data (struct client_context* cctx, struct url_context* url);
 
-int set_response_logfile (struct client_context* cctx, struct url_context* url);
+/**********************************************************************
+* Function name - response_logfiles_set
+*
+* Description - Opens a logfile for responses to be used for a certain client
+*               and a certain url. A separate file to be opened for headers 
+*               and bodies. Sets the files to the logging mechanism of
+*               libcurl.
+* 
+* Input -       *cctx - pointer to client context
+*               *url  - pointer to url context
+* Return Code/Output - On Success - 0, on Error -1
+***********************************************************************/
+int response_logfiles_set (struct client_context* cctx, struct url_context* url);
 
 
 /*******************************************************************************
 * Function name - add_secondary_ip_to_device
 *
 * Description - Adds a secondary IPv4 address to a valid networking device.
-* Input -       *device - network device name as linux sees it, like "eth0"
+*
+* Input -       *device        - network device name as linux sees it, like "eth0"
 *               *ip_slash_mask - string in the form of ipv4/mask, 
 *                                e.g. "192.168.0.1/24"
-*              *scope - network scope of the addresses: "global", "site" (IPv6), "link", "host"
+*               *scope         - network scope of the addresses: "global", 
+*                                "site" (IPv6), "link", "host"
 *
 * Return Code/Output - On Success - 0, on Error -1
 ********************************************************************************/
@@ -112,11 +126,12 @@ int add_secondary_ip_to_device (const char*const device,
 * Function name - add_secondary_ip_addrs
 *
 * Description - Adds all secondary IPv4 addresses from array to network interface
-* Input -       *interface - network device name as linux sees it, like "eth0"
+*
+* Input -       *interface  - network device name as linux sees it, like "eth0"
 *               addr_number - number of addresses to add
-*               *addresses - array of strings of ipv4 addresses
-*               netmask - CIDR notation netmask
-*               scope - address scope, like "global", "host", "link", "site"
+*               *addresses  - array of strings of ipv4 addresses
+*               netmask     - CIDR notation netmask
+*               scope       - address scope, like "global", "host", "link", "site"
 * Return Code/Output - On Success - 0, on Error -1
 ********************************************************************************/
 int add_secondary_ip_addrs (const char*const interface, 
@@ -130,7 +145,7 @@ int add_secondary_ip_addrs (const char*const interface,
 *
 * Description - Parses configuration file and fills batch contexts in array
 *
-* Output -       *bctx_array - array of batch contexts to be filled on parsing
+* Output -       *bctx_array     - array of batch contexts to be filled on parsing
 * Input-         bctx_array_size - number of bctx contexts in <bctx_array>.
 *
 * Return Code/Output - On Success - number of batches >=1, on Error -1
@@ -169,10 +184,11 @@ int pending_active_and_waiting_clients_num (struct batch_context* bctx);
  *               to client the next url to load, or marks the being at completion state: 
  *               CSTATE_ERROR or CSTATE_FINISHED_OK.
  *
- * Input -       *cctx - pointer to the client context
- *                   now_time -  current timestamp in msec
-  *Input/Output -  sched_now - when true, the client is scheduled right now without timer queue.
-  * Return Code/Output - CSTATE enumeration with the state of loading
+ * Input -       *cctx     - pointer to the client context
+ *               now_time  - current timestamp in msec
+ * Input/Output- sched_now - when true, the client is scheduled right now 
+ *                           without timer queue.
+ * Return Code/Output - CSTATE enumeration with the state of loading
  ****************************************************************************************/
 int load_next_step (struct client_context* cctx,
                     unsigned long now_time,
@@ -183,11 +199,13 @@ int load_next_step (struct client_context* cctx,
  * Function name - dispatch_expired_timers
  *
  * Description - Fetches from the waiting timer queue timers and dispatches them
- *               by calling timer-node specific handle_timeout () method. Among other expired timers
- *               dispatches waiting clients (kept in timer-queue to respect url interleave timeouts),
- *               where func_timer () function of client timer-node adds the clients to loading machinery.
+ *               by calling timer-node specific handle_timeout () method. Among 
+ *               other expired timers dispatches waiting clients (kept in 
+ *               timer-queue to respect url interleave timeouts), where 
+ *               func_timer () function of client timer-node adds the clients 
+ *               to loading machinery.
  *
- * Input -       *bctx - pointer to the batch of contexts;
+ * Input -       *bctx    - pointer to the batch of contexts;
  *               now_time -  current time passed in msec
  *
  * Return Code/Output - On Success - 0, on Error -1
@@ -211,15 +229,15 @@ int add_loading_clients (struct batch_context* bctx);
  *
  * Description - Adding a number of clients to load
  *
- * Input -       *bctx - pointer to the batch of contexts
- *                  add_number - number of clients to add to load
+ * Input -       *bctx      - pointer to the batch of contexts
+ *               add_number - number of clients to add to load
  * Return Code/Output - On Success - 0, on error  - (-1)
  ****************************************************************************************/
 int add_loading_clients_num (struct batch_context* bctx, int add_number);
 
-typedef int (*load_state_func)  (struct client_context* cctx, 
-                                 unsigned long now_time, 
-                                 unsigned long *wait_msec);
+typedef int (*load_state_func) (struct client_context* cctx, 
+                                unsigned long now_time, 
+                                unsigned long *wait_msec);
 
 /* 
    Table of loading functions in order to call an appropiate for 
@@ -235,7 +253,7 @@ extern const load_state_func load_state_func_table [];
  *
  * Description - Allocates and initializes timer waiting queue
  *
- *Input               size -  maximum possible size of the queue
+ *Input          size - maximum possible size of the queue
  *Input/Output   **wq - waiting queue to be allocated, initialized and returned back
  *
  * Return Code/Output - On success -0, on error -1
@@ -247,7 +265,7 @@ int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq);
  *
  * Description - Cancels scheduled periodic timers
  *
- *Input               *bctx - pointer to timer waiting queue
+ * Input         *bctx - pointer to timer waiting queue
  * Return Code/Output - On success -0, on error -1
  ****************************************************************************/
 int cancel_periodic_timers (struct batch_context* bctx);
@@ -257,8 +275,8 @@ int cancel_periodic_timers (struct batch_context* bctx);
  *
  * Description - Really inits timers and adds initial clients to load
  *
- *Input               *bctx - pointer to a batch context
- *                   now-time  - current timestamp
+ *Input          *bctx     - pointer to a batch context
+ *               now-time  - current timestamp
  *
  * Return Code/Output - On success -0, on error -1
  ******************************************************************************/

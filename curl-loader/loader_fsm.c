@@ -78,13 +78,10 @@ static int handle_cctx_sleeping_timer (timer_node* tn,
 static int handle_cctx_url_completion_timer (timer_node* tn,
                                              void* pvoid_param, 
                                              unsigned long ulong_param);
-
-
 static int client_remove_from_load (batch_context* bctx, client_context* cctx);
 static int client_add_to_load (batch_context* bctx, 
                                client_context* cctx,
                                unsigned long now_time);
-
 static int fetching_decision (client_context* cctx, url_context* url);
 
 
@@ -93,8 +90,9 @@ static int fetching_decision (client_context* cctx, url_context* url);
  *
  * Description - Allocates and initializes timer waiting queue
  *
- *Input          size - maximum possible size of the queue
- *Input/Output   **wq - waiting queue to be allocated, initialized and returned back
+ * Input          size - maximum possible size of the queue
+ * Input/Output   **wq - waiting queue to be allocated, initialized and returned back
+ *
  * Return Code/Output - On success -0, on error -1
  ******************************************************************************/
 int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq)
@@ -185,8 +183,7 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
 
   bctx->start_time = bctx->last_measure = now_time;
   bctx->active_clients_count = bctx->sleeping_clients_count =0;
-  
-  
+
 
   if (add_loading_clients (bctx) == -1)
     {
@@ -267,8 +264,8 @@ int cancel_periodic_timers (batch_context* bctx)
  *
  * Input -       *cctx     - pointer to the client context
  *               now_time  - current timestamp in msec
- * Input/Output  sched_now - when true, the client is scheduled right now without 
- * 			     timer queue.
+ * Input/Output  *sched_now - pointer to an int, when the value of *sched_now is 
+ *                               true, the client is scheduled right now without timer queue.
  * Return Code/Output - CSTATE enumeration with the state of loading
  ******************************************************************************/
 int load_next_step (client_context* cctx,
@@ -326,8 +323,9 @@ int load_next_step (client_context* cctx,
                                                            now_time,
                                                            &interleave_waiting_time);
 
-
-  /* Update operational statistics */
+  /* 
+     Update operational statistics 
+  */
   op_stat_update (&bctx->op_delta, 
                   (recoverable_error_state == CSTATE_ERROR) ? 
 		  	recoverable_error_state : rval_load, 
@@ -893,7 +891,6 @@ static int handle_cctx_url_completion_timer (timer_node* tn,
  * Description -  Returns the sum of active and waiting (for load scheduling) clients
  *
  * Input -       *bctx - pointer to the batch context
- *
  * Return Code/Output - Sum of active and waiting (for load scheduling) clients
  ****************************************************************************************/
 int pending_active_and_waiting_clients_num (batch_context* bctx)
@@ -964,18 +961,18 @@ static int setup_url (client_context* cctx)
         CURL handle. Note, that it should be done on CURL handle 
         outside (removed) from MCURL handle. Add it back afterwords.
       */
-      if (set_client_url_post_data (cctx, url) == -1)
+      if (init_client_url_post_data (cctx, url) == -1)
         {
-          fprintf(stderr,"%s error: set_client_url_post_data() - failed\n", 
+          fprintf(stderr,"%s error: init_client_url_post_data() - failed\n", 
                   __func__);
           return -1;
         }
       
       if (url->log_resp_bodies || url->log_resp_headers)
         {
-          if (set_response_logfile (cctx, url) == -1)
+          if (response_logfiles_set (cctx, url) == -1)
             {
-              fprintf (stderr,"%s - error: set_response_logfile () failed.\n",
+              fprintf (stderr,"%s - error: response_logfiles_set () failed.\n",
                        __func__);
               return -1;
             }
@@ -1014,7 +1011,7 @@ static int load_init_state (client_context* cctx,
  *               re-schedules the client for next cycle of loading.
  *
  * Input -       *cctx      - pointer to the client context
-*               now_time - current timestamp
+ *               now_time - current timestamp
  *               *wait_msec - pointer to time to wait till next scheduling 
  *                            (interleave time).
  * Return Code/Output - CSTATE enumeration with the state of loading
@@ -1044,6 +1041,16 @@ static int load_error_state (client_context* cctx,
   return (cctx->client_state = CSTATE_ERROR);
 }
 
+/*******************************************************************************
+ * Function name - pick_up_next_url
+ *
+ * Description - Decides, which url to fetch next. Advances cycles number, where
+ *                     appropriate.
+ *
+ * Input -       *cctx      - pointer to the client context
+ * Return Code/Output - Returns a non-negative index of URL or -1, when no-need
+ *                     to fetch URLs any more.
+ ********************************************************************************/
 static int pick_up_next_url (client_context* cctx)
 {
   batch_context* bctx = cctx->bctx;
@@ -1098,6 +1105,16 @@ static int pick_up_next_url (client_context* cctx)
   return -1;
 }
 
+/*******************************************************************************
+ * Function name - fetching_decision
+ *
+ * Description - Decides, which url to fetch next. Advances cycles number, where
+ *                     appropriate.
+ *
+ * Input -       *cctx - pointer to the client context
+ *                     *url -  pointer to URL
+ * Return Code/Output - Return 1 to fetch, 0 - not to fetch.
+ ********************************************************************************/
 static int fetching_decision (client_context* cctx, url_context* url)
 {
   if (! url->fetch_probability)
@@ -1145,7 +1162,9 @@ static int fetching_decision (client_context* cctx, url_context* url)
   return 0;
 }
 
-static int load_urls_state (client_context* cctx, unsigned long now_time, unsigned long *wait_msec)
+static int load_urls_state (client_context* cctx,
+                            unsigned long now_time, 
+                            unsigned long *wait_msec)
 { 
   batch_context* bctx = cctx->bctx;
   int url_next = -1;
