@@ -21,11 +21,7 @@
          the value of that directory.<br/>
          For example: $export OPENSSLDIR=the-full-path-to-the-directory<br/>
          <br/>
-         Another known issue is libidn.so, which means, that some linux distributions 
-         do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink.
-         Sometimes you may need to edit the Makefile and to remove -lidn from the linking string.
-        <br/>
-          Run the following commands from your bash linux shell:<br/>
+         Run the following commands from your bash linux shell:<br/>
          $tar zxfv curl-loader-&lt;version&gt;.tar.gz<br/>
          $cd curl-loader-&lt;version&gt;<br/>
          $make<br/>
@@ -34,7 +30,21 @@
          debugging -g option. To build with optimization and without debugging, please, run:<br/>
          $make cleanall<br/>
          $make optimize=1 debug=0<br/>
-         If still any building issues, please, fill you free to contact us for assistance.<br/>
+        <br/>
+         Optionally, you can run as a root:<br/>
+         #make install<br/>
+         and enjoy our man pages by $man curl-loader and $man curl-loader-config.<br/>
+         <br/>
+         A known building issue is libidn.so, which means, that some linux distributions 
+         do have some libidn.so.11 or libidn.so.10, but not libidn.so, and it breaks linking. 
+         Resolve the issue by creating a softlink:<br/>
+         <br/>
+         #cd to the directory, where e.g. libidn.so.11 is installed and run<br/>
+         #ln -s libidn.so.11 libidn.so<br/>
+         <br/>
+         If the above was not helpful, try editing the Makefile and removing -lidn from the linking string.<br/>
+        <br/>
+        If still any building issues, please, fill you free to contact us for assistance.<br/>
          <br/>
       <p>
        LOADING CONFIGURATION.

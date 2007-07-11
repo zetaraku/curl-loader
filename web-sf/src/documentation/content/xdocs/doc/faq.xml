@@ -111,9 +111,19 @@ What are the building pre-requirements?
          $make cleanall<br/>
          $make optimize=1 debug=0<br/>
          <br/>
-         Y can make optional installing of the loader by running as a root:<br/>
+         Y can optionally install the loader by running as a root:<br/>
           #make install<br/>
+          and enjoy our man pages by $man curl-loader and $man curl-loader-config.<br/>
          <br/>
+         A known building issue is libidn.so, which means, that some linux distributions 
+         do have some libidn.so.11 or libidn.so.10, but not libidn.so, and it breaks linking. 
+         Resolve the issue by creating a softlink:<br/>
+         <br/>
+         #cd to the directory, where e.g. libidn.so.11 is installed and run<br/>
+         #ln -s libidn.so.11 libidn.so<br/>
+         <br/>
+         If the above was not helpful, try editing the Makefile and removing -lidn from the linking string.<br/>
+        <br/>
          If still any building issues, please, fill you free to contact us for assistance using placed in 
          download tarball PROBLEM-REPORTING form and its instructions.<br/>
        </answer>
@@ -406,8 +416,10 @@ The path should be taken from the curl-loader place, e.g. ./conf-examples/bax.co
 HEADER - is assisting to customize/add/over-write HTTP/FTP headers. 
 If a header already exits by default, the custom header over-writes it. 
 USER_AGENT tag is for User-Agent header only, whereas by HEADER may be added 
-or over-written any header (including User-Agent). Look for example at 
-./conf-examples/custom_hdrs.conf.<br/>
+or over-written any header (including User-Agent).
+To prevent from sending "Expect: 100-continue", pass as a custom HTTP header
+HEADER="Expect: "<br/>
+Look at example at ./conf-examples/custom_hdrs.conf.<br/>
 <br/>
 USERNAME and PASSWORD are the tags to provide credentials for the login operations.
 The strings may be used either as is or as the base-words to append numbers and
@@ -539,9 +551,11 @@ MULTIPART_FORM_DATA="htmlcode=&lt;HTML&gt;&lt;/HTML&gt;;type=text/html"<br/>
 MULTIPART_FORM_DATA="file=@cooltext.txt"<br/>
 MULTIPART_FORM_DATA="coolfiles=@fil1.gif,fil2.txt,fil3.html"<br/>
 <br/>
-The files to be copied are indicated by @ and to be located in the same directory
-as curl-loader. Currently, the feature uses the strings provided AS_IS and does not generate
-any unique users, unique passwords or loads tokens from file.
+The files to be uploaded are indicated by @ and to be located in the same directory
+as curl-loader. Content type could be added as e.g. ;type=text/html.
+Currently, the feature uses the strings provided AS_IS and does not generate
+any unique users, unique passwords or loads tokens from file.<br/>
+<br/>
 To prevent from sending "Expect: 100-continue", pass as a custom HTTP header
 HEADER="Expect: "<br/>
 <br/>
@@ -553,9 +567,9 @@ FETCH_PROBABILITY allows to fetch a url not as a must, but
 with a certain run-time probability. The allowed values are in the 
 range from 1 to 100 percents.<br/>
 <br/>
-FETCH_PROBABILITY_ONCE enables for a client to make the decision regarding
-wether to fetch a URL or not using FETCH_PROBABILITY
-to be done only once (at the first cycle).
+FETCH_PROBABILITY_ONCE when set to 1 configures each client to make the decision 
+about fetching of a URL with the FETCH_PROBABILITY tag to be done only once, namely, 
+at the first cycle, and not at each cycle.
       </answer>
     </faq>
 
@@ -635,6 +649,7 @@ like /etc/security/limits.conf, etc
         -l[ogfile max size in MB (default 1024). On the size reached, file pointer is rewinded]<br/>
         -m[ode of loading, 0 - hyper (the default, epoll () based ), 1 - smooth (select () based)]<br/>
         -r[euse connections disabled. Closes TCP-connections and re-open them. Try with and without]<br/>
+        -t[hreads number. Use it for high loads and when running at SMP/multi-core HW]<br/>
         -v[erbose output to the logfiles; includes info about headers sent/received]<br/>
         -u[rl logging - logs url names to logfile, when -v verbose option is used]<br/>
         -w[arnings skip]<br/>
@@ -646,9 +661,14 @@ like /etc/security/limits.conf, etc
        Whether it is appropriate for you to work with -r option or without, it  depends
        on your server support of Keep-Alive and the purpose of your testing.
        Try with and without -r and see, what you get.<br/>
-
       Connection reuse (which is the default, without -r option) has advantages due to the 
       decreased consumption of opened descriptors (sockets) and ports.<br/>
+       <br/>
+Threads number -t option. This option is helpful, when running at a 
+multiple CPUs or multiple core CPU HW.
+We are recommending to use the option only for 1000 clients and more loads
+with a number of threads kept about the same as the number of the linux
+logical CPUs as seen by cat /proc/cpuinfo.
        </answer>
        </faq>
 
@@ -921,7 +941,7 @@ re-opened for the next request. <br/>
 8. Running curl-loader in multiple threads on several CPUs/cores.<br/>
 <br/>
 SMP-support can be gained by using option -t &lt;threads-num&gt;. 
-We can recommend to use number of threads as number of CPUs from /proc/cpuinfo. 
+We can recommend to use number of threads as the number of logical CPUs seen by cat /proc/cpuinfo. 
 Sometimes curl-loader crashes on start with the option used due to suspected bugs in libevent
 library. Re-run it optionally changing/decreasing number of threads used.  Note, that total statistics 
 is written to the file $batch-name_0.txt, whereas logs are per-thread and are written to the files 
