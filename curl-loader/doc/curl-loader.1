@@ -77,8 +77,10 @@ connection for any subsequent operation.
 .TP
 .B "\-t #"
 Specify the number of threads to use for loading sub\-batches of clients.  
-The default number of threads is 1 (single\-threaded).  This option will
-only help if you really have multiple CPUs available.
+This option is helpful, when running at a multiple CPUs or multiple core CPU HW.
+We are recommending to use the option only for 1000 clients and more loads
+with a number of threads kept about the same as the number of the linux
+logical CPUs as seen by cat /proc/cpuinfo.
 .TP
 .B "\-v"
 Request more verbose output to the log files, including information about 

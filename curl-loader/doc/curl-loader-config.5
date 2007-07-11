@@ -488,8 +488,8 @@ e.g. as in ./conf-examples/multipart-formdata-post.conf:
    MULTIPART_FORM_DATA="coolfiles=@fil1.gif,fil2.txt,fil3.html"
 .fi
 
-The files to be copied are indicated by @ and to be located in the same directory
-as curl-loader.
+The files to be uploaded are indicated by @ and to be located in the same directory
+as curl-loader. Context type may be specified using the syntax like ;type=text/html.
 .br
 .br
 Currently, the feature uses the strings provided AS_IS and does not generate
@@ -513,9 +513,9 @@ This is a tag for the URL section.
 .TP
 .B FETCH_PROBABILITY_ONCE
 This optional tag enables for a client to make the decision regarding
-wether to fetch a URL or not using
+a URL fetching with the tag
 .B FETCH_PROBABILITY
-to be done only once (at the first cycle).
+to be done only once (at the first cycle), and not at each cycle.
 
 
 
