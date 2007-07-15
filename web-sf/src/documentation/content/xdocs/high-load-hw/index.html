@@ -12,7 +12,7 @@ We have used the following HW to run loads of 40-60 K of HTTP 1.1 clients/users:
 an old PC with dual Xeon and 2-4 GB of checked memory, where 4GB is recommended.
 We compiled curl-loader with optimization, tuned linux as described in our HOWTOS-FAQs 
 and run the loader with threads using command line option -t 2 or -t 4.
-Please, note that due to still unresolved bugs, most probably in libevent, the loader may crash
+Please, note, that due to some unresolved bugs, most probably in libevent, the loader may crash
 on start. Workaround it by re-running and/or, optionally, changing the number of threads.
 We are recommending to run the number of threads close to the number of logical CPUs.
 </p>
@@ -22,8 +22,8 @@ We are recommending to run the number of threads close to the number of logical 
 <p>
 a PC-box equipped with two modern dual core Intel or AMD CPUs and 8GB of checked RAM.
 Please, proceed with all optimizations as in HOWTOS-FAQs, mind the total bandwidth limitations of
-the box NICs and run curl-loader with -t 4 command-line option. Y may wish to limit maximum bandwidth
-used by client as specified in HOWTOS-FAQs, using a special URL-section tag.
+the loading PC NICs and run curl-loader with -t 4 command-line option. Y may wish to limit maximum bandwidth
+used by each client as specified in HOWTOS-FAQs, using a special URL-section tag.
 Please, also edit the file in curl-loader distribution patches/libevent-nevent.patch
 and correct NEVENT number from the set 61000 to the maximum number of connections/clients 
 you wish to reach plus more 1000. Further run "make cleanall" and rebuild curl-loader 

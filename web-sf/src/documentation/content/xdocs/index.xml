@@ -23,7 +23,7 @@
   <body> 
     <section id="overview">
       <title>Introduction</title>
-<p>curl-loader (also known as "homasnik" and "davilka") is an open-source 
+<p>curl-loader (also known as "omes-nik" and "davilka") is an open-source 
 tool written in C-language, simulating application load and application 
 behavior of thousands and tens of thousand HTTP/HTTPS and FTP/FTPS 
 clients, each with its own source IP-address. In contrast to other tools 
@@ -76,10 +76,10 @@ manual mode;
 - HTTP user authentication login with POST or GET+POST methods. 
 Unique configurable username and password for each virtual client as well as 
 configurable posted string (post-forms) are the options. Another option is 
-loading of users with credentials from a text file;
+loading of users with credentials from a tokens text file;
       </p>
       <p>
-- HTTP POST/GET forms with up to 16 tokens loaded from file;
+- HTTP POST/GET forms with up to 16 tokens filled from a tokens text file;
       </p>
       <p>
 - HTTP user logoff with POST, GET+POST, or GET (cookies); POST logoff with
@@ -124,26 +124,23 @@ and FTPS urls in a single batch (test plan) configuration;
 - URL completion timers monitoring and enforcement for each client;
       </p>
       <p>
-- Inter/after URL "sleeping" timers, including random timers taken from an interval;
+- Inter/after URL "sleeping" timers, including random timers taken from a configurable interval;
       </p>
       <p>
 - Logfile with tracing activities for each virtual client. The logfile is automatically 
 rewinded, when reaching configurable size preventing disk crashes;
       </p>
       <p>
-- Responses logging (headers and bodies) to files.
+- Logging of responses (headers and bodies) to files.
       </p>
       <p>
 - Pre-cooked batch configuration (test plan) examples;
       </p>
       <p>
-- Load Status GUI and load status output to file;
+- Load Status GUI at console and with output to file;
       </p>
       <p>
-- Status and statistics per each virtual client logged to file;
-      </p>
-      <p>
-- Detailed loading statistics at Load Status GUI and to file;
+- Status and statistics for each virtual client, which are logged to file;
       </p>
        <p>Here is a screenshot:</p>
           <img src="images/black_cut.jpeg" alt="curl-loader screenshot" />
@@ -152,7 +149,7 @@ rewinded, when reaching configurable size preventing disk crashes;
     <section id="license">
       <title>License</title>
       <p>
-             curl-loader is licensed under GPL2.
+             curl-loader is licensed under GPLv2.
       </p>
      </section>
 

@@ -10,8 +10,10 @@
      What is the batch?
       </question>
       <answer>
-      Batch is a group of clients (virtual clients emulating real clients) with 
-     the same characteristics and loading behavior.
+     Batch is a group of clients (virtual clients emulating real clients) with 
+     the same characteristics and loading behavior. Meaning of the word "batch" is
+     also overloaded and is used for a batch configuration file, representing a test
+     plan.
        </answer>
     </faq>
 
@@ -21,6 +23,15 @@
       </question>
       <answer>
       Batch configuration file is a test plan for a batch of clients.
+       </answer>
+    </faq>
+
+  <faq id="version">
+      <question>
+     For which version are these FAQs applicable?
+      </question>
+      <answer>
+      We are keeping these FAQs updated and applicable for the latest version of curl-loader.
        </answer>
     </faq>
 
@@ -54,7 +65,7 @@ curl-loader threads equal to the number of logical CPUs seen in /proc/cpuinfo (c
 and deliver very high numbers  (20K-50K-100K) of simultaneously loading clients from a single PC. 
 To run a batch in several threads use the command line option -t &lt;number-of-threads&gt;.<br/>
 <br/>
-If you are thinking, tuning, optimizing and getting our advise - the sky is the limit.
+If you are thinking, tuning, optimizing and getting our advise, thus, the sky is the limit.
        </answer>
     </faq>
   </faqsection>
@@ -568,8 +579,8 @@ with a certain run-time probability. The allowed values are in the
 range from 1 to 100 percents.<br/>
 <br/>
 FETCH_PROBABILITY_ONCE when set to 1 configures each client to make the decision 
-about fetching of a URL with the FETCH_PROBABILITY tag to be done only once, namely, 
-at the first cycle, and not at each cycle.
+regarding fetching of a URL marked by a FETCH_PROBABILITY tag to be done only once, 
+namely, at the first cycle.
       </answer>
     </faq>
 
@@ -666,9 +677,9 @@ like /etc/security/limits.conf, etc
        <br/>
 Threads number -t option. This option is helpful, when running at a 
 multiple CPUs or multiple core CPU HW.
-We are recommending to use the option only for 1000 clients and more loads
-with a number of threads kept about the same as the number of the linux
-logical CPUs as seen by cat /proc/cpuinfo.
+We are recommending to use the option only for loads with 1000 clients and more, where
+the number of threads is kept about the same as the number of the linux
+logical CPUs seen by cat /proc/cpuinfo.
        </answer>
        </faq>
 
@@ -680,7 +691,7 @@ logical CPUs as seen by cat /proc/cpuinfo.
 Hyper-mode (command line -m0) is the default mode . The mode is using for event 
 demultiplexing epoll() or /dev/epoll. <br/>
 <br/>
-Another loading mode is called "smoothing" (-m1 command line) is basically the same
+Another loading mode is called "smooth" (-m1 command line), and it is basically the same
 as hyper, but uses poll() system call for demultiplexing.
 <br/>
        </answer>
