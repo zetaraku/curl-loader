@@ -1,5 +1,8 @@
 version 0.41, ?
 
+* Advanced to curl-7.16.4 recent release. Patch ./patches/curl-hash.patch
+  moved to curl mainline, and, therefore, is not necessary and removed.
+
 * Makefile DESTDIR to support make install DESTDIR=/some/fake/root
   for packaging purposes. Thanks to John Gatewood Ham
   <buraphalinuxserver@gmail.com> for this patch.
