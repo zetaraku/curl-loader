@@ -1,4 +1,5 @@
-Last updated: July 8 2007
+Last updated: July 16 2007
+
 
 The strategic directions of development are:
 
@@ -6,7 +7,8 @@ The strategic directions of development are:
   (200 000 - 500 000) simulated HTTP/FTP users/clients;
 
 - adding support for deep inspection and analyses of HTTP/FTP 
-  responses bodies and headers;
+  response bodies and headers. Support for regular expressions and 
+  configurable actions;
 
 - web-crawling and emulation of browser behaviour;
 
