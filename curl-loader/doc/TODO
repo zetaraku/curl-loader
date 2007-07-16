@@ -2,14 +2,16 @@ Last updated: July 8 2007
 
 The strategic directions of development are:
 
-- increasing of loading power like simulated HTTP/FTP users/clients
-  numbers and bringing it to hundred thousands (200 000 - 500 000);
+- increasing of loading power by delivering the load of hundred thousands 
+  (200 000 - 500 000) simulated HTTP/FTP users/clients;
 
-- adding support for HTTP/FTP responses body and headers analyses;
+- adding support for deep inspection and analyses of HTTP/FTP 
+  responses bodies and headers;
 
 - web-crawling and emulation of browser behaviour;
 
-- adding support for TLS/SSL HW acceleration (e.g. Cavium or Broadcom cards);
+- adding support for TLS/SSL HW acceleration (e.g. Cavium or Broadcom cards)
+  to deliver high numbers of HTTPS and FTPS load;
 
 
 
@@ -52,30 +54,30 @@ Next releases:
 
 2. FETCH_REPETITION tag to define how much times to repeat a url fetching.
 
-3. Logging to files of responses headers and bodies can be improved. We may 
+2. Logging to files of responses headers and bodies can be improved. We may 
     wish to use memory-mapped files.
 
-4. Configuration/making improvements: moving all source-files
+3. Configuration/making improvements: moving all source-files
    to src directory etc.
 
-5. X.509 client certificates per each https, ftps url. Client certificate
+4. X.509 client certificates per each https, ftps url. Client certificate
    for each client?
 
-6. Support for CAPS (calls per second) defined mode. Currently, we are 
+5. Support for CAPS (calls per second) defined mode. Currently, we are 
    supporting only a certain number of virtual clients and CAPS is the derived
    parameter. CAPS-MODE MAY support a certain number of CAPS, 
    and virtual clients number to be the derived parameter;
 
-7. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like;
+6. Load Status GUI. Decrease of loading clients number [-|\] - SIPP-like;
 
-8. Template-guided output of configurable statistics 
+7. Template-guided output of configurable statistics 
    (what user wishes with desired string, names) to statistics file;
 
-9. Support for more protocols: telnet, SFTP, SCP, SSH, etc;
+8. Support for more protocols: telnet, SFTP, SCP, SSH, etc;
 
-10. Support for more HTTP and FTP features.
+9. Support for more HTTP and FTP features.
 
-11. Support for browsers bevavior simulation.
+10. Support for browsers bevavior simulation.
 
    Aleksandar Lazic <al-curlloader@none.at> has proposed to mimic
    the behavior of browsers/wget, etc by:
@@ -114,3 +116,12 @@ Next releases:
    make. libcurl's pipelining support doesn't currently allow you to do any fine-
    grained control on what gets pipelined or not, so if you enable it you'll get
    pipelining for every subsequent request sent to the same server."
+
+11. Jeremy Brown has suggested to add a capability to run clients with at each cycle 
+      posted tokens (e.g. credentials) being new and being randomly taken from a list.
+  
+      Thus, 1000 running clients could be helpful to simulate a load of 100 000 users 
+      coming to authentication from time to time, but keeping the number of 
+      simultaneous clients rather low.
+
+      Sounds like a great option.
