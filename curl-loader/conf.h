@@ -28,7 +28,7 @@
 
 
 
-/* ----------------------------------------------------------------------------------------------------
+/* ----------------------------------------------------------------------------
    Global configuration parameters, comming with the command-line.
 */
 
@@ -46,10 +46,10 @@ extern int connect_timeout;
 extern int verbose_logging;
 
 /* 
-   Flag, whether to run batches as batch per thread. This is the only option to run
-   several batches of load from a single curl-loader process. To do that, place to
-   to your config file configurations for several batches, each with its own unique 
-   batch-name.
+   Flag, whether to run batches as a sub-batch per thread. 
+   To utilize SMP/multi-core HW capabilities a batch can be separated
+   to N non-overlapping (by addresses/ports) sub-batches. Each sub-batch
+   could be run from a separate thread by using -t <N> command line option.
 */
 extern int threads_subbatches_num;
 

@@ -217,7 +217,7 @@ void print_help ()
   fprintf (stderr, " -l[ogfile max size in MB (default 1024). On the size reached, file pointer rewinded]\n");
   fprintf (stderr, " -m[ode of loading, 0 - hyper  (default), 1 - smooth]\n");
   fprintf (stderr, " -r[euse onnections disabled. Close connections and re-open them. Try with and without]\n");
-  fprintf (stderr, " -t[hreads number loading sub-batches of clients]\n");
+  fprintf (stderr, " -t[hreads number to run batch clients as sub-batches in several threads. Works to utilize SMP/m-core HW]\n");
   fprintf (stderr, " -v[erbose output to the logfiles; includes info about headers sent/received]\n");
   fprintf (stderr, " -u[rl logging - logs url names to logfile, when -v verbose option is used]\n");
   fprintf (stderr, " -w[arnings skip]\n");

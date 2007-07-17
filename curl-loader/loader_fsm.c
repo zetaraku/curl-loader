@@ -64,21 +64,23 @@ static void advance_cycle_num (client_context* cctx);
 static int setup_url (client_context* cctx);
 
 static int handle_screen_input_timer (timer_node* tn, 
-                                       void* pvoid_param, 
+                                      void* pvoid_param, 
                                       unsigned long ulong_param);
 static int handle_logfile_rewinding_timer (timer_node* tn, 
                                            void* pvoid_param, 
                                            unsigned long ulong_param);
-static int handle_gradual_increase_clients_num_timer (timer_node* tn,
-                                                      void* pvoid_param, 
-                                                      unsigned long ulong_param);
+static int 
+handle_gradual_increase_clients_num_timer (timer_node* tn,
+                                           void* pvoid_param, 
+                                           unsigned long ulong_param);
 static int handle_cctx_sleeping_timer (timer_node* tn,
                                 void* pvoid_param, 
                                 unsigned long ulong_param);
 static int handle_cctx_url_completion_timer (timer_node* tn,
                                              void* pvoid_param, 
                                              unsigned long ulong_param);
-static int client_remove_from_load (batch_context* bctx, client_context* cctx);
+static int client_remove_from_load (batch_context* bctx, 
+				    client_context* cctx);
 static int client_add_to_load (batch_context* bctx, 
                                client_context* cctx,
                                unsigned long now_time);
@@ -91,7 +93,8 @@ static int fetching_decision (client_context* cctx, url_context* url);
  * Description - Allocates and initializes timer waiting queue
  *
  * Input          size - maximum possible size of the queue
- * Input/Output   **wq - waiting queue to be allocated, initialized and returned back
+ * Input/Output   **wq - waiting queue to be allocated, initialized and 
+ *                       returned back
  *
  * Return Code/Output - On success -0, on error -1
  ******************************************************************************/
@@ -129,7 +132,7 @@ int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq)
  *
  * Description - Really inits timers and adds initial clients to load
  *
- *Input          *bctx - pointer to a batch context
+ *Input          *bctx     - pointer to a batch context
  *               now-time  - current timestamp
  * Return Code/Output - On success -0, on error -1
  ******************************************************************************/
@@ -148,7 +151,8 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
   bctx->logfile_timer_node.period = logfile_timer_msec;
   bctx->logfile_timer_node.func_timer = handle_logfile_rewinding_timer;
 
-  if (tq_schedule_timer (bctx->waiting_queue, &bctx->logfile_timer_node) == -1)
+  if (tq_schedule_timer (bctx->waiting_queue, 
+  	                 &bctx->logfile_timer_node) == -1)
     {
       fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
       return -1;
@@ -168,7 +172,7 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
   bctx->screen_input_timer_node.period = 1000;
   bctx->screen_input_timer_node.func_timer = handle_screen_input_timer;
 
-  if (tq_schedule_timer(bctx->waiting_queue,&bctx->screen_input_timer_node)== -1)
+  if (tq_schedule_timer (bctx->waiting_queue, &bctx->screen_input_timer_node)== -1)
     {
       fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n", __func__);
       return -1;
@@ -259,13 +263,13 @@ int cancel_periodic_timers (batch_context* bctx)
  *
  * Description - Called at initialization and further after url-fetch completion 
  *               indication (that may be an error status as well). Either sets 
- *               to client the next url to load, or marks the being at completion state: 
- *               CSTATE_ERROR or CSTATE_FINISHED_OK.
+ *               to client the next url to load, or marks the being at 
+ *               completion state: CSTATE_ERROR or CSTATE_FINISHED_OK.
  *
- * Input -       *cctx     - pointer to the client context
- *               now_time  - current timestamp in msec
+ * Input -       *cctx      - pointer to the client context
+ *               now_time   - current timestamp in msec
  * Input/Output  *sched_now - pointer to an int, when the value of *sched_now is 
- *                               true, the client is scheduled right now without timer queue.
+ *                            true, the client is scheduled right now without timer queue.
  * Return Code/Output - CSTATE enumeration with the state of loading
  ******************************************************************************/
 int load_next_step (client_context* cctx,

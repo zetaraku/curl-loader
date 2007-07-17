@@ -59,7 +59,10 @@ typedef enum authentication_method
     AUTHENTICATION_ANY = CURLAUTH_ANY,
   } authentication_method;
 
-/* Currently, only username and password - 2 records */
+/* 
+ * Currently, we are using mainly username and password, but up to 16 
+ * tokens/records are available. 
+*/
 #define FORM_RECORDS_MAX_TOKENS_NUM 16
 #define FORM_RECORDS_TOKEN_MAX_LEN 64
 #define FORM_RECORDS_SEQ_NUM_LEN 7 /* Up to 10 000 000 clients */
@@ -74,12 +77,12 @@ typedef struct form_records_cdata
 
 
 /*
-  url_context - structure, that concentrates our knowledge about the url
-  to fetch.
+  url_context - structure, that concentrates our knowledge 
+  about the url to fetch (download, upload, etc).
 */
 typedef struct url_context
 {
-   /* URL buffer */
+   /* URL buffer, string containing the url */
   char* url_str;
 
   /* URL buffer length*/
@@ -89,16 +92,19 @@ typedef struct url_context
   char url_short_name [URL_SHORT_NAME_LEN + 1];
 
   /*
-    Used instead of URL string. If true, the current url will be used. 
-    Useful e.g. when POST-ing to the form, obtained by the previous GET fetching. 
-    Cannot be used for the first URL.
+    The flag can be set instead of URL string provisioning. If true, 
+    the current url will be used. 
+    Useful e.g. when POST-ing to the form, obtained by the previous 
+    GET fetching. Cannot be used for the first URL, because there is
+    no any "currect" url with CURL handle till at least a single fetch
+    has been done.
   */
   int url_use_current;
 
   /*
     If true, such url is done only once and not cycled. 
     Useful for a single login/logoff operation. A url with such flag to be
-    fetched only, when previous cycling URLs have been accomplished.
+    fetched only, when all previous cycling URLs have been accomplished.
   */
   int url_dont_cycle;
 
@@ -113,6 +119,7 @@ typedef struct url_context
   struct curl_slist *custom_http_hdrs;
 
   /* 
+     Request type/method. Used currently for HTTP only and can be:
      REQ_TYPE_GET_AND_POST, REQ_TYPE_POST, REQ_TYPE_GET
   */
   size_t req_type;
@@ -171,8 +178,10 @@ typedef struct url_context
   form_records_cdata* form_records_array;
 
   /*
-    Number of records in the array of form records with clients data (cdata). 
-    Normally to be the same as the number of clients, but may be more.
+    Number of records in the above array of form records, containing client 
+    data (cdata). 
+    Normally, to be the same size as the number of clients, but it can 
+    be larger as well.
   */
   size_t form_records_num;
 
@@ -238,7 +247,7 @@ typedef struct url_context
   unsigned long timer_after_url_sleep_lrange;
   unsigned long timer_after_url_sleep_hrange;
 
-  /* When positive, means ftp active. The default is passive. */
+  /* When positive, means ftp-active. The default is ftp-passive. */
   int ftp_active;
 
   /* Logs headers of HTTP responses to files, when true. */
@@ -248,20 +257,21 @@ typedef struct url_context
   int log_resp_bodies;
 
   /* 
-     Upper limit for the transfer download/upload rate in
+     Upper limit for download/upload rate in
      bytes/sec. 
   */
   curl_off_t transfer_limit_rate;
 
   /*
     Percent probability, that a client will fetch the url.
-    Zero means 100 % probability.
+    Should be from 0 up to 100%, where zero means 100% probability.
   */
   int fetch_probability;
 
   /*
-    Client should remember, whetter once decided using rand()
-    "to fetch a url or not to fetch".
+    Client should make the decision "to fetch or not to fetch" a url
+    only once (at the first cycle), remember the decision and to
+    follow the once-made decision at all next cycles.
   */
   int fetch_probability_once;
 
@@ -277,28 +287,26 @@ typedef struct url_context
   long url_ind;
 
   /* 
-     Directory name to be used for the files with logging if headers and 
-     bodies of HTTP responses. 
+     Directory name to be used for logfiles of responses 
+     (headers and bodies). 
   */
   char* dir_log;
 
   /*
-    An optional table of response status erros. If a response status is 404,
-    when resp_status_errors_tbl[404] is true, it is considered as an error
-    response. 
-    By default 4xx responses without 401 and 407 and all 5xx responses
-    are considered as errors.
+    An optional table of response status errors. If a response status is 404,
+    when resp_status_errors_tbl[404] is true, and the response is considered 
+    as an error. 
+    By default 4xx responses without 401 and 407 and all 5xx responses are 
+    considered as errors.
   */
   unsigned char *resp_status_errors_tbl;
 
 } url_context;
 
-
 int
 current_url_completion_timeout (unsigned long *timeout,
                                 url_context* url, 
                                 unsigned long now);
-
 int
 current_url_sleeping_timeout (unsigned long *timeout, 
                               url_context* url, 

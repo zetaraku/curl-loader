@@ -48,7 +48,8 @@ static int mperform_smooth (batch_context* bctx,
  * Function name - user_activity_smooth
  *
  * Description - Simulates user-activities using SMOOTH-MODE
- * Input -       *cctx_array - array of client contexts (related to a certain batch of clients)
+ * Input -       *cctx_array - array of client contexts (related to a certain 
+ *                             batch of clients)
  * Return Code/Output - On Success - 0, on Error -1
  *******************************************************************************/
 int user_activity_smooth (client_context* cctx_array)
@@ -61,8 +62,7 @@ int user_activity_smooth (client_context* cctx_array)
       return -1;
     }
 
-  if (alloc_init_timer_waiting_queue (
-                                      bctx->client_num_max + PERIODIC_TIMERS_NUMBER + 1,
+  if (alloc_init_timer_waiting_queue (bctx->client_num_max + PERIODIC_TIMERS_NUMBER + 1,
                                       &bctx->waiting_queue) == -1)
     {
       fprintf (stderr, 
@@ -73,8 +73,7 @@ int user_activity_smooth (client_context* cctx_array)
 
   const unsigned long now_time = get_tick_count ();
   
-  if (init_timers_and_add_initial_clients_to_load (bctx,
-                                                   now_time) == -1)
+  if (init_timers_and_add_initial_clients_to_load (bctx, now_time) == -1)
     {
       fprintf (stderr, 
                "%s - error: init_timers_and_add_initial_clients_to_load () failed.\n", 
@@ -121,16 +120,17 @@ int user_activity_smooth (client_context* cctx_array)
 
 
 
-/****************************************************************************************
+/*******************************************************************************
  * Function name - mget_url_smooth
  *
- * Description - Performs actual fetching of urls for a whole batch. Starts with initial fetch
- *               by mperform_smooth () and further acts using mperform_smooth () on select events
+ * Description - Performs actual fetching of urls for a whole batch. Starts 
+ *               with initial fetch by mperform_smooth () and further acts 
+ *               using mperform_smooth () on select events
  *
  * Input -       *bctx - pointer to the batch of contexts
  *
  * Return Code/Output - On Success - 0, on Error -1
- ****************************************************************************************/
+ ********************************************************************************/
 static int mget_url_smooth (batch_context* bctx)  		       
 {
   int max_timeout_msec = 1000;
@@ -185,12 +185,12 @@ static int mget_url_smooth (batch_context* bctx)
 /****************************************************************************************
  * Function name - mperform_smooth
  *
- * Description - Uses curl_multi_perform () for initial url-fetch and to react on socket events.
- *               Uses curl_multi_info_read () to test url-fetch completion events and to proceed
- *               with the next step for the client, using load_next_step (). Cares about statistics
- *               at certain timeouts.
+ * Description - Uses curl_multi_perform () for initial url-fetch and to react 
+ *               on socket events. It calls curl_multi_info_read () to test url-fetch 
+ *               completion events and to proceed with the next step for a client, 
+ *               using load_next_step (). It cares about statistics at certain timeouts.
  *
- * Input -       *bctx - pointer to the batch of contexts;
+ * Input -       *bctx          - pointer to the batch of contexts;
  *               *still_running - pointer to counter of still running clients (CURL handles)
  *               
  * Return Code/Output - On Success - 0, on Error -1
@@ -222,7 +222,10 @@ static int mperform_smooth (batch_context* bctx,
     {
       if (msg->msg == CURLMSG_DONE)
         {
-          /* TODO: CURLMsg returns 'result' field as curl return code. We may wish to use it. */
+          /* 
+	   * TODO: CURLMsg returns 'result' field as curl return code. 
+	   * We may wish to use it. 
+	   */
 
           CURL *handle = msg->easy_handle;
           client_context *cctx = NULL;

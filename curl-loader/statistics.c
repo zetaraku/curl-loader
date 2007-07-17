@@ -73,7 +73,7 @@ static void dump_clients (client_context* cctx_array);
 * Description - Adds counters of one stat_point object to another
 * Input -       *left  -pointer to the stat_point, where counter will be added
 *               *right -pointer to the stat_point, which counter will be 
-*                         added to the <left>
+*                       added to the <left>
 * Return Code/Output - None
 ****************************************************************************************/
 void stat_point_add (stat_point* left, stat_point* right)
@@ -230,7 +230,7 @@ void op_stat_point_release (op_stat_point* point)
 * Description - Initializes an allocated op_stat_point by allocating relevant pointer 
 * 		fields for counters
 *
-* Input -       *point      - pointer to the op_stat_point, where counter will be added
+* Input -       *point  - pointer to the op_stat_point, where counter will be added
 *               url_num - number of urls
 *
 * Return Code/Output - None
@@ -338,8 +338,8 @@ unsigned long get_tick_count ()
 *               print_snapshot_interval_statistics and print_statistics_* functions.
 *               At the end calls dump_clients () to dump the clients table.
 *
-* Input -       *cctx - pointer to client context, where the decision to complete loading 
-*                       (and dump) has been made. 
+* Input -       *cctx - pointer to client context, where the decision to 
+*                       complete loading (and dump) has been made. 
 * Return Code/Output - None
 ****************************************************************************************/
 void dump_final_statistics (client_context* cctx)
