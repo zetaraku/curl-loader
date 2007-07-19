@@ -693,8 +693,13 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
                             url->custom_http_hdrs);
         }
       
-      /* Enable cookies. This is important for various authentication schemes. */
-      curl_easy_setopt (handle, CURLOPT_COOKIEFILE, "");
+      /* 
+         Enable cookies. This is important for various authentication schemes. 
+      */
+      if (! url->url_ind)
+        {
+          curl_easy_setopt (handle, CURLOPT_COOKIEFILE, "");
+        }
       
       if (url->req_type == HTTP_REQ_TYPE_POST)
         {

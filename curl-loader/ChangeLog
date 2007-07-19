@@ -1,5 +1,8 @@
 version 0.41, ?
 
+* Setting empty cookies to CURL handle only for the very first url.
+  The bug has been reported by Artur <artvbar@gmail.com> Fixed?
+
 * Advanced to curl-7.16.4 recent release. Patch ./patches/curl-hash.patch
   moved to curl mainline, and, therefore, is not necessary and removed.
 
