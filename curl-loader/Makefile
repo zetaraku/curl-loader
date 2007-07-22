@@ -74,10 +74,7 @@ LD=gcc
 #Linker Flags
 LDFLAGS=-L./lib -L$(OPENSSLDIR)/lib
 
-# Link Libraries. RedHat/FC require sometimes lidn
-LIBS= -ldl -lpthread -lrt -lidn -lcurl -levent -lz -lssl -lcrypto #-lcares 
-
-# Link Libraries. Some other distributions do not need -lidn
+# Link Libraries. 
 LIBS= -ldl -lpthread -lrt -lcurl -levent -lz -lssl -lcrypto #-lcares 
 
 # Include directories
@@ -149,6 +146,7 @@ $(LIBCURL):
 	patch -d curl -p1 < ../patches/curl-trace-info-error.patch
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix=$(CURL_BUILD) \
+	--without-libidn \
 	--enable-ipv6 \
         --enable-thread \
         --with-random=/dev/urandom \
@@ -160,7 +158,6 @@ $(LIBCURL):
 	cp -a $(CURL_BUILD)/include/curl ./inc/curl
 	cp -pf $(CURL_BUILD)/lib/libcurl* ./lib
 
-#	--without-libidn \
 #--enable-ares=$(CARES_MAKE_DIR)
 
 # Files types rules

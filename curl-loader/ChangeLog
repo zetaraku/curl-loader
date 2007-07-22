@@ -1,5 +1,10 @@
 version 0.41, ?
 
+* Building libcurl with --without-libidn option. This creates mainly
+   building problems. Users, that would like to resolve IDNA domain
+   names with "international" letters should build it with
+   --with-libidn=full-path-dir.
+
 * Setting empty cookies to CURL handle only for the very first url.
   The bug has been reported by Artur <artvbar@gmail.com> Fixed?
 
