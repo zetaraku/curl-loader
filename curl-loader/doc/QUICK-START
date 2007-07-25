@@ -16,11 +16,10 @@ If you want to specify an openssl development directory with include
 files (e.g. crypto.h), export environment variable OPENSSLDIR with 
 the value of that directory.
 For example: $export OPENSSLDIR=the-full-path-to-the-directory
-         
-Another known issue is libidn.so, which means, that some linux distributions 
-do have some libidn.so.11, but not libidn.so. Resolve it by creating a softlink.
-In some cases, you may be required to remove -lidn from the linking line,
-whereas you need to comment a line in Makefile and uncomment another.
+
+We are building libcurl with --without-libidn option. Users, that would like 
+to resolve IDNA domain names with "international" letters can edit our 
+Makefile and use instead --with-libidn=full-path-dir.         
         
 Run the following commands from your bash linux shell:
 $tar zxfv curl-loader-<version>.tar.gz

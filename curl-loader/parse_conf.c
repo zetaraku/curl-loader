@@ -213,7 +213,7 @@ static int load_form_record_string (char*const input,
                                     size_t input_length,
                                     form_records_cdata* form_record,
                                     size_t record_num,
-                                    char* separator);
+                                    char** separator);
 
 static int add_param_to_batch (char*const input, 
                                size_t input_length,
@@ -388,17 +388,17 @@ static int load_form_record_string (char*const input,
                                     size_t input_len,
                                     form_records_cdata* form_record, 
                                     size_t record_num,
-                                    char* separator)
+                                    char** separator)
 {
-  const char separators_supported [] =
+  const char* separators_supported [] =
     {
-      ',',
-      ':',
-      ';',
-      ' ', 
-      '@', 
-      '/', 
-      '\0'
+      ",",
+      ":",
+      ";",
+      " ", 
+      "@", 
+      "/", 
+      0
     };
   char* sp = NULL;
   int i;
@@ -416,9 +416,9 @@ static int load_form_record_string (char*const input,
     {
       for (i = 0; separators_supported [i]; i++)
         {
-          if ((sp = strchr (input, separators_supported [i])))
+          if ((sp = strchr (input, *separators_supported [i])))
             {
-              *separator = *sp; /* Remember the separator */
+              *separator = (char *) separators_supported [i]; /* Remember the separator */
               break;
             }
         }
@@ -429,9 +429,10 @@ static int load_form_record_string (char*const input,
                    "%s - failed to locate in the first string \"%s\" \n" 
                    "any supported separator.\nThe supported separators are:\n",
                __func__, input);
+
           for (i = 0; separators_supported [i]; i++)
             {
-              fprintf (stderr,"\"%c\"\n", separators_supported [i]);
+              fprintf (stderr,"\"%s\"\n", separators_supported [i]);
             }
           return -1;
         }
@@ -440,9 +441,9 @@ static int load_form_record_string (char*const input,
   char * token = 0, *strtokp = 0;
   size_t token_count  = 0;
 
-  for (token = strtok_r (input, separator, &strtokp); 
+  for (token = strtok_r (input, *separator, &strtokp); 
        token != 0;
-       token = strtok_r (0, separator, &strtokp))
+       token = strtok_r (0, *separator, &strtokp))
     {
       size_t token_len = strlen (token);
 
@@ -2687,7 +2688,7 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
 {
   char fgets_buff[512];
   FILE* fp;
-  char sep;
+  char* sep = 0; // strtok_r requires a string with '\0' 
 
   /* 
      Open the file with form records 
@@ -2735,6 +2736,16 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
             {
               fprintf (stderr, "%s - skipping empty line.\n", __func__);
               continue;
+            }
+
+          if (fgets_buff[string_len - 2] == '\r')
+            {
+              fgets_buff[string_len - 2] = '\0';
+            }
+
+          if (fgets_buff[string_len -1] == '\n')
+            {
+              fgets_buff[string_len -1] = '\0';
             }
 
           if ((int)url->form_records_num >= bctx->client_num_max)
