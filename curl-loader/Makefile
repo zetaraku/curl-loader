@@ -74,7 +74,7 @@ LD=gcc
 #Linker Flags
 LDFLAGS=-L./lib -L$(OPENSSLDIR)/lib
 
-# Link Libraries. 
+# Link Libraries. In some cases, plese add -lidn
 LIBS= -ldl -lpthread -lrt -lcurl -levent -lz -lssl -lcrypto #-lcares 
 
 # Include directories
