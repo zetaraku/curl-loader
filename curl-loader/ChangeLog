@@ -1,5 +1,9 @@
 version 0.41, ?
 
+* Critical bug, where loading credentials/tokens from file has been
+   broken. Thanks to Artur Barashev <artvbar@gmail.com> for this
+   patch.
+	
 * Building libcurl with --without-libidn option. This creates mainly
    building problems. Users, that would like to resolve IDNA domain
    names with "international" letters should build it with
@@ -14,6 +18,7 @@ version 0.41, ?
 * Makefile DESTDIR to support make install DESTDIR=/some/fake/root
   for packaging purposes. Thanks to John Gatewood Ham
   <buraphalinuxserver@gmail.com> for this patch.
+
 
 version 0.40, July 5 2007, svn 468
 
