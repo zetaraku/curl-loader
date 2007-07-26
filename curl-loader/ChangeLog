@@ -1,4 +1,4 @@
-version 0.41, ?
+version 0.41, July 26 2007, svn 492
 
 * Critical bug, where loading credentials/tokens from file has been
    broken. Thanks to Artur Barashev <artvbar@gmail.com> for this
