@@ -390,7 +390,7 @@ static int load_form_record_string (char*const input,
                                     size_t record_num,
                                     char** separator)
 {
-  const char* separators_supported [] =
+  static const char* separators_supported [] =
     {
       ",",
       ":",
