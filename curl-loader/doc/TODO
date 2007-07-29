@@ -21,15 +21,13 @@ The strategic directions of development are:
 Some urgent issues for the next beta:
 
 1. Log to files headers and bodies of the requests, issued by curl-loader.
-    We are currently logging only incoming responses. The feature is a 
-     MUST for successful debugging of encrypted further TLS/SSL to HTTPS
-     URLs. Suggested by Artur <artvbar@gmail.com>.
+   We are currently logging only incoming responses. The feature is a 
+   MUST for successful debugging of encrypted further TLS/SSL to HTTPS
+   URLs. Suggested by Artur <artvbar@gmail.com>.
 
-2. Re-check, that GET-forms do work with unique users and from file tokens.
-    Correct a possible bug reported by <artvbar@gmail.com>.
-
-3. Add to multipart form POST-ing as in RFC1867 at least an option to load 
-    credentials from file. Currently, it is doing only AS-IS POST-ing.
+2. Add to multipart form POST-ing as in RFC1867 at least an option to load 
+   credentials from file. Several people are asking it. Currently, it is 
+   doing only AS-IS POST-ing.
 
 
 
