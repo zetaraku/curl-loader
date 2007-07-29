@@ -36,13 +36,13 @@ and simulates user behavior with support for login and authentication flavors.
 The goal of the project is to deliver a powerful and flexible open-source testing solution
 as a real alternative to Spirent Avalanche and IXIA IxLoad.
   </p>
-      <p>The tool is useful for performance loading of various application services,
-              using HTTP, HTTPS, FTP and FTPS, for testing web and ftp servers and traffic generation.
-              Activities of each virtual client are logged and collected statistics include information 
-             about: resolving, connection establishment, sending of requests, receiving responses, headers and data 
-             received/sent, errors from network, TLS/SSL and application (HTTP, FTP) level events and errors.
+      <p>The tool is useful for performance loading of various application services, 
+for testing web and ftp servers and traffic generation. Activities of each virtual client 
+are logged and collected statistics includes information about resolving, connection 
+establishment, sending of requests, receiving responses, headers and data 
+received/sent, errors from network, TLS/SSL and application (HTTP, FTP) level events and errors.
   </p>
-      <p> Virtual clients are grouped together to so-called batches of clients, performing
+      <p> Virtual clients are grouped together to the so-called batches of clients, performing
               the same sort of activities, like:
   </p>
        <p>     - authentication login;  </p>
@@ -56,10 +56,10 @@ as a real alternative to Spirent Avalanche and IXIA IxLoad.
     <section id="features">
       <title>Features List</title>
       <p>
-- Virtual clients number. The tools runs depending on your HW and scenario
+- Virtual clients number. The tool runs, depending on your HW and scenario,
 2500-25000 and more simultaneously loading clients, all from a single curl-loader process.
-Actual number of clients may be several times higher (we tried 60 000 HTTP 1.1 clients) and is limited 
-mainly by memory. Each client performs loading from its own source IP-address or, 
+Actual number of clients may be several times higher (we tried 60 000 HTTP 1.1 clients), 
+and it is limited mainly by memory. Each client performs loading from its own source IP-address or, 
 as an option, all clients share the same IP-address;
       </p>
       <p>
@@ -156,7 +156,7 @@ rewinded, when reaching configurable size preventing disk crashes;
     <section id="authors">
       <title>Authors</title>
       <p>
-         The tool is written and supported by Robert Iakobashvili and Michael Moser both 
+         The tool is written and supported by Robert Iakobashvili and Michael Moser, both 
          from Israel.
       </p>
      <p>
