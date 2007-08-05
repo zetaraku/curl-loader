@@ -263,7 +263,7 @@ int cancel_periodic_timers (batch_context* bctx)
  *
  * Description - Called at initialization and further after url-fetch completion 
  *               indication (that may be an error status as well). Either sets 
- *               to client the next url to load, or marks the being at 
+ *               to a client the next url to load, or marks the client being at a
  *               completion state: CSTATE_ERROR or CSTATE_FINISHED_OK.
  *
  * Input -       *cctx      - pointer to the client context
@@ -374,9 +374,10 @@ int load_next_step (client_context* cctx,
     {
         //PRINTF("load_next_step: ctx %p schedule next load in %d seconds\n", 
         //     cctx,(int) interleave_waiting_time/1000);
+
       /* 
          Postpone client scheduling for the interleave_waiting_time msec by 
-         placing it to the timer queue. 
+         placing it to the timer queue. Schedule the timer now.
       */
       cctx->tn.next_timer = now_time + interleave_waiting_time;
       cctx->tn.period = 0;
@@ -833,12 +834,27 @@ int handle_cctx_sleeping_timer (timer_node* tn,
                                 void* pvoid_param,
                                 unsigned long ulong_param)
 {
-  client_context* cctx = (client_context *) tn;
-  batch_context* bctx = cctx->bctx;
   (void)pvoid_param;
   (void)ulong_param;
 
+  client_context* cctx = (client_context *) tn;
+  batch_context* bctx = cctx->bctx;
+  url_context* url = &bctx->url_ctx_array[cctx->url_curr_index];
+
   bctx->sleeping_clients_count--;
+
+  if (url->fresh_connect)
+    {
+      /*
+        On a fresh connect we reset the connection and go to sleep.
+        The call to setup_url (cctx) is postponed to the timer handler
+        timer handler.
+      */
+      
+      // Setup the new url.
+      setup_url (cctx);
+    }
+
   const unsigned long now_time = get_tick_count ();
 
   return client_add_to_load (bctx, cctx, now_time);
@@ -1171,6 +1187,8 @@ static int load_urls_state (client_context* cctx,
                             unsigned long *wait_msec)
 { 
   batch_context* bctx = cctx->bctx;
+  CURL* handle = cctx->handle;
+  url_context* url = &bctx->url_ctx_array[cctx->url_curr_index];
   int url_next = -1;
   
   if (cctx->client_state == CSTATE_URLS)
@@ -1178,7 +1196,7 @@ static int load_urls_state (client_context* cctx,
       // Mind the after url sleeping timeout, if any.
       //
       if (current_url_sleeping_timeout (wait_msec,
-                                          &bctx->url_ctx_array[cctx->url_curr_index],
+                                          url,
                                           now_time) == -1)
         {
           fprintf (stderr, 
@@ -1198,10 +1216,22 @@ static int load_urls_state (client_context* cctx,
           // Set the new url index
           cctx->url_curr_index =  (size_t) url_next;
         }
-      while (fetching_decision (cctx, &bctx->url_ctx_array[cctx->url_curr_index]) != 1);
+      while (fetching_decision (cctx, url) != 1);
       
-      // Setup the new url.
-      setup_url (cctx);
+      if (url->fresh_connect && *wait_msec)
+        {
+          /*
+            On a fresh connect reset the connection and go to sleep.
+            Postpone the call to setup_url (cctx) and make it in the 
+            timer handler.
+          */
+          curl_easy_reset (handle);
+        }
+      else
+        {
+          // Setup the new url.
+          setup_url (cctx);
+        }
 
       // Remain in URL state
       return cctx->client_state;
