@@ -534,6 +534,11 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
   /* Define the connection re-use policy. When passed 1, re-establish */
   curl_easy_setopt (handle, CURLOPT_FRESH_CONNECT, url->fresh_connect);
 
+  if (url->fresh_connect)
+    {
+      curl_easy_setopt (handle, CURLOPT_FORBID_REUSE, 1);
+    }
+
   /* 
      If DNS resolving is necesary, global DNS cache is enough,
      otherwise compile libcurl with ares (cares) library support.
