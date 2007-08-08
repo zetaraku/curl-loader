@@ -1,3 +1,22 @@
+version 0.42, ?
+
+* When FRESH_CONNECT=1 tag is specified for FTP URLs, new 
+  FTP connections have been opened in due course, but old FTP connections 
+  were kept forever and not closed. The bugfix committed to SVN forces old 
+  connections to be closed.
+
+  Current behavior is the following:
+   a) an established control FTP-connection is closed immediately just after a 
+       file transfer is accomplished;
+   b) an established data FTP-connection is not closed after transfer, but is kept 
+      during sleeping time and goes closed only after a new data connection is opened;
+
+  Current behavior still may require to define twice higher number of connections 
+  allowed by your FTP server, than number of clients in curl-loader.	
+  Thanks to John Gatewood Ham <buraphalinuxserver@gmail.com> for the 
+  reporting the problem and testing patches.
+
+
 version 0.41, July 26 2007, svn 492
 
 * Critical bug, where loading credentials/tokens from file has been
