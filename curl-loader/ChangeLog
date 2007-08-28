@@ -1,5 +1,8 @@
 version 0.42, ?
 
+* CentOS 64-bit was reported not defining PAGE_SIZE in <asm/page.h>
+  Added a workaround to enable compilation.
+
 * When FRESH_CONNECT=1 tag is specified for FTP URLs, new 
   FTP connections have been opened in due course, but old FTP connections 
   were kept forever and not closed. The bugfix committed to SVN forces old 
@@ -12,8 +15,8 @@ version 0.42, ?
       during sleeping time and goes closed only after a new data connection is opened;
 
   Current behavior still may require to define twice higher number of connections 
-  allowed by your FTP server, than number of clients in curl-loader.	
-  Thanks to John Gatewood Ham <buraphalinuxserver@gmail.com> for the 
+  allowed by your FTP server, than the number of clients in curl-loader.	
+  Thanks to John Gatewood Ham <buraphalinuxserver@gmail.com> for
   reporting the problem and testing patches.
 
 

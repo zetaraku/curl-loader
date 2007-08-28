@@ -26,7 +26,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+// PAGE_SIZE should be defined in the header <asm/page.h>. 
+// However, CentOS-64bit was reported not defining PAGE_SIZE.
+//
 #include <asm/page.h>
+#if !defined PAGE_SIZE
+#define PAGE_SIZE 4096
+#endif
 
 #define OS_FREE_LIST_CHUNK_SIZE (PAGE_SIZE*9/10)
 #define MPOOL_PTR_ALIGN (sizeof(void*))
