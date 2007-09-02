@@ -102,6 +102,7 @@ extern int loading_mode;
    normally used with verbose logging, like '-v -u' in command line.
 */
 extern int url_logging;
+extern int detailed_logging;
 
 extern int warnings_skip;
 

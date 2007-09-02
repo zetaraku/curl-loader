@@ -1,5 +1,12 @@
 version 0.42, ?
 
+* Detailed logging option (-x) added outputs to <batch-name>.log file all
+   request and response headers and bodies. Recommended not to combine
+  it with verbose -v.
+  This option was suggested by Artur Barashev <artvbar@gmail.com> and
+  is supposed to enable HTTP and FTP request/responses tracing for encrypted
+  HTTPS/FTPS traffic, where sniffers are not helpful.
+
 * CentOS 64-bit was reported not defining PAGE_SIZE in <asm/page.h>
   Added a workaround to enable compilation.
 

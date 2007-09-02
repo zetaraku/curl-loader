@@ -1075,20 +1075,16 @@ static int client_tracing_function (CURL *handle,
   char*url_target = NULL, *url_effective = NULL;
   url_context* url_ctx = &cctx->bctx->url_ctx_array[cctx->url_curr_index];
 
-#if 0
-  char buf[300];
-  int n;
 
-  n = snprintf (buf, 
-                sizeof (buf)- 1, 
-                "->client_tracing_function cctx=%p size=%d | %s",
-                cctx,
-                size,
-                data);
+  if (detailed_logging)
+    {
+      char buf[512];
+      int n;
 
-  buf[n] = '\0';
-  printf("%s\n",buf);
-#endif  
+      n = snprintf (buf, sizeof (buf)- 1, "%s", data);
+      buf[n] = '\0';
+      fprintf(cctx->file_output, "%s\n", buf);
+    }
 
   if (url_logging)
     {

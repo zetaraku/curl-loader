@@ -64,6 +64,9 @@ int loading_mode = LOAD_MODE_DEFAULT;
  /* Whether to include url to all log outputs. */
 int url_logging = 0;
 
+/* Output to logfile the details of request/response. */
+int detailed_logging = 0;
+
 int warnings_skip = 0;
 
 /* Name of the configuration file */
@@ -81,7 +84,7 @@ int parse_command_line (int argc, char *argv [])
 {
   int rget_opt = 0;
 
-    while ((rget_opt = getopt (argc, argv, "c:ehf:i:l:m:op:rst:vuw")) != EOF) 
+    while ((rget_opt = getopt (argc, argv, "c:ehf:i:l:m:op:rst:vuwx")) != EOF) 
     {
       switch (rget_opt) 
         {
@@ -184,6 +187,10 @@ int parse_command_line (int argc, char *argv [])
 
         case 'w':
           warnings_skip = 1; 
+          break;
+
+        case 'x':
+          detailed_logging = 1;
           break;
 
         default: 
