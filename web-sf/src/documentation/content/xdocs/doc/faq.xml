@@ -35,6 +35,28 @@
        </answer>
     </faq>
 
+  <faq id="VCnum">
+      <question>
+     What is the maximum possible number of virtual clients (VCs) with a dedicated IP-address?
+      </question>
+      <answer>
+      You can use the same IP-address for all VCs or a dedicated address for each client. A clear
+       limitation of "the same IP" is that you can reach only 64K of clients (64K is the number of
+      ports to bind).<br/>
+     <br/>
+     When using a dedicated IP address per client, the address is added by curl-loader to the 
+      loading network interface as a secondary IP. Talking 32-bits, linux kernel  allocates for IPv4
+      structure in_ifaddr, which is is ~55-60 bytes (depending on config options, arch, etc) from
+     slab-64, which means, that something above 64 bytes are used. IPv6 address takes a chunk
+     from slab-128 and uses above 128 bytes of kernel memory. <br/>
+     We got at least 100K IPv4 and 8K IPv6 addresses using a machine with 1G memory. The more
+     memory you have, the more you can get, whereas it depends on the number of chunks in slab-64
+     and slab-128 allocators.<br/>
+     The situation can be worse for 64-bit kernels, whereas such machines are normally enjoying more
+     memory.<br/>
+       </answer>
+    </faq>
+
   </faqsection>
   <faqsection id="Hardware">
     <title>Hardware Requirements</title>
@@ -78,6 +100,8 @@ Which operating systems are supported by curl-loader?
       </question>
       <answer>
 You can use any operating system of your choice, providing that this is linux with kernel 2.4 or 2.6.
+We are building, developing and testing on Debian and kernel 2.6 is recommended. If you have
+any compilation issues on any other linux distributions, please, report them to the mailing list. 
        </answer>
     </faq>
     <faq id="pre-requirements">
@@ -86,11 +110,12 @@ What are the building pre-requirements?
       </question>
       <answer>
         General C development environment with bash, gcc, make, etc on a linux machine
-        is required.<br/>
+        is required. We are supporting gcc of series 3 and 4.<br/>
         <br/>
-        Building pre-requirements are:<br/>
-          1. openssl binaries;<br/>
-          2. openssl development package with include files (on debian libssl-dev);<br/>
+        The Building pre-requirements are:<br/>
+          1. glibc include files, which are normally in /usr/include;<br/>
+          2. openssl binaries;<br/>
+          3. openssl development package with include files (on debian libssl-dev);<br/>
          <br/>
          Adjust Makefile variables to point to the openssl headers and libraries. 
          To specify an openssl development directory with include files (e.g. crypto.h), 

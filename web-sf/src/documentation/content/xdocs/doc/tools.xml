@@ -13,7 +13,7 @@ A very extensive collection of open-source testing tools could be found
 at the site <link href="http://www.opensourcetesting.org/">opensourcetesting</link><br/>
 <br/>
 <link href="http://jakarta.apache.org/jmeter/">Apache JMeter</link> is a good open-source
-HTTP/S loading and performance testing tools competing with curl-loader.<br/>
+HTTP/S loading and performance testing tool, which we are recommending for features, not covered by curl-loader.<br/>
 <br/>
 <link href="http://sipp.sourceforge.net/">SIPp</link> is an excellent open-source
 SIP protocol loader.<br/>
