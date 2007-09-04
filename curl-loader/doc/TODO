@@ -1,4 +1,4 @@
-Last updated: July 16 2007
+Last updated: September 4 2007
 
 
 The strategic directions of development are:
@@ -20,19 +20,13 @@ The strategic directions of development are:
 
 Some urgent issues for the next beta:
 
-1. Log to files headers and bodies of the requests, issued by curl-loader.
-   We are currently logging only incoming responses. The feature is a 
-   MUST for successful debugging of encrypted further TLS/SSL to HTTPS
-   URLs. Suggested by Artur <artvbar@gmail.com>.
-
-2. Add to multipart form POST-ing as in RFC1867 at least an option to load 
+1. Add to multipart form POST-ing as in RFC1867 at least an option to load 
    credentials from file. Several people are asking it. Currently, it is 
    doing only AS-IS POST-ing.
 
 
 
-The next beta release 0.41 may hopefully be devoted to processing
-of HTTP response bodies: 
+The next beta release may hopefully be devoted to processing of HTTP response bodies: 
 
 1. HTML analyses. libcurl example is using libtidy in:
    http://www.koders.com/c/fid7923BF828D0534D6B747ED138FCDD50DCFD13B3F.aspx
