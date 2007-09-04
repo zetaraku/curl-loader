@@ -54,6 +54,10 @@ option is used to specify that file name.
 .nh
 Specify connection establishment timeout in seconds.
 .TP
+.B "\-d"
+.nh
+Detailed logging, which outputs to logfile headers and bodies of requests/responses.
+.TP
 .B "\-e"
 .nh
 Error drop client. When an error occurs, the client 
@@ -84,7 +88,7 @@ logical CPUs as seen by cat /proc/cpuinfo.
 .TP
 .B "\-v"
 Request more verbose output to the log files, including information about 
-the headers sent and received.
+the headers sent and received. In some cases\-d option is a more informative.
 .TP
 .B "\-u"
 Activate logging of URLs to the log file, when the \-v verbose option is used.

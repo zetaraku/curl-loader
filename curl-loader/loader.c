@@ -1078,12 +1078,12 @@ static int client_tracing_function (CURL *handle,
 
   if (detailed_logging)
     {
-      char buf[512];
+      char detailed_buff[CURL_ERROR_SIZE +1];
       int n;
 
-      n = snprintf (buf, sizeof (buf)- 1, "%s", data);
-      buf[n] = '\0';
-      fprintf(cctx->file_output, "%s\n", buf);
+      n = snprintf (detailed_buff, sizeof (detailed_buff)- 1, "%s", data);
+      detailed_buff[n] = '\0';
+      fprintf(cctx->file_output, "%s\n", detailed_buff);
     }
 
   if (url_logging)

@@ -84,18 +84,20 @@ int parse_command_line (int argc, char *argv [])
 {
   int rget_opt = 0;
 
-    while ((rget_opt = getopt (argc, argv, "c:ehf:i:l:m:op:rst:vuwx")) != EOF) 
+    while ((rget_opt = getopt (argc, argv, "c:dehf:i:l:m:op:rst:vuw")) != EOF) 
     {
       switch (rget_opt) 
         {
         case 'c': /* Connection establishment timeout */
           if (!optarg || (connect_timeout = atoi (optarg)) <= 0)
             {
-              fprintf (stderr, 
-                       "%s error: -c option should be a positive number in seconds.\n",
-                  __func__);
+              fprintf (stderr, "%s error: -c option should be a positive number in seconds.\n", __func__);
               return -1;
             }
+          break;
+
+        case 'd':
+          detailed_logging = 1;
           break;
           
         case 'e':
@@ -111,9 +113,7 @@ int parse_command_line (int argc, char *argv [])
             strcpy(config_file, optarg);
           else
             {
-              fprintf (stderr, 
-                       "%s error: -f option should be followed by a filename.\n", 
-                       __func__);
+              fprintf (stderr, "%s error: -f option should be followed by a filename.\n", __func__);
               return -1;
             }
           break;
@@ -122,8 +122,7 @@ int parse_command_line (int argc, char *argv [])
           if (!optarg ||
               (snapshot_statistics_timeout = atoi (optarg)) < 1)
             {
-              fprintf (stderr, 
-                       "%s error: -i option should be followed by a number >= 1.\n", 
+              fprintf (stderr, "%s error: -i option should be followed by a number >= 1.\n", 
                        __func__);
               return -1;
             }
@@ -133,8 +132,7 @@ int parse_command_line (int argc, char *argv [])
           if (!optarg || 
               (logfile_rewind_size = atol (optarg)) < 2)
             {
-              fprintf (stderr, 
-                       "%s: error: -l option should be followed by a number >= 2.\n",
+              fprintf (stderr, "%s: error: -l option should be followed by a number >= 2.\n",
                   __func__);
               return -1;
             }
@@ -146,8 +144,7 @@ int parse_command_line (int argc, char *argv [])
                 (((loading_mode = atol (optarg)) != LOAD_MODE_SMOOTH && 
                   loading_mode != LOAD_MODE_HYPER )))
             {
-              fprintf (stderr, 
-                       "%s error: -m to be followed by a number either %d or %d.\n",
+              fprintf (stderr, "%s error: -m to be followed by a number either %d or %d.\n",
                        __func__, LOAD_MODE_SMOOTH, LOAD_MODE_HYPER);
               return -1;
             }
@@ -170,8 +167,7 @@ int parse_command_line (int argc, char *argv [])
           if (!optarg ||
               (threads_subbatches_num = atoi (optarg)) < 2)
             {
-              fprintf (stderr, 
-                       "%s error: -t option should be followed by a number >= 2.\n", 
+              fprintf (stderr, "%s error: -t option should be followed by a number >= 2.\n", 
                        __func__);
               return -1;
             }
@@ -187,10 +183,6 @@ int parse_command_line (int argc, char *argv [])
 
         case 'w':
           warnings_skip = 1; 
-          break;
-
-        case 'x':
-          detailed_logging = 1;
           break;
 
         default: 
@@ -219,6 +211,7 @@ void print_help ()
   fprintf (stderr, "usage: run as a root:\n");
   fprintf (stderr, "./curl-loader -f <configuration file name> with [other options below]:\n");
   fprintf (stderr, " -c[onnection establishment timeout, seconds]\n");
+  fprintf (stderr, " -d[etailed logging; outputs to logfile headers and bodies of requests/responses. Good for text pages/files]\n");
   fprintf (stderr, " -e[rror drop client (smooth mode). Client on error doesn't attempt next cycle]\n");
   fprintf (stderr, " -i[ntermediate (snapshot) statistics time interval (default 3 sec)]\n");
   fprintf (stderr, " -l[ogfile max size in MB (default 1024). On the size reached, file pointer rewinded]\n");
