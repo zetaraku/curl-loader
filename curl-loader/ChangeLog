@@ -1,4 +1,4 @@
-version 0.42, ?
+version 0.42, stable, September 05, 2007, svn 503
 
 * Detailed logging option (-x) added outputs to <batch-name>.log file all
    request and response headers and bodies. Recommended not to combine

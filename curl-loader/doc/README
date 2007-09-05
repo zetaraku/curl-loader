@@ -689,6 +689,7 @@ Usage: run as a root user:
 Other possible options are:
 -c[onnection establishment timeout, seconds]
 -e[rror drop client. Client on error doesn't attempt to process the next cycle]
+-d[etailed logging, hich outputs to logfile headers and bodies of requests/responses]
 -h[elp]
 -i[ntermediate (snapshot) statistics time interval (default 3 sec)]
 -f[ilename of configuration to run (batches of clients)]
