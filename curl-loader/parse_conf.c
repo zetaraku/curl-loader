@@ -139,6 +139,9 @@ static int transfer_limit_rate_parser (batch_context*const bctx, char*const valu
 static int fetch_probability_parser (batch_context*const bctx, char*const value);
 static int fetch_probability_once_parser (batch_context*const bctx, char*const value);
 
+static int form_records_random_parser (batch_context*const bctx, char*const value);
+static int form_records_file_max_num_parser(batch_context*const bctx, char*const value);
+
 static fparser find_tag_parser (const char* tag);
 
 /*
@@ -199,6 +202,9 @@ static const tag_parser_pair tp_map [] =
 
     {"FETCH_PROBABILITY", fetch_probability_parser},
     {"FETCH_PROBABILITY_ONCE", fetch_probability_once_parser},
+
+    {"FORM_RECORDS_RANDOM", form_records_random_parser},
+    {"FORM_RECORDS_FILE_MAX_NUM", form_records_file_max_num_parser},
 
     {NULL, 0}
 };
@@ -1252,6 +1258,51 @@ static int form_records_file_parser (batch_context*const bctx, char*const value)
 
     return 0;
 }
+
+static int form_records_random_parser (batch_context*const bctx, char*const value)
+{
+  long url_form_records_random_flag = 0;
+  url_form_records_random_flag = atol (value);
+
+  if (url_form_records_random_flag < 0 || url_form_records_random_flag > 1)
+    {
+      fprintf (stderr, 
+               "%s - error: FORM_RECORDS_RANDOM should be either 0 or 1 and not %ld.\n",
+               __func__, url_form_records_random_flag);
+      return -1;
+    }
+
+  bctx->url_ctx_array[bctx->url_index].form_records_random =  url_form_records_random_flag;
+  return 0;
+
+}
+
+static int form_records_file_max_num_parser(batch_context*const bctx, char*const value)
+{
+  long max_records = 0;
+  max_records = atol (value);
+
+  if (max_records < 0)
+    {
+      fprintf (stderr, 
+               "%s - error: FORM_RECORDS_FILE_MAX_NUM should be a "
+               "positive value and not %ld.\n", __func__, max_records);
+      return -1;
+    }
+
+  if (bctx->url_ctx_array[bctx->url_index].form_records_file)
+    {
+      fprintf (stderr, 
+               "%s - error: FORM_RECORDS_FILE_MAX_NUM should be specified "
+               "prior to tag FORM_RECORDS_FILE\n"
+               "Please, change the order of the tags in your configuration.\n", __func__);
+      return -1;
+    }
+
+  bctx->url_ctx_array[bctx->url_index].form_records_file_max_num =  max_records;
+  return 0;
+}
+
 static int upload_file_parser  (batch_context*const bctx, char*const value)
 {
   struct stat statbuf;
@@ -2701,15 +2752,17 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
       return -1;
     }
 
+  const size_t max_records = url->form_records_file_max_num ? 
+    url->form_records_file_max_num : (size_t)bctx->client_num_max;
+
   /* 
      Allocate the place to keep form records tokens for clients
   */
-  if (! (url->form_records_array =  calloc (bctx->client_num_max, 
-  					    sizeof (form_records_cdata))))
+  if (! (url->form_records_array =  calloc (max_records, 
+                                            sizeof (form_records_cdata))))
   {
-      fprintf (stderr, 
-               "%s - failed to allocate memory for url->form_records_array with errno %d.\n", 
-               __func__, errno);
+      fprintf (stderr, "%s - failed to allocate memory for "
+               "url->form_records_array with errno %d.\n", __func__, errno);
       return -1;
   }
 
@@ -2721,7 +2774,7 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
       char* string_buff = NULL;
       size_t string_len = 0;
 
-      if ((string_len = strlen (fgets_buff)) && 
+      if ((string_len = strlen (fgets_buff)) &&
           (string_buff = eat_ws (fgets_buff, &string_len)))
         {
           // Line may be commented out by '#'.
@@ -2748,12 +2801,12 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
               fgets_buff[string_len -1] = '\0';
             }
 
-          if ((int)url->form_records_num >= bctx->client_num_max)
+          if (url->form_records_num >= max_records)
             {
-              fprintf (stderr, 
-                       "%s - warning: CLIENTS_NUM (%d) is less than the number of" 
+              fprintf (stderr, "%s - error: CLIENTS_NUM (%d) and "
+                       "FORM_RECORDS_FILE_MAX_NUM (%d) are both less than the number of" 
                        "records is the file form_records_file.\n", 
-		       __func__, bctx->client_num_max);
+                       __func__, bctx->client_num_max, url->form_records_file_max_num);
               sleep (3);
               break;
             }
@@ -2775,7 +2828,7 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
         }
     }
 
-  if ((int)url->form_records_num < bctx->client_num_max)
+  if (!url->form_records_random && (int)url->form_records_num < bctx->client_num_max)
     {
       fprintf (stderr, 
                "%s - error: CLIENTS_NUM (%d) is above the number " 

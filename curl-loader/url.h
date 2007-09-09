@@ -185,6 +185,17 @@ typedef struct url_context
   */
   size_t form_records_num;
 
+  /* The limit of records, passed by configuration. If no limit set and the field is
+     zero, we are taking number of clients as the possible maximum */
+  size_t form_records_file_max_num;
+
+
+  /* 
+     If 1 set, records are used in a random fashion and not "bound"
+     to each client using index (index of client == index of record). 
+  */
+  size_t form_records_random;
+
   /*
     Name of the file (with a path, if required) to upload.
   */

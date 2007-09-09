@@ -1023,8 +1023,28 @@ static int init_client_formed_buffer (client_context* cctx,
             return -1;
           }
 
-        const form_records_cdata*const fcd = 
-          &url->form_records_array[cctx->client_index];
+        size_t record_index;
+
+        if (url->form_records_random)
+          {
+            struct timeval tval;
+            
+            if (gettimeofday (&tval, NULL) == -1)
+              {
+                fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", __func__, errno);
+                return -1;
+              }
+            srand (tval.tv_sec * tval.tv_usec);
+
+            record_index = (size_t) (((double)url->form_records_num) * 
+                                                       (rand () / (RAND_MAX + 1.0)));
+           }
+        else
+          {
+            record_index = cctx->client_index;
+          }
+
+        const form_records_cdata*const fcd = &url->form_records_array[record_index];
         
         snprintf (buffer,
                   buffer_len,

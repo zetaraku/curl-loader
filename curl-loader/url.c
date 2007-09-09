@@ -82,8 +82,6 @@ current_url_sleeping_timeout (unsigned long *timeout,
       return 0;
     }
 
-  //srand (now);
-
   struct timeval  tval;
 
   if (gettimeofday (&tval, NULL) == -1)
