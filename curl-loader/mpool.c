@@ -26,20 +26,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <errno.h>
 
-// PAGE_SIZE should be defined in the header <asm/page.h>. 
-// However, CentOS-64bit was reported not defining PAGE_SIZE.
-//
-#include <asm/page.h>
-#if !defined PAGE_SIZE
-#define PAGE_SIZE 4096
-#endif
-
-#define OS_FREE_LIST_CHUNK_SIZE (PAGE_SIZE*9/10)
+#define CL_PAGE_SIZE_MIN 1024
+#define CL_PAGE_SIZE_DEF 4096
 #define MPOOL_PTR_ALIGN (sizeof(void*))
 
 
 #include "mpool.h"
+
+static int os_free_list_chunk_size = -1;
 
 void allocatable_set_next (allocatable* item, allocatable* next_item)
 {
@@ -161,10 +158,28 @@ int mpool_init (mpool* mpool, size_t object_size, int num_obj)
      return -1;
    }
 
+  /* Figure out the page size */
+  if (os_free_list_chunk_size < 0)
+    {
+      int pagesize = -1;
+      if ((pagesize = getpagesize()) == -1)
+        {
+          fprintf (stderr, "%s - warning: getpagesize() failed with errno %d\n", 
+                   __func__, errno);
+        }
+      
+      if (pagesize < CL_PAGE_SIZE_MIN)
+        {
+          pagesize = CL_PAGE_SIZE_DEF;
+        }
+
+      os_free_list_chunk_size = (pagesize * 9)/10;
+    }
+
   /* Alignment as proposed by Michael Moser */
   object_size = (object_size + MPOOL_PTR_ALIGN -1) & (~(MPOOL_PTR_ALIGN - 1));
 
-  if (object_size > OS_FREE_LIST_CHUNK_SIZE)
+  if (object_size > (size_t) os_free_list_chunk_size)
     {
       fprintf (stderr, "%s - error: too large object size\n", __func__);
       return -1;
@@ -174,7 +189,7 @@ int mpool_init (mpool* mpool, size_t object_size, int num_obj)
   mpool->obj_size = object_size;
   
   /* Preventing fragmentation */
-  mpool->increase_step = OS_FREE_LIST_CHUNK_SIZE / mpool->obj_size;
+  mpool->increase_step = os_free_list_chunk_size / mpool->obj_size;
 	
   if (mpool_allocate (mpool, num_obj) == -1)
     {
