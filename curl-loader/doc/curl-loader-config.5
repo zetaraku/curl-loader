@@ -171,6 +171,15 @@ address from your address pool.  See the discussion for the
 tag.
 This is a tag for the general section.
 .TP
+.B IP_SHARED_NUM
+This requires a positive number of IP-addresses, that will be assigned by
+the program to its virtual clients evenly. When the number is one, it is equivalent to
+the only IP-address, described in the
+.B IP_ADDR_MIN tag section. The option enables to overcome
+a limit of 64K clients per IP without using a dedicated IP-address
+for each client.
+This is a tag for the general section.
+.TP
 .B CYCLES_NUM
 This requires a valid signed integer value.  This is the number of
 cycles to be performed.  If the value is -1, the 
@@ -516,6 +525,29 @@ This optional tag enables for a client to make the decision regarding
 a URL fetching with the tag
 .B FETCH_PROBABILITY
 to be done only once (at the first cycle), and not at each cycle.
+This is a tag for the URL section.
+.TP
+.B FORM_RECORDS_RANDOM
+This optional tag allows to use for each virtual client not a pre-defined
+record, but a randomly chosen record. One can load a 10000 
+records from a records file using
+.B FORM_RECORDS_FILE
+tag and use the records in a random fashion for 1000 clients. The tag does not 
+ensure uniquickness of the records used for each virtual client. To use the
+tag properly, specify number of the records to be loaded, using tag
+.B FORM_RECORDS_FILE_MAX_NUM
+This is a tag for the URL section.
+.TP
+.B FORM_RECORDS_FILE_MAX_NUM
+This optional tag allows to load not from a records file, specified by tag
+.B FORM_RECORDS_FILE
+not the default number of records being the same as the maximum number
+of virtual clients
+.B CLIENTS_NUM_MAX,
+but some larger number, required by 
+.B FORM_RECORDS_RANDOM
+This is a tag for the URL section.
+
 
 
 
