@@ -95,6 +95,7 @@ static int interface_parser (batch_context*const bctx, char*const value);
 static int netmask_parser (batch_context*const bctx, char*const value);
 static int ip_addr_min_parser (batch_context*const bctx, char*const value);
 static int ip_addr_max_parser (batch_context*const bctx, char*const value);
+static int ip_shared_num_parser (batch_context*const bctx, char*const value);
 static int cycles_num_parser (batch_context*const bctx, char*const value);
 static int user_agent_parser (batch_context*const bctx, char*const value);
 static int urls_num_parser (batch_context*const bctx, char*const value);
@@ -158,6 +159,7 @@ static const tag_parser_pair tp_map [] =
     {"NETMASK", netmask_parser},
     {"IP_ADDR_MIN", ip_addr_min_parser},
     {"IP_ADDR_MAX", ip_addr_max_parser},
+    {"IP_SHARED_NUM", ip_shared_num_parser},
     {"CYCLES_NUM", cycles_num_parser},
     {"USER_AGENT", user_agent_parser},
     {"URLS_NUM", urls_num_parser},
@@ -822,6 +824,19 @@ static int ip_addr_max_parser (batch_context*const bctx, char*const value)
 
   return 0;
 }
+static int ip_shared_num_parser (batch_context*const bctx, char*const value)
+{
+  bctx->ip_shared_num = atol (value);
+  if (bctx->ip_shared_num <= 0)
+    {
+      fprintf (stderr, 
+               "%s - error: a positive number is expected as the value"
+               "for tag IP_SHARED_NUM\n", __func__);
+      return -1;
+    }
+    return 0;
+}
+
 static int cycles_num_parser (batch_context*const bctx, char*const value)
 {
     bctx->cycles_num = atol (value);
@@ -2049,7 +2064,7 @@ static int validate_batch_general (batch_context*const bctx)
       {
         if (bctx->ip_addr_min && (bctx->ip_addr_min == bctx->ip_addr_max))
           {
-            bctx->ip_common =1;
+            bctx->ip_shared_num =1;
           }
         else
           {
@@ -2068,7 +2083,7 @@ static int validate_batch_general (batch_context*const bctx)
                       &bctx->ipv6_addr_max, 
                       sizeof (bctx->ipv6_addr_min)))
           {
-            bctx->ip_common =1;
+            bctx->ip_shared_num =1;
           } 
       }
 

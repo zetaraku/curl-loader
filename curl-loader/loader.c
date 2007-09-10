@@ -157,10 +157,9 @@ main (int argc, char *argv [])
     }
 
    /*
-    * De-facto the support is only for a single batch.
-    * However, we are using internal support for multiple batches
-    * for loading from several threads, using sub-batches 
-    * (a subset of virtual clients).
+    * De-facto the support is only for a single batch. However, we are using 
+    * internal support for multiple batches for loading from several threads, 
+    * using sub-batches (a subset of virtual clients).
     * TODO: test env for all batches.
     */
    if (test_environment (&bc_arr[0]) == -1)
@@ -1671,31 +1670,28 @@ static int create_ip_addrs (batch_context* bctx_array, int bctx_num)
 *
 * Input -       *bctx        - pointer to a batch context
 *               client_index - number of client in the client-array
-*
 * Input/Output **addr_str - second pointer a string for IP-address, allocated by the
 *                           function.
 * Return Code/Output - None
 *******************************************************************************/
-static int ip_addr_str_allocate_init (batch_context* bctx, 
-                                      int client_index, 
+static int ip_addr_str_allocate_init (batch_context* bctx,
+                                      int client_index,
                                       char** addr_str)
 {
   struct in_addr in_address;
-  struct in6_addr in6_prev, in6_new;
   char ipv6_string[INET6_ADDRSTRLEN+1];
   char* ipv4_string = 0;
   char* ipaddrstr = 0;
 
   *addr_str = NULL;
 
-  if (! (ipaddrstr = (char*)calloc (bctx->ipv6 ? INET6_ADDRSTRLEN + 1 : 
+  if (! (ipaddrstr = (char *)calloc (bctx->ipv6 ? INET6_ADDRSTRLEN + 1 : 
                                     INET_ADDRSTRLEN + 1, sizeof (char))))
     {
       fprintf (stderr, "%s - allocation of ipaddrstr failed for client %d.\n", 
-               __func__, client_index) ;
+               __func__, client_index);
       return -1;
     }
-  
   
   if (bctx->ipv6 == 0)
     {
@@ -1704,7 +1700,7 @@ static int ip_addr_str_allocate_init (batch_context* bctx,
          IPv4-address, using client index as the offset. 
       */
       in_address.s_addr = htonl (bctx->ip_addr_min + 
-                                 (bctx->ip_common ? 0 : client_index));
+                                 (bctx->ip_shared_num ? next_ipv4_shared_index(bctx) :  (size_t) client_index));
       
       if (! (ipv4_string = inet_ntoa (in_address)))
         {
@@ -1715,42 +1711,60 @@ static int ip_addr_str_allocate_init (batch_context* bctx,
     }
   else
     {
+      ///------------------------------------------------ IPv6 -----------------------------------------------------------------///
+
       /* 
-         When clients are not using common IP,  advance the 
-         IPv6-address by incrementing previous address. 
+         Non-shared IPv6. Advance the IPv6-address by incrementing previous address. 
       */
-      if (client_index == 0 || bctx->ip_common)
+      if (!bctx->ip_shared_num)
         {
-          memcpy (&in6_prev, &bctx->ipv6_addr_min, sizeof (in6_prev));
-          memcpy (&in6_new, &bctx->ipv6_addr_min, sizeof (in6_new));
+          if (client_index == 0)
+            {
+              memcpy (&bctx->in6_prev, &bctx->ipv6_addr_min, sizeof (bctx->in6_prev));
+              memcpy (&bctx->in6_new, &bctx->ipv6_addr_min, sizeof (bctx->in6_new));
+            }
+          else
+            {
+              if (ipv6_increment (&bctx->in6_prev, &bctx->in6_new) == -1)
+                {
+                  fprintf (stderr, "%s - ipv6_increment() failed for ip_address of client [%d]\n", 
+                           __func__, client_index) ;
+                  return -1;
+                }
+            }
+          memcpy (&bctx->in6_prev, &bctx->in6_new, sizeof (bctx->in6_prev));
         }
       else
         {
-          if (ipv6_increment (&in6_prev, &in6_new) == -1)
+          /* Shared IP-addresses */
+          memcpy (&bctx->in6_prev, &bctx->ipv6_addr_min, sizeof (bctx->in6_prev));
+          memcpy (&bctx->in6_new, &bctx->ipv6_addr_min, sizeof (bctx->in6_new));
+          
+          size_t index_step = next_ipv6_shared_index (bctx);
+          
+          size_t k;
+          for (k = 0; k < index_step; k++)
             {
-              fprintf (stderr, "%s - ipv6_increment() failed for ip_address of client [%d]\n", 
-                       __func__, client_index) ;
-              return -1;
+              if (ipv6_increment (&bctx->in6_prev, &bctx->in6_new) == -1)
+                {
+                  fprintf (stderr, "%s - ipv6_increment() failed \n", __func__) ;
+                  return -1;
+                }
+              memcpy (&bctx->in6_prev, &bctx->in6_new, sizeof (bctx->in6_prev));
             }
         }
       
-      if (! inet_ntop (AF_INET6, &in6_new, ipv6_string, sizeof (ipv6_string)))
+      /* All IPv6 addresses */
+      if (! inet_ntop (AF_INET6, &bctx->in6_new, ipv6_string, sizeof (ipv6_string)))
         {
           fprintf (stderr, "%s - inet_ntoa() failed for ip_addresses of client [%d]\n", 
                    __func__, client_index) ;
           return -1;
         }
-      else
-        {
-          /* Remember in6_new address in in6_prev */
-          memcpy (&in6_prev, &in6_new, sizeof (in6_prev));
-        }
     }
   
-  snprintf (ipaddrstr, 
-            bctx->ipv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN, 
-            "%s", 
-            bctx->ipv6 ? ipv6_string : ipv4_string);
+  snprintf (ipaddrstr, bctx->ipv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN, 
+            "%s", bctx->ipv6 ? ipv6_string : ipv4_string);
 
   *addr_str = ipaddrstr;
 
@@ -1846,9 +1860,19 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
 
   if (subbatches_num < 2 || subbatches_num > BATCHES_MAX_NUM)
     {
-      fprintf (stderr, 
-               "%s - error: wrong input.\n", __func__);
+      fprintf (stderr, "%s - error: number of subbatches (%d) "
+               "should not be less than 2 or above BATCHES_MAX_NUM (%d)\n", 
+               __func__, subbatches_num, BATCHES_MAX_NUM);
       return -1;
+    }
+
+  if (bc_arr[0].ip_shared_num > 1 && subbatches_num < bc_arr[0].ip_shared_num)
+    {
+           fprintf (stderr, "%s - error: subbatches should deal either with a single shared IP "
+               "or with at least a single shared IP per subbatch\n", 
+               __func__);
+      return -1;
+      
     }
 
   batch_context master;
@@ -1901,7 +1925,7 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
 
       bc_arr[i].ipv6 = master.ipv6;
 
-      if (! master.ip_common)
+      if (! master.ip_shared_num)
         {
           if (! bc_arr[i].ipv6)
             {
@@ -1910,7 +1934,7 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
             }
           else
             {
-              // IPv6 range
+              // ========= IPv6 range ======== //
               
               if (! i)
                 {
@@ -1918,10 +1942,9 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
                 }
               else
                 {
-                  if (ipv6_increment (&bc_arr[i - 1].ipv6_addr_max, 
-                                      &bc_arr[i].ipv6_addr_min) == -1)
+                  if (ipv6_increment (&bc_arr[i - 1].ipv6_addr_max, &bc_arr[i].ipv6_addr_min) == -1)
                     {
-                      fprintf (stderr, "%s - error: ipv6_increment()failed\n ", __func__);
+                      fprintf (stderr, "%s - error: ipv6_increment() failed\n ", __func__);
                       return -1;
                     }
                 }
@@ -1934,7 +1957,7 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
                   if (ipv6_increment (&in6_temp, 
                                       &bc_arr[i].ipv6_addr_max) == -1)
                     {
-                      fprintf (stderr, "%s - error: ipv6_increment()failed\n ", __func__);
+                      fprintf (stderr, "%s - error: ipv6_increment() failed\n ", __func__);
                       return -1;
                     }
                   
@@ -1944,19 +1967,22 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
         }
       else
         {
-          // Common IP-address.
-
+          //
+          // Shared IP-addresses.
+          //
           if (! bc_arr[i].ipv6)
             {
-              bc_arr[i].ip_addr_min = bc_arr[i].ip_addr_max  = master.ip_addr_min;
+              bc_arr[i].ip_addr_min = master.ip_addr_min;
+              bc_arr[i].ip_addr_max = master.ip_addr_max;
             }
           else
             {
-              bc_arr[i].ipv6_addr_min = bc_arr[i].ipv6_addr_max = master.ipv6_addr_min; 
+              bc_arr[i].ipv6_addr_min = master.ipv6_addr_min;
+              bc_arr[i].ipv6_addr_max = master.ipv6_addr_max;
             }
         }
 
-      bc_arr[i].ip_common = master.ip_common;
+      bc_arr[i].ip_shared_num = master.ip_shared_num;
 
       bc_arr[i].cidr_netmask = master.cidr_netmask;
 

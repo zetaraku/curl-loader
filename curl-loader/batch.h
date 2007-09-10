@@ -106,8 +106,13 @@ typedef struct batch_context
   /* Maximum IPv4-address of a client in the batch (host order).*/
   long ip_addr_max;
 
-  /* Same ip-address is used by all clients, when ip_addr_min eq p_addr_max */
-  int ip_common;
+  /* 
+     Shared ip-addresses to be used by clients. Former ip-common for the single
+     common for all clients ip-address.
+   */
+  int ip_shared_num;
+
+  size_t ipv4_shared_index;
 
   /* 
      CIDR netmask number from 0 to 128, like 16 or 24, etc. If the input netmask is
@@ -123,6 +128,10 @@ typedef struct batch_context
 
   /* Miximum IPv6-address of a client in the batch. */
   struct in6_addr ipv6_addr_max;
+
+  struct in6_addr in6_prev, in6_new;
+
+  size_t ipv6_shared_index;
  
    /* 
       Number of cycles to repeat the urls downloads and afterwards sleeping 
@@ -262,6 +271,9 @@ typedef struct batch_context
 
 
 int is_batch_group_leader (batch_context* bctx);
+
+size_t next_ipv4_shared_index (batch_context* bctx);
+size_t next_ipv6_shared_index (batch_context* bctx);
 
 
 

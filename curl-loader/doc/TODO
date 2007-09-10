@@ -25,7 +25,6 @@ Some urgent issues for the next beta:
    doing only AS-IS POST-ing.
 
 
-
 The next beta release may hopefully be devoted to processing of HTTP response bodies: 
 
 1. HTML analyses. libcurl example is using libtidy in:
@@ -125,12 +124,3 @@ Next releases:
    make. libcurl's pipelining support doesn't currently allow you to do any fine-
    grained control on what gets pipelined or not, so if you enable it you'll get
    pipelining for every subsequent request sent to the same server."
-
-11. Jeremy Brown has suggested to add a capability to run clients with at each cycle 
-      posted tokens (e.g. credentials) being new and being randomly taken from a list.
-  
-      Thus, 1000 running clients could be helpful to simulate a load of 100 000 users 
-      coming to authentication from time to time, but keeping the number of 
-      simultaneous clients rather low.
-
-      Sounds like a great option.

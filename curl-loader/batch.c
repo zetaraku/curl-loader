@@ -28,3 +28,22 @@ int is_batch_group_leader (batch_context* bctx)
 {
   return !bctx->batch_id;
 }
+
+size_t next_ipv4_shared_index (batch_context* bctx)
+{
+  size_t to_return = bctx->ipv4_shared_index;
+
+  if (++bctx->ipv4_shared_index == (size_t)bctx->ip_shared_num)
+    bctx->ipv4_shared_index = 0;
+
+  return to_return;
+}
+size_t next_ipv6_shared_index (batch_context* bctx)
+{
+  size_t to_return = bctx->ipv6_shared_index;
+
+  if (++bctx->ipv6_shared_index == (size_t)bctx->ip_shared_num)
+    bctx->ipv6_shared_index = 0;
+
+  return to_return;
+}
