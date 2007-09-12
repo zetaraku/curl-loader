@@ -1,9 +1,12 @@
 version ?
 
+* Resolved IPv6 bug, when using a dedicated IPv6-address per client.
+   It was broken with the first address used by all virtual clients. 
+
 * Tag IP_SHARED_NUM added to enable multiple clients to use not a 
    single common IP and not a unique IP-address, but several IP-address.
    If IP_SHARED_NUM=3, first client gets the first address, second the second,
-   third gets the third, whereas the forth client gets back the first address.
+   third gets the third, whereas the forth client gets back the first address and so on.
    The feature should enable to support more than 64K loading clients without
    a need to assign a unique address to each client (which has its memory price and
    its own limitations). 
@@ -11,7 +14,7 @@ version ?
    Thus, to enable 200K loading clients, one can use about 64K clients per address
    and IP_SHARED_NUM=4 will be enough for such cases.
    The feature can be useful also, when somebody is not willing to use a unique
-   IP per client, but also does not like, that all clients are coming from the same IP-address.
+   IP per client, but does not like, that all clients are coming from the same IP-address.
    An example of the IP_SHARED_NUM usage is in ./conf-examples/bulk.conf
 	
    IP_SHARED_NUM=1 is the cases of the so-called "common-IP" for all clients.
