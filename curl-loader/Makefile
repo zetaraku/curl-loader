@@ -12,7 +12,7 @@ BUILD=$(shell pwd)/build
 #CARES_MAKE_DIR=$(CARES_BUILD)/c-ares-$(CARES_VER)
 
 CURL_BUILD=$(BUILD)/curl
-CURL_VER:=7.16.4
+CURL_VER:=7.17.0
 
 LIBEVENT_BUILD=$(BUILD)/libevent
 LIBEVENT_VER:=1.3
@@ -75,7 +75,7 @@ LD=gcc
 LDFLAGS=-L./lib -L$(OPENSSLDIR)/lib
 
 # Link Libraries. In some cases, plese add -lidn
-LIBS= -ldl -lpthread -lrt -lcurl -levent -lz -lssl -lcrypto #-lcares 
+LIBS= -ldl -lpthread -lrt -lcurl -levent -lz -lssl -lcrypto
 
 # Include directories
 INCDIR=-I. -I./inc -I$(OPENSSLDIR)/include

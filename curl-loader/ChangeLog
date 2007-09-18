@@ -1,4 +1,6 @@
-version ?
+version 0.43, September 18, 2007, svn 514
+
+* Advanced to curl-7.17.0 recent version with more FTP bugfixes.
 
 * Resolved IPv6 bug, when using a dedicated IPv6-address per client.
    It was broken with the first address used by all virtual clients. 

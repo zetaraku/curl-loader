@@ -548,6 +548,18 @@ between username and password. An example of batch configuration is
 ./conf-examples/credentials.cred.
 Next version will support up to 16 tokens (2 tokens now).
 
+FORM_RECORDS_FILE_MAX_NUM allows to load not from a records file,
+specified by tag FORM_RECORDS_FILE not the default number of records 
+being the same as the maximum number of virtual clients CLIENTS_NUM_MAX,
+but some larger number, required by FORM_RECORDS_RANDOM.
+
+FORM_RECORDS_RANDOM allows to use for each virtual client not a pre-defined
+record, but a randomly chosen record. One can load a 10000 records from a records file using
+FORM_RECORDS_FILE tag and use the records in a random fashion for 1000 clients. 
+The tag does not ensure uniquickness of the records used for each virtual client. To use the
+tag properly, specify number of the records to be loaded, using tag
+FORM_RECORDS_FILE_MAX_NUM
+
 WEB_AUTH_METHOD to be configured from the "BASIC", "DIGEST", "GSS_NEGOTIATE", 
 "NTLM" or "ANY". The configured method will be used for authentication on HTTP 
 401 response. When "ANY" is configured, libcurl will choose a method. To use 
