@@ -2068,7 +2068,8 @@ static int validate_batch_general (batch_context*const bctx)
           }
         else
           {
-            if ((bctx->ip_addr_max - bctx->ip_addr_min + 1) < bctx->client_num_max)
+            if (!bctx->ip_shared_num &&
+                ((bctx->ip_addr_max - bctx->ip_addr_min + 1) < bctx->client_num_max))
               {
                 fprintf (stderr, "%s - error: range of IPv4 addresses is less than number of clients.\n"
                          "Please, increase IP_ADDR_MAX.\n", __func__);
