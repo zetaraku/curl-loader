@@ -363,37 +363,37 @@ For more examples, please, look at the files in "conf-examples" directory.<br/>
 <br/>
 Tags of the sections GENERAL:<br/>
 <br/>
-BATCH_NAME requires a string value and is used to name the batch.  This
-name is used for the display while the program is running, and also for the three 
-generated log and statistics files.<br/>
+BATCH_NAME requires a string value; it is used to name the batch.  The
+name is displayed, while the program is running, and as the base word for the three 
+generated log and statistics filenames.<br/>
 <br/>
-CLIENTS_NUM_MAX - a maximum number of clients to be used for this load.
+CLIENTS_NUM_MAX - is the maximum number of clients to be used for this load.
 Any positive number is valid here. Note, that each loading client requires about 30 K
 of RAM plus some non-pageable memory in kernel. We have already tried loads
-with up to 60000 clients. Loads above 1000 client is recommended to start with a some
+with up to 100 K clients. Loads above 1000 client is recommended to start with a some
 lower starting number, managed by the next tag CLIENTS_NUM_START and
-ramped-up each second by adding CLIENTS_RAMPUP_INC clients to the load.<br/>
+ramped-up each second by adding CLIENTS_RAMPUP_INC clients to the loading set.<br/>
 <br/>
-CLIENTS_NUM_START - number of clients to start the load with. If the tag is 
-not present or zero CLIENTS_RAMPUP_INC value will be taken instead. 
-If neither CLIENTS_NUM_START nor CLIENTS_RAMPUP_INC are present
-or have any positive value, the loader will take CLIENTS_NUM_MAX as the number
-of clients to start the load.<br/>
+CLIENTS_NUM_START - is the number of clients to start the load with. If the tag is 
+absent or zero, the value of CLIENTS_RAMPUP_INC will be taken instead. 
+If neither CLIENTS_NUM_START nor CLIENTS_RAMPUP_INC are possessing a 
+valid positive value, the loader takes CLIENTS_NUM_MAX as the number
+of clients to start with.<br/>
 <br/>
 CLIENTS_RAMPUP_INC - number of clients to be added to the load in the auto
 mode every second till CLIENTS_NUM_MAX number will be reached. For machines
 with a single CPU we would recommend not to keep the number above 50-100, whereas
-for dual-CPU machines you can keep it as large as 200-300.<br/>
+for dual-CPU machines you may try as large as 200-300.<br/>
 <br/>
-INTERFACE - name of the loading network interface. Find your interfaces by running
-/sbin/ifconfig.<br/>
+INTERFACE - name of the loading network interface, like eth0. Find the network interface
+names by running /sbin/ifconfig.<br/>
  <br/>
-NETMASK - netmask for the loading clients IP-addresses (from IP_ADDR_MIN to 
+NETMASK - netmask for the loading IP-addresses of virtual clients (from IP_ADDR_MIN to 
 IP_ADDR_MAX). For IPv4 you can use either quad-dotted netmask string or CIDR 
 number from 0-32. For IPv6 only CIDR values from 0 to 128 are supported.<br/>
 <br/>
-IP-addresses from IP_ADDR_MIN up to IP_ADDR_MAX are the interval to be used
-for loading clients. The interval of the addresses should be large enough to supply
+IP-addresses from IP_ADDR_MIN up to IP_ADDR_MAX are the interval of addresses to be used
+for loading clients. The interval of addresses should be large enough to supply
 a dedicated IP for each client. Another mode that can be used is "single IP address"
 for all clients. When IP_ADDR_MIN and IP_ADDR_MAX have the same valid
 IP-address, it will be used for all clients. If the IP-addresses specified by the tags do not exist,
@@ -415,9 +415,9 @@ tag IP_ADDR_MIN.<br/>
 CYCLES_NUM is the number of cycles to be performed. Any positive value is
 valid here as well as (-1), which means cycle indefinitely. Loading can be normally
 stopped at any moment by pressing Cntl-C; all statistics will be collected properly and files
-closed to contain necessary information. Note, that cycling relates only to the URLs not
-containing tag URL_DONT_CYCLE = 1. Curl-loader enables two optional non-cycling
-areas: the first before the cycling url/s area and the second after the cycling url/s area.<br/>
+will be closed. Note, that cycling relates only to the URLs without tag 
+URL_DONT_CYCLE = 1. Curl-loader enables two optional non-cycling
+areas: the first area before the cycling url/s area and the second area after the cycling url/s area.<br/>
 <br/>
 USER_AGENT provides an option to over-write the default MSIE-6-like HTTP header
 User-Agent. Place here a quoted string to emulate the browser that you need.
@@ -428,45 +428,44 @@ URLS_NUM is the number of urls to be used in URLs Section.<br/>
 <br/>
 <br/>
 <br/>
-Tags of the sections URLs:<br/>
+Tags of the section URLs:<br/>
 <br/>
-URL - is the first tag of each url-subsection and marks beginning of a new
+URL - is the first tag of each url-subsection; it marks the beginning of a new
 url. The tag should be either a valid url or an empty string, which is allowed
-only when URL_USE_CURRENT=1 also presents. "Current url" is used for example, when 
-POST-ing at the url, resulting from the previous GET. HTTP redirections
-are handled internally and there is no need to use "current url" approach for that
+only when URL_USE_CURRENT=1. "Current url" is useful, for example, when 
+POST-ing page with a url, resulting from the previous GET. HTTP redirections
+are handled internally, and there is no need to use "current url" approach for that
 purpose. Note, that URL used for file uploading should include a filename and
 not only a directory.<br/>
 <br/>
-URL_SHORT_NAME - an optional up to 12 ASCII string long name, which will appear on a Load
-Status GUI. It improves appearance of the current operational status at the console. We are 
-recommending to configure it.<br/>
+URL_SHORT_NAME - is an optional up to 12 ASCII string long name, which will appear 
+at a Load Status GUI. It improves appearance of the current operational status at the console. 
+We are recommending to configure it.<br/>
 <br/>
-URL_USE_CURRENT - used in combination with an empty string URL="" to indicate,
-that the current url, fetched by the previous operation, should be used. "Current url" is 
-useful e.g., when POST-ing at the url, resulting from the previous GET. Note, that 
-HTTP redirections are handled internally and there is no need to use "current url" 
+URL_USE_CURRENT - is used in combination with an empty string URL="" to indicate,
+that the current url page, fetched by the previous operation, should be used. "Current url" is 
+useful e.g., when POST-ing page of a url, resulting from the previous GET. Note, that 
+HTTP redirections are handled internally, and there is no need to use "current url" 
 approach for that purpose. <br/>
 <br/>
 URL_DONT_CYCLE - marks a url as non-cycling. Curl-loader enables two optional 
-non-cycling areas: the first before the cycling url/s area and the second after it.
-The first non-cycling area may be used for login, authentication, etc. single time
-operations, whereas the second non-cycling area is good for a single time logoff, for example.<br/>
+non-cycling areas: the first area before the cycling url/s area and the second after it.
+The first non-cycling area may be useful for login, authentication, etc. single time
+operations, whereas the second non-cycling area may be good for a single time logoff, for example.<br/>
 <br/>
 REQUEST_TYPE - HTTP request method to be chosen from GET, POST or PUT.<br/>
 <br/>
-UPLOAD_FILE - filename, including path, to the file to be used for uploading.
+UPLOAD_FILE - a filename, including path, of a file to be used for uploading.
 The path should be taken from the curl-loader place, e.g. ./conf-examples/bax.conf <br/>
 <br/>
 HEADER - is assisting to customize/add/over-write HTTP/FTP headers. 
 If a header already exits by default, the custom header over-writes it. 
 USER_AGENT tag is for User-Agent header only, whereas by HEADER may be added 
-or over-written any header (including User-Agent).
-To prevent from sending "Expect: 100-continue", pass as a custom HTTP header
-HEADER="Expect: "<br/>
-Look at example at ./conf-examples/custom_hdrs.conf.<br/>
+or over-written any header, including User-Agent.
+To prevent from sending "Expect: 100-continue", please, pass HEADER="Expect: "<br/>
+Look at the example ./conf-examples/custom_hdrs.conf.<br/>
 <br/>
-USERNAME and PASSWORD are the tags to provide credentials for the login operations.
+USERNAME and PASSWORD are the tags to provide credentials for login operations.
 The strings may be used either as is or as the base-words to append numbers and
 to generate some unique credentials. The behavior is governed by the tag 
 FORM_USAGE_TYPE. Note, that PASSWORD may be an empty string.<br/>
@@ -510,19 +509,19 @@ FORM_USAGE_TYPE="AS_IS" means, that FORM_STRING will not be validated and
 POST-ed indeed AS IS.<br/>
 <br/>
 <br/>
-FORM_RECORDS_FILE specifies the path to the file with credentials or any other tokens.
+FORM_RECORDS_FILE specifies path to the file with credentials or any other tokens.
 (full-path or relative to curl-loader location). A text file with usernames and passwords 
 with the structure of each string like: &lt;teken1&gt;&lt;separator&gt;&lt;token2&gt;
 can be used as an input. According to RFC1738, only reserved ':', '@', '/' and probably 
 ' ' (space) are safe to use as separators between username and password. An example of 
 batch configuration is ./conf-examples/post-form-token-fr-file.conf and an 
-example of credentials is in ./conf-examples/credentials.cred.<br/>
-Next version will support up to 16 tokens (2 tokens now).<br/>
+example of credentials is in ./conf-examples/credentials.cred.
+Current version supports up to 16 tokens in the file.<br/>
 <br/>
 FORM_RECORDS_FILE_MAX_NUM allows to load from a file with records,
 specified by tag FORM_RECORDS_FILE, any number of records, and not only the default 
 number of records, which is equal to the maximum number of virtual clients CLIENTS_NUM_MAX. 
-The tag is required by FORM_RECORDS_RANDOM feature.<br/>
+The tag is required by FORM_RECORDS_RANDOM.<br/>
 <br/>
 FORM_RECORDS_RANDOM allows to use for each virtual client a randomly chosen record,
 whereas without the tag the program uses for a client with index I always record number I. 
@@ -563,33 +562,33 @@ be changed using -c command-line option.<br/>
 <br/>
 TIMER_URL_COMPLETION is the time in milli-seconds to allow a 
 url fetching operation, including all internal re-directions. The legal values are 0, 
-which means no limit on url-completion time, or above 20 msecs. When a value of 
-the tag is above 0, we are monitoring the url-fetching and canceling it, 
-if above the specified milliseconds. The results are presented on the Load Status 
-GUI as the operation "Timeouted" statistics and logged to all statistics files as 
+which means no limit on url-completion time, or above 20 (milli-seconds). When a value of 
+the tag is above 0, we are monitoring the progress of url-fetching and canceling it, 
+if not accompliched within the the specified value of milliseconds. The results are presented 
+at the Load Status GUI as the operation "Timed Out" statistics and logged to all statistics files as 
 T-Err number.<br/>
 <br/>
 TIMER_AFTER_URL_SLEEP is the time in milli-seconds for client to sleep 
 after fetching a URL prior to dealing with the next URL. Zero (0) means don't wait 
-and schedule client after the URL immediately. Random timer values could be an 
-option specified as e.g. 0-2000, which means, that a client will sleep for some 
-random time from 0 to 2000 milliseconds.<br/>
+and schedule client immediately. Random timer values are a legal option to be specified 
+as e.g. 0-2000, which means, that a client will sleep for some random time from 
+0 to 2000 milliseconds.<br/>
 <br/>
 FTP_ACTIVE, when defined as 1, is forcing FTP protocol to use an active mode 
 (the default is passive).<br/>
 <br/>
-LOG_RESP_HEADERS, when defined as 1, logs response headers to a file.
+LOG_RESP_HEADERS, when defined as 1, the program logs response headers to a file.
 Directory &lt;batch-name&gt; is created with subdirs url0, url1, url&lt;n&gt;
 Headers of responses are logged to the files named:
 cl-&lt;client-num&gt;-cycle-&lt;cycle-num&gt;.hdr<br/>
 <br/>
-LOG_RESP_BODIES, when defined as 1, logs response headers to a file.
+LOG_RESP_BODIES, when defined as 1, the program logs response headers to a file.
 Directory &lt;batch-name&gt; is created with subdirs url0, url1... url&lt;n&gt;
 Headers of responses are logged to the files named:
 cl-&lt;client-num&gt;-cycle-&lt;cycle-num&gt;.body<br/>
 <br/>
 RESPONSE_STATUS_ERRORS supports changes to the default set of per-url responses 
-considered as errors. By default 4xx without 401 and 407 and all 5xx response codes 
+considered as errors. By default most 4xx (without 401 and 407) and all 5xx response codes 
 are treated as errors. Now you can either add a status to the errors set or remove it. 
 Sign + (plus) adds, - (minus) removes. The syntax is a line of tokens separated by ',', 
 where each tokens begins with either + or - and is followed by the response status 
@@ -619,16 +618,16 @@ To prevent from sending "Expect: 100-continue", pass as a custom HTTP header
 HEADER="Expect: "<br/>
 <br/>
 <br/>
-TRANSFER_LIMIT_RATE limits client maximum throughput for 
-a url. The value of the tag to be provided as bytes (not bits) per second.<br/>
+TRANSFER_LIMIT_RATE - limits client maximum throughput for 
+a url. The value of the tag to be provided as bytes (! not bits) per second.<br/>
 <br/>
-FETCH_PROBABILITY allows to fetch a url not as a must, but 
+FETCH_PROBABILITY - allows to fetch a url not as a must, but 
 with a certain run-time probability. The allowed values are in the 
 range from 1 to 100 percents.<br/>
 <br/>
 FETCH_PROBABILITY_ONCE when set to 1 configures each client to make the decision 
-regarding fetching of a URL marked by a FETCH_PROBABILITY tag to be done only once, 
-namely, at the first cycle.
+regarding whether to fetch a URL marked by a FETCH_PROBABILITY or not, 
+to be done only once, namely, at the first cycle.
       </answer>
     </faq>
 
