@@ -57,10 +57,11 @@ received/sent, errors from network, TLS/SSL and application (HTTP, FTP) level ev
       <title>Features List</title>
       <p>
 - Virtual clients number. The tool runs, depending on your HW and scenario,
-2500-25000 and more simultaneously loading clients, all from a single curl-loader process.
-Actual number of clients may be several times higher (we tried 60 000 HTTP 1.1 clients), 
-and it is limited mainly by memory. Each client performs loading from its own source IP-address or, 
-as an option, all clients share the same IP-address;
+2500-100 000 and more simultaneously loading clients, all from a single curl-loader process.
+Actual number of clients may be several times higher,  and it is limited mainly by memory. 
+Each client loads from its "personal" source IP-address, from the "common" IP-address shared by
+all clients, or from the IP-addresses shared by some clients, where a limited set of shared
+IP-addresses can be used by a batch of clients.
       </p>
       <p>
 - Rampup of the virtual clients number at loading start in either automatic or

@@ -27,7 +27,12 @@ used by each client as specified in HOWTOS-FAQs, using a special URL-section tag
 Please, also edit the file in curl-loader distribution patches/libevent-nevent.patch
 and correct NEVENT number from the set 61000 to the maximum number of connections/clients 
 you wish to reach plus more 1000. Further run "make cleanall" and rebuild curl-loader 
-with optimization as described by the HOWTOS-FAQs.
+with optimization as described by the HOWTOS-FAQs. 
+</p>
+<p>
+We would recommend to use IP_SHARED_NUM
+specified set of shared ip-addresses, where 64K IP-addresses is a limit of a single IP-address.
+Thus, to create a load of 200 000 clients, one may need 4 IP-addresses.
 </p>
 <p>
 Many testing scenarious with 100K clients do not require strong processing power and a

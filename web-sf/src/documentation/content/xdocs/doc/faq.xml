@@ -403,6 +403,15 @@ and from server back to the client addresses. Another route to ensure, when is a
 is to/from DNS server for resolving. Firewalling (netfilter/iptables) settings are also among
 those to check.<br/>
 <br/>
+IP_SHARED_NUM is the positive number of IP-addresses, that will be assigned by
+the program to its virtual clients evenly. When the number is one, it is equivalent to
+the single common IP-address, described in the IP_ADDR_MIN tag section. 
+If, for example, IP_SHARED_NUM is 3, the first client gets the first address, second the second,
+third gets the third IP-address, whereas the forth client gets back the first address and so on.
+This option enables to overcome the limit of 64K clients per IP without using a dedicated 
+IP-address for each client. Without the tag the program follows the behavior described for
+tag IP_ADDR_MIN.<br/>
+<br/>
 CYCLES_NUM is the number of cycles to be performed. Any positive value is
 valid here as well as (-1), which means cycle indefinitely. Loading can be normally
 stopped at any moment by pressing Cntl-C; all statistics will be collected properly and files
@@ -510,6 +519,20 @@ batch configuration is ./conf-examples/post-form-token-fr-file.conf and an
 example of credentials is in ./conf-examples/credentials.cred.<br/>
 Next version will support up to 16 tokens (2 tokens now).<br/>
 <br/>
+FORM_RECORDS_FILE_MAX_NUM allows to load from a file with records,
+specified by tag FORM_RECORDS_FILE, any number of records, and not only the default 
+number of records, which is equal to the maximum number of virtual clients CLIENTS_NUM_MAX. 
+The tag is required by FORM_RECORDS_RANDOM feature.<br/>
+<br/>
+FORM_RECORDS_RANDOM allows to use for each virtual client a randomly chosen record,
+whereas without the tag the program uses for a client with index I always record number I. 
+One can load e.g. 10000 records from a file, specified by FORM_RECORDS_FILE tag, and use 
+the records in a random fashion for e.g. 100 clients. 
+The tag does not ensure uniquickness of the records used for each virtual client. To use the
+tag properly, please, specify number of the records to be loaded, using tag
+FORM_RECORDS_FILE_MAX_NUM.<br/>
+<br/>
+
 WEB_AUTH_METHOD to be configured from the "BASIC", "DIGEST", "GSS_NEGOTIATE",
 "NTLM" or "ANY". The configured method will be used for authentication on 
 HTTP 401 response. When "ANY" is configured, libcurl will choose a method.
@@ -678,6 +701,7 @@ like /etc/security/limits.conf, etc
          <br/>
          Other possible options are:<br/>
         -c[onnection establishment timeout, seconds]<br/>
+        -d[etailed logging; outputs to logfile headers and bodies of requests/responses. Good for text pages/files]<br/>
         -e[rror drop client. Client on error doesn't attempt to process the next cycle]<br/>
         -h[elp]<br/>
         -i[ntermediate (snapshot) statistics time interval (default 3 sec)]<br/>
