@@ -147,7 +147,7 @@ $(LIBCURL):
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix=$(CURL_BUILD) \
 	--without-libidn \
-	--without-ldap \
+	--disable-ldap \
 	--enable-ipv6 \
         --enable-thread \
         --with-random=/dev/urandom \
