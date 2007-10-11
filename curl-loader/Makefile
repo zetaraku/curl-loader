@@ -74,7 +74,7 @@ LD=gcc
 #Linker Flags
 LDFLAGS=-L./lib -L$(OPENSSLDIR)/lib
 
-# Link Libraries. In some cases, plese add -lidn
+# Link Libraries. In some cases, plese add -lidn, or -lldap
 LIBS= -ldl -lpthread -lrt -lcurl -levent -lz -lssl -lcrypto
 
 # Include directories
@@ -147,6 +147,7 @@ $(LIBCURL):
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix=$(CURL_BUILD) \
 	--without-libidn \
+	--without-ldap \
 	--enable-ipv6 \
         --enable-thread \
         --with-random=/dev/urandom \
