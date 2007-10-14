@@ -2635,7 +2635,7 @@ int parse_config_file (char* const filename,
                        batch_context* bctx_array, 
                        size_t bctx_array_size)
 {
-  char fgets_buff[1024];
+  char fgets_buff[1024*8];
   FILE* fp;
   struct stat statbuf;
   int batch_index = -1;
