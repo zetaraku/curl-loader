@@ -1,3 +1,16 @@
+version 
+
+* Fixed bug crashing curl-loader, when run with -d command line option.
+   Thanks to Iliyan Peychev <iliyan.peychev@gmail.com> for reporting it.
+
+* Increased size of the config-file parser buffer to consume long url strings. 
+   Thanks to Iliyan Peychev <iliyan.peychev@gmail.com> for suggesting it.
+
+* Fixed building bug on systems with ldap development package installed.
+   Added --disabled-ldap option to libcurl configure script.
+   Thanks to Mehdi Khalilzadeh <mehdi_khalilzadeh@yahoo.com> for reporting it.
+
+
 version 0.43, September 18, 2007, svn 514
 
 * Advanced to curl-7.17.0 recent version with more FTP bugfixes.
