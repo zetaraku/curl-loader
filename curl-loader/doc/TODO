@@ -1,4 +1,4 @@
-Last updated: September 4 2007
+Last updated: October 21 2007
 
 
 The strategic directions of development are:
@@ -23,6 +23,8 @@ Some urgent issues for the next beta:
 1. Add to multipart form POST-ing as in RFC1867 at least an option to load 
    credentials from file. Several people are asking it. Currently, it is 
    doing only AS-IS POST-ing.
+
+2. Transparent support for POST-ing some file, e.g. a SOAP file.
 
 
 The next beta release may hopefully be devoted to processing of HTTP response bodies: 
