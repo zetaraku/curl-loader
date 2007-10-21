@@ -1,13 +1,14 @@
-version 
+version 0.44, stable, October 21, 2007, svn 524
 
 * Fixed bug crashing curl-loader, when run with -d command line option.
    Thanks to Iliyan Peychev <iliyan.peychev@gmail.com> for reporting it.
 
-* Increased size of the config-file parser buffer to consume long url strings. 
+* Increased size of the parser buffer to consume long url strings from configuration
+   files. 
    Thanks to Iliyan Peychev <iliyan.peychev@gmail.com> for suggesting it.
 
 * Fixed building bug on systems with ldap development package installed.
-   Added --disabled-ldap option to libcurl configure script.
+   Added --disable-ldap option to libcurl configure script.
    Thanks to Mehdi Khalilzadeh <mehdi_khalilzadeh@yahoo.com> for reporting it.
 
 
