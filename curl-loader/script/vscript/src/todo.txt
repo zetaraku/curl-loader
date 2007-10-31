@@ -1,0 +1,22 @@
+this S_WHILES_WHILEiteration:
+
+- no continue statement!
+
+- regression tests for standard library + better standard library
+- regex
+- hashes
+- symbolic debug information  
+- constant folding (?)
+- += *= /= operators
+- unary operators
+- more comments
+- runtime: object cache (reuse of long/float ?array?string???)
+
+----------------------------
+bugs:
+- reuse of indexes is wrong.
+- too many instructions in assignment
+
+done:
+---------------------------
+- test for string lib

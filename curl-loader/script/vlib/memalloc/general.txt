@@ -1,0 +1,10 @@
+
+- allocate a big block when the allocator is initialsed?
+    decided against it.
+    allocate as you go - in any case it will be quite early in system
+    startup, so no surprises here (if you wan't do be double sure then
+    allocate something yourself)
+
+
+- big blocks of the same size, or do we some sort of resize policy?
+    i think fixed size for now; (???)
