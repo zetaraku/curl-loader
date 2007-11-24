@@ -233,8 +233,8 @@ ifeq "$(strip $(NO_LIBSTDC))" ""
 else
 	$(LD) -shared -o $(TARGET_SOLIB) $(objects) $(LDFLAGS)
 endif
-	@cp -f $(TARGET_SOLIB) $(GOAC_ROOT)/build/lib
-	@cp -f $(TARGET_SOLIB) $(GOAC_ROOT)/lib/ 
+	@cp -f $(TARGET_SOLIB) $(ROOT_DIR)/build/lib
+	@cp -f $(TARGET_SOLIB) $(ROOT_DIR)/lib/ 
 	@set -e; if [ -x ./$(TARGET_POST_BUILD_SCRIPT) ]; then ./$(TARGET_POST_BUILD_SCRIPT); fi
  
 
@@ -287,7 +287,7 @@ test_objs:=$(patsubst %.$(SRC_SUFFIX),%.o,$(wildcard *.$(SRC_SUFFIX)))
 ###
 # Add cppunit includes and libraries.
 ###
-#CLAGS+=-I $(GOAC_OSS_BUILD)/include/cppunit
+#CLAGS+=-I $(ROOT_OSS_BUILD)/include/cppunit
 #LDFLAGS+=-lcppunit
 
 .PHONY: main
