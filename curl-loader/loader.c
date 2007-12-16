@@ -710,12 +710,11 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
           /* 
              Make POST, using post buffer, if requested. 
           */
-          if (!cctx->post_data)
+            if (url->upload_file && url->upload_file_ptr && !cctx->post_data)
             {
-              fprintf (stderr, "%s - error: post_data is NULL.\n", __func__);
-              return -1;
+                curl_easy_setopt(handle, CURLOPT_POST, 1);
             }
-          else
+            else if (cctx->post_data)
             {
               /* 
                  Sets POST as the HTTP request method using either:
@@ -729,6 +728,11 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
                            __func__);
                   return -1;
                 }
+            }
+            else
+            {
+              fprintf (stderr, "%s - error: post_data is NULL.\n", __func__);
+              return -1;
             }
         }
       else if (url->req_type == HTTP_REQ_TYPE_PUT)
