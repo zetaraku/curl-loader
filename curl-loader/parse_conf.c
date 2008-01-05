@@ -2153,6 +2153,7 @@ static int validate_batch_url (batch_context*const bctx)
           */ 
           if (req_type == HTTP_REQ_TYPE_POST)
             {
+                /*
               if (!url->form_str && !url->mpart_form_post)
                 {
                   fprintf (stderr, "%s - error: either FORM_STRING or "
@@ -2160,6 +2161,7 @@ static int validate_batch_url (batch_context*const bctx)
                            "make HTTP POST\n", __func__);
                   return -1;   
                 }
+                */
 
               if (url->form_str && url->mpart_form_post)
                 {
