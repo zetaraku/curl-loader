@@ -6,7 +6,7 @@ diff -Naru libevent-1.3/devpoll.c libevent-1.3-mod/devpoll.c
  };
  
 -#define NEVENT	32000
-+#define NEVENT	61000
++#define NEVENT	121000
  
  static int
  devpoll_commit(struct devpollop *devpollop)
@@ -18,7 +18,7 @@ diff -Naru libevent-1.3/epoll.c libevent-1.3-mod/epoll.c
  #endif
  
 -#define NEVENT	32000
-+#define NEVENT	61000
++#define NEVENT	121000
  
  void *
  epoll_init(void)

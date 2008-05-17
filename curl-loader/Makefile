@@ -15,8 +15,8 @@ CURL_BUILD=$(BUILD)/curl
 CURL_VER:=7.17.0
 
 LIBEVENT_BUILD=$(BUILD)/libevent
-LIBEVENT_VER:=1.3
-LIBEVENT_MAKE_DIR=$(LIBEVENT_BUILD)/libevent-$(LIBEVENT_VER)
+LIBEVENT_VER:=1.4.4
+LIBEVENT_MAKE_DIR=$(LIBEVENT_BUILD)/libevent-$(LIBEVENT_VER)-stable
 
 OBJ_DIR:=obj
 SRC_SUFFIX:=c
@@ -123,8 +123,8 @@ install:
 
 $(LIBEVENT):
 	mkdir -p $(LIBEVENT_BUILD)
-	cd $(LIBEVENT_BUILD); tar zxfv ../../packages/libevent-$(LIBEVENT_VER).tar.gz;
-	cd $(LIBEVENT_MAKE_DIR); patch -p1 < ../patches/libevent-nevent.patch; ./configure --prefix $(LIBEVENT_BUILD) \
+	cd $(LIBEVENT_BUILD); tar zxfv ../../packages/libevent-$(LIBEVENT_VER)-stable.tar.gz;
+	cd $(LIBEVENT_MAKE_DIR); patch -p1 < ../../../patches/libevent-nevent.patch; ./configure --prefix $(LIBEVENT_BUILD) \
 		CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS)"
 	make -C $(LIBEVENT_MAKE_DIR); make -C $(LIBEVENT_MAKE_DIR) install
 	mkdir -p ./inc; mkdir -p ./lib
@@ -153,7 +153,7 @@ $(LIBCURL):
         --with-random=/dev/urandom \
         --with-ssl=/usr/include/openssl \
         --enable-shared=no \
-        CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS) -DCURL_MAX_WRITE_SIZE=8192"
+        CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS) -DCURL_MAX_WRITE_SIZE=4096"
 	make -C $(CURL_BUILD); make -C $(CURL_BUILD) install;
 	mkdir -p ./inc; mkdir -p ./lib
 	cp -a $(CURL_BUILD)/include/curl ./inc/curl

@@ -62,18 +62,18 @@ typedef V_UINT32			V_POINTER_SIZE_T;
 
 #elif linux
 
-#if i386
+/*#if i386 */
 
 typedef V_UINT32			V_POINTER_SIZE_T;
 
 #define V_DEFAULT_STRUCT_ALIGNMENT	(sizeof(void *))
 #define V_PAGE_SIZE			(4096)
 #define V_L2_CACHE_LINE_SIZE		(32)
-
+/*
 #else
 #error "Undefined platform"
 #endif
-
+*/
 #else
 #error "Undefined platform"
 #endif
