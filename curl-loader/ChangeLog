@@ -1,3 +1,13 @@
+version 0.45, unstable, May 17, 2008, svn 531
+
+* Advanced to libevent-1.4.4, which is supposed to deliver
+  better performance for high loads
+
+* Corrected the patch changing the NEVENT number.
+  The patch was not applied in previous versions, limiting the number
+   of virtual clients to only 32K
+
+
 version 0.44, stable, October 21, 2007, svn 524
 
 * Fixed bug crashing curl-loader, when run with -d command line option.
