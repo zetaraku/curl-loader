@@ -788,13 +788,14 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
 
               char proxy_userpwd[256];
               sprintf (proxy_userpwd, "%s:%s", url->username, url->password);
-              curl_easy_setopt(handle, CURLOPT_USERPWD, proxy_userpwd);
+              curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, proxy_userpwd);
             }
           else
             {
-              curl_easy_setopt(handle, CURLOPT_USERPWD, url->proxy_auth_credentials);
+              curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, url->proxy_auth_credentials);
             }
-          curl_easy_setopt(handle, CURLOPT_HTTPAUTH, url->proxy_auth_method);
+          curl_easy_setopt(handle, CURLOPT_PROXYAUTH, url->proxy_auth_method);
+
         }
 
     }
@@ -1319,7 +1320,7 @@ static int client_tracing_function (CURL *handle,
           {
             /* 401 and 407 responses are just authentication challenges, that 
               virtual client may overcome. */
-            if (response_status != 401 || response_status != 407)
+            if (response_status != 401 && response_status != 407)
               {
                 cctx->client_state = CSTATE_ERROR;
               }

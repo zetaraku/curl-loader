@@ -1,3 +1,7 @@
+
+* Proxy authentication bug fixed by Francois Pesce <francois.pesce@gmail.com>
+  curl-loader now tested and works with proxies.
+
 version 0.45, unstable, May 17, 2008, svn 531
 
 * Advanced to libevent-1.4.4, which is supposed to deliver
