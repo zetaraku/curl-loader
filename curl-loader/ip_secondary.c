@@ -30,6 +30,7 @@
 #include <fnmatch.h>
 #include <time.h>
 #include <errno.h>
+#include <limits.h>
 
 #include <linux/netdevice.h>
 #include <linux/if_arp.h>

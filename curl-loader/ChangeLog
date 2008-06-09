@@ -1,4 +1,8 @@
 
+* Compilation fix for some linux-distros, like recent gentoo, by adding 
+  #include <limits.h> in ip_secondary.c. Thanks to Aleksandar Lazic <al-curlloader@none.at>
+  for reporting it.
+
 * Proxy authentication bug fixed by Francois Pesce <francois.pesce@gmail.com>
   curl-loader now tested and works with proxies.
 
