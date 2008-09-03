@@ -12,7 +12,7 @@ BUILD=$(shell pwd)/build
 #CARES_MAKE_DIR=$(CARES_BUILD)/c-ares-$(CARES_VER)
 
 CURL_BUILD=$(BUILD)/curl
-CURL_VER:=7.17.0
+CURL_VER:=7.19.0
 
 LIBEVENT_BUILD=$(BUILD)/libevent
 LIBEVENT_VER:=1.4.4
@@ -105,7 +105,7 @@ clean:
 cleanall: clean
 	rm -rf ./build ./packages/curl-$(CURL_VER) \
 	./packages/curl ./inc ./lib ./bin $(TAGFILE) \
-	*.log *.txt *.ctx *~ ./mconfig/*~ ./conf-examples/*~
+	*.log *.txt *.ctx *~ ./conf-examples/*~
 
 tags:
 	etags --members -o $(TAGFILE) *.h *.c
@@ -142,7 +142,7 @@ $(LIBEVENT):
 #	cp -pf $(CARES_MAKE_DIR)/lib/libcares* ./lib
 
 $(LIBCURL):
-	cd ./packages; tar zxf curl-$(CURL_VER).tar.gz; ln -sf curl-$(CURL_VER) curl; \
+	cd ./packages; tar jxfv curl-$(CURL_VER).tar.bz2; ln -sf curl-$(CURL_VER) curl; \
 	patch -d curl -p1 < ../patches/curl-trace-info-error.patch
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix=$(CURL_BUILD) \

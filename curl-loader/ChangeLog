@@ -1,4 +1,8 @@
+version 0.46, unstable, Sep 3, 2008, svn 534
 
+* Advanced to curl-7.19.0 with more relevant fixes, particular in the
+  area of multi-transfer and FTP bug fixes.
+	
 * Compilation fix for some linux-distros, like recent gentoo, by adding 
   #include <limits.h> in ip_secondary.c. Thanks to Aleksandar Lazic <al-curlloader@none.at>
   for reporting it.
