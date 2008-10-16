@@ -284,7 +284,12 @@ static int add_param_to_batch (char*const str_buff,
                                int*const batch_num)
 {
   if (!str_buff || !str_len || !bctx_array)
+  {
+      fprintf (stderr, "%s - error: wrong input\n", __func__) ;
     return -1;
+  }
+
+  char* batch_str = strstr (str_buff, "BATCH_NAME");
 
   /*We are not eating LWS, as it supposed to be done before... */
     
@@ -361,15 +366,16 @@ static int add_param_to_batch (char*const str_buff,
         }
     }
 
-  if (strstr (str_buff, tp_map[0].tag))
+  if (batch_str)
   {
       /* On string "BATCH_NAME" - next batch and move the number */
-       ++(*batch_num);
+      const int batch_ind_val = *batch_num;
+       *batch_num = batch_ind_val + 1;
   }
 
   if ((*parser) (&bctx_array[*batch_num], value) == -1)
     {
-      fprintf (stderr,"%s - parser failed for tag %s and value %s.\n",
+      fprintf (stderr,"%s - error: parser failed for tag %s and value %s.\n",
                __func__, str_buff, equal + 1);
       return -1;
     }
@@ -811,8 +817,7 @@ static int ip_addr_max_parser (batch_context*const bctx, char*const value)
                  value, 
                  bctx->ipv6 ? (void *)&bctx->ipv6_addr_max : (void *)&inv4) == -1)
     {
-      fprintf (stderr, 
-               "%s - error: inet_pton ()  failed for ip_addr_max %s\n", 
+      fprintf (stderr, "%s - error: inet_pton ()  failed for ip_addr_max %s\n", 
                __func__, value);
       return -1;
     }
@@ -2665,8 +2670,7 @@ int parse_config_file (char* const filename,
 
   while (fgets (fgets_buff, sizeof (fgets_buff) - 1, fp))
     {
-      // fprintf (stderr, "%s - processing file string \"%s\n", 
-      //         __func__, fgets_buff);
+      fprintf (stderr, "%s - processing file string \"%s\n", __func__, fgets_buff);
 
       char* string_buff = NULL;
       size_t string_len = 0;
@@ -2686,8 +2690,7 @@ int parse_config_file (char* const filename,
           /* Line may be commented out by '#'.*/
           if (fgets_buff[0] == '#')
             {
-              // fprintf (stderr, "%s - skipping commented file string \"%s\n", 
-              //         __func__, fgets_buff);
+              fprintf (stderr, "%s - skipping commented file string \"%s\n", __func__, fgets_buff);
               continue;
             }
 
@@ -2940,6 +2943,8 @@ static int netmask_to_cidr (char *dotted_ipv4)
  
   if (inet_pton (AF_INET, dotted_ipv4, &network) < 1) 
     {
+       fprintf (stderr, 
+                "%s - error: inet_pton () failed with errno %d on buffer %s\n", __func__, errno, dotted_ipv4);
       return -1;
     }
 
@@ -3007,6 +3012,8 @@ static int print_correct_form_usagetype (form_usagetype ftype, char* value)
       break;
     }
 
+  fprintf (stderr, 
+                "%s - error: unknown error\n", __func__);
   return -1;
 }
 
