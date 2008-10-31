@@ -710,7 +710,7 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
           /* 
              Make POST, using post buffer, if requested. 
           */
-            if (url->upload_file && url->upload_file_ptr && (!cctx->post_data || !cctx->post_data[0]))
+            if (url->upload_file && url->upload_file_ptr && (!cctx->post_data /* || !cctx->post_data[0]*/))
             {
                 curl_easy_setopt(handle, CURLOPT_POST, 1);
             }
