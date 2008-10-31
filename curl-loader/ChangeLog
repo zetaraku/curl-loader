@@ -1,10 +1,16 @@
 
+* Fixed a POST-binary bug, where an extra check was preventing direct
+   posting.
+   Thanks to Alex <alex2048@gmail.com> and Gary Fitts <gary@intouchgroup.com>
+	
 * Fixed a bug on 64-bit ubuntoo, originating most probably from the
    wrong compiler optimization and running on an SMP machine, where 
    configuration files has failed to be loaded.
    Thanks to Sergei Shnaidman <sergei.shnaidman@qik.com> for 
    reporting, debugging and testing the fix.
 
+
+	
 version 0.46, unstable, Sep 3, 2008, svn 534
 
 * Advanced to curl-7.19.0 with more relevant fixes, particular in the
