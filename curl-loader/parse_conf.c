@@ -283,6 +283,16 @@ static int add_param_to_batch (char*const str_buff,
                                batch_context*const bctx_array, 
                                int*const batch_num)
 {
+  batch_context * bctx;
+  form_usagetype ftype = 0;
+
+  if(bctx_array && *batch_num >= 0 && *batch_num <= 1000)
+  {
+    bctx = &bctx_array[*batch_num];
+    if(bctx->url_ctx_array)
+      ftype = bctx->url_ctx_array[bctx->url_index].form_usage_type;
+  }
+
   if (!str_buff || !str_len || !bctx_array)
   {
       fprintf (stderr, "%s - error: wrong input\n", __func__) ;
@@ -334,11 +344,15 @@ static int add_param_to_batch (char*const str_buff,
 
   /* Removing LWS, TWS and comments from the value */
   char* value = equal + 1;
-  if (pre_parser (&value, (unsigned int *)&value_len) == -1)
-  {
-      fprintf (stderr,"%s - error: pre_parser () failed for tag %s and value \"%s\".\n",
-               __func__, str_buff, equal + 1);
-      return -1;
+
+  if (parser != form_string_parser || ftype != FORM_USAGETYPE_AS_IS)
+  { 
+      if (pre_parser (&value, (unsigned int *)&value_len) == -1)
+      {
+          fprintf (stderr,"%s - error: pre_parser () failed for tag %s and value \"%s\".\n",
+                   __func__, str_buff, equal + 1);
+          return -1;
+      }
   }
 
   if (!strlen (value))
@@ -348,38 +362,41 @@ static int add_param_to_batch (char*const str_buff,
       return 0;
     }
 
-  /* Remove quotes from the value */
-  if (*value == '"')
-    {
-      value++, value_len--;
-      if (value_len < 2)
-        {
-          return 0;
-        }
-      else
-        {
-          if (*(value +value_len-2) == '"')
-            {
-              *(value +value_len-2) = '\0';
-              value_len--;
-            }
-        }
-    }
-
+  if (parser != form_string_parser || ftype != FORM_USAGETYPE_AS_IS)
+  {
+      /* Remove quotes from the value */
+      if (*value == '"')
+      {
+          value++, value_len--;
+          if (value_len < 2)
+          {
+              return 0;
+          }
+          else
+          {
+              if (*(value +value_len-2) == '"')
+              {
+                  *(value +value_len-2) = '\0';
+                  value_len--;
+              }
+          }
+      }
+  }
+      
   if (batch_str)
   {
       /* On string "BATCH_NAME" - next batch and move the number */
       const int batch_ind_val = *batch_num;
-       *batch_num = batch_ind_val + 1;
+      *batch_num = batch_ind_val + 1;
   }
-
+  
   if ((*parser) (&bctx_array[*batch_num], value) == -1)
-    {
+  {
       fprintf (stderr,"%s - error: parser failed for tag %s and value %s.\n",
                __func__, str_buff, equal + 1);
       return -1;
-    }
-
+  }
+  
   return 0;
 }
 
