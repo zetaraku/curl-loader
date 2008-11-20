@@ -9,6 +9,14 @@
    Thanks to Sergei Shnaidman <sergei.shnaidman@qik.com> for 
    reporting, debugging and testing the fix.
 
+* Integrated a great contribution from Gary Fitts <gary@intouchgroup.com>
+  - template URL, where throusands URLs specifying by a single template is an option;
+  - fetching of response tokens from the bodies of responses and usage them in template URL;
+  - usage of statically defined in file tokens for template URL;
+  - fixing of several bugs in that area.
+  We need to polish the code, bring coding conventions and comments,
+  README and man pages.
+
 
 	
 version 0.46, unstable, Sep 3, 2008, svn 534

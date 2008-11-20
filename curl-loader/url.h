@@ -76,6 +76,55 @@ typedef struct form_records_cdata
 } form_records_cdata;
 
 
+
+/*
+  GF
+  Structures for storing a set of URLs built from an URL_TEMPLATE such as
+  http://www.abc.com/group/%s/user/%s/account
+  Each URL is built by replacing the %s's with a token from a file specified
+  by URL_TOKEN_FILE, or from an URL_TOKEN obtained in a prior server response.
+  This allows each virtual client to make a unique request.
+  The token file may also specify a cookie to accompany the request.
+*/
+typedef struct urle
+{
+   char*	string;
+    char*	cookie;
+
+} urle;
+
+typedef struct url_set
+{
+   int		n_urles;
+   urle*	urles;
+   int		index;
+
+} url_set;
+
+/*
+  The URL_TEMPLATE is stored here, for both URL_TOKEN and URL_TOKEN_FILE cases,
+  although both cannot be used together.
+*/
+typedef struct
+{
+    char* string;	/* template string, eg http://www.abc.com/group/%s/user/%s/account */
+    int   n_cents;	/* number of %s's in the template */
+    int   n_tokens;	/* number of URL_TOKENS parsed so far */
+   char** names;	/* URL_TOKEN names */
+   char** values;	/* scratch space for collecting token values */
+
+} url_template;
+
+/*
+  This url has this many RESPONSE_TOKENS that we must scan for
+*/
+typedef struct
+{
+    int n_tokens;
+}url_response;
+	
+
+
 /*
   url_context - structure, that concentrates our knowledge 
   about the url to fetch (download, upload, etc).
@@ -311,8 +360,40 @@ typedef struct url_context
     considered as errors.
   */
   unsigned char *resp_status_errors_tbl;
+  
+
+  /*GF */
+   url_set set;
+   url_template template;
+   url_response response;
+
+    /*
+      Keep a separate upload-file offset for each client
+      Replaces the single upload_file_ptr.
+    */
+    /* file descriptor for open upload file */
+    int upload_descriptor;
+    /* allocated, one for each client */
+    off_t* upload_offsets;
+  
+  /*
+    Allows form records to be used sequentially as clients cycle.
+    See form_records_array above.
+   */
+  int form_records_cycle;
+  size_t form_records_index;
+
+   /*
+    Governs how urls are chosen from the url_set, not implemented yet
+    */
+   int url_cycling;
 
 } url_context;
+
+
+/* GF */
+#define is_template(url)	(url->template.string != 0)
+
 
 int
 current_url_completion_timeout (unsigned long *timeout,

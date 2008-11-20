@@ -34,11 +34,16 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <stdarg.h>
+
+#include <sys/types.h>
+#include <sys/uio.h>
 
 #include "conf.h"
 #include "batch.h"
 #include "client.h"
 #include "cl_alloc.h"
+#include "url.h"
 
 #define EXPLORER_USERAGENT_STR "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" 
 #define BATCH_MAX_CLIENTS_NUM 4096
@@ -103,7 +108,7 @@ static int urls_num_parser (batch_context*const bctx, char*const value);
 /*
  * URL section tag parsers. 
 */
-static int url_parser (batch_context*const bctx, char*const value);
+extern int url_parser (batch_context*const bctx, char*const value); /* changed static to extern GF */
 static int url_short_name_parser (batch_context*const bctx, char*const value);
 static int url_use_current_parser (batch_context*const bctx, char*const value);
 static int url_dont_cycle_parser (batch_context*const bctx, char*const value);
@@ -144,6 +149,14 @@ static int form_records_random_parser (batch_context*const bctx, char*const valu
 static int form_records_file_max_num_parser(batch_context*const bctx, char*const value);
 
 static fparser find_tag_parser (const char* tag);
+
+ /* GF url-set parsers.  */
+extern int url_template_parser(batch_context* const bctx, char* const string);
+extern int url_token_parser(batch_context* const bctx, char* const word);
+extern int url_token_file_parser(batch_context* const bctx, char* const fname);
+extern int response_token_parser(batch_context* const bctx, char* const word);
+extern int form_records_cycle_parser(batch_context* const bctx, char* const value);
+
 
 /*
  * The mapping between tag strings and parsing functions.
@@ -207,6 +220,13 @@ static const tag_parser_pair tp_map [] =
 
     {"FORM_RECORDS_RANDOM", form_records_random_parser},
     {"FORM_RECORDS_FILE_MAX_NUM", form_records_file_max_num_parser},
+    
+    /* GF These parsers are in the file url_set.c */
+    {"URL_TEMPLATE", url_template_parser},
+    {"URL_TOKEN", url_token_parser},
+    {"URL_TOKEN_FILE", url_token_file_parser},
+    {"RESPONSE_TOKEN", response_token_parser},
+    {"FORM_RECORDS_CYCLE", form_records_cycle_parser},
 
     {NULL, 0}
 };
@@ -283,23 +303,8 @@ static int add_param_to_batch (char*const str_buff,
                                batch_context*const bctx_array, 
                                int*const batch_num)
 {
-  batch_context * bctx;
-  form_usagetype ftype = 0;
-
-  if(bctx_array && *batch_num >= 0 && *batch_num <= 1000)
-  {
-    bctx = &bctx_array[*batch_num];
-    if(bctx->url_ctx_array)
-      ftype = bctx->url_ctx_array[bctx->url_index].form_usage_type;
-  }
-
   if (!str_buff || !str_len || !bctx_array)
-  {
-      fprintf (stderr, "%s - error: wrong input\n", __func__) ;
     return -1;
-  }
-
-  char* batch_str = strstr (str_buff, "BATCH_NAME");
 
   /*We are not eating LWS, as it supposed to be done before... */
     
@@ -344,15 +349,11 @@ static int add_param_to_batch (char*const str_buff,
 
   /* Removing LWS, TWS and comments from the value */
   char* value = equal + 1;
-
-  if (parser != form_string_parser || ftype != FORM_USAGETYPE_AS_IS)
-  { 
-      if (pre_parser (&value, (unsigned int *)&value_len) == -1)
-      {
-          fprintf (stderr,"%s - error: pre_parser () failed for tag %s and value \"%s\".\n",
-                   __func__, str_buff, equal + 1);
-          return -1;
-      }
+  if (pre_parser (&value, (unsigned int *)&value_len) == -1)
+  {
+      fprintf (stderr,"%s - error: pre_parser () failed for tag %s and value \"%s\".\n",
+               __func__, str_buff, equal + 1);
+      return -1;
   }
 
   if (!strlen (value))
@@ -362,41 +363,37 @@ static int add_param_to_batch (char*const str_buff,
       return 0;
     }
 
-  if (parser != form_string_parser || ftype != FORM_USAGETYPE_AS_IS)
-  {
-      /* Remove quotes from the value */
-      if (*value == '"')
-      {
-          value++, value_len--;
-          if (value_len < 2)
-          {
-              return 0;
-          }
-          else
-          {
-              if (*(value +value_len-2) == '"')
-              {
-                  *(value +value_len-2) = '\0';
-                  value_len--;
-              }
-          }
-      }
-  }
-      
-  if (batch_str)
+  /* Remove quotes from the value */
+  if (*value == '"')
+    {
+      value++, value_len--;
+      if (value_len < 2)
+        {
+          return 0;
+        }
+      else
+        {
+          if (*(value +value_len-2) == '"')
+            {
+              *(value +value_len-2) = '\0';
+              value_len--;
+            }
+        }
+    }
+
+  if (strstr (str_buff, tp_map[0].tag))
   {
       /* On string "BATCH_NAME" - next batch and move the number */
-      const int batch_ind_val = *batch_num;
-      *batch_num = batch_ind_val + 1;
+       ++(*batch_num);
   }
-  
+
   if ((*parser) (&bctx_array[*batch_num], value) == -1)
-  {
-      fprintf (stderr,"%s - error: parser failed for tag %s and value %s.\n",
+    {
+      fprintf (stderr,"%s - parser failed for tag %s and value %s.\n",
                __func__, str_buff, equal + 1);
       return -1;
-  }
-  
+    }
+
   return 0;
 }
 
@@ -427,7 +424,7 @@ static int load_form_record_string (char*const input,
       ":",
       ";",
       " ", 
-      "@", 
+    /*"@", we need @ for email addresses */
       "/", 
       0
     };
@@ -834,7 +831,8 @@ static int ip_addr_max_parser (batch_context*const bctx, char*const value)
                  value, 
                  bctx->ipv6 ? (void *)&bctx->ipv6_addr_max : (void *)&inv4) == -1)
     {
-      fprintf (stderr, "%s - error: inet_pton ()  failed for ip_addr_max %s\n", 
+      fprintf (stderr, 
+               "%s - error: inet_pton ()  failed for ip_addr_max %s\n", 
                __func__, value);
       return -1;
     }
@@ -918,9 +916,10 @@ static int urls_num_parser (batch_context*const bctx, char*const value)
 }
 
 /*
-** URL section tag parsers. 
+** URL section tag parsers.
+   Changed static to extern, GF
 */
-static int url_parser (batch_context*const bctx, char*const value)
+extern int url_parser (batch_context*const bctx, char*const value)
 {
     size_t url_length = 0;
 
@@ -1163,6 +1162,11 @@ static int form_string_parser (batch_context*const bctx, char*const value)
         bctx->url_ctx_array[bctx->url_index].form_usage_type;
 
   const size_t value_len = strlen (value);
+  
+  if (value_len)
+  	fprintf(stderr, "found form_str %s\n", value);
+  else
+  	fprintf(stderr, "form_str has zero length\n");
 
   if (!value_len)
     {
@@ -1173,7 +1177,7 @@ static int form_string_parser (batch_context*const bctx, char*const value)
 
   if (ftype <= FORM_USAGETYPE_START || ftype >= FORM_USAGETYPE_END)
     {
-      fprintf(stderr, "%s - error: please, beyond FORM_STRING place the "
+      fprintf(stderr, "%s - error: please, before FORM_STRING place the "
               "defined FORM_USAGE_TYPE tag with its values to be choosen from:"
               "%s , %s ,\n" "%s , %s , %s \n" , __func__, 
               FT_UNIQUE_USERS_AND_PASSWORDS, FT_UNIQUE_USERS_SAME_PASSWORD,
@@ -1224,8 +1228,8 @@ static int form_string_parser (batch_context*const bctx, char*const value)
         }
       else
         {
-
-          if (ftype != FORM_USAGETYPE_AS_IS)
+          /* GF added 2nd condition to allow more than 2 records from file */
+          if (ftype != FORM_USAGETYPE_AS_IS && ftype != FORM_USAGETYPE_RECORDS_FROM_FILE)
             {
               fprintf (stderr, 
                        "\n%s - error: FORM_STRING (%s) is not valid. \n"
@@ -1369,6 +1373,14 @@ static int upload_file_parser  (batch_context*const bctx, char*const value)
                string_len -1);
 
       bctx->url_ctx_array[bctx->url_index].upload_file_size = statbuf.st_size;
+      
+      /* GF  */
+      {
+          extern int allocate_upload_streams(batch_context*);
+          
+          if (allocate_upload_streams(bctx) < 0)
+              return -1;
+      }
     }
     return 0;
 }
@@ -2687,7 +2699,8 @@ int parse_config_file (char* const filename,
 
   while (fgets (fgets_buff, sizeof (fgets_buff) - 1, fp))
     {
-      fprintf (stderr, "%s - processing file string \"%s\n", __func__, fgets_buff);
+      // fprintf (stderr, "%s - processing file string \"%s\n", 
+      //         __func__, fgets_buff);
 
       char* string_buff = NULL;
       size_t string_len = 0;
@@ -2707,7 +2720,8 @@ int parse_config_file (char* const filename,
           /* Line may be commented out by '#'.*/
           if (fgets_buff[0] == '#')
             {
-              fprintf (stderr, "%s - skipping commented file string \"%s\n", __func__, fgets_buff);
+              // fprintf (stderr, "%s - skipping commented file string \"%s\n", 
+              //         __func__, fgets_buff);
               continue;
             }
 
@@ -2815,8 +2829,14 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
       if ((string_len = strlen (fgets_buff)) &&
           (string_buff = eat_ws (fgets_buff, &string_len)))
         {
+          /*
+           GF
+           Changed fgets_buff to string_buff below.
+           This was causing whitespace and newlines left in form records.
+           */
+          
           // Line may be commented out by '#'.
-          if (fgets_buff[0] == '#')
+          if (string_buff[0] == '#')
             {
               fprintf (stderr, "%s - skipping commented file string \"%s\n", 
                        __func__, fgets_buff);
@@ -2829,27 +2849,27 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
               continue;
             }
 
-          if (fgets_buff[string_len - 2] == '\r')
+          if (string_buff[string_len - 2] == '\r')
             {
-              fgets_buff[string_len - 2] = '\0';
+              string_buff[string_len - 2] = '\0';
             }
 
-          if (fgets_buff[string_len -1] == '\n')
+          if (string_buff[string_len -1] == '\n')
             {
-              fgets_buff[string_len -1] = '\0';
+              string_buff[string_len -1] = '\0';
             }
 
           if (url->form_records_num >= max_records)
             {
               fprintf (stderr, "%s - error: CLIENTS_NUM (%d) and "
-                       "FORM_RECORDS_FILE_MAX_NUM (%d) are both less than the number of" 
-                       "records is the file form_records_file.\n", 
+                       "FORM_RECORDS_FILE_MAX_NUM (%d) are both less than the number of " 
+                       "records in the form_records_file.\n", 
                        __func__, bctx->client_num_max, url->form_records_file_max_num);
               sleep (3);
               break;
             }
 
-          if (load_form_record_string (fgets_buff,
+          if (load_form_record_string (string_buff,
                                        string_len,
                                        &url->form_records_array[url->form_records_num],
                                        url->form_records_num,
@@ -2960,8 +2980,6 @@ static int netmask_to_cidr (char *dotted_ipv4)
  
   if (inet_pton (AF_INET, dotted_ipv4, &network) < 1) 
     {
-       fprintf (stderr, 
-                "%s - error: inet_pton () failed with errno %d on buffer %s\n", __func__, errno, dotted_ipv4);
       return -1;
     }
 
@@ -3029,8 +3047,1458 @@ static int print_correct_form_usagetype (form_usagetype ftype, char* value)
       break;
     }
 
-  fprintf (stderr, 
-                "%s - error: unknown error\n", __func__);
   return -1;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+extern int		url_template_parser(batch_context* const batch, char* const string);
+extern int		url_token_parser(batch_context* const batch, char* const word);
+extern int		url_token_file_parser(batch_context* const batch, char* const fname);
+extern int		response_token_parser(batch_context* const batch, char* const word);
+extern int		form_records_cycle_parser(batch_context* const batch, char* const value);
+extern int		allocate_upload_streams(batch_context* batch);
+extern int		init_upload_stream(client_context* client, url_context* url);
+
+extern int		update_url(CURL* handle, client_context* client, url_context* url);
+extern int		scan_response(curl_infotype type, char* data, size_t size, client_context* client);
+extern void		free_url_extensions(url_context* url);
+
+static size_t	read_callback(void *ptr, size_t size, size_t nmemb, void *uptr);
+
+static int		pick_url_from_set(CURL* handle, client_context* client, url_context* url);
+static int		complete_url_from_response(CURL* handle, client_context* client, url_context* url);
+static int		build_url_set(url_set* set, url_template* template, FILE* file, char* fname);
+static urle*	build_urle(char* line, url_template* template);
+
+static void		construct_url(char* buf, url_template* template);
+static int		install_url(CURL* handle, url_context* url, char* s);
+
+static void		free_url_template(url_template* t);
+static void		free_url_set(url_set* set);
+
+static int		keyval_start(int nqueues);
+static int		keyval_create(int index, void* context, char* word);
+static int		keyval_init(int index, void* context);
+static void		keyval_scan(int index, void* context, char* data, int size);
+static void		keyval_flush(int index, void* context);
+static char*	keyval_lookup(char* word, int index);
+static void		keyval_stop();
+
+static char*	string_copy(char* src, char* dst);
+static char*	getline(char* buf, int size, FILE* file);
+static char*	get_token(char** line_ptr);
+static char*	skip_white(char* s);
+static char*	skip_black(char* s);
+static char*	skip_quote(char* s);
+static int		err_out(const char* func, char* fmt, ...);
+
+#define error(x)	err_out(__func__, x)
+
+
+/*********************************************************
+
+	Build or choose the next URL for this client
+
+*********************************************************/
+
+/*
+  Called from setup_curl_handle_init in loader.c to construct the next url
+  from a template, or retrieve the next url from a preconstructed set.
+*/
+extern int
+update_url(CURL* handle, client_context* client, url_context* url)
+{
+    int result;
+	
+    /*
+      If this url has RESPONSE_TOKENs to scan for, we need to reinitialize them
+    */
+    if (url->response.n_tokens > 0)
+    {
+        (void) keyval_init(client->client_index, url);
+    }
+	
+    /*
+      If this is an URL and not an URL_TEMPLATE, there's nothing more to do
+    */
+    if (! is_template (url))
+    {
+        return 0;
+    }
+	
+    /*
+      Try to pick an url from an url_set, or if this wasn't an url_set,
+      try to complete the template from server responses
+    */
+    if ((result = pick_url_from_set(handle, client, url)) == 0)
+    {
+        result = complete_url_from_response (handle, client, url);
+    }
+	
+    return (result < 0) ? -1 : 0;
+}
+
+
+/*
+  Choose the next URL from an url set. Return 0 if this isn't an url_set,
+  1 on success, and 0 on failure.
+*/
+static int
+pick_url_from_set (CURL* handle, client_context* client, url_context* url)
+{
+    url_set* set = &url->set; 
+    urle* u;
+	
+    if (set->n_urles == 0)
+    {
+        return 0; /* this wasn't a pre-constructed url set */
+    }
+	
+    if (!url->url_cycling)
+    {
+        set->index = client->client_index % set->n_urles;
+    }
+    else if (++set->index >= set->n_urles) /* will set index to 0 the first time through */
+    {
+        set->index = 0;
+    }	
+
+   u = &set->urles[set->index];
+
+   if (install_url(handle, url, u->string) < 0)
+   {
+       return -1;
+   }
+	
+   if (u->cookie)
+   {
+       curl_easy_setopt(handle, CURLOPT_COOKIE, u->cookie);
+   }
+	
+   return 1;
+}
+
+
+/*
+  Construct an URL from prior server responses.
+*/
+static int
+complete_url_from_response(CURL* handle, client_context* client, url_context* url)
+{
+    char **names;
+    char **values;
+    char buf[512];
+    int i;
+	
+    /*
+      This check should have been done at parse time,
+      but there's no convenient place to do it
+    */
+    if (url->template.n_tokens != url->template.n_cents)
+    {
+        return err_out (__func__, "wrong number of URL_TOKENS for %s", url->template.string);
+    }
+	
+    names = url->template.names;
+    values = url->template.values;
+	
+    for (i = 0; i < url->template.n_tokens; i++)
+    {
+        if ((values[i] = keyval_lookup(names[i], client->client_index)) == 0)
+            return error("missing server response values");
+    }
+	
+    construct_url (buf, &url->template);
+	
+    if (install_url (handle, url, buf) < 0)
+    {
+        return -1;
+    }
+	
+    client->previous_type = 0;
+    return 1;
+}
+
+
+/*
+  Install a string as the official url_str in this url_context.
+*/
+static int
+install_url (CURL* handle, url_context* url, char* s)
+{
+   /*
+     Hand the url to curl right away. If we wait for setup_curl_handle_init
+     to do it with url->url_str, another client from another thread might change
+     that value first.
+   */
+    curl_easy_setopt (handle, CURLOPT_URL, s);
+
+    if (url->url_str != 0)
+    {
+        free(url->url_str);
+    }
+	
+    if ((url->url_str = strdup(s)) == 0)
+    {
+        return error("cannot allocate space for url_str");
+    }
+	
+    url->url_str_len = strlen(s);
+    return 0;
+}
+
+
+/*********************************************************
+
+	Set up an URL template
+
+*********************************************************/
+
+/*
+   Called from parse_conf.c to parse an URL_TEMPLATE line
+*/
+extern int
+url_template_parser (batch_context* const batch, char* const string)
+{
+   extern int url_parser(batch_context* const, char* const); 
+   url_context* url;
+   char* s;
+	
+   if (string == 0 || *string == 0)
+   {
+       return error("missing template string");
+   }
+	
+   /*
+     url_parser copies the string to the url_context->url_str field.
+     It also initilaizes url_str_len, url_appl_type, and url_ind,
+     and increments batch->url_index.
+   */
+   if (url_parser (batch, string) < 0)
+   {
+       return error("url_parser failed");
+   }
+	
+   url = &batch->url_ctx_array[batch->url_index];
+	
+   if ((url->template.string = strdup(string)) == 0)
+   {
+       return error("cannot allocate template string");
+   }
+	
+   for (s = string; (s = strstr(s, "%s")) != 0; s++)
+   {
+       url->template.n_cents++;
+   }
+	
+   if (url->template.n_cents == 0)
+   {
+       return error("invalid URL_TEMPLATE");
+   }
+	
+   if ((url->template.names = (char**) calloc(url->template.n_cents, sizeof(char**))) == 0)
+   {
+       return error("cannot allocate token-name array");
+   }
+
+   if ((url->template.values = (char**) calloc(url->template.n_cents, sizeof(char**))) == 0)
+   {
+       return error("cannot allocate token-value array");
+   }
+
+   return 0;
+}
+
+
+/*********************************************************
+
+	Set up response keys and url keys
+
+*********************************************************/
+
+ /*
+   Called in parse_conf.c to parse a RESPONSE_KEY line.
+   The keyword is stored by the keyvalue engine, and it is
+   tied to the client index and the url context. Later when
+   we're scanning the server reponse, we ask the keyval engine
+   to scan for all words belonging to the current client and url.
+ */
+extern int
+response_token_parser (batch_context* const batch, char* const word)
+{
+   url_context* url = &batch->url_ctx_array[batch->url_index];
+   int nclients = batch->client_num_max;
+   int i;
+	
+   if (keyval_start(nclients) < 0)
+       return -1;
+	
+   for (i = 0; i < nclients; i++)
+   {
+       if (keyval_create(i, url, word) < 0)
+           return -1;
+       
+       url->response.n_tokens++;
+   }   
+   return 0;
+}
+
+
+/*
+  Called in parse_conf.c to parse an URL_TOKEN line
+*/
+extern int
+url_token_parser (batch_context* const batch, char* const word)
+{
+    url_context* url = & batch->url_ctx_array[batch->url_index];
+	
+    if (url->set.urles != 0)
+    {
+        return error("cannot have both URL_TOKEN_FILE and URL_TOKEN");
+    }
+	
+    if (url->template.n_cents == 0)
+    {
+        return error("URL_TOKEN specified without a valid URL_TEMPLATE");
+    }
+	
+   if (url->template.n_tokens >= url->template.n_cents)
+   {
+       return error("too many URL_TOKENs for this template");
+   }
+	
+   if ((url->template.names[url->template.n_tokens++] = strdup(word)) == 0)
+   {
+       return error("cannot allocate space for token");
+   }
+	
+   return 0;
+}
+
+
+/*********************************************************
+
+	Scan the server response
+
+*********************************************************/
+
+/*
+  Called from client_tracing_function in loader.c
+*/
+extern int
+scan_response(curl_infotype type, char* data, size_t size, client_context* client)
+{
+    url_context* url = & client->bctx->url_ctx_array[client->url_curr_index];
+	
+    if (url->response.n_tokens == 0)
+    {
+        return 0; /* not looking for any RESPONSE_TOKENS */
+    }
+		
+    if (type == CURLINFO_DATA_IN)
+    {
+        // scan for this url's keyvals, storing results in this client's space
+        keyval_scan(client->client_index, url, data, size);
+    }
+    else if (client->previous_type == CURLINFO_DATA_IN)
+    {
+        // finish any unterminated values
+        keyval_flush(client->client_index, url);
+    }
+	
+    client->previous_type = type;
+    return 0;
+}
+
+
+
+/*********************************************************
+
+	Build an url set from a token file
+
+*********************************************************/
+/*
+  Called in parse_conf.c to parse an URL_SET_TOKEN_FILE line
+*/
+extern int
+url_token_file_parser(batch_context* const batch, char* const fname)
+{
+    url_context* url = &batch->url_ctx_array[batch->url_index];
+    FILE* file;
+	
+    if (fname == 0 || *fname == 0)
+    {
+        return error("missing file name");
+    }
+	
+    if (url->template.n_tokens != 0)
+    {
+        return error("cannot have both URL_TOKEN_FILE and URL_TOKEN");
+    }
+	
+    if ((file = fopen(fname, "r")) == 0)
+    {
+        return err_out(__func__, "unable to open file %s", fname);
+    }
+	
+   if (build_url_set(&url->set, &url->template, file, fname) < 0)
+   {
+       fclose(file);
+       return error("build_url_set failed");
+   }
+	
+   fclose(file);
+   return 0;
+}
+
+
+#define is_comment(x) ((s = skip_white(x)) == 0 || *s == 0 || *s == '#')
+
+/*
+  Build a set of URLs from the template string and token stream.
+*/
+static int
+build_url_set(url_set* set, url_template* template, FILE* file, char* fname)
+{
+    int nrows;
+    int ind;
+    int lineno; 
+    char f_buf[512];
+    char *s;
+    urle *u;
+    urle *v;
+	
+    for (nrows = 0; getline(f_buf, sizeof f_buf, file) != 0; )
+        if (!is_comment(f_buf))
+            nrows++;
+		
+    if ((set->urles = (urle*) calloc(nrows, sizeof (urle))) == 0)
+        return error("unable to allocate urle array");
+	
+    set->n_urles = nrows;
+    rewind (file);
+		
+    for (ind = 0, lineno = 1; getline(f_buf, sizeof f_buf, file) != 0; lineno++)
+    {
+        if (is_comment(f_buf))
+            continue;
+		
+        if ((u = build_urle(f_buf, template)) == 0)
+            return err_out(__func__, "error parsing line %d of file %s", lineno, fname);
+		
+        v = &set->urles[ind];
+        v->string = u->string;
+        v->cookie = u->cookie;
+		
+        ind++;
+    }
+	
+    set->index = -1; /* prepare for first call to pick_url_from_set */
+    return 0;
+}
+
+
+static urle*
+build_urle (char* line, url_template* template)
+{
+    char **values = template->values;
+    char *line_ptr = line;
+    char *cookie;
+    char buf[512];
+    int i;
+    static urle u;
+	
+	
+    for (i = 0; i < template->n_cents; i++)
+    {
+        if ((values[i] = get_token(&line_ptr)) == 0)
+        {
+            error("not enough tokens for this url template");
+            return 0;
+        }
+    }
+	
+    cookie = get_token(&line_ptr); /* optional cookie */
+    construct_url(buf, template);
+	
+    if ((u.string = strdup(buf)) == 0)
+        return 0;
+	
+    if (cookie && (u.cookie = strdup(cookie)) == 0)
+    {
+        free(u.string);
+        return 0;
+    }
+	
+    return &u;
+}
+
+
+/*
+  Construct an URL from the template and its list of token values
+*/
+static void
+construct_url (char* buf, url_template* template)
+{
+    char *s;
+    char *b;
+    int n = 0;
+	
+    /* copy the template to the buffer, substituting tokens for %b */
+    for (s = template->string, b = buf; *s != 0; s++)
+    {
+        if (*s != '%')
+        {
+            *b++ = *s;
+        }
+        else if (*++s != 's')
+        {
+            *b++ = '%';
+            *b++ = *s;
+        }
+        else
+        {
+            b = string_copy(template->values[n++], b);
+        }
+    }
+	
+    *b = 0;
+}
+
+
+
+/*********************************************************
+	Flag parsers
+*********************************************************/
+#if 0
+/*
+  Called in parse_conf.c to parse an URL_CYCLING line
+  NOT IMPLEMENTED YET
+*/
+extern int
+url_cycling_parser(batch_context* const batch, char* const value)
+{
+    url_context* url = &batch->url_ctx_array[batch->url_index]; int flag = atoi(value);
+	
+    if ( ! (flag == 0 || flag == 1) )
+    {
+        fprintf (stderr, "%s - error: URL_CYCLING should be either 0 or 1.\n", __func__);
+        return -1;
+    }
+	
+    url->url_cycling = flag;
+    return 0;
+}
+#endif
+
+/*
+  Called in parse_conf.c to parse an FORM_RECORDS_CYCLE line
+  FORM_RECORDS_CYCLE = 1 is similar to FORM_RECORDS_RANDOM = 1,
+  except that the records are assigned round-robin, instead of
+  at random. This can be used if you need more predictability.
+*/
+extern int
+form_records_cycle_parser(batch_context* const batch, char* const value)
+{
+    url_context* url = &batch->url_ctx_array[batch->url_index]; int flag = atoi(value);
+	
+    if ( ! (flag == 0 || flag == 1) )
+    {
+        fprintf (stderr, "%s - error: FORM_RECORDS_CYCLE should be either 0 or 1.\n", __func__);
+        return -1;
+    }
+	
+    url->form_records_cycle = flag;
+    return 0;
+}
+
+/*********************************************************
+	Per-client file upload streams.
+	Allows multiple clients to upload the same file, and
+	cycling URLs to continually upload the same file.
+*********************************************************/
+/*
+  Called from upload_file_parser to allocate per-client file upload streams
+*/
+extern int
+allocate_upload_streams(batch_context* batch)
+{
+    url_context* url = &batch->url_ctx_array[batch->url_index];
+	
+    if ((url->upload_offsets = (off_t*) calloc(batch->client_num_max, sizeof (off_t))) == 0)
+        return error("cannot allocate upload streams");
+	
+    return 0;
+}
+
+
+/*
+  Called from setup_curl_handle_init to initialize a per-client upload stream,
+  and re-initialize the stream for a cycling url.
+*/
+extern int
+init_upload_stream(client_context* client, url_context* url)
+{
+    off_t* offset_ptr = & url->upload_offsets[client->client_index];
+    CURL* handle = client->handle;
+	
+    if (url->upload_file == 0)
+    {
+        return 0;
+    }
+		
+    if	(
+        url->upload_file_ptr == 0 &&
+        (url->upload_file_ptr = fopen(url->upload_file, "rb")) == 0
+        )
+    {
+        return err_out(__func__, "fopen(%s) failed, errno = %d", url->upload_file, errno);
+    }
+
+    url->upload_descriptor = fileno(url->upload_file_ptr);
+    *offset_ptr = 0; /* re-initializes the stream for a cycling url */
+	
+    curl_easy_setopt(handle, CURLOPT_UPLOAD, 1);
+    curl_easy_setopt(handle, CURLOPT_READFUNCTION, read_callback);
+    curl_easy_setopt(handle, CURLOPT_READDATA, client);
+    curl_easy_setopt(handle, CURLOPT_INFILESIZE, (long) url->upload_file_size);
+	
+    if (url->transfer_limit_rate)
+    {
+        curl_easy_setopt(handle, CURLOPT_MAX_SEND_SPEED_LARGE,(curl_off_t) url->transfer_limit_rate);
+    }
+
+    return 0;
+}
+
+
+/*
+  Callback from libcurl to handle file-upload reads.
+*/
+static size_t
+read_callback(void *ptr, size_t size, size_t nmemb, void* user_supplied)
+{
+    extern int pread(int, void*, size_t, long);
+   
+    client_context* client = user_supplied;
+    batch_context* batch = client->bctx;
+    url_context* url = & batch->url_ctx_array[client->url_curr_index];
+    off_t* offset_ptr = & url->upload_offsets[client->client_index];
+    int nread;
+	
+   /*
+     Use pread instaed of fseek/fread for thread safety
+   */
+    if ((nread = pread(url->upload_descriptor, ptr, size * nmemb, *offset_ptr)) < 0)
+    {
+        err_out(__func__, "pread returned %d", errno);
+        return 0;
+    }
+	
+    *offset_ptr += nread;
+    return nread;
+}
+
+
+/*********************************************************
+	Cleanup
+*********************************************************/
+
+#define freeze(x) if (x != 0) {free(x); x = 0;}
+
+/*
+  Free url_set and url_response stuff
+  Called from free_url in loader.c
+*/
+extern void
+free_url_extensions(url_context* url)
+{
+    free_url_set(&url->set);
+    free_url_template(&url->template);
+    freeze(url->upload_offsets);
+    keyval_stop();
+}
+
+	
+static void
+free_url_template(url_template* t)
+{
+    int i;
+	
+    for (i = 0; i < t->n_tokens; i++)
+    {
+        freeze(t->names[i]);
+    }
+		
+    freeze(t->names);
+    freeze(t->string);
+    freeze(t->values); /* the individual values were not allocated */
+}
+
+
+static void
+free_url_set(url_set* set)
+{
+    int i;
+
+    if (set->urles == 0)
+        return;
+	
+    for (i = 0; i < set->n_urles; i++)
+    {
+        urle* u = &set->urles[i];
+		
+        freeze(u->string);
+        freeze(u->cookie);
+    }
+	
+    freeze(set->urles);
+}
+
+
+/*********************************************************
+	Outside keyval interface
+*********************************************************/
+
+#define VALUE_SIZE	256
+
+typedef struct keyval
+{
+    struct	keyval* next;
+    void*	context;
+	
+    struct
+    {
+        char*	word;
+        int		index;
+        char	        last_c;
+        int		found;
+
+    } key;
+	
+    struct
+    {
+        char	       buf[VALUE_SIZE];
+        int		index;
+        char	        quote;
+        int		found;
+    } value;
+	
+} keyval;
+
+
+typedef struct
+{
+    keyval*	first;
+    keyval*	last;
+} keyq;
+
+
+static keyq* que_array = 0;
+
+static int num_queues = 0;
+
+
+static int	kv_create(keyval* k, char* word);
+static void	kv_scan(keyval* k, char* data, int size);
+static void	scan_for_key(keyval* k, char c);
+static void	scan_for_value(keyval *k, char c);
+static void	add_to_value(keyval* k, char c);
+static void	kv_init(keyval* k);
+static void	kv_free(keyval* k);
+static void	kv_flush(keyval* k);
+static void	q_insert(keyq* q, keyval* k);
+static int err_out(const char* func, char* fmt, ...);
+
+#define error(x) err_out(__func__, x)
+
+/*
+  Allocate an array of keyval queues, one for each possible context
+*/
+static int
+keyval_start(int nqueues)
+{
+   if (que_array)
+       return 0;
+		
+   if ((que_array = (keyq*) calloc(nqueues, sizeof (keyq))) == 0)
+       return error("cannot allocate que_array");
+	
+   num_queues = nqueues;
+   return 0;
+}
+
+/*
+  Create a keyval for a given keyword
+*/
+static int
+keyval_create(int index, void* context, char* word)
+{
+    keyval* k;
+	
+    if (index >= num_queues)
+        return error("index out of range");
+	
+    if ((k = calloc(1, sizeof *k)) == 0)
+        return error("cannot allocate keyval");
+	
+    if (kv_create(k, word) < 0)
+        return -1;
+	
+    k->context = context;
+    q_insert(&que_array[index], k);
+	
+    return 0;
+}
+
+
+/*
+  Called when a previously-fetched URL is recycled,
+  and we want to capture new response values
+*/
+static int
+keyval_init(int index, void* context)
+{
+    keyval* k;
+	
+    if (index >= num_queues)
+        return error("index out of range");
+	
+    for (k = que_array[index].first; k != 0; k = k->next)
+    {
+        if (k->context == context)
+            kv_init (k);
+    }
+	
+    return 0;
+}
+
+
+/*
+  Scan the given data for all the keyvals in the index
+*/
+static void
+keyval_scan(int index, void* context, char* data, int size)
+{
+    keyval* k;
+	
+    for (k = que_array[index].first; k != 0; k = k->next)
+    {
+        if (k->context == context)
+            kv_scan(k, data, size);
+    }
+}
+
+static void
+keyval_flush(int index, void* context)
+{
+    keyval* k;
+	
+    for (k = que_array[index].first; k != 0; k = k->next)
+    {
+        if (k->context == context)
+            kv_flush(k);
+    }
+}
+
+static char*
+keyval_lookup(char* word, int index)
+{
+    keyval* k;
+	
+    for (k = que_array[index].first; k != 0; k = k->next)
+    {
+        if (strcmp(k->key.word, word) == 0)
+            return k->value.buf;
+    }
+    return 0;
+}
+
+static void
+keyval_stop()
+{
+    int i; keyval *k, *next;
+	
+    if (que_array == 0)
+        return;
+	
+    for (i = 0; i < num_queues; i++)
+        for (k = que_array[i].first; k != 0; k = next)
+        {
+            next = k->next;
+            kv_free(k);
+        }
+	
+    free(que_array);
+    que_array = 0;
+}
+ 
+static void
+q_insert(keyq* q, keyval* k)
+{
+    if (q->first == 0)
+    {
+        q->first = k;
+    }
+    else if (q->last != 0)
+    {
+        q->last->next = k;
+    }
+   
+    q->last = k;
+    k->next = 0;
+}
+
+/*********************************************************
+	Low-level keyval implementation,
+	for word-boundry-only substring matching
+*********************************************************/
+static int
+kv_create(keyval* k, char* word)
+{
+    if ((k->key.word = strdup(word)) == 0)
+        return error("cannot allocate word");	
+    return 0;
+}
+
+static void
+kv_scan(keyval* k, char* data, int size)
+{
+    if (k->value.found)
+        return;
+		
+    for ( ; size > 0; data++, size--)
+    {
+        if (k->key.found == 0)
+        {
+            scan_for_key(k, *data);
+            k->key.last_c = *data;
+        }
+        else if (k->value.found == 0)
+        {
+            scan_for_value(k, *data);
+        }
+        else
+            break;
+    }
+}
+
+/*
+  Alphanumeric characters plus @, underscore, and dot.
+*/
+static const char
+alphanum_plus[] =
+{
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	/*   0 -  15 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	/*  16 -  31 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 	/*  32 -  47 */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 	/*  48 -  63 */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 	/*  64 -  79 */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 	/*  80 -  95 */
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 	/*  96 - 111 */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 	/* 112 - 127 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	/* 128 - 143 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	/* 144 - 159 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	/* 160 - 175 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	/* 176 - 191 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	/* 192 - 207 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	/* 208 - 223 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	/* 224 - 239 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 	/* 240 - 255 */
+};
+
+#define acceptable(x)	(alphanum_plus[(unsigned char) (x)] == 1)
+
+static void
+scan_for_key(keyval* k, char c)
+{
+    if (k->key.index == 0)
+    {
+        /* No matching so far. If we're continuing a run of the same thing
+           (alphanumeric or non), or we've switched to non-alphanumeric,
+           just ignore the character and continue the non-matching run.
+        */
+        if (acceptable(c) == acceptable(k->key.last_c) || !acceptable(c))
+            return;
+		
+        /* Otherwise we have just changed from non-alphanumeric to
+           alphanumeric, so we fall through and start matching.
+        */
+    }
+ 
+    if (k->key.word[k->key.index] == 0)
+    {
+        /* we're in a matching run, and we've finished matching the keyword */
+        if (acceptable(c))
+        {
+            // if the next character alphanumeric, so the match is spoiled
+            k->key.index = 0;
+        }
+        else
+        {
+            // otherwise we decalre a match! 
+            k->key.found = 1;
+        }
+        return;
+    }
+    
+    if (c != k->key.word[k->key.index])
+    {
+        /* Now we're in a matching run, and this character doesn't match,
+           so switch to a non-matching run.
+        */
+        k->key.index = 0;
+        return;
+    }
+	
+    /* We've matched another character */
+    ++k->key.index;
+}
+
+#define is_quote(x) (x == '"' || x == '\'')
+
+/*
+  We've found the keyword, and now we're collecting the value string.
+  We'll first skip any non-aplhanumerics. Then we'll collect a quoted
+  string, or a string of alphanumerics.
+*/
+static void
+scan_for_value(keyval *k, char c)
+{
+    if (acceptable(c))
+    {
+        add_to_value(k, c); /* any alphanumeic is welcome */
+        return;
+    }
+		
+    if (k->value.quote) /* we're in a quote run */
+    {
+        if (k->value.quote == c) /* we've found the terminating quote */
+            k->value.found = 1;
+        else
+            add_to_value(k, c); /* collect the character, whatever it is */
+        return;
+    }
+	
+    if (is_quote(c) && k->value.index == 0)
+    {
+        k->value.quote = c; /* start a quote run */
+        return;
+    }
+	
+    if (k->value.index > 0) /* we've collected non-quoted characters, and ... */
+    {
+        k->value.found = 1; /* this non-aplhanumeric ends the collection */
+        return;
+    }
+	
+    /* we have an initial non-quote non-alphanumeric, which we'll ignore */
+}
+
+static void
+add_to_value(keyval* k, char c)
+{
+    if (k->value.index < VALUE_SIZE - 1)
+    {
+        k->value.buf[k->value.index++] = c;
+        k->value.buf[k->value.index] = 0;
+    }
+}
+
+static void
+kv_init(keyval* k)
+{
+    k->key.index = 0;
+    k->key.last_c = 0;
+    k->key.found = 0;
+	
+    k->value.buf[0] = 0;
+    k->value.index = 0;
+    k->value.quote = 0;
+    k->value.found = 0;
+}
+
+static void
+kv_free(keyval* k)
+{
+    if (k != 0)
+    {
+        free(k->key.word);
+        free(k);
+    }
+}
+
+static void
+kv_flush(keyval* k)
+{
+    if (k->key.found || k->key.word[k->key.index] == 0)
+        k->value.found = 1;
+}
+	
+
+#if 0
+/***** bitap version, for more general substring search *****/
+	/*
+	 Struct for keeping track of a bitap string search.
+	 We use chars instead of bits for simplicity, but
+	 bits would save space and run faster.
+	 */
+typedef struct bitap
+{
+   char* word;	/* pattern or word to be recognized */
+   int   size;	/* strlen(word) */
+   char* mark;	/* array of size + 1 markers */
+   }
+   bitap;
+
+
+typedef enum
+{
+    init = 0,
+    inter,
+    found
+
+} state;
+
+
+#define	VALUE_SIZE	256
+
+typedef struct keyval
+{
+    struct keyval* next;
+    void* context;
+
+    bitap	key;
+    char*	data;
+    int		size;
+    char	value[VALUE_SIZE + 1];
+    int		length;
+    char	quote;
+    state   keystate;
+    state   valstate;
+
+} keyval;
+
+
+static int		bitap_search(bitap* bp, char* stream, int length);
+static int		bitap_init(bitap* b, char* word);
+static int		bitap_refresh(bitap* b);
+static void	bitap_free(bitap* b);
+
+ static int
+kv_init(keyval* k)
+	{
+	k->value[0] = 0;
+	k->length = 0;
+	k->quote = 0;
+	k->keystate = init;
+	k->valstate = init;
+	return bitap_refresh(&k->key);
+	}
+
+	static void
+kv_free(keyval* k)
+	{
+	bitap_free(&k->key);
+	}
+
+	static void
+kv_flush(keyval* k)
+	{
+	if (k->keystate == found)
+		{
+		k->valstate = found;
+		k->value[k->length] = 0;
+		}
+	}
+
+	static void
+kv_scan(keyval* k, char* data, int size)
+	{
+	k->data = data;
+	k->size = size;
+	
+	if (k->keystate != found)
+		scan_for_key(k);
+	
+	if (k->keystate == found && k->valstate != found)
+		scan_for_value(k);
+	}
+
+	static void
+scan_for_key(keyval* k)
+	{
+	int n = 0;
+	
+	if (k->data == 0 || k->size == 0 || k->keystate == found)
+		return (void) error("bad initial conditions");
+	
+	n = bitap_search(&k->key, k->data, k->size);
+	
+	if (n > 0)
+		{
+		k->data += n;
+		k->size -= n;
+		
+		k->keystate = found;
+		}
+	}
+
+	static void
+scan_for_value(keyval *k)
+	{
+	if (k->data == 0 || k->size == 0 || k->valstate == found)
+		return (void) error("bad initial conditions");
+	
+	if (k->valstate == init)
+		{
+		/* skip white space and equals signs */
+		for ( ; k->size > 0 && (is_white(*k->data) || *k->data == '='); k->size--, k->data++)
+			;
+		
+		if (k->size == 0)
+			return; /* we haven't found the beginning of the value yet */
+		
+		k->valstate = inter;
+		
+		if (*k->data == '"' || *k->data == '\'')
+			{
+			k->quote = *k->data++;
+			k->size--;
+			}
+
+		if (k->size == 0)
+			return;
+		}
+	
+	/* at this point we're collecting the value */
+	if (k->quote != 0)
+		{
+		for ( ; k->size > 0 && *k->data != k->quote; k->size--, k->data++)
+			if (k->length < VALUE_SIZE)
+				k->value[k->length++] = *k->data;
+		
+		if (k->size > 0)
+			k->valstate = found;
+		}
+	
+	else
+		{
+		for ( ; k->size > 0 && !is_white(*k->data); k->size--, k->data++)
+			if (k->length < VALUE_SIZE)
+				k->value[k->length++] = *k->data;
+		
+		if (k->size > 0)
+			k->valstate = found;
+		}
+	}
+
+
+	static int
+is_white(char c)
+	{
+	return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
+	}
+
+
+/***** Bitap stuff *****/
+
+	static int
+bitap_search(bitap* bp, char* stream, int length)
+	{
+	int i, j; char* b = bp->mark; char* p = bp->word;
+	
+	for (j = 1; j <= length; j++, stream++)
+		{
+		for (i = bp->size; i > 0; i--)
+			b[i] = b[i - 1] && (p[i - 1] == *stream);
+		
+		if (b[bp->size] == 1)
+			return j;
+		}
+	
+	return 0;
+	}
+
+	static int
+bitap_init(bitap* b, char* word)
+	{
+	if (word)
+		{
+		if ((b->word = strdup(word)) == 0)
+			return error("cannot allocate word");
+		
+		if ((b->mark = calloc((b->size + 1), sizeof (char))) == 0)
+			return error("cannot allocate mark array");
+		
+		b->size = strlen(word);
+		}
+	
+	return bitap_refresh(b);
+	}
+
+	static int
+bitap_refresh(bitap* b)
+	{
+	int i;
+	
+	b->mark[0] = 1;
+
+	for (i = 1; i <= b->size; i++)
+		b->mark[i] = 0;
+	
+	return 0;
+	}
+
+	static void
+bitap_free(bitap* b)
+	{
+	free(b->word);
+	free(b->mark);
+	}
+
+/***** end of bitap version *****/
+#endif
+
+
+/*********************************************************
+
+	Utilities
+
+*********************************************************/
+	
+/*	 
+Copy the source to the destination, and return a pointer to the zero byte 
+at the end of the destination
+*/
+static char*
+string_copy(char* src, char* dst)
+{
+    while ((*dst++ = *src++) != 0)
+        ;	
+    return dst - 1;
+}
+	
+static char*
+getline(char* buf, int size, FILE* file)
+{
+    char* s;
+	
+    if (fgets(buf, size, file) == 0)
+        return 0;
+
+    s = buf + strlen(buf) - 1;
+	
+    if (*s == '\n' || *s == '\r')
+        *s = 0;
+	
+    return buf;
+}
+
+/*
+   Get the next token from the source line
+*/
+static char*
+get_token(char** line_ptr)
+{
+    char *s, *p;
+     
+    if (*line_ptr == 0)
+        return 0;
+	
+    s = skip_white(*line_ptr);
+	
+    if (s == 0 || *s == 0 || *s == '#')
+    {
+        *line_ptr = 0;
+        return 0;
+    }
+	
+    if (*s == '"' || *s == '\'')
+        p = skip_quote(s++);
+    else
+        p = skip_black(s);
+	
+    *line_ptr = *p? p + 1 : 0;
+    *p = 0;
+	
+    return s;
+}
+	
+/*
+  Move a pointer past any whitespace, or to the end of the string
+*/
+static char*
+skip_white(char* s)
+{
+   if (s != 0)
+   {
+       while (*s && (*s == ' ' || *s == '\t'))
+           s++;
+   }	
+   return s;
+}
+
+/*
+  Move a pointer past non-whitespace, or to the end of the string
+*/
+static char*
+skip_black(char* s)
+{
+   if (s != 0)
+   {
+       while (*s && !(*s == ' ' || *s == '\t'))
+           s++;
+   }
+   return s;
+}
+
+/*
+  Move a pointer past a quoted phrase, or to the end of the string
+*/
+static char*
+skip_quote(char* s)
+{
+   char quote;
+	
+   if (s == 0 || *s == 0)
+       return s;
+	
+   quote = *s++;
+	
+   while (*s && *s != quote)
+   {
+       s++;
+   }
+	
+   if (*s)
+   {
+       s++;
+   }
+   return s;
+}
+
+static int
+err_out(const char* func, char* fmt, ...)
+ {
+ va_list ap;
+	
+   fprintf(stderr, "%s error: ", func);
+	
+   va_start(ap, fmt);
+   vfprintf(stderr, fmt, ap);
+   va_end(ap);
+	
+   fprintf(stderr, "\n");
+   return -1;
+ }

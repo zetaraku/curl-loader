@@ -86,6 +86,8 @@ static int client_add_to_load (batch_context* bctx,
                                unsigned long now_time);
 static int fetching_decision (client_context* cctx, url_context* url);
 
+static void close_connections(client_context* client); /* GF  */
+
 
 /*****************************************************************************
  * Function name - alloc_init_timer_waiting_queue
@@ -349,6 +351,7 @@ int load_next_step (client_context* cctx,
   */
   if (rval_load == CSTATE_ERROR || rval_load == CSTATE_FINISHED_OK)
     {
+      close_connections(cctx); /* GF  */
       return rval_load;
     }
 
@@ -1250,7 +1253,27 @@ static int load_final_ok_state (client_context* cctx,
                                 unsigned long now_time, 
                                 unsigned long *wait_msec)
 {
-  (void) cctx; (void) wait_msec; (void) now_time; 
-
+  (void) cctx; (void) wait_msec; (void) now_time;
+  
   return CSTATE_FINISHED_OK;
+}
+
+
+/*
+  GF 
+  At this point this client is finished, and there are no more URLs to fetch.
+  But the client may still be holding a connection open, which may prevent other
+  clients in the batch from connecting to the server. If we wait until the end-of-batch
+  general cleanup to close connections, then these other clients may never connect, and
+  the only way the batch will end is to have all these waiting clients time out. So we
+  should close out this client's connections here. Setting client->handle = 0 will prevent
+  curl_easy_cleanup from being called again in the general cleanup.
+*/
+static void close_connections(client_context* client)
+{
+    if (client->handle)
+    {
+        curl_easy_cleanup(client->handle);
+        client->handle = 0;
+    }
 }

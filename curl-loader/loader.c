@@ -449,6 +449,7 @@ int setup_curl_handle (client_context*const cctx, url_context* url)
 ******************************************************************************/
 int setup_curl_handle_init (client_context*const cctx, url_context* url)
 {
+
   if (!cctx || !url)
     {
       return -1;
@@ -459,6 +460,23 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
 
   curl_easy_reset (handle);
 
+  /*
+   GF
+   Choose the next URL from an url set, or complete the url template from prior responses,
+   or prepare to scan for new response values.
+   This updates the url_str with the appropriate token values, and hands the url to curl
+   before any other clients (possibly in other threads) can intervene.
+   */
+  {
+      extern int update_url(CURL*, client_context*, url_context*);
+      
+      if (update_url (handle, cctx, url) < 0)
+      {
+          fprintf (stderr,"%s - error: update_url failed\n", __func__);
+	  return -1;
+      }
+  }
+  
   if (bctx->ipv6)
     curl_easy_setopt (handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
       
@@ -506,7 +524,10 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
         }
       else
         {
-          curl_easy_setopt (handle, CURLOPT_URL, url->url_str);
+          if (! is_template(url)) /* Handled in update_url () above. GF */
+          {
+              curl_easy_setopt (handle, CURLOPT_URL, url->url_str);
+          }
         }
     }
   else
@@ -588,8 +609,10 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
   curl_easy_setopt (handle, CURLOPT_PRIVATE, cctx);
 
   /* Without the buffer set, we do not get any errors in tracing function. */
-  curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer); 
-
+  curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer);
+  
+  
+  #if 0
   if (url->upload_file)
     {
       if (! url->upload_file_ptr)
@@ -626,14 +649,24 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
                            (curl_off_t) url->transfer_limit_rate);
         }
     }
+  #endif
+
+  /* GF  */
+  if (url->upload_file)
+  {
+      extern int init_upload_stream(client_context*, url_context*);
+      
+      if (init_upload_stream (cctx, url) < 0)
+          return -1;
+  }
   else
-    {
+  {
       if (url->transfer_limit_rate)
-        {
+      {
           curl_easy_setopt(handle, CURLOPT_MAX_RECV_SPEED_LARGE,
                            (curl_off_t) url->transfer_limit_rate);
-        }
-    }
+      }
+  }
 
   /* 
      Application (url) specific setups, like HTTP-specific, FTP-specific, etc. 
@@ -710,11 +743,11 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
           /* 
              Make POST, using post buffer, if requested. 
           */
-            if (url->upload_file && url->upload_file_ptr && (!cctx->post_data /* || !cctx->post_data[0]*/))
+            if (url->upload_file && url->upload_file_ptr && (!cctx->post_data || !cctx->post_data[0]))
             {
                 curl_easy_setopt(handle, CURLOPT_POST, 1);
             }
-            else if (cctx->post_data /*&& cctx->post_data[0]*/)
+            else if (cctx->post_data )
             {
               /* 
                  Sets POST as the HTTP request method using either:
@@ -1030,23 +1063,28 @@ static int init_client_formed_buffer (client_context* cctx,
         size_t record_index;
 
         if (url->form_records_random)
-          {
+        {
             struct timeval tval;
             
             if (gettimeofday (&tval, NULL) == -1)
-              {
+            {
                 fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", __func__, errno);
                 return -1;
-              }
+            }
             srand (tval.tv_sec * tval.tv_usec);
-
-            record_index = (size_t) (((double)url->form_records_num) * 
-                                                       (rand () / (RAND_MAX + 1.0)));
-           }
+            
+            record_index = (size_t) (((double)url->form_records_num) * (rand () / (RAND_MAX + 1.0)));
+        }
+        else if (url->form_records_cycle) /* Added by GF */
+        {
+            if (++url->form_records_index >= url->form_records_num)
+            	url->form_records_index = 0;
+            record_index = url->form_records_index;
+        }
         else
-          {
+        {
             record_index = cctx->client_index;
-          }
+        }
 
         const form_records_cdata*const fcd = &url->form_records_array[record_index];
         
@@ -1098,12 +1136,12 @@ static int client_tracing_function (CURL *handle,
   client_context* cctx = (client_context*) userp;
   char*url_target = NULL, *url_effective = NULL;
   url_context* url_ctx = &cctx->bctx->url_ctx_array[cctx->url_curr_index];
-
-
+  
+#if 0 /* GF moved to end of function */
   if (detailed_logging)
     {
       char detailed_buff[CURL_ERROR_SIZE +1];
-
+      
       if (size <= CURL_ERROR_SIZE)
         {
           memcpy (detailed_buff, data, size);
@@ -1112,6 +1150,7 @@ static int client_tracing_function (CURL *handle,
           fprintf(cctx->file_output, "%s\n", detailed_buff);
         }
     }
+#endif
 
   if (url_logging)
     {
@@ -1123,9 +1162,23 @@ static int client_tracing_function (CURL *handle,
 
   const char*const url = url_effective ? url_effective : url_target;
   const int url_print = (url_logging && url) ? 1 : 0;
-  const int url_diff = (url_print && url_effective && url_target) ? 
+
+  /* 
+     if we're using an URL_TEMPLATE, the url_str may well have changed, so don't log - GF 
+  */
+  const int url_diff = (url_print && url_effective && url_target && ! is_template (url_ctx)) ? 
     strcmp(url_effective, url_target) : 0;
   long response_status = 0;
+
+
+  /* GF */
+  {
+      extern int scan_response(curl_infotype, char*, size_t, client_context*);
+      
+      /* scan the server response for RESPONSE_TOKENS */
+      scan_response(type, (char*) data, size, cctx);
+  }
+  
 
   switch (type)
     {
@@ -1194,13 +1247,13 @@ static int client_tracing_function (CURL *handle,
       {
         long response_module = 0;
         
-        if (verbose_logging)
-          fprintf(cctx->file_output, "%ld %s <= Recv header: eff-url: %s, url: %s\n", 
-                  cctx->cycle_num, cctx->client_name, url_print ? url : "",
-                  url_diff ? url_target : "");
-        
         curl_easy_getinfo (handle, CURLINFO_RESPONSE_CODE, &response_status);
 
+        if (verbose_logging)
+          fprintf(cctx->file_output, "%ld %s <= Recv header:%ld eff-url: %s, url: %s\n", 
+                  cctx->cycle_num, cctx->client_name, response_status, url_print ? url : "",
+                  url_diff ? url_target : "");
+        
         response_module = response_status / (long)100;
         
         switch (response_module)
@@ -1329,7 +1382,7 @@ static int client_tracing_function (CURL *handle,
 
       break;
 
-    case CURLINFO_DATA_IN:
+    case CURLINFO_DATA_IN:     
       if (verbose_logging) 
           fprintf(cctx->file_output, "%ld %s <= Recv data: eff-url: %s, url: %s\n", 
                   cctx->cycle_num, cctx->client_name, 
@@ -1353,6 +1406,22 @@ static int client_tracing_function (CURL *handle,
       fprintf (stderr, "default OUT - \n");
     }
 
+  /* 
+   GF
+   Show the data after the header label
+   */
+  if (detailed_logging)
+  {
+      char detailed_buff[CURL_ERROR_SIZE +1]; size_t nbytes;
+      
+      nbytes = (size <= CURL_ERROR_SIZE)? size : CURL_ERROR_SIZE;
+      memcpy (detailed_buff, data, nbytes);
+      
+      detailed_buff[nbytes] = '\0';
+      fprintf(cctx->file_output, "%s%s\n\n", detailed_buff, nbytes < size? "..." : "");
+  }
+
+  
   // fflush (cctx->file_output); // Don't do it
   return 0;
 }
@@ -1500,6 +1569,10 @@ static void free_batch_data_allocations (batch_context* bctx)
 
 static void free_url (url_context* url, int clients_max)
 {
+  /* GF */
+  extern void free_url_extensions(url_context* url);
+  free_url_extensions(url);
+  
   /* Free url string */
   if (url->url_str)
     {

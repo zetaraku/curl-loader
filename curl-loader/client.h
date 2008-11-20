@@ -196,6 +196,14 @@ typedef struct client_context
      Pointer to socket data used by hyper-mode
    */
   void * ext_data;
+  
+  
+   /*
+      GF
+      The previous curl_infotype seen by this client in a server response.
+      Used by scan_response() for url-set
+    */
+  curl_infotype previous_type;
 
 
 } client_context;
