@@ -108,7 +108,7 @@ static int urls_num_parser (batch_context*const bctx, char*const value);
 /*
  * URL section tag parsers. 
 */
-extern int url_parser (batch_context*const bctx, char*const value); /* changed static to extern GF */
+static int url_parser (batch_context*const bctx, char*const value);
 static int url_short_name_parser (batch_context*const bctx, char*const value);
 static int url_use_current_parser (batch_context*const bctx, char*const value);
 static int url_dont_cycle_parser (batch_context*const bctx, char*const value);
@@ -148,14 +148,12 @@ static int fetch_probability_once_parser (batch_context*const bctx, char*const v
 static int form_records_random_parser (batch_context*const bctx, char*const value);
 static int form_records_file_max_num_parser(batch_context*const bctx, char*const value);
 
-static fparser find_tag_parser (const char* tag);
-
- /* GF url-set parsers.  */
-extern int url_template_parser(batch_context* const bctx, char* const string);
-extern int url_token_parser(batch_context* const bctx, char* const word);
-extern int url_token_file_parser(batch_context* const bctx, char* const fname);
-extern int response_token_parser(batch_context* const bctx, char* const word);
-extern int form_records_cycle_parser(batch_context* const bctx, char* const value);
+/* GF url-set parsers.  */
+static int url_template_parser(batch_context* const bctx, char* const value);
+static int url_token_parser(batch_context* const bctx, char* const value);
+static int url_token_file_parser(batch_context* const bctx, char* const value);
+static int response_token_parser(batch_context* const bctx, char* const value);
+static int form_records_cycle_parser(batch_context* const bctx, char* const value);
 
 
 /*
@@ -221,7 +219,7 @@ static const tag_parser_pair tp_map [] =
     {"FORM_RECORDS_RANDOM", form_records_random_parser},
     {"FORM_RECORDS_FILE_MAX_NUM", form_records_file_max_num_parser},
     
-    /* GF These parsers are in the file url_set.c */
+    /* GF */
     {"URL_TEMPLATE", url_template_parser},
     {"URL_TOKEN", url_token_parser},
     {"URL_TOKEN_FILE", url_token_file_parser},
@@ -263,6 +261,8 @@ static int parse_timer_range (char* input,
                               size_t input_len, 
                               long* first_val, 
                               long* second_val);
+
+static int upload_file_streams_alloc(batch_context* batch);
 
 /****************************************************************************************
 * Function name - find_tag_parser
@@ -349,7 +349,7 @@ static int add_param_to_batch (char*const str_buff,
 
   /* Removing LWS, TWS and comments from the value */
   char* value = equal + 1;
-  if (pre_parser (&value, (unsigned int *)&value_len) == -1)
+  if (pre_parser (&value, (size_t *)&value_len) == -1)
   {
       fprintf (stderr,"%s - error: pre_parser () failed for tag %s and value \"%s\".\n",
                __func__, str_buff, equal + 1);
@@ -612,54 +612,54 @@ static int parse_timer_range (char* input,
   sep = strchr (input, separator);
 
   if (sep)
-    {
+  {
       *sep = '\0';
-
+      
       if ((sep - input < (int)input_len) && (*(sep + 1)))
-        {
+      {
           second = sep + 1;
-        }
+      }
       else
-        {
+      {
           *sep = separator;
           fprintf (stderr, "%s - error: wrong input %s. "
                    "Separator %c exists, but no value after the separator.\n", 
                    __func__, input, separator);
           return -1 ;
-        }
-    }
-
+      }
+  }
+  
   *first_val = atol (input);
 
   if (*first_val < 0)
-    {
+  {
       fprintf (stderr, "%s - error: wrong input %s. "
                "Only non-negative values are allowed.\n", 
                __func__, input);
       return -1;
-    }
-
+  }
+  
   if (sep)
-    {
+  {
       *second_val = atol (second);
-
+      
       if (sep && *second_val < 0)
-        {
+      {
           fprintf (stderr, "%s - error: wrong input %s. "
                    "Only non-negative values are allowed.\n", 
                    __func__, second);
           return -1;
-        }
+      }
       
       if (sep && *first_val >= *second_val)
-        {
+      {
           fprintf (stderr, "%s - error: wrong input. "
                    "First value (%ld) should be less then the second (%ld).\n"
                    "Switch the order.\n", __func__, *first_val, *second_val);
           return -1 ;
-        }
-    }
-
+      }
+  }
+  
   return 0;
 }
 
@@ -915,11 +915,7 @@ static int urls_num_parser (batch_context*const bctx, char*const value)
     return 0;
 }
 
-/*
-** URL section tag parsers.
-   Changed static to extern, GF
-*/
-extern int url_parser (batch_context*const bctx, char*const value)
+static int url_parser (batch_context*const bctx, char*const value)
 {
     size_t url_length = 0;
 
@@ -1375,12 +1371,8 @@ static int upload_file_parser  (batch_context*const bctx, char*const value)
       bctx->url_ctx_array[bctx->url_index].upload_file_size = statbuf.st_size;
       
       /* GF  */
-      {
-          extern int allocate_upload_streams(batch_context*);
-          
-          if (allocate_upload_streams(bctx) < 0)
-              return -1;
-      }
+      if (upload_file_streams_alloc(bctx) < 0)
+          return -1;
     }
     return 0;
 }
@@ -3061,15 +3053,8 @@ static int print_correct_form_usagetype (form_usagetype ftype, char* value)
 
 
 
-extern int		url_template_parser(batch_context* const batch, char* const string);
-extern int		url_token_parser(batch_context* const batch, char* const word);
-extern int		url_token_file_parser(batch_context* const batch, char* const fname);
-extern int		response_token_parser(batch_context* const batch, char* const word);
-extern int		form_records_cycle_parser(batch_context* const batch, char* const value);
-extern int		allocate_upload_streams(batch_context* batch);
-extern int		init_upload_stream(client_context* client, url_context* url);
 
-extern int		update_url(CURL* handle, client_context* client, url_context* url);
+int update_url_from_set_or_template(CURL* handle, client_context* client, url_context* url);
 extern int		scan_response(curl_infotype type, char* data, size_t size, client_context* client);
 extern void		free_url_extensions(url_context* url);
 
@@ -3115,8 +3100,8 @@ static int		err_out(const char* func, char* fmt, ...);
   Called from setup_curl_handle_init in loader.c to construct the next url
   from a template, or retrieve the next url from a preconstructed set.
 */
-extern int
-update_url(CURL* handle, client_context* client, url_context* url)
+int
+update_url_from_set_or_template(CURL* handle, client_context* client, url_context* url)
 {
     int result;
 	
@@ -3395,8 +3380,7 @@ url_token_parser (batch_context* const batch, char* const word)
 /*
   Called from client_tracing_function in loader.c
 */
-extern int
-scan_response(curl_infotype type, char* data, size_t size, client_context* client)
+int scan_response(curl_infotype type, char* data, size_t size, client_context* client)
 {
     url_context* url = & client->bctx->url_ctx_array[client->url_curr_index];
 	
@@ -3630,8 +3614,7 @@ form_records_cycle_parser(batch_context* const batch, char* const value)
 /*
   Called from upload_file_parser to allocate per-client file upload streams
 */
-extern int
-allocate_upload_streams(batch_context* batch)
+static int upload_file_streams_alloc(batch_context* batch)
 {
     url_context* url = &batch->url_ctx_array[batch->url_index];
 	
@@ -3641,13 +3624,11 @@ allocate_upload_streams(batch_context* batch)
     return 0;
 }
 
-
 /*
-  Called from setup_curl_handle_init to initialize a per-client upload stream,
+  Called from setup_curl_handle_init to initialize a per-client upload file stream,
   and re-initialize the stream for a cycling url.
 */
-extern int
-init_upload_stream(client_context* client, url_context* url)
+int upload_file_stream_init (client_context* client, url_context* url)
 {
     off_t* offset_ptr = & url->upload_offsets[client->client_index];
     CURL* handle = client->handle;
@@ -3720,8 +3701,7 @@ read_callback(void *ptr, size_t size, size_t nmemb, void* user_supplied)
   Free url_set and url_response stuff
   Called from free_url in loader.c
 */
-extern void
-free_url_extensions(url_context* url)
+void free_url_extensions(url_context* url)
 {
     free_url_set(&url->set);
     free_url_template(&url->template);
@@ -4158,8 +4138,7 @@ typedef struct bitap
    char* word;	/* pattern or word to be recognized */
    int   size;	/* strlen(word) */
    char* mark;	/* array of size + 1 markers */
-   }
-   bitap;
+} bitap;
 
 
 typedef enum
@@ -4195,120 +4174,113 @@ static int		bitap_init(bitap* b, char* word);
 static int		bitap_refresh(bitap* b);
 static void	bitap_free(bitap* b);
 
- static int
-kv_init(keyval* k)
-	{
-	k->value[0] = 0;
-	k->length = 0;
-	k->quote = 0;
-	k->keystate = init;
-	k->valstate = init;
-	return bitap_refresh(&k->key);
-	}
+static int kv_init (keyval* k)
+{
+   k->value[0] = 0;
+   k->length = 0;
+   k->quote = 0;
+   k->keystate = init;
+   k->valstate = init;
+   return bitap_refresh(&k->key);
+}
 
-	static void
-kv_free(keyval* k)
-	{
-	bitap_free(&k->key);
-	}
+static void kv_free (keyval* k)
+{
+   bitap_free(&k->key);
+}
 
-	static void
-kv_flush(keyval* k)
-	{
-	if (k->keystate == found)
-		{
-		k->valstate = found;
-		k->value[k->length] = 0;
-		}
-	}
+static void kv_flush (keyval* k)
+{
+   if (k->keystate == found)
+    {
+        k->valstate = found;
+        k->value[k->length] = 0;
+    }
+}
 
-	static void
-kv_scan(keyval* k, char* data, int size)
-	{
-	k->data = data;
-	k->size = size;
+static void kv_scan (keyval* k, char* data, int size)
+{
+    k->data = data;
+    k->size = size;
 	
-	if (k->keystate != found)
-		scan_for_key(k);
+    if (k->keystate != found)
+	   scan_for_key(k);
 	
-	if (k->keystate == found && k->valstate != found)
-		scan_for_value(k);
-	}
+    if (k->keystate == found && k->valstate != found)
+        scan_for_value(k);
+}
 
-	static void
-scan_for_key(keyval* k)
-	{
-	int n = 0;
+static void scan_for_key(keyval* k)
+{
+    int n = 0;
 	
-	if (k->data == 0 || k->size == 0 || k->keystate == found)
-		return (void) error("bad initial conditions");
+    if (k->data == 0 || k->size == 0 || k->keystate == found)
+        return (void) error("bad initial conditions");
 	
-	n = bitap_search(&k->key, k->data, k->size);
+    n = bitap_search(&k->key, k->data, k->size);
 	
-	if (n > 0)
-		{
-		k->data += n;
-		k->size -= n;
+    if (n > 0)
+    {
+	   k->data += n;
+	   k->size -= n;
 		
-		k->keystate = found;
-		}
-	}
+	   k->keystate = found;
+    }
+}
 
-	static void
-scan_for_value(keyval *k)
-	{
-	if (k->data == 0 || k->size == 0 || k->valstate == found)
-		return (void) error("bad initial conditions");
+static void scan_for_value(keyval *k)
+{
+   if (k->data == 0 || k->size == 0 || k->valstate == found)
+       return (void) error("bad initial conditions");
 	
-	if (k->valstate == init)
-		{
-		/* skip white space and equals signs */
-		for ( ; k->size > 0 && (is_white(*k->data) || *k->data == '='); k->size--, k->data++)
-			;
+   if (k->valstate == init)
+   {
+	   /* skip white space and equals signs */
+       for ( ; k->size > 0 && (is_white(*k->data) || *k->data == '='); k->size--, k->data++)
+		   ;
 		
-		if (k->size == 0)
-			return; /* we haven't found the beginning of the value yet */
+       if (k->size == 0)
+           return; /* we haven't found the beginning of the value yet */
 		
-		k->valstate = inter;
+       k->valstate = inter;
 		
-		if (*k->data == '"' || *k->data == '\'')
-			{
-			k->quote = *k->data++;
-			k->size--;
-			}
+       if (*k->data == '"' || *k->data == '\'')
+        {
+            k->quote = *k->data++;
+            k->size--;
+        }
 
-		if (k->size == 0)
-			return;
-		}
+       if (k->size == 0)
+           return;
+   }
 	
-	/* at this point we're collecting the value */
-	if (k->quote != 0)
-		{
+   /* at this point we're collecting the value */
+   if (k->quote != 0)
+    {
 		for ( ; k->size > 0 && *k->data != k->quote; k->size--, k->data++)
 			if (k->length < VALUE_SIZE)
 				k->value[k->length++] = *k->data;
 		
 		if (k->size > 0)
 			k->valstate = found;
-		}
-	
-	else
-		{
+    }	
+   else
+    {
 		for ( ; k->size > 0 && !is_white(*k->data); k->size--, k->data++)
 			if (k->length < VALUE_SIZE)
 				k->value[k->length++] = *k->data;
 		
 		if (k->size > 0)
 			k->valstate = found;
-		}
-	}
+    }
+}
 
 
-	static int
+static int
 is_white(char c)
-	{
+{
 	return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
-	}
+}
 
 
 /***** Bitap stuff *****/
@@ -4381,16 +4353,14 @@ bitap_free(bitap* b)
 Copy the source to the destination, and return a pointer to the zero byte 
 at the end of the destination
 */
-static char*
-string_copy(char* src, char* dst)
+static char* string_copy(char* src, char* dst)
 {
     while ((*dst++ = *src++) != 0)
         ;	
     return dst - 1;
 }
 	
-static char*
-getline(char* buf, int size, FILE* file)
+static char* getline(char* buf, int size, FILE* file)
 {
     char* s;
 	
@@ -4408,8 +4378,7 @@ getline(char* buf, int size, FILE* file)
 /*
    Get the next token from the source line
 */
-static char*
-get_token(char** line_ptr)
+static char* get_token (char** line_ptr)
 {
     char *s, *p;
      
@@ -4438,8 +4407,7 @@ get_token(char** line_ptr)
 /*
   Move a pointer past any whitespace, or to the end of the string
 */
-static char*
-skip_white(char* s)
+static char* skip_white (char* s)
 {
    if (s != 0)
    {
@@ -4452,8 +4420,7 @@ skip_white(char* s)
 /*
   Move a pointer past non-whitespace, or to the end of the string
 */
-static char*
-skip_black(char* s)
+static char* skip_black (char* s)
 {
    if (s != 0)
    {
@@ -4466,8 +4433,7 @@ skip_black(char* s)
 /*
   Move a pointer past a quoted phrase, or to the end of the string
 */
-static char*
-skip_quote(char* s)
+static char* skip_quote (char* s)
 {
    char quote;
 	
@@ -4488,17 +4454,14 @@ skip_quote(char* s)
    return s;
 }
 
-static int
-err_out(const char* func, char* fmt, ...)
+static int err_out (const char* func, char* fmt, ...)
  {
- va_list ap;
-	
-   fprintf(stderr, "%s error: ", func);
-	
-   va_start(ap, fmt);
-   vfprintf(stderr, fmt, ap);
-   va_end(ap);
-	
-   fprintf(stderr, "\n");
-   return -1;
+     va_list ap;
+     
+     fprintf(stderr, "%s error: ", func);
+     va_start(ap, fmt);
+     vfprintf(stderr, fmt, ap);
+     va_end(ap); 
+     fprintf(stderr, "\n");
+     return -1;
  }

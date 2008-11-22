@@ -25,7 +25,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
-
+#include <curl/curl.h>
 #include "timer_queue.h"
 
 #define BATCHES_MAX_NUM 64
@@ -305,6 +305,13 @@ int user_activity_hyper (struct client_context*const cctx_array);
 * Return Code/Output - On Success - 0, on Error -1
 ****************************************************************************************/
 int user_activity_smooth (struct client_context*const cctx_array);
+
+
+
+int update_url_from_set_or_template (CURL* handle, struct client_context* client, struct url_context* url);
+int upload_file_stream_init (struct client_context* client, struct url_context* url);
+int scan_response (curl_infotype type, char* data, size_t size, struct client_context* client);
+void free_url_extensions (struct url_context* url);
 
 extern int stop_loading;
 

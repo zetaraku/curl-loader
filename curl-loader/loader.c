@@ -461,20 +461,15 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
   curl_easy_reset (handle);
 
   /*
-   GF
-   Choose the next URL from an url set, or complete the url template from prior responses,
-   or prepare to scan for new response values.
+   Choose the next URL from an url set, or complete the url template from 
+   prior responses, or prepare to scan for new response values.
    This updates the url_str with the appropriate token values, and hands the url to curl
    before any other clients (possibly in other threads) can intervene.
    */
+  if (update_url_from_set_or_template (handle, cctx, url) < 0)
   {
-      extern int update_url(CURL*, client_context*, url_context*);
-      
-      if (update_url (handle, cctx, url) < 0)
-      {
-          fprintf (stderr,"%s - error: update_url failed\n", __func__);
+      fprintf (stderr,"%s - error: update_url_from_set_or_template failed\n", __func__);
 	  return -1;
-      }
   }
   
   if (bctx->ipv6)
@@ -524,7 +519,7 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
         }
       else
         {
-          if (! is_template(url)) /* Handled in update_url () above. GF */
+          if (! is_template(url)) /* Handled in update_url_from_set_or_template () above. GF */
           {
               curl_easy_setopt (handle, CURLOPT_URL, url->url_str);
           }
@@ -654,9 +649,7 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
   /* GF  */
   if (url->upload_file)
   {
-      extern int init_upload_stream(client_context*, url_context*);
-      
-      if (init_upload_stream (cctx, url) < 0)
+      if (upload_file_stream_init (cctx, url) < 0)
           return -1;
   }
   else
@@ -1170,15 +1163,11 @@ static int client_tracing_function (CURL *handle,
     strcmp(url_effective, url_target) : 0;
   long response_status = 0;
 
-
   /* GF */
-  {
-      extern int scan_response(curl_infotype, char*, size_t, client_context*);
-      
-      /* scan the server response for RESPONSE_TOKENS */
-      scan_response(type, (char*) data, size, cctx);
-  }
-  
+  /* 
+     scan the server response for RESPONSE_TOKENS 
+   */
+  scan_response(type, (char*) data, size, cctx);
 
   switch (type)
     {
@@ -1570,7 +1559,6 @@ static void free_batch_data_allocations (batch_context* bctx)
 static void free_url (url_context* url, int clients_max)
 {
   /* GF */
-  extern void free_url_extensions(url_context* url);
   free_url_extensions(url);
   
   /* Free url string */
