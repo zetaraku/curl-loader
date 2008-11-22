@@ -351,7 +351,12 @@ int load_next_step (client_context* cctx,
   */
   if (rval_load == CSTATE_ERROR || rval_load == CSTATE_FINISHED_OK)
     {
-      close_connections(cctx); /* GF  */
+        close_connections (cctx); // cleanup of each handle is forcing multi-handle to decrease the num of connections
+
+      if (rval_load == CSTATE_ERROR)
+      {
+          curl_easy_init (cctx->handle);
+      }
       return rval_load;
     }
 
