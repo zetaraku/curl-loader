@@ -69,7 +69,9 @@ bases;
 - URL fetching probability; 
 - TCP connections reuse or re-establishment on a per url bases; 
 - Unlimited configurable number of URLs. Mixing of HTTP, HTTPS, FTP and FTPS 
-urls in a single batch (test plan) configuration; 
+urls in a single batch (test plan) configuration;
+- Thousands URLs configured from a template-URL and static tokens loaded from file;
+- URLs configured from a template-URL and dynamic tokens fetched from responses; 
 - Connection establishment timers for each URL; 
 - URL completion timers monitoring and enforcement for each client; 
 - Inter/after URL "sleeping" timers, including random timers taken from an 
@@ -94,7 +96,8 @@ curl-loader is licensed under GPL2.
 AUTHORS
 
 The tool is written and supported by Robert Iakobashvili and Michael Moser both 
-from Israel. 
+from Israel, which are the copyright-holders for the project.
+We are thankful to the great people, specified in THANKS file for their contributions.
 
 
 SUPPORT
@@ -461,8 +464,10 @@ URLS_NUM is the number of urls to be used in URLs Section.
 
 Tags of the sections URLs:
 
-URL - is the first tag of each url-subsection and marks beginning of a new url. 
-The tag should be either a valid url or an empty string, which is allowed only 
+URL - can be the first tag of each url-subsection and marks beginning of a new url.
+Yet another option to start a new url (set of urls) is the tag URL_TEMPLATE.
+Note, that the tags URL and URL_TEMPLATE are mutually exclusive.
+URL tag should be either a valid url or an empty string, which is allowed only 
 when URL_USE_CURRENT=1 also presents. "Current url" is used for example, when 
 POST-ing at the url, resulting from the previous GET. HTTP redirections are 
 handled internally and there is no need to use "current url" approach for that 
@@ -661,6 +666,67 @@ by POST);
 - POST only;
 - GET only.
 The loader also supports multipart form data POST-ing as in RFC1867.
+
+
+
+URL_TEMPLATE  Yet another option to start a new url (set of urls) is the tag URL.
+Note, that the tags URL and URL_TEMPLATE are mutually exclusive. 
+An example of URL_TEMPLATE usage is: 
+URL_TEMPLATE= http://www.foo.com/user/%s/group/%s.
+URL_TEMPLATE allows an url to vary from client to client or from cycle to cycle. 
+As in FORM_STRINGs, the %s markers will be replaced with appropriate strings 
+before the URL is fetched. The replacement values can be obtained either 
+statically from file (using URL_TOKEN_FILE) or fetched dynamically by fetching token 
+from HTTP-responses (using RESPONSE_TOKENs and URL_TOKENs).
+
+
+RESPONSE_TOKEN  (Example: RESPONSE_TOKEN = user_id) 
+There can be any number of RESPONSE_TOKENs in an URL or URL_TEMPLATE subsection. 
+When curl-loader fetches the url, it will scan the server's response for all the response tokens. 
+If found, curl-loader will save the "value" of each response token for use in constructing 
+later URL_TEMPLATEs (see URL_TOKEN below). For instance, if we specify 
+RESPONSE_TOKEN = user_id, and if the server response contains ... user_id=1234 ..., 
+then we will save the name-value pair "user_id, 1234". Different clients may well receive different 
+responses and save different values, thus constructing different urls from later templates.
+Note, that order of the RESPONSE_TOKENs in the url subsection is immaterial. Matches and values 
+are collected across response-packet boundaries. Once a value is collected from a particular 
+server response, the scanning for that token stops, and subsequent occurrences of that token in 
+the response will not trigger a new value collection. Finally, a RESPONSE_TOKEN with the same 
+name as one in a previous url will replace any previously collected value for that name.
+See, the usage example in ./conf-examples/url-template-resp-dynamic.conf
+
+
+URL_TOKEN Such tags may occur in an URL_TEMPLATE subsection. Each URL_TOKEN 
+is taken in order and looked up in this client's bucket of saved RESPONSE_TOKENs. 
+The value obtained is substituted for the next %s marker in the URL_TEMPLATE. 
+Thus the order of the URL_TOKENs matters. There must be the same number of 
+URL_TOKENs as %s makers, and each URL_TOKEN must have a corresponding saved 
+RESPONSE_TOKEN value, or an error results. Note that not all these values need 
+come from the same prior url the only requirement is that the needed value has 
+been obtained from some prior server response by this client. URL_TOKEN is mutually 
+exclusive with URL_TOKEN_FILE tag, where tokens are loaded from file statically.
+See, the usage example in ./conf-examples/url-template-resp-dynamic.conf
+
+
+URL_TOKEN_FILE - This tag may occur in an URL_TEMPLATE subsection, 
+and is mutually exclusive with URL_TOKEN tag. It specifies a file from which the 
+substitution tokens for the URL_TEMPLATE will be taken. The pathname must be 
+absolute or relative to the curl-loader directory.
+The syntax for token files is a bit more permissive than the rules for scanning 
+server responses.
+(1) Each remaining line is parsed to obtain the tokens for constructing one url, so there 
+     must be as many tokens on each line as there are %s markers in the URL_TEMPLATE. 
+(2) Tokens are runs of non-whitespace characters, or quoted strings, separated by whitespace. 
+(3) Attention! If there is an extra token remaining in the line, it is saved as a cookie 
+     to be sent when the url is fetched.
+As the load runs, the pre-constructed urls are taken on demand, and if the 
+demand is greater than the supply, we start over from the first url. Thus, if the 
+number of urls is equal to the number of clients, each client will get the same 
+unique url for each cycle.
+See, the usage example in ./conf-examples/url-template-fr-file.conf
+
+
+
 
 The loader supports HTTP Web Authentication and Proxy Authentication. The 
 supported authentication methods are Basic, Digest (RFC2617) and NTLM. When 
