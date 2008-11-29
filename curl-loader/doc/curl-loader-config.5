@@ -548,7 +548,102 @@ but some larger number, required by
 .B FORM_RECORDS_RANDOM
 This is a tag for the URL section.
 
+.TP
+.B URL_TEMPLATE
+Yet another option to start a new url section (set of urls).
+Note, that the tags the 
+.B URL 
+and URL_TEMPLATE are mutually exclusive. 
+An example of URL_TEMPLATE usage is: URL_TEMPLATE= http://www.foo.com/user/%s/group/%s.
+.br
+URL_TEMPLATE allows an url to vary from client to client or from cycle to cycle. 
+As in 
+.B FORM_STRING
+, the %s markers will be replaced with appropriate strings 
+before the URL is fetched. The replacement values can be obtained either 
+statically from file using 
+.B URL_TOKEN_FILE
+or fetched dynamically by fetching token 
+from HTTP-responses using both
+.B RESPONSE_TOKEN
+and 
+.B URL_TOKEN
+tags.
 
+.TP
+.B RESPONSE_TOKEN
+There can be any number of 
+.B RESPONSE_TOKENs in an 
+.B URL 
+or 
+.N URL_TEMPLATE 
+subsections. 
+When curl-loader fetches the url, it will scan the server's response for all the response tokens. 
+If found, curl-loader will save the "value" of each response token for use in constructing later 
+.B URL_TEMPLATE 
+by using
+.B URL_TOKEN
+tag. For instance, if we specify RESPONSE_TOKEN = user_id, and if the server response contains user_id=1234, 
+then we will save the name-value pair "user_id, 1234". Different clients may well receive different 
+responses and save different values, thus constructing different urls from later templates.
+Note, that order of the RESPONSE_TOKENs in the url subsection is immaterial. Matches and values 
+are collected across response-packet boundaries. Once a value is collected from a particular 
+server response, the scanning for that token stops, and subsequent occurrences of that token in 
+the response will not trigger a new value collection. Finally, a RESPONSE_TOKEN with the same 
+name as one in a previous url will replace any previously collected value for that name.
+See, the usage example in ./conf-examples/url-template-resp-dynamic.conf
+
+.TP
+.B URL_TOKEN
+Such tags may occur in an 
+.B URL_TEMPLATE 
+subsection. Each URL_TOKEN 
+is taken in order and looked up in this client's bucket of saved 
+.B RESPONSE_TOKENs. 
+The value obtained is substituted for the next %s marker in the
+.B URL_TEMPLATE. 
+Thus, the order of the URL_TOKENs matters. There must be the same number of 
+URL_TOKENs as %s makers, and each URL_TOKEN must have a corresponding saved 
+.B RESPONSE_TOKEN 
+value, or an error results. Note that not all these values need 
+come from the same prior url the only requirement is that the needed value has 
+been obtained from some prior server response by this client. URL_TOKEN is mutually 
+exclusive with 
+.B URL_TOKEN_FILE
+tag, where tokens are loaded from file statically.
+.br
+See, the usage example in ./conf-examples/url-template-resp-dynamic.conf
+
+.TP
+.B URL_TOKEN_FILE
+This tag may occur in an 
+.B URL_TEMPLATE
+subsection, 
+and is mutually exclusive with URL_TOKEN tag. It specifies a file from which the 
+substitution tokens for the 
+.B URL_TEMPLATE
+will be taken. The pathname must be 
+absolute or relative to the curl-loader directory.
+The syntax for token files is a bit more permissive than the rules for scanning 
+server responses.
+.br
+.br
+(1) Each remaining line is parsed to obtain the tokens for constructing one url, so there 
+     must be as many tokens on each line as there are %s markers in the 
+.B URL_TEMPLATE. 
+.br
+(2) Tokens are runs of non-whitespace characters, or quoted strings, separated by whitespace.
+.br
+(3) Attention! If there is an extra token remaining in the line, it is saved as a cookie 
+     to be sent when the url is fetched.
+.br
+.br
+As the load runs, the pre-constructed urls are taken on demand, and if the 
+demand is greater than the supply, we start over from the first url. Thus, if the 
+number of urls is equal to the number of clients, each client will get the same 
+unique url for each cycle.
+.br
+See, the usage example in ./conf-examples/url-template-fr-file.conf
 
 
 .SH AUTHORS

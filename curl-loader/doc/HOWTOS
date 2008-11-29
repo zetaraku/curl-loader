@@ -1,0 +1,29 @@
+1. HOWTO POST a text file, e.g. an XML-file.
+
+Since the configuration with POST-ing URL and UPLOAD_FILE
+is somehow buggy in libcurl and issues PUT instead of POST,
+let's use the workaround as recommended by Alex.
+
+Please, try the following:
+
+1. Use the latest version of libcurl
+2. Use FORM_USAGE_TYPE= AS_IS
+3. FORM_STRING should be a single line, containing your XML file content 
+without any newline symbols, because it is read as a single line by fgets.
+The length is limited at 8K, by you can increase it at parse_conf.c by increasing the buffer size here:
+char fgets_buff[1024*8];
+
+4. An example configuration is below:
+
+URL=http://192.168.2.56/nomadesk/index.phpTask?Navigator::Task=ReceiveMessage
+URL_SHORT_NAME="Poll"
+TIMER_URL_COMPLETION = 5000
+
+TIMER_AFTER_URL_SLEEP = 5000
+REQUEST_TYPE=POST
+FORM_USAGE_TYPE= AS_IS
+FORM_STRING=<Poll><Accounts><Account><AccountName>nmua000014</AccountName><Password>aventiv23</Password></Account></Accounts><LocationID>bf42425f-fcef-4ea3-aaab-199120138cb3</LocationID><ClientVersion>2.6.0.13</ClientVersion><CreationTstamp>10/28/2008 7:00:30 AM</CreationTstamp></Poll>
+
+5.  A full example is here:
+
+conf-examples/post-xml-file.conf
