@@ -1,4 +1,5 @@
-
+version 0.46, unstable, 
+	
 * Fixed a POST-binary bug, where an extra check was preventing direct
    posting.
    Thanks to Alex <alex2048@gmail.com> and Gary Fitts <gary@intouchgroup.com>
@@ -14,8 +15,11 @@
   - fetching of response tokens from the bodies of responses and usage them in template URL;
   - usage of statically defined in file tokens for template URL;
   - fixing of several bugs in that area.
-  We need to polish the code, bring coding conventions and comments,
-  README and man pages.
+
+* UPLOAD_FILE bug fixed, where the same file-pointer for uploading was shared among mulitple
+   clients. Thenks to  Gary Fitts <gary@intouchgroup.com>.
+	
+*  Added for "Template URL" README and man pages.
 
 
 	
