@@ -86,7 +86,6 @@ static int client_add_to_load (batch_context* bctx,
                                unsigned long now_time);
 static int fetching_decision (client_context* cctx, url_context* url);
 
-static void close_connections(client_context* client); /* GF  */
 
 
 /*****************************************************************************
@@ -98,7 +97,7 @@ static void close_connections(client_context* client); /* GF  */
  * Input/Output   **wq - waiting queue to be allocated, initialized and 
  *                       returned back
  *
- * Return Code/Output - On success -0, on error -1
+G * Return Code/Output - On success -0, on error -1
  ******************************************************************************/
 int alloc_init_timer_waiting_queue (size_t size, timer_queue** wq)
 {
@@ -346,19 +345,37 @@ int load_next_step (client_context* cctx,
     }
 
   /*
-     Coming to the error or the finished states, just return without more 
-     scheduling the client any more.
+    Coming to the error or the finished states, just return without more 
+    scheduling the client any more.
   */
   if (rval_load == CSTATE_ERROR || rval_load == CSTATE_FINISHED_OK)
-    {
-        close_connections (cctx); // cleanup of each handle is forcing multi-handle to decrease the num of connections
+  {
+      /*
+        GF 
+        At this point this client is finished, and there are no more URLs to fetch.
+        But the client may still be holding a connection open, which may prevent other
+        clients in the batch from connecting to the server. If we wait until the end-of-batch
+        general cleanup to close connections, then these other clients may never connect, and
+        the only way the batch will end is to have all these waiting clients time out. So we
+        should close out this client's connections here. Setting client->handle = 0 will prevent
+        curl_easy_cleanup from being called again in the general cleanup.
+      */
+      // cleanup of each handle is a hint to multi-handle to 
+      // decrease the num of connections to server
+      if (cctx->handle)
+      {
+          curl_easy_cleanup (cctx->handle);
+          cctx->handle = 0;
+      }
 
       if (rval_load == CSTATE_ERROR)
       {
-          curl_easy_init (cctx->handle);
+          // Re-init clients in CSTATE_ERROR state to enable their optional
+          // scheduling
+          cctx->handle = curl_easy_init ();
       }
       return rval_load;
-    }
+  }
 
   /* 
      Schedule virtual clients by adding them to multi-handle, 
@@ -1261,24 +1278,4 @@ static int load_final_ok_state (client_context* cctx,
   (void) cctx; (void) wait_msec; (void) now_time;
   
   return CSTATE_FINISHED_OK;
-}
-
-
-/*
-  GF 
-  At this point this client is finished, and there are no more URLs to fetch.
-  But the client may still be holding a connection open, which may prevent other
-  clients in the batch from connecting to the server. If we wait until the end-of-batch
-  general cleanup to close connections, then these other clients may never connect, and
-  the only way the batch will end is to have all these waiting clients time out. So we
-  should close out this client's connections here. Setting client->handle = 0 will prevent
-  curl_easy_cleanup from being called again in the general cleanup.
-*/
-static void close_connections(client_context* client)
-{
-    if (client->handle)
-    {
-        curl_easy_cleanup(client->handle);
-        client->handle = 0;
-    }
 }
