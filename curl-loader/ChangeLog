@@ -1,4 +1,4 @@
-version 0.46, unstable, 
+version 0.47, unstable, December 2, 2008, svn 551
 	
 * Fixed a POST-binary bug, where an extra check was preventing direct
    posting.
@@ -14,15 +14,16 @@ version 0.46, unstable,
   - template URL, where throusands URLs specifying by a single template is an option;
   - fetching of response tokens from the bodies of responses and usage them in template URL;
   - usage of statically defined in file tokens for template URL;
-  - fixing of several bugs in that area.
+  - fixing of several bugs in that area
+  - introduced new tags: 
+   URL_TEMPLATE, RESPONSE_TOKEN, URL_TOKEN, URL_TOKEN_FILE
 
-* UPLOAD_FILE bug fixed, where the same file-pointer for uploading was shared among mulitple
-   clients. Thenks to  Gary Fitts <gary@intouchgroup.com>.
+* UPLOAD_FILE bug fixed, where the same file-pointer for uploading was shared 
+   among mulitple clients. Thanks to  Gary Fitts <gary@intouchgroup.com>.
 	
-*  Added for "Template URL" README and man pages.
+*  Added for "Template URL" README and man pages, usage examples.
 
 
-	
 version 0.46, unstable, Sep 3, 2008, svn 534
 
 * Advanced to curl-7.19.0 with more relevant fixes, particular in the

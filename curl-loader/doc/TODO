@@ -1,4 +1,4 @@
-Last updated: October 21 2007
+Last updated: December 2 2008
 
 
 The strategic directions of development are:
@@ -8,7 +8,7 @@ The strategic directions of development are:
 
 - adding support for deep inspection and analyses of HTTP/FTP 
   response bodies and headers. Support for regular expressions and 
-  configurable actions;
+  configurable actions; That was partially addressed for some cases
 
 - web-crawling and emulation of browser behaviour;
 
@@ -20,11 +20,8 @@ The strategic directions of development are:
 
 Some urgent issues for the next beta:
 
-1. Add to multipart form POST-ing as in RFC1867 at least an option to load 
-   credentials from file. Several people are asking it. Currently, it is 
-   doing only AS-IS POST-ing.
-
-2. Transparent support for POST-ing some file, e.g. a SOAP file.
+2. Improve transparent support for POST-ing some file, e.g. a SOAP file.
+   Currently it works as a HOWTOS workaround.
 
 
 The next beta release may hopefully be devoted to processing of HTTP response bodies: 
@@ -37,9 +34,6 @@ The next beta release may hopefully be devoted to processing of HTTP response bo
 
 3. Regular expression operations for the header/s certain header and whether 
    value matches a regular expression pattern.
-
-4. Vladislav Wainbaum proposed to add extraction of a field from response
-      to be used in the next requests.
 
 
 ---------------------------------------------------------------------------------------------------- 
