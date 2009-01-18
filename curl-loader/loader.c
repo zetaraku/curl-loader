@@ -480,6 +480,9 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
                     bctx->ip_addr_array [cctx->client_index]);
 
   curl_easy_setopt (handle, CURLOPT_NOSIGNAL, 1);
+
+  /* set|unset the curl proxy */
+  curl_easy_setopt (handle, CURLOPT_PROXY, config_proxy);
     
   /* Set the url */
   if (url->url_str && url->url_str_len)

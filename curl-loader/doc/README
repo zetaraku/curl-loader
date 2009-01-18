@@ -780,6 +780,7 @@ and without]
 -v[erbose output to the logfiles; includes info about headers sent/received]
 -u[rl logging - logs url names to logfile, when -v verbose option is used]
 -w[arnings skip]
+-x[set|unset proxy] "<proxy:port>"
 
 Connection Reuse Disable Option (-r):
 The default behavior of curl-loader after HTTP response is to re-use the 

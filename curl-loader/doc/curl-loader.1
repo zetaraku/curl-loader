@@ -95,6 +95,9 @@ Activate logging of URLs to the log file, when the \-v verbose option is used.
 .TP
 .B "\-w"
 Do not display warnings.
+.TP
+.B "\-x" "<proxy:port>"
+Use this option to explicitly set or unset the proxy for curl\-loader. For example, you can use \-x "http://192.168.1.1:8080" to set the proxy, or use \-x "" to specifically unset it.
 .SH HINTS
 .nh
 When running a non\-trivial number clients, you may need to tune your system.
@@ -126,11 +129,11 @@ program was written by Robert Iakobashvili and Michael Moser.
 This manual page was written by John Gatewood Ham
 .br
 .SH FILES
-/usr/bin/curl-loader
+/usr/bin/curl\-loader
 .br
-/usr/share/doc/curl-loader/* for documentation
+/usr/share/doc/curl\-loader/* for documentation
 .br
-/usr/share/doc/curl-loader/conf-examples/* for configuration examples
+/usr/share/doc/curl\-loader/conf\-examples/* for configuration examples
 .br
 .SH SEE ALSO
-curl-loader-config(5)
+curl\-loader\-config(5)

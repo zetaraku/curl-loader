@@ -72,6 +72,9 @@ int warnings_skip = 0;
 /* Name of the configuration file */
 char config_file[PATH_MAX + 1];
 
+/* Name of the proxy */
+char config_proxy[PATH_MAX];
+
 /* 
    On errors, whether to continue loading for this client 
    from the next cycle, or to give it up.
@@ -84,7 +87,7 @@ int parse_command_line (int argc, char *argv [])
 {
   int rget_opt = 0;
 
-    while ((rget_opt = getopt (argc, argv, "c:dehf:i:l:m:op:rst:vuw")) != EOF) 
+    while ((rget_opt = getopt (argc, argv, "c:dehf:i:l:m:op:rst:vuwx:")) != EOF) 
     {
       switch (rget_opt) 
         {
@@ -185,6 +188,16 @@ int parse_command_line (int argc, char *argv [])
           warnings_skip = 1; 
           break;
 
+        case 'x': /* set/unset proxy */
+          if (optarg)
+            strcpy(config_proxy, optarg);
+          else
+            {
+              fprintf (stderr, "%s error: -x option should be followed by a proxy IP or name.\n", __func__);
+              return -1;
+            }
+          break;
+
         default: 
             fprintf (stderr, "%s error: not supported option\n", __func__);
           print_help ();
@@ -221,6 +234,7 @@ void print_help ()
   fprintf (stderr, " -v[erbose output to the logfiles; includes info about headers sent/received]\n");
   fprintf (stderr, " -u[rl logging - logs url names to logfile, when -v verbose option is used]\n");
   fprintf (stderr, " -w[arnings skip]\n");
+  fprintf (stderr, " -x[set|unset proxy] \"<proxy:port>\"\n");
   fprintf (stderr, "\n");
 
   fprintf (stderr, "For more examples of configuration files please, look at \"conf-examples\" directory.\n");

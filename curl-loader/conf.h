@@ -112,6 +112,12 @@ extern int warnings_skip;
 extern char config_file[PATH_MAX + 1];
 
 /*
+   Name of the proxy.
+*/
+extern char config_proxy[PATH_MAX];
+
+
+/*
   HTTP requests: GET, POST and PUT.
   3xx redirections are supported valid options for each above case.
 */

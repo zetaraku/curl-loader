@@ -54,7 +54,7 @@ copy an example file and edit it.
 Environment and System.
 
 Running hundreds and thousands of clients, please, do not forget:
- - to increase limit of descriptors (sockets) by running e.g. 
+- to increase limit of descriptors (sockets) by running e.g. 
    #ulimit -n 10000;
 - optionally, to set reuse of sockets in time-wait state: by setting 
    #echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle and/or 
@@ -63,8 +63,11 @@ Running hundreds and thousands of clients, please, do not forget:
 In some cases you may need to increase the system limits for open
 descriptors (sockets).
        
-         
-
+With curl-loader using libcurl, it honors the way libcurl handles proxy settings
+through .curlrc and by expanding the proxy environment variables $http_proxy,
+$ftp_proxy and $all_proxy. By using the curl-loader option -x, curl-loader can be
+forced to set or unset a proxy independend of .curlrc and environment, making the
+proxy usage more transparent.
 
 Usage: 
 

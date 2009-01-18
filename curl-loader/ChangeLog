@@ -1,3 +1,9 @@
+* Added -x command-line option to let explicitly specify a proxy server. 
+  By using the curl-loader option -x, curl-loader can be
+  forced to set or unset a proxy independend of .curlrc and environment, making the
+  proxy usage more transparent.
+  Thanks to Frank <Frank_Migge@manulife.com> for this patch.
+
 version 0.47, unstable, December 2, 2008, svn 551
 	
 * Fixed a POST-binary bug, where an extra check was preventing direct
