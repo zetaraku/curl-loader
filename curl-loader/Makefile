@@ -84,6 +84,7 @@ INCDIR=-I. -I./inc -I$(OPENSSLDIR)/include
 #LIBCARES:=./lib/libcares.a
 LIBCURL:=./lib/libcurl.a
 LIBEVENT:=./lib/libevent.a
+CONF_OBJ:=$(OBJ_DIR)/parse_conf.o
 
 # documentation directory
 DOCDIR=/usr/share/doc/curl-loader/
@@ -93,10 +94,10 @@ MANDIR=/usr/share/man
 
 all: $(TARGET)
 
-$(TARGET): $(LIBCURL) $(LIBEVENT) $(OBJ)
+$(TARGET): $(LIBCURL) $(LIBEVENT)  $(CONF_OBJ) $(OBJ)
 	$(LD) $(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
 
-nobuildcurl: $(OBJ)
+nobuildcurl: $(CONF_OBJ) $(OBJ)
 	$(LD) $(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS) -o $(TARGET) $(OBJ) $(LIBS)
 
 clean:
@@ -168,3 +169,7 @@ $(LIBCURL):
 
 $(OBJ_DIR)/%.o: %.c
 	$(CC) $(CFLAGS) $(PROF_FLAG) $(OPT_FLAGS) $(DEBUG_FLAGS) $(INCDIR) -c -o $(OBJ_DIR)/$*.o $<
+
+$(CONF_OBJ):
+	rm -rf $(OBJ_DIR)/parse_conf.o
+	$(CC) $(CFLAGS) $(PROF_FLAG) $(DEBUG_FLAGS) $(INCDIR) -c -o $(OBJ_DIR)/parse_conf.o parse_conf.c
