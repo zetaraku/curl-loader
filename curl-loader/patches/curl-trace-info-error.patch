@@ -22,15 +22,6 @@ diff -Nru curl-7.15.4/lib/sendf.c curl-7.15.4-rob/lib/sendf.c
    }
  
    va_end(ap);
-@@ -484,7 +485,7 @@
-                   char *ptr, size_t size)
- {
-   static const char * const s_infotype[CURLINFO_END] = {
--    "* ", "< ", "> ", "{ ", "} ", "{ ", "} " };
-+    "* ", "< ", "> ", "{ ", "} ", "{ ", "} " "! "};
- 
- #ifdef CURL_DOES_CONVERSIONS
-   char buf[BUFSIZE+1];
 @@ -517,6 +518,7 @@
    case CURLINFO_TEXT:
    case CURLINFO_HEADER_OUT:
