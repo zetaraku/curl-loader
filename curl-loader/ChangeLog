@@ -1,5 +1,8 @@
 
-version 0.48, unstable, April 9, 2009, svn 
+version 0.48, unstable, April 9, 2009, svn 556
+
+* Advanced to curl version 19.4 with several bugfixes in the area
+  of multi-handle transfers, HTTPS, FTP/S and cookies handling.
 
 * Work-around for the bug involving reading from file and using fgets,
    when gcc-4.3 is used with optimization. It is done by compiling the file
