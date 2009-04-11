@@ -54,7 +54,7 @@ ifeq ($(optimize),1)
 OPT_FLAGS+= -O3 -ffast-math -finline-functions -funroll-all-loops \
 	-finline-limit=1000 -mmmx -msse -foptimize-sibling-calls
 else
-OPT_FLAGS=
+OPT_FLAGS= -O0
 endif
 
 # CPU-tuning flags for Pentium-4 arch.

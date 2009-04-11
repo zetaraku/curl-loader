@@ -743,7 +743,7 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
             {
                 curl_easy_setopt(handle, CURLOPT_POST, 1);
             }
-            else if (cctx->post_data )
+            else if (cctx->post_data || url->mpart_form_post)
             {
               /* 
                  Sets POST as the HTTP request method using either:

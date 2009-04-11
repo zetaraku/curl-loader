@@ -1458,37 +1458,49 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
     content_type_len = strlen (content_type);
   
   if (content_type && content_type_len)
-    {
+  {
       if (content_type_len <= strlen (FORM_CONTENT_TYPE_STR))
-        {
+      {
           fprintf(stderr, "%s - error: content type, if appears should not be empty.\n", 
                   __func__);
           return -1;
-        }
+      }
       
       *content_type = '\0'; /* place instead of ';' of ';type=' zero - '\0' */
       content_type = content_type + strlen (FORM_CONTENT_TYPE_STR);
       
-    }
-
-  if (! files)
-    {
+  }
   
+  if (! files)
+  {
       if (content_type)
         {
-          curl_formadd (&url->mpart_form_post, &url->mpart_form_last, 
-                        CURLFORM_COPYNAME, fieldname,
-                        CURLFORM_COPYCONTENTS, content,
-                        CURLFORM_CONTENTTYPE, content_type, 
-                        CURLFORM_END);
+            if (curl_formadd (&url->mpart_form_post,
+                              &url->mpart_form_last, 
+                              CURLFORM_COPYNAME, fieldname,
+                              CURLFORM_COPYCONTENTS, content,
+                              CURLFORM_CONTENTTYPE, content_type, 
+                              CURLFORM_END))
+            {
+
+                fprintf(stderr, "%s - error: curl_formadd () error - no files and content type exits.\n", 
+                  __func__);
+                return -1;
+            }
         }
       else
         {
           /* Default content-type */
-          curl_formadd (&url->mpart_form_post, &url->mpart_form_last, 
-                        CURLFORM_COPYNAME, fieldname,
-                        CURLFORM_COPYCONTENTS, content,
-                        CURLFORM_END);
+            if (curl_formadd (&url->mpart_form_post,
+                              &url->mpart_form_last, 
+                              CURLFORM_COPYNAME, fieldname,
+                              CURLFORM_COPYCONTENTS, content,
+                              CURLFORM_END))
+            {
+                fprintf(stderr, "%s - error: curl_formadd () error - no files and no content type.\n", 
+                  __func__);
+                return -1;
+            }
         }
 
       return 0;
@@ -1497,28 +1509,42 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
   /* Coming here, if content is a file or files 'if (*content == '@')' is TRUE */
   
   // We allow content-type only for a single file. 
-  if (content_type)
+  if (files_number == 1)
     {
-      if (files_number != 1)
+        if (content_type)
         {
-          fprintf(stderr, "%s - error: content type is allowed only " 
-                  "when a single file passed.\n", __func__);
-          return -1;
+            if (curl_formadd (&url->mpart_form_post,
+                              &url->mpart_form_last, 
+                              CURLFORM_COPYNAME, fieldname,
+                              CURLFORM_FILE, content,
+                              CURLFORM_CONTENTTYPE, content_type, 
+                              CURLFORM_END))
+            {
+                fprintf(stderr, "%s - error: curl_formadd () error - one file with content type.\n", 
+                  __func__);
+                return -1;
+            }
         }
-      else
+        else
         {
-          curl_formadd (&url->mpart_form_post, &url->mpart_form_last, 
-                        CURLFORM_COPYNAME, fieldname,
-                        CURLFORM_FILE, content,
-                        CURLFORM_CONTENTTYPE, content_type, 
-                        CURLFORM_END);
+            if (curl_formadd (&url->mpart_form_post,
+                              &url->mpart_form_last, 
+                              CURLFORM_COPYNAME,
+                              fieldname,
+                              CURLFORM_FILE, content,
+                              CURLFORM_END))
+            {
+                fprintf(stderr, "%s - error: curl_formadd () error - one file without content type.\n", 
+                  __func__);
+                return -1;
+            }
         }
     }
-
-  if (!content_type)
-    {
-      // Multiple files, or a single file without content type
+  else if (files_number > 1)
+  {
+      // Multiple files without content type
       struct curl_forms* forms =  NULL;
+      size_t j = 0;
 
       if (! (forms = calloc (files_number + 1, sizeof (struct curl_forms))))
         {
@@ -1526,6 +1552,11 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
                   __func__, errno);
           return -1;
         }
+
+      for (j = 0; j < files_number + 1; j++)
+      {
+          forms [j].option = CURLFORM_END;
+      }
 
       char * token = 0, *strtokp = 0;
       size_t token_index = 0;
@@ -1537,22 +1568,29 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
           size_t token_len = strlen (token);
           
           if (! token_len)
-            {
+          {
               fprintf (stderr, "%s - warning: token is empty. \n", __func__);
-            }
+              return -1;
+          }
           else
-            {
+          {
               forms [token_index].option = CURLFORM_FILE;
               forms [token_index].value  = token;
-            }
+          }
           
           token_index++;
         }
 
-      curl_formadd (&url->mpart_form_post, &url->mpart_form_last, 
-                   CURLFORM_COPYNAME, fieldname,
-                   CURLFORM_ARRAY, forms, 
-                   CURLFORM_END);
+      if (curl_formadd (&url->mpart_form_post,
+                        &url->mpart_form_last, 
+                        CURLFORM_COPYNAME, fieldname,
+                        CURLFORM_ARRAY, forms, 
+                        CURLFORM_END))
+      {
+          fprintf(stderr, "%s - error: curl_formadd () error - multiple files without content type.\n", 
+                  __func__);
+          return -1;
+      }
     }
 
   return 0;
