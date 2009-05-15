@@ -1,3 +1,12 @@
+* Post an XML-file as a body of POST request.
+  An example of configuration file is conf-examples/post-xml.conf, where the XML-file itself is
+  residing in the same configuration directory, namely conf-examples/some.xml
+  The majic is now done by:
+  REQUEST_TYPE=POST
+  MULTIPART_FORM_DATA="file=@some.xml"
+
+* Advanced to libevent-1.4.11-stable, which fixes several nastry epoll bugs.
+
 
 version 0.48, unstable, April 9, 2009, svn 556
 
