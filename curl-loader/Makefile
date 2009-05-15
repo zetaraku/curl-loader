@@ -148,6 +148,7 @@ $(LIBCURL):
 	mkdir -p $(CURL_BUILD);
 	cd $(CURL_BUILD); ../../packages/curl/configure --prefix=$(CURL_BUILD) \
 	--without-libidn \
+	--without-libssh2 \
 	--disable-ldap \
 	--enable-ipv6 \
         --enable-thread \
