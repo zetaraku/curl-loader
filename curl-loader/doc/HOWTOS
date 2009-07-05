@@ -1,9 +1,5 @@
 1. HOWTO POST a text file, e.g. an XML-file.
 
-Since the configuration with POST-ing URL and UPLOAD_FILE
-is somehow buggy in libcurl and issues PUT instead of POST,
-let's use the workaround as recommended by Alex.
-
 Please, try the following:
 
 1. Use the latest version of libcurl
