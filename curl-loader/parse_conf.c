@@ -322,8 +322,9 @@ static int add_param_to_batch (char*const str_buff,
       *equal = '\0'; /* The idea from Igor Potulnitsky */
     }
 
+  int string_length = (int) str_len;
   int value_len = 0;
-  if ((value_len = str_len - (equal - str_buff) - 1) < 0)
+  if ((value_len = string_length - (int)(equal - str_buff) - 1) < 0)
     {
       *equal = '=' ;
       fprintf(stderr, "%s - error: in \"%s\" a valid name should follow '='.\n", 

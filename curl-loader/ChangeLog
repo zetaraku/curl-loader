@@ -1,3 +1,7 @@
+
+* Making of libcurl without support for SSH. Some platforms do not
+   have libssh2 installed and it breaks our build.
+
 * Post an XML-file as a body of POST request.
   An example of configuration file is conf-examples/post-xml.conf, where the XML-file itself is
   residing in the same configuration directory, namely conf-examples/some.xml
