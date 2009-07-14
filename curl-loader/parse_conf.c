@@ -323,8 +323,8 @@ static int add_param_to_batch (char*const str_buff,
     }
 
   int string_length = (int) str_len;
-  int value_len = 0;
-  if ((value_len = string_length - (int)(equal - str_buff) - 1) < 0)
+  long val_len = 0;
+  if ((val_len = string_length - (long)(equal - str_buff) - 1) < 0)
     {
       *equal = '=' ;
       fprintf(stderr, "%s - error: in \"%s\" a valid name should follow '='.\n", 
@@ -349,8 +349,10 @@ static int add_param_to_batch (char*const str_buff,
   }
 
   /* Removing LWS, TWS and comments from the value */
+  size_t value_len = (size_t) val_len;
   char* value = equal + 1;
-  if (pre_parser (&value, (size_t *)&value_len) == -1)
+
+  if (pre_parser (&value, &value_len) == -1)
   {
       fprintf (stderr,"%s - error: pre_parser () failed for tag %s and value \"%s\".\n",
                __func__, str_buff, equal + 1);
@@ -366,22 +368,22 @@ static int add_param_to_batch (char*const str_buff,
 
   /* Remove quotes from the value */
   if (*value == '"')
-    {
+  {
       value++, value_len--;
       if (value_len < 2)
-        {
+      {
           return 0;
-        }
+      }
       else
-        {
+      {
           if (*(value +value_len-2) == '"')
-            {
+          {
               *(value +value_len-2) = '\0';
               value_len--;
-            }
-        }
-    }
-
+          }
+      }
+  }
+  
   if (strstr (str_buff, tp_map[0].tag))
   {
       /* On string "BATCH_NAME" - next batch and move the number */
