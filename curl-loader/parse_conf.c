@@ -322,7 +322,7 @@ static int add_param_to_batch (char*const str_buff,
       *equal = '\0'; /* The idea from Igor Potulnitsky */
     }
 
-  int string_length = (int) str_len;
+  long string_length = (long) str_len;
   long val_len = 0;
   if ((val_len = string_length - (long)(equal - str_buff) - 1) < 0)
     {
@@ -2744,7 +2744,7 @@ int parse_config_file (char* const filename,
 
           if ((batch_index + 1) >= (int) bctx_array_size)
             {
-              fprintf(stderr, "%s - error: maximum batches limit (%d) reached \n", 
+              fprintf(stderr, "%s - error: maximum batches limit (%Zu) reached \n", 
                       __func__, bctx_array_size);
               fclose (fp);
               return -1 ;
@@ -2895,7 +2895,7 @@ static int load_form_records_file (batch_context*const bctx, url_context* url)
           if (url->form_records_num >= max_records)
             {
               fprintf (stderr, "%s - error: CLIENTS_NUM (%d) and "
-                       "FORM_RECORDS_FILE_MAX_NUM (%d) are both less than the number of " 
+                       "FORM_RECORDS_FILE_MAX_NUM (%Zu) are both less than the number of " 
                        "records in the form_records_file.\n", 
                        __func__, bctx->client_num_max, url->form_records_file_max_num);
               sleep (3);

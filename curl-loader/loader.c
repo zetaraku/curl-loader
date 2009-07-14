@@ -877,7 +877,7 @@ int response_logfiles_set (client_context* cctx, url_context* url)
       memset (body_file, 0, sizeof (body_file));
 
       snprintf (body_file, sizeof (body_file) -1, 
-                "%s/cl-%d-cycle-%ld.body",
+                "%s/cl-%Zu-cycle-%ld.body",
                 url->dir_log,
                 cctx->client_index,
                 cctx->cycle_num
@@ -907,7 +907,7 @@ int response_logfiles_set (client_context* cctx, url_context* url)
       memset (hdr_file, 0, sizeof (hdr_file));
 
       snprintf (hdr_file, sizeof (hdr_file) -1, 
-                "%s/cl-%d-cycle-%ld.hdr",
+                "%s/cl-%Zu-cycle-%ld.hdr",
                 url->dir_log,
                 cctx->client_index,
                 cctx->cycle_num

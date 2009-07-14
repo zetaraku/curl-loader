@@ -191,11 +191,11 @@ void heap_dump (heap*const h)
 {
   size_t j = 0;
 	
-  fprintf (stderr, "\tcurr_heap_size=%d\n", h->curr_heap_size);
+  fprintf (stderr, "\tcurr_heap_size=%Zu\n", h->curr_heap_size);
 
   for (j = 0; j < h->curr_heap_size; j++)
     {
-      fprintf (stderr, "[%d: ", j);
+      fprintf (stderr, "[%Zu: ", j);
       if (h->fndump)
         {
           h->fndump (h->heap[j]);
