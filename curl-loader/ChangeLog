@@ -1,3 +1,11 @@
+
+* Renamed function getline to get_line since folks from RedHat are 
+   polluting the namespace. Thanks to jari pietila <jari2004@hotmail.com>
+   for reporting that.
+
+* Fixed x86_64 arch related bug in parse_conf.c Thanks to nobody/anonymous.
+
+
 version 0.49, unstable, July 5, 2009, svn 561
 
 * Corrected weirdness in parse_conf.c Thanks to nobody/anonymous.

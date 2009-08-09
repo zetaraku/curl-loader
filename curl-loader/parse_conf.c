@@ -3121,7 +3121,7 @@ static char*	keyval_lookup(char* word, int index);
 static void		keyval_stop();
 
 static char*	string_copy(char* src, char* dst);
-static char*	getline(char* buf, int size, FILE* file);
+static char*	get_line(char* buf, int size, FILE* file);
 static char*	get_token(char** line_ptr);
 static char*	skip_white(char* s);
 static char*	skip_black(char* s);
@@ -3503,7 +3503,7 @@ build_url_set(url_set* set, url_template* template, FILE* file, char* fname)
     urle *u;
     urle *v;
 	
-    for (nrows = 0; getline(f_buf, sizeof f_buf, file) != 0; )
+    for (nrows = 0; get_line(f_buf, sizeof f_buf, file) != 0; )
         if (!is_comment(f_buf))
             nrows++;
 		
@@ -4401,7 +4401,7 @@ static char* string_copy(char* src, char* dst)
     return dst - 1;
 }
 	
-static char* getline(char* buf, int size, FILE* file)
+static char* get_line(char* buf, int size, FILE* file)
 {
     char* s;
 	
