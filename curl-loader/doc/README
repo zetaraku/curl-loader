@@ -1,4 +1,4 @@
-version 0.49, unstable, July 5, 2009
+version 564.vs2 unstable, June 30, 2009
  
 2006 - 2009 Copyright (C)  
 Robert Iakobashvili,  <coroberti@gmail.com>, Ashdod, Israel
@@ -444,13 +444,39 @@ server and from server back to the client addresses. Another route to ensure,
 when is appropriate, is to/from DNS server for resolving. Firewalling 
 (netfilter/iptables) settings are also among those to check.
 
-CYCLES_NUM is the number of cycles to be performed. Any positive value is valid 
-here as well as (-1), which means cycle indefinitely. Loading can be normally 
+CYCLES_NUM is the number of cycles to be performed if the value is positive.
+A zero or negative number means indefinite number of cycles, but see the
+RUN_TIME tag below.  The default value is zero. Loading can be normally 
 stopped at any moment by pressing Cntl-C; all statistics will be collected 
 properly and files closed to contain necessary information. Note, that cycling 
 relates only to the URLs not containing tag URL_DONT_CYCLE = 1. Curl-loader 
 enables two optional non-cycling areas: the first before the cycling url/s area 
 and the second after the cycling url/s area.
+
+DUMP_OPSTATS is the flag indicating whether to write out a fairly voluminous
+operational statistics file.  It takes values "yes" or "no".  The default
+value is "yes".
+
+RUN_TIME is the maximum time to run the load.  It is specified as up to
+four numbers: hours, days, minutes and seconds separated by a colon (":").
+When less than four numbers are specified, the senior categories are assumed
+to be omitted.  That is 1:1:0:0 means one day and one hour, 1:1 means one
+minute and 1 second, 10000 means 10000 seconds, etc.  A zero or negative
+value means no limit to run time.  As noted above, the curl-loader may
+stop before the maximum time, if any, is reached if either the number
+of clycles to be performed runs out or the Cntl-C is pressed on the keyboard.
+
+REQ_RATE is the desired fixed request rate per second, sometimes referred to
+as offered load.  It is specified as an integer number.
+The rate here means that of the effective URL requests, so if, for example,
+each initial URL is redirected once with a 302 response, the rate of actual
+requests will be double from the specified one.  Note that as many clients
+as necessary are invoked in order to maintain the offered load.  If the total
+response time to the effective URL exceeds 1 second, the CLIENTS_NUM_MAX
+value must exceed the REQ_RATE value proportionately.  When the number of
+clients is insufficient for the load, an error message "need free clients (X)"
+is written to stderr, where X is the number of additional clients required.
+That number may be used as a guide for increasing the CLIENTS_NUM_MAX value.
 
 USER_AGENT provides an option to over-write the default MSIE-6-like HTTP header 
 User-Agent. Place here a quoted string to emulate the browser that you need. The 
@@ -777,7 +803,7 @@ rewinded]
 () based)]
 -r[euse connections disabled. Closes TCP-connections and re-open them. Try with 
 and without]
--v[erbose output to the logfiles; includes info about headers sent/received]
+-v[erbose output to the logfiles; includes info about headers sent/received. Increase the level of verbosity by using this option twice]
 -u[rl logging - logs url names to logfile, when -v verbose option is used]
 -w[arnings skip]
 -x[set|unset proxy] "<proxy:port>"
@@ -845,16 +871,37 @@ it?
 Detailed log is written to the file named:
 <batch-name>.log:
 
-The semantics of logfile output, using command line options -v (verbose) and -u 
-(url print):
-"Cycle number", "Client number (ip-address)" - some information string, e.g.:
+The semantics of logfile output, using command line options -v -v (very
+verbose) and -u (url print) are as follows.
 
-4 39 (192.168.0.39) :== Info: Trying 10.30.6.42... : eff-url: 
-http://10.30.6.42:8888/server/Admin/ServiceList.do, url:
+The first line is the time of the load start in milliseconds and in text
+form:
 
-Which means: cycle: 4, client number 39 with ipv4 address (192.168.0.39), status 
-of the message is Info, eff-url - is the url, used right now, "url:" is empty, 
-which means, that it is the same as effective.
+# 1248743647809 Mon Jul 27 18:14:07 2009
+
+The second line identifies log columns:
+
+# msec_offset cycle_no url_no client_no (ip) indic info
+
+That is the columns are:
+
+   - time offset from start in milliseconds
+   - cycle number
+   - url number
+   - client number
+   - client ip address in parentheses
+   - indicator, qualifies the message as setup (==), send (&gt;=),
+     receive (&lt;=) or response (!!)
+   - information string
+
+Subsequent lines look as follows.
+
+1234 4 3 39 (192.168.0.39) == Trying 10.30.6.42... : eff-url: http://10.30.6.42 :8888/server/Admin/ServiceList.do, url:
+
+Which means: 1234 msec from start, cycle 4, url number 3, client number 39
+with ipv4 address (192.168.0.39), type of the message is setup, eff-url -
+is the url, used right now, "url:" is empty, which means, that it is the
+same as effective.
 
 Effective url may be a result of redirection and, thus, "url:" 
 (target url, specified in batch configuration file) will be printed as well.

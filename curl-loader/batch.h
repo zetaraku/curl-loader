@@ -82,6 +82,9 @@ typedef struct batch_context
   /* Statistics file <batch-name>.txt */
   char batch_statistics[BATCH_NAME_SIZE+BATCH_NAME_EXTRA_SIZE];
 
+  /* Operational statistics file <batch-name>.ops */
+  char batch_opstats[BATCH_NAME_SIZE+BATCH_NAME_EXTRA_SIZE];
+
   /* Maximum number of clients (each client with its own IP-address) in the batch */
   int client_num_max;
 
@@ -135,9 +138,20 @@ typedef struct batch_context
  
    /* 
       Number of cycles to repeat the urls downloads and afterwards sleeping 
-      cycles. Zero means run it forever. 
+      cycles. Zero means run it until time to run is exhausted.
    */
   long cycles_num;
+
+  /*
+      Time to run in msec.  Zero means time to run is infinite.
+  */
+  unsigned long run_time;
+
+  /*
+      Client fixed request rate per second.  Zero means send request after
+      receiving reply.
+  */
+  int req_rate;
 
    /* 
       User-agent string to appear in the HTTP 1/1 requests.
@@ -200,6 +214,15 @@ typedef struct batch_context
   /* Array of all client contexts for the batch */
   struct client_context* cctx_array;
 
+  /* Number of clients free to send fixed rate requests */
+  int free_clients_count;
+
+  /* List of clients free to send fixed rate requests */
+  int* free_clients;
+
+  /* Request rate timer invocation sequence number within a second */
+  int req_rate_timer_invocation;
+
   /* Counter used mainly by smooth mode: active clients */
   int active_clients_count;
 
@@ -232,6 +255,9 @@ typedef struct batch_context
   /* The timer-node for timer checking user-input at a screen (stdin). */
   timer_node screen_input_timer_node;
 
+  /* The timer-node for fixed request rate timer. */
+  timer_node req_rate_timer_node;
+
   /* Event base from event_init () of libevent. */
   struct event_base* eb;
 
@@ -246,6 +272,12 @@ typedef struct batch_context
 
   /* The file to be used for statistics output */
   FILE* statistics_file;
+
+  /* The file to be used for operational statistics output */
+  FILE* opstats_file;
+
+  /* Dump operational statistics indicator, 0: no dump */
+  int dump_opstats;
 
   /* Timestamp, when the loading started */
   unsigned long start_time; 
@@ -266,6 +298,10 @@ typedef struct batch_context
   /* Operations statistics */
   op_stat_point op_delta;
   op_stat_point op_total;
+
+  /* Count of response times dumped before new-line,
+   used to limit line length */
+  int ct_resps;
 
 } batch_context;
 

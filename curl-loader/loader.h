@@ -167,14 +167,26 @@ int rewind_logfile_above_maxsize (FILE* filepointer);
 /****************************************************************************************
  * Function name - pending_active_and_waiting_clients_num
  *
- * Description - Returns the sum of active and waiting (for load scheduling) clients
+ * Description -  Returns the sum of active and waiting (for load scheduling)
+ *                clients 
  *
  * Input -       *bctx - pointer to the batch context
- *
  * Return Code/Output - Sum of active and waiting (for load scheduling) clients
  ****************************************************************************************/
 int pending_active_and_waiting_clients_num (struct batch_context* bctx);
 
+/****************************************************************************************
+ * Function name - pending_active_and_waiting_clients_num_stat
+ *
+ * Description - Returns the sum of active and waiting (for load scheduling)
+ *               clients or a number of clients maintaining a fixed request
+ *               rate
+ *
+ * Input -       *bctx - pointer to the batch context
+ *
+ * Return Code/Output - see Description
+ ****************************************************************************************/
+int pending_active_and_waiting_clients_num_stat (struct batch_context* bctx);
 
 /****************************************************************************************
  * Function name - load_next_step
@@ -312,6 +324,17 @@ int update_url_from_set_or_template (CURL* handle, struct client_context* client
 int upload_file_stream_init (struct client_context* client, struct url_context* url);
 int scan_response (curl_infotype type, char* data, size_t size, struct client_context* client);
 void free_url_extensions (struct url_context* url);
+
+/*****************************************************************************
+ * Function name - put_free_client
+ *
+ * Description - Puts a client on the list of clients free to send
+ *               a fixed rate request
+ *
+ * Input -       *cctx - pointer to the client context
+ * Return Code/Output - On success 0, on error -1
+ ******************************************************************************/
+int put_free_client (client_context *cctx);
 
 extern int stop_loading;
 

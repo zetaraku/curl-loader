@@ -260,10 +260,19 @@ int pending_active_and_waiting_clients_num (struct batch_context* bctx);
 */
 extern int stop_loading;
 
+#ifndef min
 #define min(a,b) \
        ({ typeof (a) _a = (a); \
            typeof (b) _b = (b); \
          _a < _b ? _a : _b; })
+#endif
+
+#ifndef max
+#define max(a,b) \
+       ({ typeof (a) _a = (a); \
+           typeof (b) _b = (b); \
+         _a > _b ? _a : _b; })
+#endif
 
 //void set_timer_handling_func (client_context* cctx, handle_timer);
 

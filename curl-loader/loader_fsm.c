@@ -26,13 +26,26 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "loader.h"
 #include "client.h"
+#include "loader.h"
 #include "batch.h"
 #include "conf.h"
 #include "heap.h"
 #include "screen.h"
 #include "cl_alloc.h"
+
+/*
+   Number of request rate timer invocations per second used to
+   spread the load within each second.  Should evenly divide 1000 msec.
+*/
+static const int req_rate_timer_invs_per_sec = 5;
+/*
+   Empirical fudge value to reduce request rate timer interval after
+   dividing 1000 msec into req_rate_timer_invs_per_sec invocations
+   so that the overhead of multiple timer invocations is taken into
+   account and the sum total of these invocations stays around 1000 msec.
+*/
+static const int req_rate_timer_fudge = 20;
 
 static int load_error_state (client_context* cctx, unsigned long now_time,
                              unsigned long *wait_msec);
@@ -79,12 +92,18 @@ static int handle_cctx_sleeping_timer (timer_node* tn,
 static int handle_cctx_url_completion_timer (timer_node* tn,
                                              void* pvoid_param, 
                                              unsigned long ulong_param);
+static int handle_req_rate_timer (timer_node* tn,
+                                  void* pvoid_param, 
+                                  unsigned long ulong_param);
 static int client_remove_from_load (batch_context* bctx, 
 				    client_context* cctx);
 static int client_add_to_load (batch_context* bctx, 
                                client_context* cctx,
                                unsigned long now_time);
 static int fetching_decision (client_context* cctx, url_context* url);
+static int orderly_sched_clients (batch_context* bctx, int clients_to_sched);
+static int req_rate_sched_clients (batch_context* bctx);
+static int get_free_client (batch_context* bctx, client_context **pcctx);
 
 
 
@@ -221,6 +240,24 @@ int init_timers_and_add_initial_clients_to_load (batch_context* bctx,
         }
 #endif
     }
+
+  if (bctx->req_rate)
+    {
+      /* 
+         Schedule fixied request rate timer.
+      */
+      bctx->req_rate_timer_node.next_timer = now_time + 1000;
+      bctx->req_rate_timer_node.period = 1000/req_rate_timer_invs_per_sec -
+        req_rate_timer_fudge;
+      bctx->req_rate_timer_node.func_timer = handle_req_rate_timer;
+      if (tq_schedule_timer (bctx->waiting_queue, 
+                             &bctx->req_rate_timer_node) == -1)
+        {
+          fprintf (stderr, "%s - error: tq_schedule_timer () failed.\n",
+            __func__);
+          return -1;
+        }
+    }
   return 0;
 }
 
@@ -255,9 +292,15 @@ int cancel_periodic_timers (batch_context* bctx)
       bctx->screen_input_timer_node.timer_id = -1;
     }
 
+  if (bctx->req_rate_timer_node.timer_id != -1)
+    {
+      tq_cancel_timer (bctx->waiting_queue, 
+                       bctx->req_rate_timer_node.timer_id);
+      bctx->req_rate_timer_node.timer_id = -1;
+    }
+
   return 0;
 }
-
 
 /*****************************************************************************
  * Function name - load_next_step
@@ -319,14 +362,16 @@ int load_next_step (client_context* cctx,
      Therefore, remembering here possible error state.
   */
   int recoverable_error_state = cctx->client_state;
-
+  if (bctx->run_time && (now_time - bctx->start_time >= bctx->run_time))
+      rval_load = CSTATE_FINISHED_OK;
+  else
   /* 
      Initialize virtual client's CURL handle for the next step of loading by calling
      load_<state-name>_state() function relevant for a particular client state.
   */
-  rval_load = load_state_func_table[cctx->client_state+1] (cctx,
-                                                           now_time,
-                                                           &interleave_waiting_time);
+      rval_load = load_state_func_table[cctx->client_state+1] (cctx,
+                                                   now_time,
+                                                   &interleave_waiting_time);
 
   /* 
      Update operational statistics 
@@ -445,8 +490,7 @@ int add_loading_clients (batch_context* bctx)
 {
   //client_context* cctx = bctx->cctx_array;
   long clients_to_sched = 0;
-  int scheduled_now = 0;
-  
+
   /* 
      Return, if initial gradual scheduling of all new clients has been stopped
   */
@@ -473,7 +517,7 @@ int add_loading_clients (batch_context* bctx)
               bctx->client_num_max, bctx->clients_current_sched_num);
 #endif
       return -1; // Returning (-1) means - stop the timer
-      }
+    }
   
   /* Calculate number of the new clients to schedule. */
   if (!bctx->clients_current_sched_num && bctx->client_num_start)
@@ -485,8 +529,7 @@ int add_loading_clients (batch_context* bctx)
     {
       clients_to_sched = bctx->clients_rampup_inc ?
         min (bctx->clients_rampup_inc, bctx->client_num_max - 
-		bctx->clients_current_sched_num) :
-        bctx->client_num_max;
+             bctx->clients_current_sched_num) : bctx->client_num_max;
     }
 
 
@@ -499,27 +542,12 @@ int add_loading_clients (batch_context* bctx)
   /* 
      Schedule new clients by initializing their CURL handle with
      URL, etc. parameters and adding it to MCURL multi-handle.
+     Defer activation to timer if fixed request rate is specified.
   */
-  long j;
-  for (j = bctx->clients_current_sched_num; 
-       j < bctx->clients_current_sched_num + clients_to_sched; 
-       j++)
-	{
-      /* 
-         Runs load_init_state () for each newly added client. 
-      */
-      if (load_next_step (&bctx->cctx_array[j], 
-                          bctx->start_time,
-                          &scheduled_now) == -1)
-        {  
-          fprintf(stderr,"%s error: load_next_step() initial failed\n", __func__);
-#if 0
-          fprintf (cctx->file_output, 
-                   "SCHED: %s - load_next_step failed.\n", 
-                  __func__);
-#endif
+  if (!bctx->req_rate)
+    {
+      if (orderly_sched_clients (bctx, clients_to_sched) < 0)
           return -1;
-        }
     }
 
   /* 
@@ -551,8 +579,6 @@ int add_loading_clients (batch_context* bctx)
  *******************************************************************************/
 int add_loading_clients_num (batch_context* bctx, int add_number)
 {
-  int scheduled_now = 0;
-
   if (add_number <= 0)
     {
       return -1;
@@ -566,30 +592,21 @@ int add_loading_clients_num (batch_context* bctx, int add_number)
   /* Calculate number of the new clients to schedule. */
   const long clients_to_sched = min (add_number, 
                                      bctx->client_num_max - 
-				     bctx->clients_current_sched_num); 
+                                     bctx->clients_current_sched_num); 
 
   //fprintf (stderr, "%s - adding %ld clients.\n", __func__, clients_to_sched);
 
   /* 
-     Schedule new clients by initializing thier CURL handle with
+     Schedule new clients by initializing their CURL handle with
      URL, etc. parameters and adding it to MCURL multi-handle.
+     Defer activation to timer if fixed request rate is specified.
   */
-  long j;
-  for (j = bctx->clients_current_sched_num; 
-       j < bctx->clients_current_sched_num + clients_to_sched; 
-       j++)
-	{
-      /* Runs load_init_state () for each newly added client. */
-      if (load_next_step (&bctx->cctx_array[j], 
-                          bctx->start_time,
-                          &scheduled_now) == -1)
-        {  
-          fprintf(stderr,"%s error: load_next_step() initial failed\n", 
-	  __func__);
+  if (!bctx->req_rate)
+    {
+      if (orderly_sched_clients (bctx, clients_to_sched) < 0)
           return -1;
-      }
     }
-  
+
   bctx->clients_current_sched_num += clients_to_sched;
 	
   return 0;
@@ -668,6 +685,7 @@ static int client_add_to_load (batch_context* bctx,
   cctx->preload_url_curr_index = cctx->url_curr_index;
 
   /* Schedule the client immediately */
+  cctx->req_sent_timestamp = now_time;
   if (curl_multi_add_handle (bctx->multiple_handle, cctx->handle) ==  CURLM_OK)
     {
       unsigned long timer_url_completion = 0;
@@ -885,8 +903,48 @@ int handle_cctx_sleeping_timer (timer_node* tn,
   return client_add_to_load (bctx, cctx, now_time);
 }
 
+/*****************************************************************************
+ * Function name - put_free_client
+ *
+ * Description - Puts a client on the list of clients free to send
+ *               a fixed rate request
+ *
+ * Input -       *cctx - pointer to the client context
+ * Return Code/Output - On success 0, on error -1
+ ******************************************************************************/
+int put_free_client (client_context* cctx)
+{
+  batch_context *bctx = cctx->bctx;
+  if (bctx->free_clients_count >= bctx->client_num_max)
+    /* Debugging, should not happen :-) */
+    {
+      fprintf (stderr,"%s - error: no room in free client client list.\n",
+        __func__);
+      return -1;
+    }
+  int free_client_no = cctx - bctx->cctx_array + 1;
+  if (free_client_no < 0 || free_client_no > bctx->client_num_max)
+    /* Debugging, should not happen :-) */
+    {
+      fprintf (stderr,"%s - error: invalid free client number %d.\n",
+        __func__, free_client_no);
+      return -1;
+    }
+  if (bctx->free_clients[bctx->free_clients_count])
+    /* Debugging, should not happen :-) */
+    {
+      fprintf (stderr,
+       "%s - error: non-empty free client list entry at count %d.\n",
+        __func__, bctx->free_clients_count);
+      return -1;
+    }
+
+  bctx->free_clients[bctx->free_clients_count++] = free_client_no;
+  return 0;
+}
+
 /*************************************************************************
- * Function name - handle_cctx_sleeping_timer
+ * Function name - handle_cctx_url_completion_timer
  *
  * Description - Handling of timer for a client waiting in the waiting queue to 
  *               respect url interleave timeout. Schedules the client to perform 
@@ -917,34 +975,88 @@ static int handle_cctx_url_completion_timer (timer_node* tn,
   stat_url_timeout_err_inc (cctx);
   cctx->client_state = CSTATE_ERROR;
 
+  const unsigned long now_time = get_tick_count ();
   if (verbose_logging)
     {
       fprintf (cctx->file_output, 
-               "%ld %s !! URL_COMPLETION_TIMEOUT: url: %s\n", 
-              cctx->cycle_num, cctx->client_name, 
+               "%ld %ld %ld %s !! ERUT url completion timeout: url: %s\n", 
+              now_time - bctx->start_time,
+              cctx->cycle_num, cctx->url_curr_index, cctx->client_name, 
               bctx->url_ctx_array[cctx->url_curr_index].url_str);
     }
 
-  const unsigned long now_time = get_tick_count ();
 
-  return load_next_step (cctx, now_time, &sched_now);
+  /*
+    If fixed request rate is specified, free the client, the next step
+    is loaded on the request rate timer.
+  */
+  return (bctx->req_rate) ? put_free_client(cctx) :
+    load_next_step(cctx, now_time, &sched_now);
+}
+
+/*************************************************************************
+ * Function name - handle_req_rate_timer
+ *
+ * Description - Handling of timer for fixed client request rate.
+ *               Schedules clients to run to maintain the fixed request rate.
+ *
+ * Input -       *timer_node  - pointer to timer node structure
+ *               *pvoid_param - pointer to some extra data; here batch context
+ *               *ulong_param - some extra data.
+ * Return Code/Output - On success 0, on error -1
+ ***************************************************************************/
+static int handle_req_rate_timer (timer_node* tn,
+                                  void* pvoid_param, 
+                                  unsigned long ulong_param)
+{
+  batch_context* bctx = (batch_context *) pvoid_param;
+  (void) tn;
+  (void) ulong_param;
+
+  (void)req_rate_sched_clients(bctx);
+  return 0;
 }
 
 /****************************************************************************************
  * Function name - pending_active_and_waiting_clients_num
  *
- * Description -  Returns the sum of active and waiting (for load scheduling) clients
+ * Description -  Returns the sum of active and waiting (for load scheduling)
+ *                clients
  *
  * Input -       *bctx - pointer to the batch context
  * Return Code/Output - Sum of active and waiting (for load scheduling) clients
  ****************************************************************************************/
 int pending_active_and_waiting_clients_num (batch_context* bctx)
 {
-  return bctx->waiting_queue ? 
+  int total = bctx->waiting_queue ? 
     (bctx->active_clients_count + bctx->sleeping_clients_count) :
     bctx->active_clients_count;
+  /*
+   If no clients are active, prevent loader exit in case fixed request rate
+   is specified, and clients are scheduled, ie. the request rate timer did
+   not run yet.
+  */
+  return total ? total : (int)(
+    bctx->req_rate && bctx->clients_current_sched_num);
 }
 
+/****************************************************************************************
+ * Function name - pending_active_and_waiting_clients_num_stat
+ *
+ * Description -  Returns the sum of active and waiting (for load scheduling)
+ *                clients or a number of clients maintaining the fixed request
+ *                rate
+ *
+ * Input -       *bctx - pointer to the batch context
+ * Return Code/Output - see Description
+ ****************************************************************************************/
+int pending_active_and_waiting_clients_num_stat (batch_context* bctx)
+{
+  int total = pending_active_and_waiting_clients_num (bctx);
+  if (bctx->req_rate)
+      total = bctx->client_num_max - bctx->free_clients_count;
+  return total;
+}
 
 /*================= STATIC FUNCTIONS =================== */
 
@@ -1071,7 +1183,7 @@ static int load_error_state (client_context* cctx,
     {
       advance_cycle_num (cctx);
 		
-      if (cctx->cycle_num >= bctx->cycles_num)
+      if (bctx->cycles_num && cctx->cycle_num >= bctx->cycles_num)
         {
           return (cctx->client_state = CSTATE_ERROR);
         }
@@ -1127,7 +1239,7 @@ static int pick_up_next_url (client_context* cctx)
       //
       advance_cycle_num (cctx);
           
-      if (cctx->cycle_num == bctx->cycles_num)
+      if (bctx->cycles_num && cctx->cycle_num == bctx->cycles_num)
         {
 
           // Cycling completed
@@ -1278,4 +1390,126 @@ static int load_final_ok_state (client_context* cctx,
   (void) cctx; (void) wait_msec; (void) now_time;
   
   return CSTATE_FINISHED_OK;
+}
+
+/*****************************************************************************
+ * Function name - orderly_sched_clients
+ *
+ * Description - Schedule clients to run (using load_next_step () )
+ *               in sequential order
+ *
+ * Input -       *bctx - pointer to the batch context
+ *               clients_to_sched - number of clients to schedule
+ * Return Code/Output - On success 0, on error -1
+ ******************************************************************************/
+static int orderly_sched_clients (batch_context* bctx,
+                                  int clients_to_sched)
+{
+  int scheduled_now = 0;
+  unsigned long now_time = get_tick_count ();
+  long j;
+
+  for (j = bctx->clients_current_sched_num; 
+       j < bctx->clients_current_sched_num + clients_to_sched; 
+       j++)
+	  {
+      /* 
+       Runs load_init_state () for each newly added client. 
+       */
+      if (load_next_step (&bctx->cctx_array[j], now_time,
+                          &scheduled_now) == -1)
+        {  
+          fprintf(stderr,
+            "%s error: load_next_step() initial failed\n", __func__);
+#if 0
+          fprintf (cctx->file_output, 
+                   "SCHED: %s - load_next_step failed.\n", 
+                   __func__);
+#endif
+           return -1;
+         }
+     }
+  return 0;
+}
+
+/*****************************************************************************
+ * Function name - req_rate_sched_clients
+ *
+ * Description - Schedule clients to run (using load_next_step () ) to maintain
+ *               a fixed request rate.
+ *
+ * Input -       *bctx - pointer to the batch context
+ * Return Code/Output - On success 0, on error -1
+ ******************************************************************************/
+static int req_rate_sched_clients (batch_context* bctx)
+{
+  int scheduled_now = 0;
+  unsigned long now_time = get_tick_count ();
+  int j;
+
+  /*
+    Figure out how many clients of the total (R) to schedule on a particular 
+    invocation (N) of the request rate timer.  Schedule the same number
+    (R/N) of clients on every invocation and distribute the remainder (R%N)
+    between the first (R%N) invocations.
+  */
+  int clients_to_sched = bctx->req_rate/req_rate_timer_invs_per_sec,
+      remainder_to_sched = bctx->req_rate%req_rate_timer_invs_per_sec;
+  bctx->req_rate_timer_invocation %= req_rate_timer_invs_per_sec;
+  clients_to_sched += (int)(
+    remainder_to_sched > bctx->req_rate_timer_invocation++);
+
+  /*
+    Respect gradual increase of clients if any
+  */
+  if (bctx->clients_current_sched_num < bctx->client_num_max)
+      clients_to_sched = min (clients_to_sched,
+        max (0, bctx->clients_current_sched_num -
+        (bctx->client_num_max - bctx->free_clients_count))); 
+
+  for (j = 0; j < clients_to_sched; j++)
+    {
+      client_context *cctx;
+      if (get_free_client(bctx,&cctx) < 0)
+        {
+          fprintf(stderr, "%s error: need free clients (%d)\n",
+            __func__,clients_to_sched - j);
+          return -1;
+        }
+      /*cstate client_state =  */
+      load_next_step (cctx, now_time, &scheduled_now);
+      //fprintf (stderr, "%s - after load_next_step client state %d.\n",
+      //  __func__, client_state);
+    }
+  return 0;
+}
+
+/*****************************************************************************
+ * Function name - get_free_client
+ *
+ * Description - Takes a client off the list of clients free to send
+ *               a fixed rate request
+ *
+ * Input -       *bctx - pointer to the batch context
+ * Output -      **pcctx - pointer to the client context pointer
+ * Return Code/Output - On success 0, on error -1
+ ******************************************************************************/
+static int get_free_client (batch_context* bctx,
+                            client_context** pcctx)
+{
+  if (!bctx->free_clients_count)
+      return -1;  // No free clients left
+  bctx->free_clients_count--;
+  int free_client_no = bctx->free_clients[bctx->free_clients_count];
+  if (free_client_no <= 0)
+    /* Debugging, should not happen :-) */
+    {
+      fprintf (stderr,
+       "%s - error: invalid client number in free client list at count %d.\n",
+     __func__,bctx->free_clients_count);
+    return -1;
+    }
+  bctx->free_clients[bctx->free_clients_count] = 0; // clear for debugging
+  *pcctx = bctx->cctx_array + free_client_no - 1;
+  return 0;
 }

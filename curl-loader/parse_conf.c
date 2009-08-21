@@ -102,8 +102,11 @@ static int ip_addr_min_parser (batch_context*const bctx, char*const value);
 static int ip_addr_max_parser (batch_context*const bctx, char*const value);
 static int ip_shared_num_parser (batch_context*const bctx, char*const value);
 static int cycles_num_parser (batch_context*const bctx, char*const value);
+static int run_time_parser (batch_context*const bctx, char*const value);
 static int user_agent_parser (batch_context*const bctx, char*const value);
 static int urls_num_parser (batch_context*const bctx, char*const value);
+static int dump_opstats_parser (batch_context*const bctx, char*const value);
+static int req_rate_parser (batch_context*const bctx, char*const value);
 
 /*
  * URL section tag parsers. 
@@ -172,8 +175,11 @@ static const tag_parser_pair tp_map [] =
     {"IP_ADDR_MAX", ip_addr_max_parser},
     {"IP_SHARED_NUM", ip_shared_num_parser},
     {"CYCLES_NUM", cycles_num_parser},
+    {"RUN_TIME", run_time_parser},
     {"USER_AGENT", user_agent_parser},
     {"URLS_NUM", urls_num_parser},
+    {"DUMP_OPSTATS", dump_opstats_parser},
+    {"REQ_RATE", req_rate_parser},
     
 
     /*------------------------ URL SECTION -------------------------------- */
@@ -869,6 +875,43 @@ static int cycles_num_parser (batch_context*const bctx, char*const value)
     }
     return 0;
 }
+
+static int run_time_parser (batch_context*const bctx, char*const value)
+{
+    char *token = 0, *strtokp = 0;
+    const char *delim = ":";
+    long dhms[4];
+    int ct = 0;
+    const int max_ct = sizeof(dhms)/sizeof(*dhms);
+    char value_buf[100];
+      // preserve value from destruction by strtok
+    (void)strncpy(value_buf,value,sizeof(value_buf));
+    (void)memset((char *)dhms,0,sizeof(dhms));
+    for (token = strtok_r(value_buf,delim,&strtokp);
+       token != 0; token = strtok_r(0,delim,&strtokp), ct++)
+    {
+        if (ct >= max_ct)
+	{
+            (void)fprintf(stderr, 
+                "%s - error: a value in the form [[[D:]H:]M:]S is expected"
+                " for tag RUN_TIME\n", __func__);
+            return -1;
+        }
+	int i = 0;
+	while (++i < max_ct)
+           dhms[i - 1] = dhms[i];
+        dhms[max_ct - 1] = atol(token);
+    }
+    long run_time = (60 * (60 * (24 * dhms[0] + dhms[1]) + dhms[2]) + dhms[3])*
+       1000; // msecs
+    if (run_time < 0)
+    {
+        run_time = LONG_MAX - 1;
+    }
+    bctx->run_time = (unsigned long)run_time;
+    return 0;
+}
+
 static int clients_rampup_inc_parser (batch_context*const bctx, char*const value)
 {
     bctx->clients_rampup_inc = atol (value);
@@ -915,6 +958,31 @@ static int urls_num_parser (batch_context*const bctx, char*const value)
 
     bctx->url_index = -1;  /* Starting from the 0 position in the arrays */
 
+    return 0;
+}
+
+static int dump_opstats_parser (batch_context*const bctx, char*const value)
+{
+    if (value[0] == 'Y' || value[0] == 'y' ||
+      value[0] == 'N' || value[0] == 'n')
+    	bctx->dump_opstats = (value[0] == 'Y' || value[0] == 'y');
+    else
+    {
+        fprintf (stderr, 
+           "%s - error: DUMP_OPSTATS value (%s) must start with Y|y|N|n.\n",
+                 __func__, value);
+        return -1;
+    }    
+    return 0;
+}
+
+static int req_rate_parser (batch_context*const bctx, char*const value)
+{
+    bctx->req_rate = atol (value);
+    if (bctx->req_rate < 0)
+    {
+        bctx->req_rate = 0;
+    }
     return 0;
 }
 
@@ -2169,6 +2237,13 @@ static int validate_batch_general (batch_context*const bctx)
                  EXPLORER_USERAGENT_STR, 
                  sizeof (bctx->user_agent) -1);
     }
+
+    if (bctx->req_rate > bctx->client_num_max)
+    {
+        fprintf (stderr, "%s - error: REQ_RATE exceeds CLIENTS_NUM_MAX.\n",
+                 __func__);
+        return -1;
+    }
   
     return 0;
 }
@@ -2607,6 +2682,31 @@ static int post_validate_init (batch_context*const bctx)
                    bctx->batch_name, __func__);
           return -1;
         }
+      if (bctx->req_rate)
+        {
+          /*
+            Allocate list of free clients
+          */
+          if (!(bctx->free_clients =
+            (int *) calloc (bctx->client_num_max, sizeof (int))))
+            {
+              fprintf (stderr,
+                "\"%s\" - %s - failed to allocate free client list.\n", 
+                bctx->batch_name, __func__);
+              return -1;
+            }
+	        else
+            {
+               /*
+                 Initialize the list, all clients are free
+                 Fill the list in reverse, last memeber is picked first
+               */
+               bctx->free_clients_count = bctx->client_num_max;
+               int ix = bctx->free_clients_count, client_num = 1;
+	             while (ix-- > 0)
+                  bctx->free_clients[ix] = client_num++;
+            }
+        }
     }
 
   if (create_response_logfiles_dirs (bctx) == -1)
@@ -2729,6 +2829,12 @@ int parse_config_file (char* const filename,
     }
 
   set_default_response_errors_table ();
+
+     /* for compatibility with older configurations set default value
+        of dump_opstats to 1 ("yes") */
+  unsigned i;
+  for (i = 0; i < bctx_array_size; i++)
+     bctx_array[i].dump_opstats = 1;   
 
   while (fgets (fgets_buff, sizeof (fgets_buff) - 1, fp))
     {

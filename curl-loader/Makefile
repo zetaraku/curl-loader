@@ -171,6 +171,6 @@ $(LIBCURL):
 $(OBJ_DIR)/%.o: %.c
 	$(CC) $(CFLAGS) $(PROF_FLAG) $(OPT_FLAGS) $(DEBUG_FLAGS) $(INCDIR) -c -o $(OBJ_DIR)/$*.o $<
 
-$(CONF_OBJ):
+$(CONF_OBJ): parse_conf.c
 	rm -rf $(OBJ_DIR)/parse_conf.o
 	$(CC) $(CFLAGS) $(PROF_FLAG) $(DEBUG_FLAGS) $(INCDIR) -c -o $(OBJ_DIR)/parse_conf.o parse_conf.c

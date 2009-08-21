@@ -31,9 +31,9 @@
 #include <event.h>
 #include <string.h>
 
-#include "loader.h"
 #include "batch.h"
 #include "client.h"
+#include "loader.h"
 #include "conf.h"
 #include "cl_alloc.h"
 #include "screen.h"
@@ -643,15 +643,31 @@ static int mperform_hyper (batch_context* bctx, int* still_running)
               now_time = get_tick_count ();
             }
 
-          /*cstate client_state =  */
-          load_next_step (cctx, now_time, &scheduled_now);
-
-          if (scheduled_now)
+          /*
+	          Load next step only if request rate is not specified.
+		        Otherwise requests are made on a timer.
+          */
+	        if (bctx->req_rate) 
             {
-              scheduled_now_count++;
+              if (put_free_client(cctx) < 0)
+                {
+                  fprintf (stderr, "%s error: cannot free a client.\n",
+                   __func__);
+                  return -1;
+                }
             }
+          else
+            {
+              /*cstate client_state =  */
+              load_next_step (cctx, now_time, &scheduled_now);
 
-          //fprintf (stderr, "%s - after load_next_step client state %d.\n", __func__, client_state);
+             if (scheduled_now)
+               {
+                 scheduled_now_count++;
+               }
+
+             //fprintf (stderr, "%s - after load_next_step client state %d.\n", __func__, client_state);
+            }
 
           if (msg_num <= 0)
             {

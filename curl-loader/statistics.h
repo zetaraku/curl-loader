@@ -216,10 +216,22 @@ struct batch_context;
 ****************************************************************************************/
 void dump_final_statistics (struct client_context* cctx);
 
+/******
+* Function name - ascii_time
+*
+* Description - evaluate current time in ascii
+*
+* Input -       *tbuf - pointer to time buffer
+* Return -      tbuf filled with time
+******/
+
+char *ascii_time (char *tbuf);
+
 /****************************************************************************************
-* Function name - dump_snapshot_interval and up to the interval time summary statistics
+* Function name - dump_snapshot_interval
 *
 * Description - Dumps summary statistics since the start of load
+* and up to the interval
 *
 * Input -       *bctx - pointer to batch structure
 *               now   - current time in msec since the epoch

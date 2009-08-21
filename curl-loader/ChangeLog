@@ -1,3 +1,14 @@
+By Val Shkolnikov <val@nvsoft.net>
+
+* Added a fixed request rate feature.
+  It is a bit risky feature, but "Navigare necesse est ..."
+
+By Val Shkolnikov <val@nvsoft.net>
+* Directed operational statistics into a file with the extension .ops
+* Added DUMP_OPSTATS and RUN_TIME options.
+* Added time stamp to the .log file, streamlined logging using macros.
+* Added a second -v option for varied level of logging detail.
+
 
 * Renamed function getline to get_line since folks from RedHat are 
    polluting the namespace. Thanks to jari pietila <jari2004@hotmail.com>

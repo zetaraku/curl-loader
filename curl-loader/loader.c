@@ -48,7 +48,6 @@
 #include <curl/multi.h>
 
 // getrlimit
-#include <sys/time.h>
 #include <sys/resource.h>
 
 #include "batch.h"
@@ -118,6 +117,14 @@ static pf_user_activity ua_array[2] =
   user_activity_smooth
 };
 
+static FILE *create_file (batch_context* bctx, char* fname)
+{
+  FILE *fp = fopen(fname,"w");
+  if (!fp)
+    (void)fprintf(stderr,"%s, cannot create file \"%s\", %s\n", 
+      bctx->batch_name,fname,strerror(errno));
+  return fp;
+}
 
 int 
 main (int argc, char *argv [])
@@ -258,6 +265,7 @@ static void* batch_function (void * batch_data)
   batch_context* bctx = (batch_context *) batch_data;
   FILE* log_file = 0;
   FILE* statistics_file = 0;
+  FILE* opstats_file = 0;
   
   int  rval = -1;
 
@@ -273,34 +281,38 @@ static void* batch_function (void * batch_data)
       /*
         Init batch logfile for the batch client output 
       */
-      sprintf (bctx-> batch_logfile, "./%s.log", bctx->batch_name);
-
-      if (!(log_file = fopen(bctx-> batch_logfile, "w")))
-        {
-          fprintf (stderr, 
-                   "%s - \"%s\" - failed to open file \"%s\" with errno %d.\n", 
-                   __func__, bctx->batch_name, bctx-> batch_logfile, errno);
+      (void)sprintf (bctx-> batch_logfile, "./%s.log", bctx->batch_name);
+      if (!(log_file = create_file(bctx,bctx->batch_logfile)))
           return NULL;
+      else
+        {
+          char tbuf[256];
+          (void)fprintf(log_file,"# %ld %s",get_tick_count(),ascii_time(tbuf));
+	  (void)fprintf(log_file,
+            "# msec_offset cycle_no url_no client_no (ip) indic info\n");
         }
     }
 
   /*
     Init batch statistics file
   */
-  sprintf (bctx->batch_statistics, "./%s.txt", bctx->batch_name);
-      
-  if (!(statistics_file = fopen(bctx->batch_statistics, "w")))
-  {
-      fprintf (stderr, 
-               "%s - \"%s\" - failed to open file \"%s\" with errno %d.\n", 
-               __func__, bctx->batch_name, bctx->batch_statistics, errno);
+  (void)sprintf (bctx->batch_statistics, "./%s.txt", bctx->batch_name);
+  if (!(bctx->statistics_file = statistics_file = create_file(bctx,
+    bctx->batch_statistics)))
       return NULL;
-  }
   else
-  {
-      bctx->statistics_file = statistics_file;
       print_statistics_header (statistics_file);
-  }
+  
+  /*
+    Init batch operational statistics file
+  */
+  if (bctx->dump_opstats) 
+    {
+      (void)sprintf (bctx->batch_opstats, "./%s.ops", bctx->batch_name);
+      if (!(bctx->opstats_file = opstats_file = create_file(bctx,
+       bctx->batch_opstats)))
+          return NULL;
+    }
   
   /* 
      Init the objects, containing client-context information.
@@ -348,6 +360,9 @@ static void* batch_function (void * batch_data)
 
   if (statistics_file)
       fclose (statistics_file);
+
+  if (opstats_file)
+      fclose (opstats_file);
 
   free_batch_data_allocations (bctx);
 
@@ -524,7 +539,15 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
         {
           if (! is_template(url)) /* Handled in update_url_from_set_or_template () above. GF */
           {
-              curl_easy_setopt (handle, CURLOPT_URL, url->url_str);
+              // ###DEBUG###
+              // curl_easy_setopt (handle, CURLOPT_URL, url->url_str);
+              char buf[1000];
+              sprintf(buf,"%s.%ld.%ld.%s",url->url_str,
+                  cctx->cycle_num,cctx->url_curr_index,
+                  cctx->client_name);
+              buf[strlen(buf)-1] = '\0'; // suppress space
+              curl_easy_setopt (handle, CURLOPT_URL, buf);
+              // ###DEBUG###
           }
         }
     }
@@ -1108,6 +1131,36 @@ static int init_client_formed_buffer (client_context* cctx,
   return 0;
 }
 
+#define write_log(ind, data) \
+  if (1) {\
+    char *end = data+strlen(data)-1;\
+    if (*end == '\n')\
+      *end = '\0';\
+    (void)fprintf(cctx->file_output,"%ld %ld %ld %s%s %s",\
+     offs_resp, cctx->cycle_num, cctx->url_curr_index, cctx->client_name,\
+     ind, data);\
+    if (url_print)\
+      (void)fprintf(cctx->file_output," eff-url: url %s",url);\
+    if (url_diff)\
+      (void)fprintf(cctx->file_output," url: url %s",url_target);\
+    (void)fprintf(cctx->file_output,"\n");\
+  }
+
+#define write_log_num(ind, num) \
+  if (1) {\
+    char buf[100];\
+    (void)snprintf(buf,sizeof(buf),"%ld",num);\
+    write_log(ind,buf);\
+  }
+
+#define write_log_ext(ind, num, ext) \
+  if (1) {\
+    char buf[200];\
+    (void)snprintf(buf,sizeof(buf),"%ld %s",num, ext);\
+    write_log(ind,buf);\
+  }
+
+#define startswith(str, start) !strncmp((char *)str,(char *)start,strlen((char *)start))
 
 /****************************************************************************************
 * Function name - client_tracing_function
@@ -1172,19 +1225,20 @@ static int client_tracing_function (CURL *handle,
    */
   scan_response(type, (char*) data, size, cctx);
 
+  const unsigned long time_resp = get_tick_count();
+  const unsigned long offs_resp = time_resp - cctx->bctx->start_time;
+
   switch (type)
     {
     case CURLINFO_TEXT:
       if (verbose_logging)
-          fprintf(cctx->file_output, "%ld %s :== Info: %s: eff-url: %s, url: %s\n",
-                  cctx->cycle_num, cctx->client_name, data,
-                  url_print ? url : "", url_diff ? url_target : "");
+	  if (verbose_logging > 1 || startswith(data,"About") ||
+	   startswith(data,"Closing"))
+	    write_log("==",(char *)data);
       break;
 
     case CURLINFO_ERROR:
-      fprintf(cctx->file_output, "%ld %s !! ERROR: %s: eff-url: %s, url: %s\n", 
-              cctx->cycle_num, cctx->client_name, data, 
-              url_print ? url : "", url_diff ? url_target : "");
+      write_log("!! ERR",(char *)data);
 
       cctx->client_state = CSTATE_ERROR;
 
@@ -1193,9 +1247,8 @@ static int client_tracing_function (CURL *handle,
       break;
 
     case CURLINFO_HEADER_OUT:
-      if (verbose_logging)
-          fprintf(cctx->file_output, "%ld %s => Send header: eff-url: %s, url: %s\n", 
-                  cctx->cycle_num, cctx->client_name, url_print ? url : "", url_diff ? url_target : "");
+      if (verbose_logging > 1)
+	  write_log("=>","Send header");
 
       stat_data_out_add (cctx, (unsigned long) size);
 
@@ -1204,26 +1257,21 @@ static int client_tracing_function (CURL *handle,
           /* First header of the HTTP-request. */
           first_hdr_req_inc (cctx);
           stat_req_inc (cctx); /* Increment number of requests */
-          cctx->req_sent_timestamp = get_tick_count ();
         }
       first_hdrs_clear_non_req (cctx);
       break;
 
     case CURLINFO_DATA_OUT:
-      if (verbose_logging)
-          fprintf(cctx->file_output, "%ld %s => Send data: eff-url: %s, url: %s\n", 
-                  cctx->cycle_num, cctx->client_name, url_print ? url : "",
-                  url_diff ? url_target : "");
+      if (verbose_logging > 1)
+	  write_log("=>","Send data");
 
       stat_data_out_add (cctx, (unsigned long) size);
       first_hdrs_clear_all (cctx);
       break;
 
     case CURLINFO_SSL_DATA_OUT:
-      if (verbose_logging) 
-          fprintf(cctx->file_output, "%ld %s => Send ssl data: eff-url: %s, url: %s\n", 
-                  cctx->cycle_num, cctx->client_name, url_print ? url : "",
-                  url_diff ? url_target : "");
+      if (verbose_logging > 1) 
+	  write_log("=>","Send ssl data");
 
       stat_data_out_add (cctx, (unsigned long) size);
       first_hdrs_clear_all (cctx);
@@ -1241,10 +1289,8 @@ static int client_tracing_function (CURL *handle,
         
         curl_easy_getinfo (handle, CURLINFO_RESPONSE_CODE, &response_status);
 
-        if (verbose_logging)
-          fprintf(cctx->file_output, "%ld %s <= Recv header:%ld eff-url: %s, url: %s\n", 
-                  cctx->cycle_num, cctx->client_name, response_status, url_print ? url : "",
-                  url_diff ? url_target : "");
+        if (verbose_logging > 1)
+	  write_log_num("<= Recv header:",response_status);
         
         response_module = response_status / (long)100;
         
@@ -1254,16 +1300,12 @@ static int client_tracing_function (CURL *handle,
           case 1: /* 100-Continue and 101 responses */
             if (! first_hdr_1xx (cctx))
               {
-                if (verbose_logging)
-                  fprintf(cctx->file_output, "%ld %s:!! %ld CONTINUE: eff-url: %s, url: %s\n", 
-                          cctx->cycle_num, cctx->client_name, response_status,
-                          url_print ? url : "", url_diff ? url_target : "");
+	        write_log_num("!! CONT",response_status);
 
                 /* First header of 1xx response */
                 first_hdr_1xx_inc (cctx);
                 stat_1xx_inc (cctx); /* Increment number of 1xx responses */
-                const unsigned long time_1xx_resp = get_tick_count ();
-                stat_appl_delay_add (cctx, time_1xx_resp);
+                stat_appl_delay_add (cctx, time_resp);
               }
             
             first_hdrs_clear_non_1xx (cctx);
@@ -1273,19 +1315,15 @@ static int client_tracing_function (CURL *handle,
           case 2: /* 200 OK */
             if (! first_hdr_2xx (cctx))
               {
-                if (verbose_logging)
-                    fprintf(cctx->file_output, "%ld %s:!! %ld OK: eff-url: %s, url: %s\n",
-                            cctx->cycle_num, cctx->client_name, response_status,
-                            url_print ? url : "", url_diff ? url_target : "");
+	        write_log_num("!! OK",response_status);
 
                 /* First header of 2xx response */
                 first_hdr_2xx_inc (cctx);
                 stat_2xx_inc (cctx); /* Increment number of 2xx responses */
 
                 /* Count into the averages HTTP/S server response delay */
-                const unsigned long time_2xx_resp = get_tick_count ();
-                stat_appl_delay_2xx_add (cctx, time_2xx_resp);
-                stat_appl_delay_add (cctx, time_2xx_resp);
+                stat_appl_delay_2xx_add (cctx, time_resp);
+                stat_appl_delay_add (cctx, time_resp);
               }
             first_hdrs_clear_non_2xx (cctx);
             break;
@@ -1293,15 +1331,12 @@ static int client_tracing_function (CURL *handle,
           case 3: /* 3xx REDIRECTIONS */
             if (! first_hdr_3xx (cctx))
               {
-                fprintf(cctx->file_output, "%ld %s:!! %ld REDIRECTION: %s: eff-url: %s, url: %s\n", 
-                    cctx->cycle_num, cctx->client_name, response_status, data,
-                    url_print ? url : "", url_diff ? url_target : "");
+	        write_log_num("!! RDR",response_status);
 
                 /* First header of 3xx response */
                 first_hdr_3xx_inc (cctx);
                 stat_3xx_inc (cctx); /* Increment number of 3xx responses */
-                const unsigned long time_3xx_resp = get_tick_count ();
-                stat_appl_delay_add (cctx, time_3xx_resp);
+                stat_appl_delay_add (cctx, time_resp);
               }
             first_hdrs_clear_non_3xx (cctx);
             break;
@@ -1309,16 +1344,13 @@ static int client_tracing_function (CURL *handle,
           case 4: /* 4xx Client Error */
               if (! first_hdr_4xx (cctx))
               {
-                fprintf(cctx->file_output, "%ld %s :!! %ld CLIENT_ERROR : %s: eff-url: %s, url: %s\n", 
-                      cctx->cycle_num, cctx->client_name, response_status, data,
-                      url_print ? url : "", url_diff ? url_target : "");
+	        write_log_ext("!! ERCL",response_status,data);
 
                 /* First header of 4xx response */
                 first_hdr_4xx_inc (cctx);
                 stat_4xx_inc (cctx);  /* Increment number of 4xx responses */
 
-                const unsigned long time_4xx_resp = get_tick_count ();
-                stat_appl_delay_add (cctx, time_4xx_resp);
+                stat_appl_delay_add (cctx, time_resp);
               }
              first_hdrs_clear_non_4xx (cctx);
              break;
@@ -1327,24 +1359,20 @@ static int client_tracing_function (CURL *handle,
           case 5: /* 5xx Server Error */
             if (! first_hdr_5xx (cctx))
               {
-                fprintf(cctx->file_output, "%ld %s :!! %ld SERVER_ERROR : %s: eff-url: %s, url: %s\n", 
-                    cctx->cycle_num, cctx->client_name, response_status, data,
-                    url_print ? url : "", url_diff ? url_target : "");
+	        write_log_ext("!! ERSR",response_status,data);
 
                 /* First header of 5xx response */
                 first_hdr_5xx_inc (cctx);
                 stat_5xx_inc (cctx);  /* Increment number of 5xx responses */
 
-                const unsigned long time_5xx_resp = get_tick_count ();
-                stat_appl_delay_add (cctx, time_5xx_resp);
+                stat_appl_delay_add (cctx, time_resp);
               }
             first_hdrs_clear_non_5xx (cctx);
             break;
 
           default :
-            fprintf(cctx->file_output, 
-                    "%ld %s:<= WARNING: parsing error: wrong response code (FTP?) %ld .\n", 
-                    cctx->cycle_num, cctx->client_name, response_status /*(char*) data*/);
+	    write_log_num("<= WARNING: wrong response code (FTP?)",
+	     response_status);
             /* FTP breaks it: - cctx->client_state = CSTATE_ERROR; */
             break;
           }
@@ -1375,9 +1403,11 @@ static int client_tracing_function (CURL *handle,
       break;
 
     case CURLINFO_DATA_IN:     
-      if (verbose_logging) 
-          fprintf(cctx->file_output, "%ld %s <= Recv data: eff-url: %s, url: %s\n", 
-                  cctx->cycle_num, cctx->client_name, 
+      if (verbose_logging > 1) 
+          (void)fprintf(cctx->file_output,
+                 "%ld %ld %ld %s<= Recv data: eff-url: %s, url: %s\n", 
+                  offs_resp, cctx->cycle_num, cctx->url_curr_index,
+		  cctx->client_name,
                   url_print ? url : "", url_diff ? url_target : "");
 
       stat_data_in_add (cctx,  (unsigned long) size);
@@ -1385,10 +1415,8 @@ static int client_tracing_function (CURL *handle,
       break;
 
     case CURLINFO_SSL_DATA_IN:
-      if (verbose_logging) 
-          fprintf(cctx->file_output, "%ld %s <= Recv ssl data: eff-url: %s, url: %s\n", 
-                  cctx->cycle_num, cctx->client_name, 
-                  url_print && url ? url : "", url_diff ? url_target : "");
+      if (verbose_logging > 1) 
+	  write_log("<=","Recv ssl data");
 
       stat_data_in_add (cctx,  (unsigned long) size);
       first_hdrs_clear_all (cctx);
@@ -1447,10 +1475,15 @@ static int init_client_contexts (batch_context* bctx,
       */
       cctx->cycle_num = 0;
 
-      snprintf(cctx->client_name, sizeof(cctx->client_name) - 1, 
+      if (verbose_logging > 1)
+         snprintf(cctx->client_name, sizeof(cctx->client_name) - 1, 
                "%d (%s) ", 
                i + 1, 
                bctx->ip_addr_array[i]);
+      else
+	 /* Shorten client name for low logging */
+         snprintf(cctx->client_name, sizeof(cctx->client_name) - 1, 
+               "%d ",i+1);
 
       /* Mark timer-ids as non-valid. */
       cctx->tid_sleeping = cctx->tid_url_completion = -1;
@@ -2131,7 +2164,11 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
       if (i)
         {
           bc_arr[i].cctx_array = 0;
+          bc_arr[i].free_clients = 0;
           
+          /*
+            Allocate array of client contexts
+          */
           if (!(bc_arr[i].cctx_array =
                 (client_context *) cl_calloc (bc_arr[i].client_num_max, 
                                               sizeof (client_context))))
@@ -2139,6 +2176,31 @@ static int create_thr_subbatches (batch_context *bc_arr, int subbatches_num)
               fprintf (stderr, "\"%s\" - %s - failed to allocate cctx.\n", 
                        bc_arr[i].batch_name, __func__);
               return -1;
+            }
+          if (master.req_rate)
+            {
+              /*
+                Allocate list of free clients
+              */
+              if (!(bc_arr[i].free_clients =
+               (int *) calloc (bc_arr[i].client_num_max,sizeof (int))))
+	        {
+                  fprintf (stderr,
+                    "\"%s\" - %s - failed to allocate list of free clients.\n", 
+                    bc_arr[i].batch_name, __func__);
+                  return -1;
+                }
+	      else
+                {
+                  /*
+                    Initialize the list, all clients are free
+                    Fill the list in reverse, last memeber is picked first
+                  */
+                  bc_arr[i].free_clients_count = bc_arr[i].client_num_max;
+                  int ix = bc_arr[i].free_clients_count, client_num = 1;
+	                while (ix-- > 0)
+		                bc_arr[i].free_clients[ix] = client_num++;
+                }
             }
         }
 

@@ -176,8 +176,8 @@ int parse_command_line (int argc, char *argv [])
             }
             break;
 
-        case 'v':
-          verbose_logging = 1; 
+        case 'v': /* accumulate verbosity */
+          verbose_logging += 1; 
           break;
 
         case 'u':

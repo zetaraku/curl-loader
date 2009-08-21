@@ -27,9 +27,11 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "batch.h"
 #include "client.h"
+#include "loader.h"
 #include "conf.h"
 
 #include "statistics.h"
@@ -57,7 +59,8 @@ static void print_statistics_data_to_file (FILE* file,
                                            stat_point *sd,
                                            unsigned long period);
 
-static void print_operational_statistics (op_stat_point*const osp_curr,
+static void print_operational_statistics (FILE *opstats_file,
+                                          op_stat_point*const osp_curr,
                                           op_stat_point*const osp_total,
                                           url_context* url_arr);
 
@@ -400,7 +403,8 @@ void dump_final_statistics (client_context* cctx)
     }
   op_stat_point_add (&bctx->op_total, &bctx->op_delta);
   
-  print_operational_statistics (&bctx->op_delta, 
+  print_operational_statistics (bctx->opstats_file,
+                                &bctx->op_delta, 
                                 &bctx->op_total, 
                                 bctx->url_ctx_array);
 
@@ -417,26 +421,47 @@ void dump_final_statistics (client_context* cctx)
       print_statistics_data_to_file (bctx->statistics_file,
 				     loading_time/1000,
 				     UNSECURE_APPL_STR,
-				     pending_active_and_waiting_clients_num (bctx),
+				     pending_active_and_waiting_clients_num_stat (bctx),
 				     &bctx->http_total,
 				     loading_time);
 			
       print_statistics_data_to_file (bctx->statistics_file, 
 				     loading_time/1000,
 				     SECURE_APPL_STR,
-				     pending_active_and_waiting_clients_num (bctx),
+				     pending_active_and_waiting_clients_num_stat (bctx),
 				     &bctx->https_total,
 				     loading_time);
     }
 
   dump_clients (cctx);
-  fprintf (stderr, "\nExited. For details look in the files:\n"
+  (void)fprintf (stderr, "\nExited. For details look in the files:\n"
            "- %s.log for errors and traces;\n"
            "- %s.txt for loading statistics;\n"
-           "- %s.ctx for virtual client based statistics.\n"
-           "You may add -v and -u options to the command line for more "
-	   "verbouse output to %s.log file.\n", bctx->batch_name, bctx->batch_name, 
-	   bctx->batch_name, bctx->batch_name);
+           "- %s.ctx for virtual client based statistics.\n",
+	   bctx->batch_name, bctx->batch_name, bctx->batch_name);
+  if (bctx->dump_opstats)
+      (void)fprintf (stderr,"- %s.ops for operational statistics.\n",
+      bctx->batch_name);
+  (void)fprintf (stderr, 
+           "Add -v and -u options to the command line for "
+	   "verbose output to %s.log file.\n",bctx->batch_name);
+}
+
+/******
+* Function name - ascii_time
+*
+* Description - evaluate current time in ascii
+*
+* Input -       *tbuf - pointer to time buffer
+* Return -      tbuf filled with time
+******/
+
+char *ascii_time (char *tbuf)
+{
+  time_t timeb;
+
+  (void)time(&timeb);
+  return ctime_r(&timeb,tbuf);
 }
 
 /****************************************************************************************
@@ -459,7 +484,8 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
 
   for (i = 0; i <= threads_subbatches_num; i++)
     {
-      total_current_clients += pending_active_and_waiting_clients_num (bctx + i);
+      total_current_clients +=
+        pending_active_and_waiting_clients_num_stat (bctx + i);
     }
 
   dump_snapshot_interval_and_advance_total_statistics (bctx, 
@@ -501,7 +527,8 @@ void dump_snapshot_interval (batch_context* bctx, unsigned long now)
     }
   else
     {
-      const int current_clients = pending_active_and_waiting_clients_num (bctx);
+      const int current_clients =
+        pending_active_and_waiting_clients_num_stat (bctx);
 
       fprintf(stdout," Manual: clients:max[%d],curr[%d]. Inc num: [+|*].",
               total_client_num_max, total_current_clients);
@@ -593,7 +620,8 @@ void dump_snapshot_interval_and_advance_total_statistics (batch_context* bctx,
 
   op_stat_point_add (&bctx->op_total, &bctx->op_delta );
 
-  print_operational_statistics (&bctx->op_delta,
+  print_operational_statistics (bctx->opstats_file,
+                                &bctx->op_delta,
                                 &bctx->op_total, 
                                 bctx->url_ctx_array);
 
@@ -811,29 +839,33 @@ static void dump_clients (client_context* cctx_array)
 /***********************************************************************************
 * Function name - print_operational_statistics
 *
-* Description - Prints to stdout number of login, UAS - for each URL and logoff operations
+* Description - writes number of login, UAS - for each URL and logoff operations
 *               success and failure numbers
 *
-* Input -       *osp_curr - pointer to the current operational statistics point
+* Input -       *opstats_file - FILE pointer
+*               *osp_curr - pointer to the current operational statistics point
 *               *osp_total - pointer to the current operational statistics point
 *
 * Return Code/Output - None
 *************************************************************************************/
-static void print_operational_statistics (op_stat_point*const osp_curr,
+static void print_operational_statistics (FILE *opstats_file,
+                                          op_stat_point*const osp_curr,
                                           op_stat_point*const osp_total,
                                           url_context* url_arr)
 {
-  if (!osp_curr || !osp_total)
+  if (!osp_curr || !osp_total || !opstats_file)
     return;
 
-  fprintf (stdout, " Operations:\t\t Success\t\t Failed\t\t\tTimed out\n");
+  (void)fprintf (opstats_file,
+    " Operations:\t\t Success\t\t Failed\t\t\tTimed out\n");
 
   if (osp_curr->url_num && (osp_curr->url_num == osp_total->url_num))
     {
       unsigned long i;
       for (i = 0; i < osp_curr->url_num; i++)
         {
-          fprintf (stdout, "URL%ld:%-12.12s\t%-6ld %-8ld\t\t%-6ld %-8ld\t\t%-6ld %-8ld\n",
+          (void)fprintf (opstats_file,
+              "URL%ld:%-12.12s\t%-6ld %-8ld\t\t%-6ld %-8ld\t\t%-6ld %-8ld\n",
                    i, url_arr[i].url_short_name, 
                    osp_curr->url_ok[i], osp_total->url_ok[i],
                    osp_curr->url_failed[i], osp_total->url_failed[i],
