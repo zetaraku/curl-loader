@@ -3513,7 +3513,7 @@ build_url_set(url_set* set, url_template* template, FILE* file, char* fname)
     set->n_urles = nrows;
     rewind (file);
 		
-    for (ind = 0, lineno = 1; getline(f_buf, sizeof f_buf, file) != 0; lineno++)
+    for (ind = 0, lineno = 1; get_line(f_buf, sizeof f_buf, file) != 0; lineno++)
     {
         if (is_comment(f_buf))
             continue;
