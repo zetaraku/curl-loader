@@ -539,7 +539,7 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
         {
           if (! is_template(url)) /* Handled in update_url_from_set_or_template () above. GF */
           {
-              // ###DEBUG###
+#if DEBUG
               // curl_easy_setopt (handle, CURLOPT_URL, url->url_str);
               char buf[1000];
               sprintf(buf,"%s.%ld.%ld.%s",url->url_str,
@@ -547,7 +547,10 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
                   cctx->client_name);
               buf[strlen(buf)-1] = '\0'; // suppress space
               curl_easy_setopt (handle, CURLOPT_URL, buf);
-              // ###DEBUG###
+#else
+              curl_easy_setopt (handle, CURLOPT_URL, url->url_str);
+#endif // DEBUG
+
           }
         }
     }
