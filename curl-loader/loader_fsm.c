@@ -363,7 +363,10 @@ int load_next_step (client_context* cctx,
   */
   int recoverable_error_state = cctx->client_state;
   if (bctx->run_time && (now_time - bctx->start_time >= bctx->run_time))
+    {
       rval_load = CSTATE_FINISHED_OK;
+      bctx->requests_completed = 1;
+    }
   else
   /* 
      Initialize virtual client's CURL handle for the next step of loading by calling
@@ -1028,6 +1031,8 @@ static int handle_req_rate_timer (timer_node* tn,
  ****************************************************************************************/
 int pending_active_and_waiting_clients_num (batch_context* bctx)
 {
+  if (bctx->req_rate && (bctx->cycling_completed || bctx->requests_completed))
+    return 0;
   int total = bctx->waiting_queue ? 
     (bctx->active_clients_count + bctx->sleeping_clients_count) :
     bctx->active_clients_count;

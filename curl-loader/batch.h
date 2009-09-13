@@ -220,6 +220,9 @@ typedef struct batch_context
   /* List of clients free to send fixed rate requests */
   int* free_clients;
 
+  /* Indicates that request scheduling is over */
+  int requests_completed;
+
   /* Request rate timer invocation sequence number within a second */
   int req_rate_timer_invocation;
 
