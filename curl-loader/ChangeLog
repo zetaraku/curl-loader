@@ -1,9 +1,7 @@
+version 0.50, unstable, September 21, svn 570
 
-
-version 0.50, unstable,
-
-* Advanced to curl-19.6, which is closing faster dead connections
-  and contains other improtant bug fixed.
+* Advanced to curl-19.6, which is closing dead connections faster
+  and contains other important fixes.
 
 By Val Shkolnikov <val@nvsoft.net>
 
