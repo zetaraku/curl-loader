@@ -1,3 +1,10 @@
+
+
+version 0.50, unstable,
+
+* Advanced to curl-19.6, which is closing faster dead connections
+  and contains other improtant bug fixed.
+
 By Val Shkolnikov <val@nvsoft.net>
 
 * Added a fixed request rate feature.

@@ -12,7 +12,7 @@ BUILD=$(shell pwd)/build
 #CARES_MAKE_DIR=$(CARES_BUILD)/c-ares-$(CARES_VER)
 
 CURL_BUILD=$(BUILD)/curl
-CURL_VER:=7.19.4
+CURL_VER:=7.19.6
 
 LIBEVENT_BUILD=$(BUILD)/libevent
 LIBEVENT_VER:=1.4.11
@@ -57,7 +57,7 @@ else
 OPT_FLAGS= -O0
 endif
 
-# CPU-tuning flags for Pentium-4 arch.
+# CPU-tuning flags for Pentium-4 arch as an example.
 #OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
 
 #Profiling flags
@@ -84,7 +84,6 @@ INCDIR=-I. -I./inc -I$(OPENSSLDIR)/include
 #LIBCARES:=./lib/libcares.a
 LIBCURL:=./lib/libcurl.a
 LIBEVENT:=./lib/libevent.a
-CONF_OBJ:=$(OBJ_DIR)/parse_conf.o
 
 # documentation directory
 DOCDIR=/usr/share/doc/curl-loader/
@@ -97,7 +96,7 @@ all: $(TARGET)
 $(TARGET): $(LIBCURL) $(LIBEVENT)  $(CONF_OBJ) $(OBJ)
 	$(LD) $(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
 
-nobuildcurl: $(CONF_OBJ) $(OBJ)
+nobuildcurl: $(OBJ)
 	$(LD) $(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS) -o $(TARGET) $(OBJ) $(LIBS)
 
 clean:
@@ -171,6 +170,3 @@ $(LIBCURL):
 $(OBJ_DIR)/%.o: %.c
 	$(CC) $(CFLAGS) $(PROF_FLAG) $(OPT_FLAGS) $(DEBUG_FLAGS) $(INCDIR) -c -o $(OBJ_DIR)/$*.o $<
 
-$(CONF_OBJ): parse_conf.c
-	rm -rf $(OBJ_DIR)/parse_conf.o
-	$(CC) $(CFLAGS) $(PROF_FLAG) $(DEBUG_FLAGS) $(INCDIR) -c -o $(OBJ_DIR)/parse_conf.o parse_conf.c
