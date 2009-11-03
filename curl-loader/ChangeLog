@@ -1,3 +1,7 @@
+
+* DNS resolving now works via c-ares library.
+  Thanks to Val Shkolnikov <val@nvsoft.net> for this suggestion and patch.
+
 version 0.50, unstable, September 21, svn 570
 
 * Advanced to curl-19.6, which is closing dead connections faster

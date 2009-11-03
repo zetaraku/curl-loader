@@ -7,9 +7,9 @@ BUILD=$(shell pwd)/build
 #
 # Building of DNS asynch resolving c-ares library.
 #
-#CARES_BUILD=$(BUILD)/c-ares
-#CARES_VER:=1.4
-#CARES_MAKE_DIR=$(CARES_BUILD)/c-ares-$(CARES_VER)
+CARES_BUILD=$(BUILD)/c-ares
+CARES_VER:=1.6.0
+CARES_MAKE_DIR=$(CARES_BUILD)/c-ares-$(CARES_VER)
 
 CURL_BUILD=$(BUILD)/curl
 CURL_VER:=7.19.6
@@ -58,7 +58,12 @@ OPT_FLAGS= -O0
 endif
 
 # CPU-tuning flags for Pentium-4 arch as an example.
+#
 #OPT_FLAGS+= -mtune=pentium4 -mcpu=pentium4
+
+# CPU-tuning flags for Intel core-2 arch as an example. 
+# Note, that it is supported only by gcc-4.3 and higher
+#OPT_FLAGS+=  -mtune=core2 -march=core2
 
 #Profiling flags
 ifeq ($(profile),1)
@@ -75,13 +80,13 @@ LD=gcc
 LDFLAGS=-L./lib -L$(OPENSSLDIR)/lib
 
 # Link Libraries. In some cases, plese add -lidn, or -lldap
-LIBS= -ldl -lpthread -lrt -lcurl -levent -lz -lssl -lcrypto
+LIBS= -ldl -lpthread -lrt -lcurl -levent -lz -lssl -lcrypto -lcares
 
 # Include directories
 INCDIR=-I. -I./inc -I$(OPENSSLDIR)/include
 
 # Targets
-#LIBCARES:=./lib/libcares.a
+LIBCARES:=./lib/libcares.a
 LIBCURL:=./lib/libcurl.a
 LIBEVENT:=./lib/libevent.a
 
@@ -93,7 +98,7 @@ MANDIR=/usr/share/man
 
 all: $(TARGET)
 
-$(TARGET): $(LIBCURL) $(LIBEVENT)  $(CONF_OBJ) $(OBJ)
+$(TARGET): $(LIBCARES) $(LIBCURL) $(LIBEVENT)  $(CONF_OBJ) $(OBJ)
 	$(LD) $(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
 
 nobuildcurl: $(OBJ)
@@ -105,6 +110,7 @@ clean:
 cleanall: clean
 	rm -rf ./build ./packages/curl-$(CURL_VER) \
 	./packages/curl ./inc ./lib ./bin $(TAGFILE) \
+	./packages/c-ares-$(CARES_VER) \
 	*.log *.txt *.ctx *~ ./conf-examples/*~
 
 tags:
@@ -131,15 +137,15 @@ $(LIBEVENT):
 	cp -pf $(LIBEVENT_BUILD)/include/*.h ./inc
 	cp -pf $(LIBEVENT_BUILD)/lib/libevent.a ./lib
 
-#$(LIBCARES):
-#	mkdir -p $(CARES_BUILD)
-#	cd $(CARES_BUILD); tar zxf ../../packages/c-ares-$(CARES_VER).tar.gz;
-#	cd $(CARES_MAKE_DIR); ./configure --prefix $(CARES_MAKE_DIR) \
-#		CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS)"
-#	make -C $(CARES_MAKE_DIR); make -C $(CARES_MAKE_DIR) install
-#	mkdir -p ./inc; mkdir -p ./lib
-#	cp -pf $(CARES_MAKE_DIR)/include/*.h ./inc
-#	cp -pf $(CARES_MAKE_DIR)/lib/libcares* ./lib
+$(LIBCARES):
+	mkdir -p $(CARES_BUILD)
+	cd $(CARES_BUILD); tar zxf ../../packages/c-ares-$(CARES_VER).tar.gz;
+	cd $(CARES_MAKE_DIR); ./configure --prefix $(CARES_MAKE_DIR) \
+		CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS)"
+	make -C $(CARES_MAKE_DIR); make -C $(CARES_MAKE_DIR) install
+	mkdir -p ./inc; mkdir -p ./lib
+	cp -pf $(CARES_MAKE_DIR)/include/*.h ./inc
+	cp -pf $(CARES_MAKE_DIR)/lib/libcares* ./lib
 
 $(LIBCURL):
 	cd ./packages; tar jxfv curl-$(CURL_VER).tar.bz2; ln -sf curl-$(CURL_VER) curl; \
@@ -154,13 +160,13 @@ $(LIBCURL):
         --with-random=/dev/urandom \
         --with-ssl=/usr/include/openssl \
         --enable-shared=no \
+        --enable-ares=$(CARES_MAKE_DIR) \
         CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS) -DCURL_MAX_WRITE_SIZE=4096"
 	make -C $(CURL_BUILD); make -C $(CURL_BUILD) install;
 	mkdir -p ./inc; mkdir -p ./lib
 	cp -a $(CURL_BUILD)/include/curl ./inc/curl
 	cp -pf $(CURL_BUILD)/lib/libcurl* ./lib
 
-#--enable-ares=$(CARES_MAKE_DIR)
 
 # Files types rules
 .SUFFIXES: .o .c .h
