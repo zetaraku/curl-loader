@@ -147,7 +147,7 @@ main (int argc, char *argv [])
   if (geteuid())
     {
       fprintf (stderr, 
-               "%s - error: lacking root preveledges to run this program.\n", __func__);
+               "%s - error: lacking root priviledges to run this program.\n", __func__);
       return -1;
     }
   
