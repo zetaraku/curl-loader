@@ -1,4 +1,8 @@
+version 0.51, stable, January 18, svn 574
 
+* Releasing a new stable version. The last stable has been release
+  in October 2007
+* Updated to the most recent libcurl and libevent libraries
 * DNS resolving now works via c-ares library.
   Thanks to Val Shkolnikov <val@nvsoft.net> for this suggestion and patch.
 

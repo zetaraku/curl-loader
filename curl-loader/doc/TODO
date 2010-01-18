@@ -1,4 +1,4 @@
-Last updated: December 2 2008
+Last updated: January 18, 2010
 
 
 The strategic directions of development are:
@@ -16,24 +16,6 @@ The strategic directions of development are:
   to deliver high numbers of HTTPS and FTPS load;
 
 
-
-
-Some urgent issues for the next beta:
-
-2. Improve transparent support for POST-ing some file, e.g. a SOAP file.
-   Currently it works as a HOWTOS workaround.
-
-
-The next beta release may hopefully be devoted to processing of HTTP response bodies: 
-
-1. HTML analyses. libcurl example is using libtidy in:
-   http://www.koders.com/c/fid7923BF828D0534D6B747ED138FCDD50DCFD13B3F.aspx
-
-2. A regular expression pattern for a search in a response body
-   Look in Apache JMeter.
-
-3. Regular expression operations for the header/s certain header and whether 
-   value matches a regular expression pattern.
 
 
 ---------------------------------------------------------------------------------------------------- 
