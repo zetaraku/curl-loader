@@ -1270,8 +1270,7 @@ static int pick_up_next_url (client_context* cctx)
 /*******************************************************************************
  * Function name - fetching_decision
  *
- * Description - Decides, which url to fetch next. Advances cycles number, where
- *                     appropriate.
+ * Description - Decides whether to fetch the url
  *
  * Input -       *cctx - pointer to the client context
  *                     *url -  pointer to URL
@@ -1279,36 +1278,46 @@ static int pick_up_next_url (client_context* cctx)
  ********************************************************************************/
 static int fetching_decision (client_context* cctx, url_context* url)
 {
-  if (! url->fetch_probability)
+    if (! url->fetch_probability)
     {
-      // Not using fetch probability
-      return 1;
+        // Not using fetch probability
+        return 1;
     }
-
-  if (cctx->url_fetch_decision && 
-      cctx->url_fetch_decision[cctx->url_curr_index] != -1)
+ 
+    if (cctx->url_fetch_decision && cctx->url_fetch_decision[cctx->url_curr_index] != -1)
     {
-      return cctx->url_fetch_decision[cctx->url_curr_index];
-    }
-
-  if (get_prob() <= url->fetch_probability)
-    {
-      if (cctx->url_fetch_decision)
+        // Using FETCH_PROBABILITY_ONCE, which allocates 
+        // fetching decision array to cache the decision and to decrease calls to random ()
+        //
+        if (cctx->url_fetch_decision[cctx->url_curr_index] != -1)
         {
-          cctx->url_fetch_decision[cctx->url_curr_index] = 1;
+            return cctx->url_fetch_decision[cctx->url_curr_index];
         }
-      return 1;
-    }
-  else
-    {
-      if (cctx->url_fetch_decision)
+        
+        if (get_prob() <= url->fetch_probability)
         {
-          cctx->url_fetch_decision[cctx->url_curr_index] = 0;
+            return (cctx->url_fetch_decision[cctx->url_curr_index] = 1);
         }
-      return 0;
+        else
+        {
+            return (cctx->url_fetch_decision[cctx->url_curr_index] = 0);
+        }
     }
+    else 
+    {
+        // Not using FETCH_PROBABILITY_ONCE
 
-  return 0;
+        if (get_prob() <= url->fetch_probability)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    
+    return 0;
 }
 
 static int load_urls_state (client_context* cctx,
@@ -1336,16 +1345,16 @@ static int load_urls_state (client_context* cctx,
 
       // Now, pick-up the next url index
       do
-        {
+      {
           if ((url_next = pick_up_next_url (cctx)) < 0)
-            {
+          {
               return (cctx->client_state = CSTATE_FINISHED_OK);
-            }
+          }
           
           // Set the new url index and url
           cctx->url_curr_index =  (size_t) url_next;
           url = &bctx->url_ctx_array[cctx->url_curr_index];
-        }
+      }
       while (fetching_decision (cctx, url) != 1);
       
       if (url->fresh_connect && *wait_msec)

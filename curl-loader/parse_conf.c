@@ -2610,29 +2610,28 @@ int alloc_client_fetch_decision_array (batch_context* bctx)
   int k = 0;
   
   for (k = 0; k < bctx->urls_num; k++)
-    {
+  {
       url_context* url = &bctx->url_ctx_array[k];
-
+      
       if (url->fetch_probability && url->fetch_probability_once)
-        {
+      {
           int i;
           for (i = 0;  i < bctx->client_num_max; i++)
-            {
+          {
               client_context* cctx = &bctx->cctx_array[i];
-
+              
               if (!cctx->url_fetch_decision)
-                {
+              {
                   if (!(cctx->url_fetch_decision = calloc (bctx->urls_num, sizeof (char))))
-                    {
-                      fprintf (stderr, "\"%s\" error: failed to allocate client "
-                               "url_fetch_decision buffer.\n", __func__) ;
+                  {
+                      fprintf (stderr, "\"%s\" error: failed to allocate client url_fetch_decision buffer.\n", __func__) ;
                       return -1;
-                    }
+                  }
                   memset (cctx->url_fetch_decision, -1, bctx->urls_num);
-                }
-            }
-        }
-    }
+              }
+          }
+      }
+  }
   return 0;
 }
 
