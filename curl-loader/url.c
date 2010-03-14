@@ -44,21 +44,8 @@ current_url_completion_timeout (unsigned long *timeout,
       return 0;
     }
 
-  //srand (now);
-
-   struct timeval  tval;
-
-  if (!gettimeofday (&tval, NULL) == -1)
-    {
-      fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", 
-              __func__, errno);
-      return -1;
-    }
-  srand (tval.tv_sec * tval.tv_usec);
-
   *timeout = url->timer_url_completion_lrange + 
-          (unsigned long) (((double)url->timer_url_completion_hrange) * 
-                           (rand () / (RAND_MAX + 1.0)));
+          (unsigned long) (url->timer_url_completion_hrange * get_random());
 
   return 0;
 }
@@ -82,19 +69,8 @@ current_url_sleeping_timeout (unsigned long *timeout,
       return 0;
     }
 
-  struct timeval  tval;
-
-  if (gettimeofday (&tval, NULL) == -1)
-    {
-      fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", 
-              __func__, errno);
-      return -1;
-    }
-  srand (tval.tv_sec * tval.tv_usec);
-
   *timeout = url->timer_after_url_sleep_lrange + 
-          (unsigned long) (((double)url->timer_after_url_sleep_hrange) * 
-                           (rand () / (RAND_MAX + 1.0)));
+          (unsigned long) (url->timer_after_url_sleep_hrange * get_random());
 
   return 0;
 }

@@ -67,6 +67,9 @@
 #define AUTH_NTLM "NTLM"
 #define AUTH_ANY "ANY"
 
+static int random_seed = -1;
+static char random_state[256];
+
 static unsigned char 
 resp_status_errors_tbl_default[URL_RESPONSE_STATUS_ERRORS_TABLE_SIZE];
 
@@ -157,6 +160,7 @@ static int url_token_parser(batch_context* const bctx, char* const value);
 static int url_token_file_parser(batch_context* const bctx, char* const value);
 static int response_token_parser(batch_context* const bctx, char* const value);
 static int form_records_cycle_parser(batch_context* const bctx, char* const value);
+static int random_seed_parser (batch_context*const bctx, char*const value);
 
 
 /*
@@ -231,6 +235,7 @@ static const tag_parser_pair tp_map [] =
     {"URL_TOKEN_FILE", url_token_file_parser},
     {"RESPONSE_TOKEN", response_token_parser},
     {"FORM_RECORDS_CYCLE", form_records_cycle_parser},
+    {"RANDOM_SEED", random_seed_parser},
 
     {NULL, 0}
 };
@@ -1503,7 +1508,7 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
   int files = 0;
   char* pos_current = content;
   size_t files_number = 1;
-  const char comma = ',';
+  const char *comma = ",";
 
   if (*content == '@')
     {
@@ -1516,7 +1521,7 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
       content += 1;
 
         /* Count the number of files/commas */
-      while (*pos_current && (pos_current = strchr (pos_current, comma)))
+      while (*pos_current && (pos_current = strchr (pos_current, *comma)))
         {
           ++files_number;
           ++pos_current;
@@ -1632,9 +1637,9 @@ static int multipart_form_data_parser (batch_context*const bctx, char*const valu
       char * token = 0, *strtokp = 0;
       size_t token_index = 0;
       
-      for (token = strtok_r (content, &comma, &strtokp); 
+      for (token = strtok_r (content, comma, &strtokp); 
            token != 0;
-           token = strtok_r (0, &comma, &strtokp))
+           token = strtok_r (0, comma, &strtokp))
         {
           size_t token_len = strlen (token);
           
@@ -1963,13 +1968,13 @@ static int response_status_errors_parser (batch_context*const bctx,
           URL_RESPONSE_STATUS_ERRORS_TABLE_SIZE);
 
   long status = 0;
-  const char separator =  ',';
+  const char *separator =  ",";
   char * token = 0, *strtokp = 0;
   size_t token_len = 0;
 
-  for (token = strtok_r (value, &separator, &strtokp); 
+  for (token = strtok_r (value, separator, &strtokp); 
        token != 0;
-       token = strtok_r (0, &separator, &strtokp))
+       token = strtok_r (0, separator, &strtokp))
     {
       if ((token_len = strlen (token)) < 2)
         {
@@ -2836,6 +2841,7 @@ int parse_config_file (char* const filename,
   for (i = 0; i < bctx_array_size; i++)
      bctx_array[i].dump_opstats = 1;   
 
+  int line_no = 0;
   while (fgets (fgets_buff, sizeof (fgets_buff) - 1, fp))
     {
       // fprintf (stderr, "%s - processing file string \"%s\n", 
@@ -2843,6 +2849,7 @@ int parse_config_file (char* const filename,
 
       char* string_buff = NULL;
       size_t string_len = 0;
+      line_no++;
 
       if ((string_len = strlen (fgets_buff)) && 
           (string_buff = eat_ws (fgets_buff, &string_len)))
@@ -2870,7 +2877,8 @@ int parse_config_file (char* const filename,
                                   &batch_index) == -1)
             {
               fprintf (stderr, 
-                       "%s - error: add_param_to_batch () failed processing line \"%s\"\n", 
+                       "%s - error: add_param_to_batch () "
+                       "failed processing line %d \"%s\"\n",
                        __func__, fgets_buff);
               fclose (fp);
               return -1 ;
@@ -2911,6 +2919,20 @@ int parse_config_file (char* const filename,
           return -1;
         }
     }
+
+  /* Initialize random number generator */
+  if (random_seed < 0)
+    {
+      struct timeval  tval;
+      if (gettimeofday (&tval, NULL) == -1)
+        {
+          fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", 
+            __func__, errno);
+          return -1;
+        }
+        random_seed = tval.tv_sec * tval.tv_usec;
+    }
+  (void)initstate((unsigned int)random_seed,random_state,sizeof(random_state));
 
   return (batch_index + 1);
 }
@@ -3752,6 +3774,43 @@ form_records_cycle_parser(batch_context* const batch, char* const value)
     url->form_records_cycle = flag;
     return 0;
 }
+
+/*
+  Parse a RANDOM_SEED tag.
+  RANDOM_SEED = <non-negative number>
+  This tags allows setting the random seed to a specified non-negative value.
+  With the same seed the pseudo-random numbers used in various parts of the
+  curl-loader are generated in the same order, which produces more consistent
+  results.  If this tag is absent or the value is negative, the random seed
+  is generated based on the current time, i.e. it is different from one run
+  of the curl-loader to another.  The same seed is used for all random numbers.
+  (Example, RANDOM_SEED = 10).
+*/
+static int random_seed_parser (batch_context*const bctx, char*const value)
+{
+  (void)bctx;
+  if (!(isdigit(*value) || *value == '-' || *value == '+'))
+    {
+      fprintf(stderr, "%s error: tag RANDOM_SEED should be numeric\n",
+          __func__);
+      return -1;
+    }
+  random_seed = atoi(value);
+  return 0;
+}
+ 
+  /* Get a random number */
+double get_random ()
+{
+  return (double)random() / (RAND_MAX + 1.0);
+}
+
+  /* Get probability: 1-100 */
+int get_prob ()
+{
+  return 1 + (int) (100 * get_random());
+}
+
 
 /*********************************************************
 	Per-client file upload streams.

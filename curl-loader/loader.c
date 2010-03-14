@@ -1086,16 +1086,7 @@ static int init_client_formed_buffer (client_context* cctx,
 
         if (url->form_records_random)
         {
-            struct timeval tval;
-            
-            if (gettimeofday (&tval, NULL) == -1)
-            {
-                fprintf(stderr, "%s - gettimeofday () failed with errno %d.\n", __func__, errno);
-                return -1;
-            }
-            srand (tval.tv_sec * tval.tv_usec);
-            
-            record_index = (size_t) (((double)url->form_records_num) * (rand () / (RAND_MAX + 1.0)));
+            record_index = (size_t) (url->form_records_num * get_random());
         }
         else if (url->form_records_cycle) /* Added by GF */
         {

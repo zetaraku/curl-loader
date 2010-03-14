@@ -752,7 +752,14 @@ unique url for each cycle.
 See, the usage example in ./conf-examples/url-template-fr-file.conf
 
 
-
+RANDOM_SEED - this tags allows setting the random seed to a specified
+non-negative value.  With the same seed the pseudo-random numbers used in
+various parts of the curl-loader are generated in the same order, which
+produces more consistent results.  If this tag is absent or the value is
+negative, the random seed is generated based on the current time, i.e. it
+is different from one run of the curl-loader to another.  The same seed is
+used for all random numbers.  (Example, RANDOM_SEED = 10).
+ 
 
 The loader supports HTTP Web Authentication and Proxy Authentication. The 
 supported authentication methods are Basic, Digest (RFC2617) and NTLM. When 

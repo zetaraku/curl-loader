@@ -324,6 +324,8 @@ int update_url_from_set_or_template (CURL* handle, struct client_context* client
 int upload_file_stream_init (struct client_context* client, struct url_context* url);
 int scan_response (curl_infotype type, char* data, size_t size, struct client_context* client);
 void free_url_extensions (struct url_context* url);
+double get_random ();
+int get_prob ();
 
 /*****************************************************************************
  * Function name - put_free_client
