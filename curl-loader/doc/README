@@ -110,6 +110,14 @@ The official language of the curl-loader-devel mailing list is English, whereas
 Russian and German written mails will be also responded. 
 
 
+IGNORE_CONTENT_LENGTH - Ignore the Content-Length header on a per url basis. 
+This is useful for Apache 1.x (and similar servers) which will report incorrect content 
+length for files over 2 gigabytes. If this option is used, curl will not be able to 
+accurately report progress, and will simply stop the download when the server ends 
+the connection.
+E.g. Add the following in the URL Section
+IGNORE_CONTENT_LENGTH=1
+
 
 
 FREQUENTLY ASKED QUESTIONS

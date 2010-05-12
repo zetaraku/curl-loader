@@ -25,6 +25,8 @@
 
 #include "url.h"
 
+double get_random ();
+
 int
 current_url_completion_timeout (unsigned long *timeout, 
                                 url_context* url, 

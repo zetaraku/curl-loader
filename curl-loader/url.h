@@ -388,6 +388,12 @@ typedef struct url_context
     */
    int url_cycling;
 
+   /*
+    Ignore the content length of the response. The server would normally
+    close the connection.
+    */
+   int ignore_content_length;
+
 } url_context;
 
 

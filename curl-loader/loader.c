@@ -635,6 +635,11 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
   /* Without the buffer set, we do not get any errors in tracing function. */
   curl_easy_setopt (handle, CURLOPT_ERRORBUFFER, bctx->error_buffer);
   
+  /* set ignore_content_length 
+  */
+  if (url->ignore_content_length) {
+      curl_easy_setopt (handle, CURLOPT_IGNORE_CONTENT_LENGTH, 1);
+  }
   
   #if 0
   if (url->upload_file)
@@ -1015,7 +1020,7 @@ static int init_client_formed_buffer (client_context* cctx,
                                       char* buffer,
                                       size_t buffer_len)
 {
-  int i;
+  int i = 0;
 
   if (!url->form_str || !url->form_str[0])
     {

@@ -36,6 +36,7 @@
 #include <arpa/inet.h>
 #include <stdarg.h>
 
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 
@@ -162,6 +163,7 @@ static int response_token_parser(batch_context* const bctx, char* const value);
 static int form_records_cycle_parser(batch_context* const bctx, char* const value);
 static int random_seed_parser (batch_context*const bctx, char*const value);
 
+static int ignore_content_length (batch_context*const bctx, char*const value);
 
 /*
  * The mapping between tag strings and parsing functions.
@@ -236,6 +238,8 @@ static const tag_parser_pair tp_map [] =
     {"RESPONSE_TOKEN", response_token_parser},
     {"FORM_RECORDS_CYCLE", form_records_cycle_parser},
     {"RANDOM_SEED", random_seed_parser},
+
+    {"IGNORE_CONTENT_LENGTH", ignore_content_length},
 
     {NULL, 0}
 };
@@ -2876,8 +2880,7 @@ int parse_config_file (char* const filename,
                                   &batch_index) == -1)
             {
               fprintf (stderr, 
-                       "%s - error: add_param_to_batch () "
-                       "failed processing line %d \"%s\"\n",
+                       "%s - error: add_param_to_batch () failed processing buffer \"%s\"\n",
                        __func__, fgets_buff);
               fclose (fp);
               return -1 ;
@@ -3728,6 +3731,20 @@ construct_url (char* buf, url_template* template)
 }
 
 
+
+static int ignore_content_length (batch_context*const bctx, char*const value)
+{
+    long boo = atol (value);
+
+    if (boo < 0 || boo > 1)
+    {
+        fprintf(stderr, 
+                "%s error: boolean input 0 or 1 is expected\n", __func__);
+        return -1;
+    }
+    bctx->url_ctx_array[bctx->url_index].ignore_content_length = boo;
+    return 0;
+}
 
 /*********************************************************
 	Flag parsers
