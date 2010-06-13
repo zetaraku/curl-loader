@@ -1,9 +1,17 @@
+version 0.52,stable, June 12, svn 578
+	
 * Probability of using URLs was broken.
-   Thanks to Val Shkolnikov <val@nvsoft.net> the patch restoring it back.
+   Thanks to Val Shkolnikov <val@nvsoft.net> the patch restoring it back
+    and for testing it.
 
 * Loading of configuration files sometimes failed due to passing to strtok
    a char instead of a string.
    Thanks to Val Shkolnikov <val@nvsoft.net> the patch fixing it.
+
+* Some servers are wrong with regards to content length, that they
+  are reporting. This happens for some video streaming.
+  Added a new tag to ignore server-reported context length.
+  Thans to Pranav Desai <pranavadesai@gmail.com> for this patch
 
 
 version 0.51, stable, January 18, svn 574
