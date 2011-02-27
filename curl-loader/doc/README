@@ -1069,7 +1069,17 @@ cat /proc/sys/net/core/wmem_max - the output is 109568.
 /sbin/sysctl net.ipv4.tcp_mem="109568 109568 109568" or 
 echo "109568 109568 109568" > /proc/sys/net/ipv4/tcp_mem
 
-6. Create configuration files for each instance of curl-loader to run.
+6. Increase ARP thresholds;
+
+echo 1024000 > /proc/sys/net/ipv4/neigh/default/gc_thresh1
+echo 1024000 > /proc/sys/net/ipv4/neigh/default/gc_thresh2
+echo 1024000 > /proc/sys/net/ipv4/neigh/default/gc_thresh3
+
+Read:
+http://txt.bitprocessor.be/2011/02/10/curl-loader-and-arp-cache-issues/
+
+
+7. Create configuration files for each instance of curl-loader to run.
 
 What is important is to give a unique value for tag BATCH_NAME, which is in use 
 by a separate instance of curl-loader. Logfile, report file, etc have name, 
@@ -1084,14 +1094,14 @@ clients gradually at start-up in order not boom the server and not to burn out
 the CPU at your loading machine. Addition of new clients is a CPU-expensive 
 operation, therefore keep CLIENTS_RAMPUP_INC below 100 clients per second.
 
-7. Connections re-use.
+8. Connections re-use.
 
 The default behavior of curl-loader now is to re-use the tcp-connection for the 
 next request. This default decreases consumption of CPU and open sockets. If you 
 are specifying -r command-line option, the connection will be closed and 
 re-opened for the next request. 
 
-8. Running curl-loader in multiple threads on several CPUs/cores.
+9. Running curl-loader in multiple threads on several CPUs/cores.
 
 SMP-support can be gained by using option -t <threads-num>. We can recommend to 
 use number of threads as number of CPUs from /proc/cpuinfo. Sometimes 
@@ -1101,7 +1111,7 @@ used. Note, that total statistics is written to the file $batch-name_0.txt,
 whereas logs are per-thread and are written to the files 
 $batch-name_<thread-num>.log.
 
-9. Troubleshooting.
+10. Troubleshooting.
 
 Run the first loading attempt with a small number of clients using command-line 
 options -v (verbose) and -u (url in logs). Grep to look for the errors and their 
@@ -1112,7 +1122,7 @@ timeout" error, this may be due to routing or resolving problems.
 If any assistance required, please, don't hesitate to contact us using 
 PROBLEM-REPORTING form in the download tarball.
 
-10. Logs and statistics.
+11. Logs and statistics.
 
 After end of a run, or after SIGINT (Cntl-C), the final results are calculated 
 and printed to the console as well as to the file <batch-name>.txt. Current 
@@ -1125,7 +1135,7 @@ useful, whereas the default policy is to rewind the logfile (writing from the
 file start), when it reaches 1 GB. Do not use -v and -u options, when you have 
 performance issues.
 
-11. Monitoring of the loading PC.
+12. Monitoring of the loading PC.
 
 Please, use top or vmstat commands to monitor the memory usage, swapping and 
 CPU. Intensive swapping is a good indication, that your PC is short in 
