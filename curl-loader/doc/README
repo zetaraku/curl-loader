@@ -760,6 +760,14 @@ unique url for each cycle.
 See, the usage example in ./conf-examples/url-template-fr-file.conf
 
 
+URL_RANDOM_RANGE - Specifies a range for random numbers to replace the token
+specified in URL_RANDOM_TOKEN
+E.g. URL_RANDOM_RANGE=0-2000
+URL_RANDOM_TOKEN - Replace this token in the URL with a random number from the
+range specified with URL_RANDOM_RANGE.
+E.g. URL_RANDOM_TOKEN=JUNKSTR
+For example config look at ./conf-examples/url-randomize.conf
+
 RANDOM_SEED - this tags allows setting the random seed to a specified
 non-negative value.  With the same seed the pseudo-random numbers used in
 various parts of the curl-loader are generated in the same order, which
@@ -777,6 +785,8 @@ explicitly indicating the method to be used by the tags WEB_AUTH_METHOD and/or
 PROXY_AUTH_METHOD.
 To support GSS Web-Authentication, add in Makefile building of libcurl against 
 appropriate GSS library, see libcurl pages for detailed instructions.
+
+
 
 5. What about FTP load and mixed FTP/HTTP load? 
 To generate FTP/FTPS load, please, pass user credentials via ftp-url according 

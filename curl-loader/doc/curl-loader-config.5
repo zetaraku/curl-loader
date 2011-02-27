@@ -656,6 +656,53 @@ E.g. Add the following in the URL Section:
 .br
 IGNORE_CONTENT_LENGTH=1
 
+.TP
+.B URL Randomization for caching servers
+Most caching server perform very well if the load generator is using a fixed
+set of URLs, since most of the objects will be served from cache. But in the real
+world there are millions of different URLs from which objects are served, so 
+to really stress test a caching server the load generator needs to use a large
+set of URLs, which is not very feasible in most cases.
+.br
+
+The other option is to create random URLs in the load-generator that refer to same 
+object on the webserver. So the caching server sitting in-between sees a large number 
+of unique URLs, thereby really exercising the system.
+.br
+
+The 2 options below provides the ability to add a random string in the URL. 
+They are specified per URL in the URL Section.
+.br
+
+URL=http://172.16.55.210/JUNKSTR/websites/testube/video/cNvJy0zoXOY.34
+.br
+.B URL_RANDOM_RANGE=0-2000
+.br
+.B URL_RANDOM_TOKEN=JUNKSTR
+.br
+E.g.
+http://172.16.55.210/276/websites/testube/video/cNvJy0zoXOY.34
+
+This will replace the string specified in URL_RANDOM_TOKEN with a random number 
+between 0-2000. You need to make sure that the token is part of the URL under test.
+.br
+
+To maps the unique URLs back to a single object on the webserver, you will need a 
+rewrite rule to ignore that random token.
+.br
+
+E.g. with lighttpd
+     enable mod_rewrite in server modules section
+.br
+     url.rewrite                = ( "^/[^/]*(.*)$"             => "$1" )
+.br
+
+     This will remove the first segment of the URL (/JUNKSTR/websites/testube/video/cNvJy0zoXOY.34) 
+     upto '/', thereby pointing to the same object on the webserver.
+
+For examples look at ./conf-examples/url-randomize.conf
+
+
 .SH AUTHORS
 The
 .B curl\-loader

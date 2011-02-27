@@ -394,6 +394,13 @@ typedef struct url_context
     */
    int ignore_content_length;
 
+   /*
+    Randomize a part of the url specified by a token
+    */
+   int random_lrange;
+   int random_hrange;
+   char* random_token;
+
 } url_context;
 
 

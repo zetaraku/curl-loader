@@ -560,6 +560,11 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
       return -1;
     }
   
+  // reset the url if URL_RANDOM_RANGE is used, to create a random url for caching
+  if ( (url->random_hrange > 0) && (url->random_hrange > url->random_lrange) ) {
+      randomize_url(handle, url);
+  }
+
   /* Set the index to client */
   if (url->url_ind >= 0)
   {

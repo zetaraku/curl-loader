@@ -164,6 +164,8 @@ static int form_records_cycle_parser(batch_context* const bctx, char* const valu
 static int random_seed_parser (batch_context*const bctx, char*const value);
 
 static int ignore_content_length (batch_context*const bctx, char*const value);
+static int url_random_range (batch_context*const bctx, char*const value);
+static int url_random_token (batch_context*const bctx, char*const value);
 
 /*
  * The mapping between tag strings and parsing functions.
@@ -240,6 +242,8 @@ static const tag_parser_pair tp_map [] =
     {"RANDOM_SEED", random_seed_parser},
 
     {"IGNORE_CONTENT_LENGTH", ignore_content_length},
+    {"URL_RANDOM_RANGE", url_random_range},
+    {"URL_RANDOM_TOKEN", url_random_token},
 
     {NULL, 0}
 };
@@ -3226,6 +3230,7 @@ static int print_correct_form_usagetype (form_usagetype ftype, char* value)
 
 
 int update_url_from_set_or_template(CURL* handle, client_context* client, url_context* url);
+int randomize_url(CURL *handle, url_context *url);
 extern int		scan_response(curl_infotype type, char* data, size_t size, client_context* client);
 extern void		free_url_extensions(url_context* url);
 
@@ -3302,6 +3307,47 @@ update_url_from_set_or_template(CURL* handle, client_context* client, url_contex
     }
 	
     return (result < 0) ? -1 : 0;
+}
+
+
+/*
+Randomize a part of the URL based on a specific token
+Used for creating a variance for caching server to hit or miss
+even with a small set of URLs.
+*/
+int randomize_url(CURL *handle, url_context *url)
+{
+    char buf[512];
+    char *s;
+    char rand_tmp[32];
+    long int rand;
+
+    if(url->random_hrange <= 0) {
+        return 0;
+    }
+
+    if(url->random_token == NULL) {
+        return 0;
+    }
+
+    if( (s = (char*)strcasestr(url->url_str, url->random_token)) == NULL ) {
+        return 0;
+    }
+    
+    strncpy(buf, url->url_str, s - url->url_str);
+    buf[s - url->url_str] = '\0';
+
+    rand = (random() % (url->random_hrange - url->random_lrange)) + url->random_lrange;
+
+    sprintf(rand_tmp, "%lu", rand);
+    strcat(buf, rand_tmp);
+    strcat(buf, s + strlen(url->random_token));
+    //fprintf(stderr, "%s random url: %s\n", __func__, buf);
+    
+    //reload the url with the random string in it.
+    curl_easy_setopt (handle, CURLOPT_URL, buf);
+
+    return 0;
 }
 
 
@@ -3746,6 +3792,41 @@ static int ignore_content_length (batch_context*const bctx, char*const value)
     return 0;
 }
 
+static int url_random_range (batch_context*const bctx, char*const value)
+{
+  long rand_lrange = 0;
+  long rand_hrange = 0;
+  size_t value_len = strlen (value) + 1;
+
+  if (parse_timer_range (value, value_len, &rand_lrange, &rand_hrange) == -1)
+    {
+      fprintf(stderr, "%s error: parse_timer_range () failed.\n", __func__);
+      return -1;
+    }
+  
+  if ( rand_hrange <= rand_lrange )
+    {
+      fprintf(stderr, "%s low value must be < high value\n", __func__);
+      return -1;
+    }
+
+    bctx->url_ctx_array[bctx->url_index].random_lrange = (int)rand_lrange;
+    bctx->url_ctx_array[bctx->url_index].random_hrange = (int)rand_hrange;
+
+    return 0;
+}
+
+
+static int url_random_token (batch_context*const bctx, char*const value)
+{
+    size_t value_len = strlen (value) + 1;
+    url_context* url = &bctx->url_ctx_array[bctx->url_index];
+
+    url->random_token = calloc(value_len, sizeof(char));
+
+    strcpy(url->random_token, value);
+    return 0;
+}
 /*********************************************************
 	Flag parsers
 *********************************************************/
