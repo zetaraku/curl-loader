@@ -8,11 +8,11 @@ BUILD=$(shell pwd)/build
 # Building of DNS asynch resolving c-ares library.
 #
 CARES_BUILD=$(BUILD)/c-ares
-CARES_VER:=1.6.0
+CARES_VER:=1.7.4
 CARES_MAKE_DIR=$(CARES_BUILD)/c-ares-$(CARES_VER)
 
 CURL_BUILD=$(BUILD)/curl
-CURL_VER:=7.19.7
+CURL_VER:=7.21.4
 
 LIBEVENT_BUILD=$(BUILD)/libevent
 LIBEVENT_VER:=1.4.14b
