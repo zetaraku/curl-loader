@@ -3972,7 +3972,7 @@ int upload_file_stream_init (client_context* client, url_context* url)
 static size_t
 read_callback(void *ptr, size_t size, size_t nmemb, void* user_supplied)
 {
-    extern int pread(int, void*, size_t, long);
+    extern ssize_t pread(int, void *, size_t, off_t);
    
     client_context* client = user_supplied;
     batch_context* batch = client->bctx;
