@@ -1,4 +1,15 @@
-version 0.52,stable, June 12, svn 578
+version 0.53, March 11 2011, svn 584
+
+* Updated to the latest libcurl, libevent and c-ares;
+
+* Fixed compilation issue at Fedora-8 with 
+    extern declaration of pread in parse_conf.c;
+
+* Added patch providing URL randomization.
+  Thanks to Pranav Desai <pranavadesai@gmail.com> for this patch.
+
+	
+version 0.52, stable, June 12 2010, svn 578
 	
 * Probability of using URLs was broken.
    Thanks to Val Shkolnikov <val@nvsoft.net> the patch restoring it back
@@ -11,7 +22,7 @@ version 0.52,stable, June 12, svn 578
 * Some servers are wrong with regards to content length, that they
   are reporting. This happens for some video streaming.
   Added a new tag to ignore server-reported context length.
-  Thans to Pranav Desai <pranavadesai@gmail.com> for this patch
+  Thanks to Pranav Desai <pranavadesai@gmail.com> for this patch
 
 
 version 0.51, stable, January 18, svn 574
