@@ -145,7 +145,7 @@ $(LIBCARES):
 	make -C $(CARES_MAKE_DIR); make -C $(CARES_MAKE_DIR) install
 	mkdir -p ./inc; mkdir -p ./lib
 	cp -pf $(CARES_MAKE_DIR)/include/*.h ./inc
-	cp -pf $(CARES_MAKE_DIR)/lib/libcares* ./lib
+	cp -pf $(CARES_MAKE_DIR)/lib/libcares.*a ./lib
 
 $(LIBCURL):
 	cd ./packages; tar jxfv curl-$(CURL_VER).tar.bz2; ln -sf curl-$(CURL_VER) curl; \
@@ -165,7 +165,7 @@ $(LIBCURL):
 	make -C $(CURL_BUILD); make -C $(CURL_BUILD) install;
 	mkdir -p ./inc; mkdir -p ./lib
 	cp -a $(CURL_BUILD)/include/curl ./inc/curl
-	cp -pf $(CURL_BUILD)/lib/libcurl* ./lib
+	cp -pf $(CURL_BUILD)/lib/libcurl.*a ./lib
 
 
 # Files types rules
