@@ -1,6 +1,7 @@
-version 0.53, stable, March 11 2011, svn 584
+version 0.54, stable, January 2, 2012, svn 587
  
-2006 - 2011 Copyright (C)  
+2006 - 2012 Copyright (C)
+  
 Robert Iakobashvili,  <coroberti@gmail.com>, Ashdod, Israel
 Michael Moser, <moser.michael@gmail.com>, Modiin, Israel
 All rights reserved.
@@ -439,6 +440,7 @@ running /sbin/ifconfig.
 NETMASK - netmask for the loading clients IP-addresses (from IP_ADDR_MIN to 
 IP_ADDR_MAX). For IPv4 you can use either quad-dotted netmask string or CIDR 
 number from 0-32. For IPv6 only CIDR values from 0 to 128 are supported.
+To enable IPv6 change --disable-ipv6 to --enable-ipv6 in Makefile
 
 IP-addresses from IP_ADDR_MIN up to IP_ADDR_MAX are the interval to be used for 
 loading clients. The interval of the addresses should be large enough to supply 

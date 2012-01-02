@@ -1,3 +1,15 @@
+version 0.54, stable, January 2 2012, svn 587
+	
+* Fixed static linking to c-ares
+
+* Disabled IPv6 in Makefile when building curl.
+  Somehow that creates issues at Ubuntu.
+
+* Fixed a crashing bug when running with -t option (multi-threading loading).
+   Thanks to Shao, Shuchao (Simon) sshao@websense.com for
+   finding the issue and providing the initial patch for fixing it.
+
+
 version 0.53, March 11 2011, svn 584
 
 * Updated to the latest libcurl, libevent and c-ares;

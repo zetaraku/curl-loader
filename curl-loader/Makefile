@@ -36,7 +36,7 @@ CFLAGS= -W -Wall -Wpointer-arith -pipe \
 # Making options: e.g. $make optimize=1 debug=0 profile=1 
 #
 debug ?= 1
-optimize ?= 0
+optimize ?= 1
 profile ?= 0
 
 #Debug flags
@@ -147,6 +147,9 @@ $(LIBCARES):
 	cp -pf $(CARES_MAKE_DIR)/include/*.h ./inc
 	cp -pf $(CARES_MAKE_DIR)/lib/libcares.*a ./lib
 
+
+# To enable IPv6 change --disable-ipv6 to --enable-ipv6
+
 $(LIBCURL):
 	cd ./packages; tar jxfv curl-$(CURL_VER).tar.bz2; ln -sf curl-$(CURL_VER) curl; \
 	patch -d curl -p1 < ../patches/curl-trace-info-error.patch
@@ -155,7 +158,7 @@ $(LIBCURL):
 	--without-libidn \
 	--without-libssh2 \
 	--disable-ldap \
-	--enable-ipv6 \
+	--disable-ipv6 \
         --enable-thread \
         --with-random=/dev/urandom \
         --with-ssl=/usr/include/openssl \
