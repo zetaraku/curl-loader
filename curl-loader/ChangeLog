@@ -1,3 +1,8 @@
+
+* HTTP 1.1 HEAD and DELETE methods added.
+   Thanks to Wei Guo, weiguo85@gmail.com
+	
+
 version 0.54, stable, January 2 2012, svn 587
 	
 * Fixed static linking to c-ares

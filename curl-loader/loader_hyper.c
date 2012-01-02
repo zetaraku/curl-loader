@@ -233,7 +233,7 @@ static void setsock_hyper(sock_info*sinfo,
 }
 
 /************************************************************************
- * Function name - setsock_hyper
+ * Function name - addsock_hyper
  *
  * Description - Initialize a new sock_info structure
  *
@@ -370,7 +370,7 @@ static void update_timeout_hyper (batch_context *bctx)
 
 
 /************************************************************************
- * Function name - setsock_hyper
+ * Function name - next_load_cb_hyper
  *
  * Description - Called on timer. Makes next load actions and dispatches
  *                  expired timers on the waiting queue.

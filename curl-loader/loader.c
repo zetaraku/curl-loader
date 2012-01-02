@@ -507,7 +507,9 @@ int setup_curl_handle_init (client_context*const cctx, url_context* url)
          name, not just a directory.
       */
 
-      if (url->req_type == HTTP_REQ_TYPE_GET  && url->form_str)
+      if ((url->req_type == HTTP_REQ_TYPE_GET  && url->form_str) || 
+		  (url->req_type == HTTP_REQ_TYPE_HEAD  && url->form_str) || 
+		  (url->req_type == HTTP_REQ_TYPE_DELETE  && url->form_str))
         {
           /* 
              GET url with form fields. If not making searches with a search
@@ -821,6 +823,22 @@ int setup_curl_handle_appl (client_context*const cctx, url_context* url)
               curl_easy_setopt(handle, CURLOPT_PUT, 1);
             }
         }
+      else if (url->req_type == HTTP_REQ_TYPE_HEAD)
+		{
+			  /* 
+				 HTTP HEAD method.
+				 Note, no other info need to put
+			 */
+			 curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "HEAD");
+		}
+	  else if (url->req_type == HTTP_REQ_TYPE_DELETE)
+		{
+			 /* 
+				HTTP DELETE method.
+				Note, no toher info need to put 
+			*/
+			curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+		}
 
       if (url->web_auth_method)
         {

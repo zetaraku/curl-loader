@@ -128,6 +128,8 @@ typedef enum appl_req_type
   HTTP_REQ_TYPE_GET = 1,
   HTTP_REQ_TYPE_POST = 2,
   HTTP_REQ_TYPE_PUT = 3,
+  HTTP_REQ_TYPE_HEAD = 4,
+  HTTP_REQ_TYPE_DELETE = 5,
 
   HTTP_REQ_TYPE_LAST = 7,
 

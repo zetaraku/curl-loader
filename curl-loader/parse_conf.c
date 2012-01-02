@@ -46,6 +46,8 @@
 #include "cl_alloc.h"
 #include "url.h"
 
+extern char * strcasestr(const char *, const char *);
+
 #define EXPLORER_USERAGENT_STR "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" 
 #define BATCH_MAX_CLIENTS_NUM 4096
 
@@ -55,6 +57,8 @@
 #define REQ_GET "GET"
 #define REQ_POST "POST"
 #define REQ_PUT "PUT"
+#define REQ_HEAD "HEAD"
+#define REQ_DELETE "DELETE"
 
 #define FT_UNIQUE_USERS_AND_PASSWORDS "UNIQUE_USERS_AND_PASSWORDS"
 #define FT_UNIQUE_USERS_SAME_PASSWORD "UNIQUE_USERS_SAME_PASSWORD"
@@ -1158,11 +1162,21 @@ static int request_type_parser (batch_context*const bctx, char*const value)
         bctx->url_ctx_array[bctx->url_index].req_type = 
           HTTP_REQ_TYPE_PUT;
     }
+    else if (!strcmp (value, REQ_HEAD))
+	{
+		bctx->url_ctx_array[bctx->url_index].req_type = 
+		  HTTP_REQ_TYPE_HEAD;
+	}
+	else if (!strcmp (value, REQ_DELETE))
+	{
+		bctx->url_ctx_array[bctx->url_index].req_type = 
+		  HTTP_REQ_TYPE_DELETE;
+	}
     else
     {
         fprintf (stderr, 
-                 "%s - error: REQ_TYPE (%s) is not valid. Use %s, %s or %s.\n", 
-                 __func__, value, REQ_GET, REQ_POST, REQ_PUT);
+				 "%s - error: REQ_TYPE (%s) is not valid. Use %s, %s, %s, %s or %s.\n", 
+				__func__, value, REQ_GET, REQ_POST, REQ_PUT, REQ_HEAD, REQ_DELETE);
         return -1;
     }
     return 0;
@@ -2567,7 +2581,9 @@ int alloc_client_formed_buffers (batch_context* bctx)
             }
         } /* end of post-ing buffers allocation */
       
-      else if (url->req_type == HTTP_REQ_TYPE_GET && url->form_str)
+      else if ((url->req_type == HTTP_REQ_TYPE_GET && url->form_str) ||  
+			  (url->req_type == HTTP_REQ_TYPE_HEAD && url->form_str) || 
+			  (url->req_type == HTTP_REQ_TYPE_DELETE && url->form_str))
         {
           int j;
           for (j = 0;  j < bctx->client_num_max; j++)
@@ -3318,19 +3334,22 @@ even with a small set of URLs.
 int randomize_url(CURL *handle, url_context *url)
 {
     char buf[512];
-    char *s;
+    char *s = 0;
     char rand_tmp[32];
     long int rand;
 
-    if(url->random_hrange <= 0) {
+    if (url->random_hrange <= 0) 
+    {
         return 0;
     }
 
-    if(url->random_token == NULL) {
+    if (! url->random_token) 
+    {
         return 0;
     }
 
-    if( (s = (char*)strcasestr(url->url_str, url->random_token)) == NULL ) {
+    if ( ! (s = strcasestr (url->url_str, url->random_token))) 
+    {
         return 0;
     }
     
