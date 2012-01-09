@@ -1,4 +1,10 @@
-
+version 0.55, unstable, January 9 2012, svn 588
+	
+* Bug in curl library required advancing to version
+  where the issue is supposed to be fixed.
+  At Ubuntu 10.4 building with SSL generate reporting 
+  about "undefined reference to `SSLv2_client_method'"
+	
 * HTTP 1.1 HEAD and DELETE methods added.
    Thanks to Wei Guo, weiguo85@gmail.com
 	

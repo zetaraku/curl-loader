@@ -8,11 +8,11 @@ BUILD=$(shell pwd)/build
 # Building of DNS asynch resolving c-ares library.
 #
 CARES_BUILD=$(BUILD)/c-ares
-CARES_VER:=1.7.4
+CARES_VER:=1.7.5
 CARES_MAKE_DIR=$(CARES_BUILD)/c-ares-$(CARES_VER)
 
 CURL_BUILD=$(BUILD)/curl
-CURL_VER:=7.21.4
+CURL_VER:=7.24.0-20120109
 
 LIBEVENT_BUILD=$(BUILD)/libevent
 LIBEVENT_VER:=1.4.14b
@@ -165,7 +165,7 @@ $(LIBCURL):
         --enable-shared=no \
         --enable-ares=$(CARES_MAKE_DIR) \
         CFLAGS="$(PROF_FLAG) $(DEBUG_FLAGS) $(OPT_FLAGS) -DCURL_MAX_WRITE_SIZE=4096"
-	make -C $(CURL_BUILD); make -C $(CURL_BUILD) install;
+	make -C $(CURL_BUILD); make -C $(CURL_BUILD)/lib install; make -C $(CURL_BUILD)/include/curl install;
 	mkdir -p ./inc; mkdir -p ./lib
 	cp -a $(CURL_BUILD)/include/curl ./inc/curl
 	cp -pf $(CURL_BUILD)/lib/libcurl.*a ./lib
