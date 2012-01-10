@@ -1,3 +1,12 @@
+version 0.56, unstable, January 10 2012, svn 589
+
+* Fixed a linking bug with gcc-4.6. This version
+   of gcc requires system libraries, like -lrt, to follow after
+   application libraries (-lcurl, -levent) that are using the system libraries.
+   Thanks to Eric Mueller, emueller@arbor.net for reporting the issue
+   and testing patches.
+   
+
 version 0.55, unstable, January 9 2012, svn 588
 	
 * Bug in curl library required advancing to version

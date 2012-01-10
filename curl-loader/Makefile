@@ -80,7 +80,7 @@ LD=gcc
 LDFLAGS=-L./lib -L$(OPENSSLDIR)/lib
 
 # Link Libraries. In some cases, plese add -lidn, or -lldap
-LIBS= -ldl -lpthread -lrt -lcurl -levent -lz -lssl -lcrypto -lcares
+LIBS= -lcurl -levent -lz -lssl -lcrypto -lcares -ldl -lpthread -lnsl -lrt -lresolv
 
 # Include directories
 INCDIR=-I. -I./inc -I$(OPENSSLDIR)/include

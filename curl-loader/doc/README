@@ -1,4 +1,4 @@
-version 0.55, stable, January 9, 2012, svn 588
+version 0.56, stable, January 10, 2012, svn 589
  
 2006 - 2012 Copyright (C)
   
@@ -526,7 +526,8 @@ it. The first non-cycling area may be used for login, authentication, etc.
 single time operations, whereas the second non-cycling area is good for a single 
 time logoff, for example.
 
-REQUEST_TYPE - HTTP request method to be chosen from GET, POST or PUT.
+REQUEST_TYPE - HTTP request method to be chosen from GET, POST, PUT,
+DELETE or HEAD.
 
 UPLOAD_FILE - filename, including path, to the file to be used for uploading. 
 The path should be taken from the curl-loader place, e.g. 
