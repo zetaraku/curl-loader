@@ -230,7 +230,7 @@ static int mperform_smooth (batch_context* bctx,
           CURL *handle = msg->easy_handle;
           client_context *cctx = NULL;
 
-          curl_easy_getinfo (handle, CURLINFO_PRIVATE, &cctx);
+          curl_easy_getinfo (handle, CURLINFO_PRIVATE, (char **)&cctx);
 
           if (!cctx)
             {

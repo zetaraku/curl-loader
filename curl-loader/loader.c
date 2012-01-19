@@ -1158,7 +1158,7 @@ static int init_client_formed_buffer (client_context* cctx,
     char *end = data+strlen(data)-1;\
     if (*end == '\n')\
       *end = '\0';\
-    (void)fprintf(cctx->file_output,"%ld %ld %ld %s%s %s",\
+    (void)fprintf(cctx->file_output,"%ld %ld %d %s%s %s",\
      offs_resp, cctx->cycle_num, cctx->url_curr_index, cctx->client_name,\
      ind, data);\
     if (url_print)\
@@ -1427,7 +1427,7 @@ static int client_tracing_function (CURL *handle,
     case CURLINFO_DATA_IN:     
       if (verbose_logging > 1) 
           (void)fprintf(cctx->file_output,
-                 "%ld %ld %ld %s<= Recv data: eff-url: %s, url: %s\n", 
+                 "%ld %ld %d %s<= Recv data: eff-url: %s, url: %s\n", 
                   offs_resp, cctx->cycle_num, cctx->url_curr_index,
 		  cctx->client_name,
                   url_print ? url : "", url_diff ? url_target : "");

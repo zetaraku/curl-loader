@@ -290,7 +290,7 @@ static int socket_callback (CURL *handle,
 
   if (!cctx)
     {
-      curl_easy_getinfo (handle, CURLINFO_PRIVATE, &cctx);
+      curl_easy_getinfo (handle, CURLINFO_PRIVATE, (char **)&cctx);
 
       if (cctx) 
         {
@@ -621,7 +621,7 @@ static int mperform_hyper (batch_context* bctx, int* still_running)
           CURL *handle = msg->easy_handle;
           client_context *cctx = NULL;
 
-          curl_easy_getinfo (handle, CURLINFO_PRIVATE, &cctx);
+          curl_easy_getinfo (handle, CURLINFO_PRIVATE, (char **)&cctx);
 
           if (!cctx)
             {

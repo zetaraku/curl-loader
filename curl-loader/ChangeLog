@@ -1,3 +1,6 @@
+* Fixed compilation warnings.
+
+
 version 0.56, unstable, January 10 2012, svn 589
 
 * Fixed a linking bug with gcc-4.6. This version
